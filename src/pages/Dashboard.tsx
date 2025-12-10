@@ -9,11 +9,13 @@ import {
   ChevronRight,
   Crown,
   User,
-  Loader2
+  Loader2,
+  Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -32,6 +34,22 @@ interface Department {
 interface DepartmentWithRole extends Department {
   role: 'leader' | 'member';
 }
+
+const cardColors = [
+  'from-violet-500/10 to-violet-600/5 border-violet-500/20',
+  'from-rose-500/10 to-rose-600/5 border-rose-500/20',
+  'from-emerald-500/10 to-emerald-600/5 border-emerald-500/20',
+  'from-amber-500/10 to-amber-600/5 border-amber-500/20',
+  'from-cyan-500/10 to-cyan-600/5 border-cyan-500/20',
+];
+
+const iconColors = [
+  'icon-violet',
+  'icon-rose',
+  'icon-emerald',
+  'icon-amber',
+  'icon-cyan',
+];
 
 export default function Dashboard() {
   const [departments, setDepartments] = useState<DepartmentWithRole[]>([]);
@@ -116,13 +134,14 @@ export default function Dashboard() {
       <header className="sticky top-0 z-50 glass border-b border-border/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link to="/dashboard" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow-sm">
-              <Calendar className="w-5 h-5 text-primary-foreground" />
+            <div className="w-10 h-10 rounded-xl gradient-vibrant flex items-center justify-center shadow-glow-sm">
+              <Calendar className="w-5 h-5 text-white" />
             </div>
             <span className="font-display text-xl font-bold text-foreground">LEVI</span>
           </Link>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Button variant="ghost" size="icon" className="text-muted-foreground">
               <Settings className="w-5 h-5" />
             </Button>
@@ -135,7 +154,7 @@ export default function Dashboard() {
               <LogOut className="w-5 h-5" />
             </Button>
             <Avatar className="w-9 h-9 border-2 border-primary/20">
-              <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
+              <AvatarFallback className="gradient-vibrant text-white text-sm font-medium">
                 {user.email?.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
@@ -146,6 +165,10 @@ export default function Dashboard() {
       <main className="container mx-auto px-4 py-8">
         {/* Welcome section */}
         <div className="mb-8">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+            <Sparkles className="w-4 h-4" />
+            <span>Dashboard</span>
+          </div>
           <h1 className="font-display text-3xl font-bold text-foreground mb-2">
             Olá, bem-vindo! 👋
           </h1>
@@ -160,11 +183,11 @@ export default function Dashboard() {
           className="block mb-10"
         >
           <div className="relative group">
-            <div className="absolute inset-0 gradient-primary rounded-2xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity" />
+            <div className="absolute inset-0 gradient-vibrant rounded-2xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity" />
             <div className="relative glass rounded-2xl p-6 border-2 border-dashed border-primary/30 hover:border-primary/50 transition-all hover-lift">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-xl gradient-primary flex items-center justify-center shadow-glow-sm group-hover:shadow-glow transition-all">
-                  <Plus className="w-7 h-7 text-primary-foreground" />
+                <div className="w-14 h-14 rounded-xl gradient-vibrant flex items-center justify-center shadow-glow-sm group-hover:shadow-glow transition-all">
+                  <Plus className="w-7 h-7 text-white" />
                 </div>
                 <div className="flex-1">
                   <h3 className="font-display text-xl font-semibold text-foreground mb-1">
@@ -195,18 +218,20 @@ export default function Dashboard() {
             {leaderDepartments.length > 0 && (
               <section className="mb-10">
                 <div className="flex items-center gap-2 mb-6">
-                  <Crown className="w-5 h-5 text-primary" />
+                  <div className="w-8 h-8 rounded-lg icon-violet flex items-center justify-center">
+                    <Crown className="w-4 h-4" />
+                  </div>
                   <h2 className="font-display text-xl font-semibold text-foreground">
-                    Meus Departamentos (Líder)
+                    Meus Departamentos
                   </h2>
-                  <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                  <span className="px-2 py-0.5 rounded-full gradient-vibrant text-white text-sm font-medium">
                     {leaderDepartments.length}
                   </span>
                 </div>
                 
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {leaderDepartments.map((dept) => (
-                    <DepartmentCard key={dept.id} department={dept} />
+                  {leaderDepartments.map((dept, index) => (
+                    <DepartmentCard key={dept.id} department={dept} colorIndex={index} />
                   ))}
                 </div>
               </section>
@@ -216,7 +241,9 @@ export default function Dashboard() {
             {memberDepartments.length > 0 && (
               <section className="mb-10">
                 <div className="flex items-center gap-2 mb-6">
-                  <User className="w-5 h-5 text-muted-foreground" />
+                  <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                    <User className="w-4 h-4 text-muted-foreground" />
+                  </div>
                   <h2 className="font-display text-xl font-semibold text-foreground">
                     Participo Como Membro
                   </h2>
@@ -226,8 +253,8 @@ export default function Dashboard() {
                 </div>
                 
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {memberDepartments.map((dept) => (
-                    <DepartmentCard key={dept.id} department={dept} />
+                  {memberDepartments.map((dept, index) => (
+                    <DepartmentCard key={dept.id} department={dept} colorIndex={index + leaderDepartments.length} />
                   ))}
                 </div>
               </section>
@@ -236,8 +263,8 @@ export default function Dashboard() {
             {/* Empty state */}
             {departments.length === 0 && (
               <div className="text-center py-16">
-                <div className="w-20 h-20 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-6">
-                  <Calendar className="w-10 h-10 text-muted-foreground" />
+                <div className="w-20 h-20 rounded-2xl gradient-vibrant flex items-center justify-center mx-auto mb-6 opacity-50">
+                  <Calendar className="w-10 h-10 text-white" />
                 </div>
                 <h3 className="font-display text-xl font-semibold text-foreground mb-2">
                   Nenhum departamento ainda
@@ -246,7 +273,7 @@ export default function Dashboard() {
                   Crie seu primeiro departamento ou peça um convite para participar de um existente.
                 </p>
                 <Link to="/departments/new">
-                  <Button className="gradient-primary text-primary-foreground shadow-glow-sm hover:shadow-glow transition-all">
+                  <Button className="gradient-vibrant text-white shadow-glow-sm hover:shadow-glow transition-all">
                     <Plus className="w-5 h-5 mr-2" />
                     Criar Departamento
                   </Button>
@@ -260,38 +287,34 @@ export default function Dashboard() {
   );
 }
 
-function DepartmentCard({ department }: { department: DepartmentWithRole }) {
-  const statusColors = {
-    active: 'bg-success/10 text-success',
-    trial: 'bg-warning/10 text-warning',
-    pending: 'bg-muted text-muted-foreground',
-    expired: 'bg-destructive/10 text-destructive',
-    cancelled: 'bg-destructive/10 text-destructive',
+function DepartmentCard({ department, colorIndex }: { department: DepartmentWithRole; colorIndex: number }) {
+  const statusConfig = {
+    active: { bg: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400', label: 'Ativo' },
+    trial: { bg: 'bg-amber-500/10 text-amber-600 dark:text-amber-400', label: 'Teste' },
+    pending: { bg: 'bg-muted text-muted-foreground', label: 'Pendente' },
+    expired: { bg: 'bg-destructive/10 text-destructive', label: 'Expirado' },
+    cancelled: { bg: 'bg-destructive/10 text-destructive', label: 'Cancelado' },
   };
 
-  const statusLabels = {
-    active: 'Ativo',
-    trial: 'Teste',
-    pending: 'Pendente',
-    expired: 'Expirado',
-    cancelled: 'Cancelado',
-  };
+  const status = statusConfig[department.subscription_status as keyof typeof statusConfig] || statusConfig.pending;
+  const cardColor = cardColors[colorIndex % cardColors.length];
+  const iconColor = iconColors[colorIndex % iconColors.length];
 
   return (
     <Link to={`/departments/${department.id}`}>
-      <div className="group bg-card border border-border rounded-2xl p-6 hover-lift cursor-pointer animate-fade-in">
+      <div className={`group bg-gradient-to-br ${cardColor} border rounded-2xl p-6 hover-lift cursor-pointer animate-fade-in`}>
         <div className="flex items-start justify-between mb-4">
-          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-            <Calendar className="w-6 h-6 text-primary" />
+          <div className={`w-12 h-12 rounded-xl ${iconColor} flex items-center justify-center transition-transform group-hover:scale-110`}>
+            <Calendar className="w-6 h-6" />
           </div>
           <div className="flex items-center gap-2">
             {department.role === 'leader' && (
-              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                <Crown className="w-3.5 h-3.5 text-primary" />
+              <div className="w-6 h-6 rounded-full gradient-vibrant flex items-center justify-center">
+                <Crown className="w-3.5 h-3.5 text-white" />
               </div>
             )}
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[department.subscription_status as keyof typeof statusColors] || statusColors.pending}`}>
-              {statusLabels[department.subscription_status as keyof typeof statusLabels] || 'Pendente'}
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${status.bg}`}>
+              {status.label}
             </span>
           </div>
         </div>
@@ -313,7 +336,7 @@ function DepartmentCard({ department }: { department: DepartmentWithRole }) {
           </div>
         </div>
         
-        <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
+        <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between">
           <span className="text-xs text-muted-foreground">
             Criado em {new Date(department.created_at).toLocaleDateString('pt-BR')}
           </span>

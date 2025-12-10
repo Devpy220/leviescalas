@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { 
   Calendar, 
   Users, 
@@ -17,31 +18,37 @@ const features = [
     icon: Calendar,
     title: 'Calendário Interativo',
     description: 'Arraste e solte membros diretamente nas datas. Visualização mensal e semanal com cores diferenciadas.',
+    color: 'icon-violet',
   },
   {
     icon: Users,
     title: 'Gestão de Membros',
     description: 'Convide membros com link único. Organize equipes e visualize disponibilidades em tempo real.',
+    color: 'icon-coral',
   },
   {
     icon: Bell,
     title: 'Notificações Automáticas',
     description: 'Lembretes via WhatsApp: confirmação imediata, 48h e 2h antes da escala.',
+    color: 'icon-emerald',
   },
   {
     icon: Shield,
     title: 'Seguro e Confiável',
     description: 'Dados protegidos com criptografia. Backups automáticos e acesso controlado por permissões.',
+    color: 'icon-cyan',
   },
   {
     icon: Zap,
     title: 'Tempo Real',
     description: 'Alterações sincronizam instantaneamente para todos os membros do departamento.',
+    color: 'icon-amber',
   },
   {
     icon: CheckCircle2,
     title: 'Simples de Usar',
     description: 'Interface intuitiva que qualquer pessoa pode usar. Sem treinamento necessário.',
+    color: 'icon-rose',
   },
 ];
 
@@ -63,20 +70,21 @@ export default function Landing() {
       <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow-sm">
-              <Calendar className="w-5 h-5 text-primary-foreground" />
+            <div className="w-10 h-10 rounded-xl gradient-vibrant flex items-center justify-center shadow-glow-sm">
+              <Calendar className="w-5 h-5 text-white" />
             </div>
             <span className="font-display text-xl font-bold text-foreground">LEVI</span>
           </Link>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Link to="/auth">
               <Button variant="ghost" className="hidden sm:inline-flex">
                 Entrar
               </Button>
             </Link>
             <Link to="/auth?tab=register">
-              <Button className="gradient-primary text-primary-foreground shadow-glow-sm hover:shadow-glow transition-all">
+              <Button className="gradient-vibrant text-white shadow-glow-sm hover:shadow-glow transition-all">
                 Começar Grátis
                 <ArrowRight className="w-4 h-4 ml-1" />
               </Button>
@@ -88,20 +96,20 @@ export default function Landing() {
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 lg:pt-40 lg:pb-32 overflow-hidden">
         {/* Background decorations */}
-        <div className="absolute inset-0 gradient-hero" />
+        <div className="absolute inset-0 mesh-gradient mesh-gradient-animated" />
         <div className="absolute inset-0 gradient-radial opacity-60" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] gradient-glow" />
         
         <div className="container mx-auto px-4 relative">
           <div className="max-w-4xl mx-auto text-center stagger-children">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6 border border-primary/20">
               <Sparkles className="w-4 h-4" />
               <span>Simplifique a gestão de escalas da sua igreja</span>
             </div>
             
             <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight">
               Organize suas escalas com{' '}
-              <span className="text-gradient">facilidade e elegância</span>
+              <span className="text-gradient-vibrant">facilidade e elegância</span>
             </h1>
             
             <p className="text-lg sm:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
@@ -111,12 +119,12 @@ export default function Landing() {
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/auth?tab=register">
-                <Button size="lg" className="w-full sm:w-auto gradient-primary text-primary-foreground shadow-glow hover:shadow-glow-lg transition-all text-lg px-8">
+                <Button size="lg" className="w-full sm:w-auto gradient-vibrant text-white shadow-glow hover:shadow-glow-lg transition-all text-lg px-8 animate-gradient">
                   Começar 7 dias grátis
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </Link>
-              <Button size="lg" variant="outline" className="w-full sm:w-auto text-lg px-8">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto text-lg px-8 border-2">
                 Ver demonstração
               </Button>
             </div>
@@ -129,11 +137,13 @@ export default function Landing() {
           {/* Hero Image/Preview */}
           <div className="mt-16 lg:mt-24 relative">
             <div className="absolute inset-0 gradient-glow opacity-50" />
-            <div className="relative glass rounded-3xl p-4 shadow-2xl animate-fade-in" style={{ animationDelay: '0.5s' }}>
-              <div className="aspect-[16/9] bg-gradient-to-br from-levi-50 to-levi-100 rounded-2xl flex items-center justify-center">
+            <div className="relative glass rounded-3xl p-4 shadow-colored animate-fade-in border-gradient" style={{ animationDelay: '0.5s' }}>
+              <div className="aspect-[16/9] bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl flex items-center justify-center overflow-hidden">
                 <div className="text-center p-8">
-                  <Calendar className="w-20 h-20 text-primary mx-auto mb-4 animate-float" />
-                  <p className="text-lg text-muted-foreground">
+                  <div className="w-24 h-24 mx-auto mb-6 rounded-2xl gradient-vibrant flex items-center justify-center shadow-glow animate-float">
+                    <Calendar className="w-12 h-12 text-white" />
+                  </div>
+                  <p className="text-lg text-muted-foreground font-medium">
                     Prévia do calendário de escalas
                   </p>
                 </div>
@@ -144,9 +154,13 @@ export default function Landing() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 lg:py-32 bg-secondary/30">
-        <div className="container mx-auto px-4">
+      <section className="py-20 lg:py-32 relative">
+        <div className="absolute inset-0 bg-secondary/30 dark:bg-secondary/10" />
+        <div className="container mx-auto px-4 relative">
           <div className="text-center mb-16">
+            <span className="inline-block px-4 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+              Recursos
+            </span>
             <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-4">
               Tudo que você precisa para gerenciar escalas
             </h2>
@@ -162,8 +176,8 @@ export default function Landing() {
                 className="group p-6 rounded-2xl bg-card border border-border hover-lift cursor-default animate-fade-in"
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
-                <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center mb-4 shadow-glow-sm group-hover:shadow-glow transition-all">
-                  <feature.icon className="w-6 h-6 text-primary-foreground" />
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 ${feature.color} transition-transform group-hover:scale-110`}>
+                  <feature.icon className="w-7 h-7" />
                 </div>
                 <h3 className="font-display text-xl font-semibold text-foreground mb-2">
                   {feature.title}
@@ -178,9 +192,13 @@ export default function Landing() {
       </section>
 
       {/* Pricing Section */}
-      <section className="py-20 lg:py-32">
-        <div className="container mx-auto px-4">
+      <section className="py-20 lg:py-32 relative overflow-hidden">
+        <div className="absolute inset-0 mesh-gradient opacity-30" />
+        <div className="container mx-auto px-4 relative">
           <div className="text-center mb-16">
+            <span className="inline-block px-4 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+              Preços
+            </span>
             <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-4">
               Preço simples e transparente
             </h2>
@@ -191,14 +209,14 @@ export default function Landing() {
           
           <div className="max-w-lg mx-auto">
             <div className="relative">
-              <div className="absolute inset-0 gradient-primary rounded-3xl blur-xl opacity-20" />
-              <div className="relative glass rounded-3xl p-8 lg:p-10 border-2 border-primary/20 shadow-glow">
+              <div className="absolute inset-0 gradient-vibrant rounded-3xl blur-2xl opacity-20" />
+              <div className="relative glass rounded-3xl p-8 lg:p-10 border-2 border-primary/20 shadow-colored">
                 <div className="text-center mb-8">
-                  <span className="inline-block px-4 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+                  <span className="inline-block px-4 py-1 rounded-full gradient-vibrant text-white text-sm font-medium mb-4">
                     Por departamento
                   </span>
                   <div className="flex items-baseline justify-center gap-2">
-                    <span className="text-5xl lg:text-6xl font-display font-bold text-foreground">R$ 10</span>
+                    <span className="text-5xl lg:text-6xl font-display font-bold text-gradient-vibrant">R$ 10</span>
                     <span className="text-muted-foreground">/mês</span>
                   </div>
                   <p className="mt-2 text-muted-foreground">
@@ -207,10 +225,10 @@ export default function Landing() {
                 </div>
                 
                 <ul className="space-y-4 mb-8">
-                  {pricingFeatures.map((feature) => (
+                  {pricingFeatures.map((feature, index) => (
                     <li key={feature} className="flex items-center gap-3">
-                      <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
+                      <div className="w-6 h-6 rounded-full gradient-vibrant flex items-center justify-center flex-shrink-0">
+                        <CheckCircle2 className="w-4 h-4 text-white" />
                       </div>
                       <span className="text-foreground">{feature}</span>
                     </li>
@@ -218,7 +236,7 @@ export default function Landing() {
                 </ul>
                 
                 <Link to="/auth?tab=register" className="block">
-                  <Button className="w-full gradient-primary text-primary-foreground shadow-glow hover:shadow-glow-lg transition-all text-lg py-6">
+                  <Button className="w-full gradient-vibrant text-white shadow-glow hover:shadow-glow-lg transition-all text-lg py-6">
                     Começar teste grátis
                     <ChevronRight className="w-5 h-5 ml-1" />
                   </Button>
@@ -230,8 +248,9 @@ export default function Landing() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 lg:py-32 bg-gradient-to-b from-secondary/30 to-background">
-        <div className="container mx-auto px-4">
+      <section className="py-20 lg:py-32 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-secondary/20 to-background" />
+        <div className="container mx-auto px-4 relative">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-6">
               Pronto para organizar suas escalas?
@@ -240,7 +259,7 @@ export default function Landing() {
               Junte-se a centenas de igrejas que já simplificaram sua gestão de voluntários.
             </p>
             <Link to="/auth?tab=register">
-              <Button size="lg" className="gradient-primary text-primary-foreground shadow-glow hover:shadow-glow-lg transition-all text-lg px-8">
+              <Button size="lg" className="gradient-vibrant text-white shadow-glow hover:shadow-glow-lg transition-all text-lg px-8">
                 Criar conta gratuita
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
@@ -254,8 +273,8 @@ export default function Landing() {
         <div className="container mx-auto px-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
-                <Calendar className="w-4 h-4 text-primary-foreground" />
+              <div className="w-8 h-8 rounded-lg gradient-vibrant flex items-center justify-center">
+                <Calendar className="w-4 h-4 text-white" />
               </div>
               <span className="font-display font-semibold text-foreground">LEVI</span>
             </div>

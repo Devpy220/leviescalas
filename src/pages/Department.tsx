@@ -10,10 +10,12 @@ import {
   Plus,
   Copy,
   Check,
-  Loader2
+  Loader2,
+  Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -230,13 +232,13 @@ export default function Department() {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link to="/dashboard">
-              <Button variant="ghost" size="icon" className="text-muted-foreground">
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
             </Link>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow-sm">
-                <Calendar className="w-5 h-5 text-primary-foreground" />
+              <div className="w-10 h-10 rounded-xl gradient-vibrant flex items-center justify-center shadow-glow-sm">
+                <Calendar className="w-5 h-5 text-white" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
@@ -244,8 +246,8 @@ export default function Department() {
                     {department.name}
                   </h1>
                   {isLeader && (
-                    <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Crown className="w-3 h-3 text-primary" />
+                    <div className="w-5 h-5 rounded-full gradient-vibrant flex items-center justify-center">
+                      <Crown className="w-3 h-3 text-white" />
                     </div>
                   )}
                 </div>
@@ -257,6 +259,7 @@ export default function Department() {
           </div>
 
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             {isLeader && (
               <>
                 <Button 
@@ -266,7 +269,7 @@ export default function Department() {
                   className="gap-2"
                 >
                   {copiedInvite ? (
-                    <Check className="w-4 h-4 text-success" />
+                    <Check className="w-4 h-4 text-emerald-500" />
                   ) : (
                     <Share2 className="w-4 h-4" />
                   )}
@@ -283,13 +286,13 @@ export default function Department() {
 
       <main className="container mx-auto px-4 py-6">
         <Tabs defaultValue="calendar" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <TabsList className="bg-muted/50">
-              <TabsTrigger value="calendar" className="gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <TabsList className="bg-muted/50 self-start">
+              <TabsTrigger value="calendar" className="gap-2 data-[state=active]:gradient-vibrant data-[state=active]:text-white">
                 <Calendar className="w-4 h-4" />
                 <span>Calendário</span>
               </TabsTrigger>
-              <TabsTrigger value="members" className="gap-2">
+              <TabsTrigger value="members" className="gap-2 data-[state=active]:gradient-vibrant data-[state=active]:text-white">
                 <Users className="w-4 h-4" />
                 <span>Membros</span>
               </TabsTrigger>
@@ -298,10 +301,10 @@ export default function Department() {
             {isLeader && (
               <Button 
                 onClick={() => handleAddSchedule()}
-                className="gradient-primary text-primary-foreground shadow-glow-sm hover:shadow-glow transition-all gap-2"
+                className="gradient-vibrant text-white shadow-glow-sm hover:shadow-glow transition-all gap-2"
               >
                 <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">Nova Escala</span>
+                <span>Nova Escala</span>
               </Button>
             )}
           </div>
