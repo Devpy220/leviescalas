@@ -3,12 +3,13 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Calendar, Eye, EyeOff, ArrowLeft, Loader2 } from 'lucide-react';
+import { Calendar, Eye, EyeOff, ArrowLeft, Loader2, Sparkles, Users, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 // Validation schemas
 const loginSchema = z.object({
@@ -132,19 +133,22 @@ export default function Auth() {
       {/* Left side - Form */}
       <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 lg:px-20 py-12">
         <div className="w-full max-w-md mx-auto">
-          {/* Back link */}
-          <Link 
-            to="/" 
-            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Voltar ao início
-          </Link>
+          {/* Back link and theme toggle */}
+          <div className="flex items-center justify-between mb-8">
+            <Link 
+              to="/" 
+              className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Voltar ao início
+            </Link>
+            <ThemeToggle />
+          </div>
 
           {/* Logo */}
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center shadow-glow-sm">
-              <Calendar className="w-6 h-6 text-primary-foreground" />
+            <div className="w-12 h-12 rounded-xl gradient-vibrant flex items-center justify-center shadow-glow-sm">
+              <Calendar className="w-6 h-6 text-white" />
             </div>
             <div>
               <span className="font-display text-2xl font-bold text-foreground">LEVI</span>
@@ -218,7 +222,7 @@ export default function Auth() {
 
               <Button 
                 type="submit" 
-                className="w-full h-12 gradient-primary text-primary-foreground shadow-glow-sm hover:shadow-glow transition-all"
+                className="w-full h-12 gradient-vibrant text-white shadow-glow-sm hover:shadow-glow transition-all"
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -324,7 +328,7 @@ export default function Auth() {
 
               <Button 
                 type="submit" 
-                className="w-full h-12 gradient-primary text-primary-foreground shadow-glow-sm hover:shadow-glow transition-all"
+                className="w-full h-12 gradient-vibrant text-white shadow-glow-sm hover:shadow-glow transition-all"
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -350,36 +354,35 @@ export default function Auth() {
 
       {/* Right side - Decorative */}
       <div className="hidden lg:flex flex-1 relative overflow-hidden">
-        <div className="absolute inset-0 gradient-primary" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--levi-blue-400)/0.4),transparent_50%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,hsl(var(--levi-blue-700)/0.4),transparent_50%)]" />
+        <div className="absolute inset-0 mesh-gradient mesh-gradient-animated" />
+        <div className="absolute inset-0 gradient-vibrant opacity-80" />
         
-        <div className="relative z-10 flex flex-col justify-center p-16 text-primary-foreground">
+        <div className="relative z-10 flex flex-col justify-center p-16 text-white">
           <div className="max-w-md">
             <h2 className="font-display text-4xl font-bold mb-6">
               Simplifique a gestão de voluntários
             </h2>
-            <p className="text-lg text-primary-foreground/80 mb-8">
+            <p className="text-lg text-white/80 mb-8">
               Com LEVI, você organiza escalas, envia notificações automáticas e mantém 
               todos os membros sincronizados em tempo real.
             </p>
             
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary-foreground/20 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
                   <Calendar className="w-5 h-5" />
                 </div>
                 <span>Calendário visual com drag-and-drop</span>
               </div>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary-foreground/20 flex items-center justify-center">
-                  <Calendar className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                  <Bell className="w-5 h-5" />
                 </div>
                 <span>Notificações automáticas via WhatsApp</span>
               </div>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary-foreground/20 flex items-center justify-center">
-                  <Calendar className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                  <Users className="w-5 h-5" />
                 </div>
                 <span>Sincronização em tempo real</span>
               </div>
