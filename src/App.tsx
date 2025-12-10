@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import Department from "./pages/Department";
 import CreateDepartment from "./pages/CreateDepartment";
 import JoinDepartment from "./pages/JoinDepartment";
 import NotFound from "./pages/NotFound";
@@ -24,6 +25,7 @@ const App = () => (
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/departments/:id" element={<Department />} />
             <Route path="/departments/new" element={<CreateDepartment />} />
             <Route path="/join/:inviteCode" element={<JoinDepartment />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
