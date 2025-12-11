@@ -251,33 +251,43 @@ export default function ScheduleCalendar({
               <button
                 key={index}
                 onClick={() => handleDayClick(day)}
-                className={`relative h-10 border-b border-r border-border transition-colors ${
+                className={`relative h-12 border-b border-r border-border transition-colors overflow-hidden ${
                   !isCurrentMonth ? 'bg-muted/20 text-muted-foreground/40' : 'bg-card hover:bg-muted/30'
                 } ${index % 7 === 6 ? 'border-r-0' : ''} ${
                   Math.floor(index / 7) === Math.floor((calendarDays.length - 1) / 7) ? 'border-b-0' : ''
                 }`}
               >
+                {/* Background color strips for schedules */}
+                {hasSchedules && (
+                  <div className="absolute inset-0 flex">
+                    {daySchedules.map((_, i) => (
+                      <div 
+                        key={i} 
+                        className="h-full opacity-30"
+                        style={{ 
+                          backgroundColor: getScheduleColor(i).bg,
+                          width: `${100 / daySchedules.length}%`
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+                {/* Day number */}
                 <span
-                  className={`text-xs font-medium flex items-center justify-center w-6 h-6 mx-auto rounded-full ${
+                  className={`relative z-10 text-xs font-medium flex items-center justify-center w-6 h-6 mx-auto mt-1 rounded-full ${
                     isCurrentDay
                       ? 'bg-primary text-primary-foreground'
-                      : ''
+                      : hasSchedules ? 'text-foreground font-semibold' : ''
                   }`}
                 >
                   {format(day, 'd')}
                 </span>
+                {/* Schedule count indicator */}
                 {hasSchedules && (
-                  <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
-                    {daySchedules.slice(0, 4).map((_, i) => (
-                      <div 
-                        key={i} 
-                        className="w-1.5 h-1.5 rounded-full" 
-                        style={{ backgroundColor: getScheduleColor(i).dot }}
-                      />
-                    ))}
-                    {daySchedules.length > 4 && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50" />
-                    )}
+                  <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2">
+                    <span className="text-[10px] font-medium text-foreground/70">
+                      {daySchedules.length}
+                    </span>
                   </div>
                 )}
               </button>
