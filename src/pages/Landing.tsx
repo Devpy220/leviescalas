@@ -29,7 +29,7 @@ const features = [
   {
     icon: Bell,
     title: 'Notificações Automáticas',
-    description: 'Lembretes via WhatsApp: confirmação imediata, 48h e 2h antes da escala.',
+    description: 'Lembretes via Email: confirmação imediata, 48h e 2h antes da escala.',
     color: 'icon-emerald',
   },
   {
@@ -55,7 +55,7 @@ const features = [
 const pricingFeatures = [
   'Membros ilimitados',
   'Escalas ilimitadas',
-  'Notificações WhatsApp',
+  'Notificações por Email',
   'Calendário drag-and-drop',
   'Link de convite único',
   'Exportação PDF/Excel',
