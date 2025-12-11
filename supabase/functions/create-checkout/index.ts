@@ -1,11 +1,24 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Input validation schema
+const checkoutSchema = z.object({
+  departmentName: z.string()
+    .min(1, "Department name is required")
+    .max(100, "Department name must be less than 100 characters")
+    .regex(/^[a-zA-ZÀ-ÿ0-9\s\-_]+$/, "Department name contains invalid characters"),
+  departmentDescription: z.string()
+    .max(500, "Description must be less than 500 characters")
+    .optional()
+    .nullable(),
+});
 
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -35,8 +48,26 @@ serve(async (req) => {
     }
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    const { departmentName, departmentDescription } = await req.json();
-    logStep("Request body", { departmentName, departmentDescription });
+    // Parse and validate input
+    const rawData = await req.json();
+    const validationResult = checkoutSchema.safeParse(rawData);
+    
+    if (!validationResult.success) {
+      logStep("Validation error", { errors: validationResult.error.errors });
+      return new Response(
+        JSON.stringify({ 
+          error: "Invalid input", 
+          details: validationResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`)
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const { departmentName, departmentDescription } = validationResult.data;
+    logStep("Request body validated", { departmentName, departmentDescription });
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",

@@ -1,11 +1,17 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Input validation schema
+const updateQuantitySchema = z.object({
+  departmentId: z.string().uuid("Invalid department ID format"),
+});
 
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -40,12 +46,26 @@ serve(async (req) => {
     if (!user?.id) throw new Error("User not authenticated");
     logStep("User authenticated", { userId: user.id });
 
-    const { departmentId } = await req.json();
-    if (!departmentId) throw new Error("Department ID is required");
-    if (typeof departmentId !== "string" || !departmentId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-      throw new Error("Invalid department ID format");
+    // Parse and validate input
+    const rawData = await req.json();
+    const validationResult = updateQuantitySchema.safeParse(rawData);
+    
+    if (!validationResult.success) {
+      logStep("Validation error", { errors: validationResult.error.errors });
+      return new Response(
+        JSON.stringify({ 
+          error: "Invalid input", 
+          details: validationResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`)
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
-    logStep("Department ID received", { departmentId });
+
+    const { departmentId } = validationResult.data;
+    logStep("Department ID validated", { departmentId });
 
     // Verify user is the department leader
     const { data: department, error: deptError } = await supabaseClient

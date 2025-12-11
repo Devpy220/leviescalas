@@ -1,11 +1,19 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Input validation schema - Stripe session IDs start with cs_
+const completeCheckoutSchema = z.object({
+  sessionId: z.string()
+    .min(1, "Session ID is required")
+    .regex(/^cs_(test_|live_)?[a-zA-Z0-9]+$/, "Invalid Stripe session ID format"),
+});
 
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -40,9 +48,26 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated");
     logStep("User authenticated", { userId: user.id });
 
-    const { sessionId } = await req.json();
-    if (!sessionId) throw new Error("Session ID is required");
-    logStep("Session ID received", { sessionId });
+    // Parse and validate input
+    const rawData = await req.json();
+    const validationResult = completeCheckoutSchema.safeParse(rawData);
+    
+    if (!validationResult.success) {
+      logStep("Validation error", { errors: validationResult.error.errors });
+      return new Response(
+        JSON.stringify({ 
+          error: "Invalid input", 
+          details: validationResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`)
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const { sessionId } = validationResult.data;
+    logStep("Session ID validated", { sessionId });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     
