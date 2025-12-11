@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { validatePassword } from '@/lib/passwordBreachChecker';
 
 import { supabase } from '@/integrations/supabase/client';
 
@@ -33,7 +34,7 @@ const FacebookIcon = () => (
 // Validation schemas
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
-  password: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres'),
+  password: z.string().min(8, 'Senha deve ter no mínimo 8 caracteres'),
 });
 
 const registerSchema = z.object({
@@ -42,7 +43,7 @@ const registerSchema = z.object({
   whatsapp: z.string()
     .regex(/^\d{11}$/, 'WhatsApp deve ter 11 dígitos (DDD + número)')
     .transform(val => val.replace(/\D/g, '')),
-  password: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres'),
+  password: z.string().min(8, 'Senha deve ter no mínimo 8 caracteres'),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'As senhas não coincidem',
@@ -54,7 +55,7 @@ const recoverySchema = z.object({
 });
 
 const resetPasswordSchema = z.object({
-  password: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres'),
+  password: z.string().min(8, 'Senha deve ter no mínimo 8 caracteres'),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'As senhas não coincidem',
@@ -154,6 +155,20 @@ export default function Auth() {
 
   const handleRegister = async (data: RegisterForm) => {
     setIsLoading(true);
+    
+    // Verificação de senha vazada
+    const passwordValidation = await validatePassword(data.password);
+    
+    if (!passwordValidation.valid) {
+      toast({
+        variant: 'destructive',
+        title: 'Senha insegura',
+        description: passwordValidation.errors.join(' '),
+      });
+      setIsLoading(false);
+      return;
+    }
+    
     const { error } = await signUp(data.email, data.password, data.name, data.whatsapp);
     setIsLoading(false);
 
@@ -213,6 +228,19 @@ export default function Auth() {
     setIsLoading(true);
     
     try {
+      // Verificação de senha vazada
+      const passwordValidation = await validatePassword(data.password);
+      
+      if (!passwordValidation.valid) {
+        toast({
+          variant: 'destructive',
+          title: 'Senha insegura',
+          description: passwordValidation.errors.join(' '),
+        });
+        setIsLoading(false);
+        return;
+      }
+      
       const { error } = await supabase.auth.updateUser({
         password: data.password,
       });
