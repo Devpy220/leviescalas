@@ -53,13 +53,14 @@ serve(async (req) => {
     const origin = req.headers.get("origin") || "https://zuksvsxnchwskqytuxxq.lovableproject.com";
 
     // Create checkout session with subscription and trial
+    // Price is R$10 per member, starting with 1 (the leader)
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       line_items: [
         {
           price: "price_1ScxeOK0EKnRdptQGVphZU3V",
-          quantity: 1,
+          quantity: 1, // Starting with 1 member (the leader)
         },
       ],
       mode: "subscription",
