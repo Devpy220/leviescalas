@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { Camera, Loader2, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { compressImage } from '@/lib/imageCompression';
+import ImageCropDialog from './ImageCropDialog';
 
 interface DepartmentAvatarProps {
   departmentId: string;
@@ -20,6 +20,8 @@ export default function DepartmentAvatar({
   onAvatarChange
 }: DepartmentAvatarProps) {
   const [uploading, setUploading] = useState(false);
+  const [cropDialogOpen, setCropDialogOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -43,27 +45,38 @@ export default function DepartmentAvatar({
       return;
     }
 
-    // Validate file size (max 5MB before compression)
-    if (file.size > 5 * 1024 * 1024) {
+    // Validate file size (max 10MB before crop)
+    if (file.size > 10 * 1024 * 1024) {
       toast({
         variant: 'destructive',
         title: 'Arquivo muito grande',
-        description: 'A imagem deve ter no máximo 5MB.',
+        description: 'A imagem deve ter no máximo 10MB.',
       });
       return;
     }
 
+    // Open crop dialog
+    setSelectedFile(file);
+    setCropDialogOpen(true);
+    
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    setCropDialogOpen(false);
+    setSelectedFile(null);
     setUploading(true);
 
     try {
-      // Compress image before upload
-      const compressedBlob = await compressImage(file);
       const fileName = `${departmentId}/avatar.jpg`;
 
-      // Upload compressed image to storage
+      // Upload cropped image to storage
       const { error: uploadError } = await supabase.storage
         .from('department-avatars')
-        .upload(fileName, compressedBlob, { 
+        .upload(fileName, croppedBlob, { 
           upsert: true,
           contentType: 'image/jpeg'
         });
@@ -78,8 +91,7 @@ export default function DepartmentAvatar({
       // Add timestamp to bust cache
       const urlWithTimestamp = `${publicUrl}?t=${Date.now()}`;
 
-      // Update department record using raw update to bypass type checking
-      // since types haven't been regenerated yet
+      // Update department record
       const { error: updateError } = await supabase
         .from('departments')
         .update({ avatar_url: urlWithTimestamp } as any)
@@ -102,53 +114,63 @@ export default function DepartmentAvatar({
       });
     } finally {
       setUploading(false);
-      // Reset input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
     }
   };
 
-  return (
-    <div className="relative">
-      <button
-        onClick={handleClick}
-        disabled={!isLeader || uploading}
-        className={`
-          w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center
-          ${avatarUrl ? '' : 'gradient-vibrant'}
-          ${isLeader ? 'cursor-pointer hover:opacity-80 transition-opacity' : 'cursor-default'}
-          shadow-glow-sm
-        `}
-        title={isLeader ? 'Clique para alterar o avatar' : departmentName}
-      >
-        {uploading ? (
-          <Loader2 className="w-5 h-5 text-white animate-spin" />
-        ) : avatarUrl ? (
-          <img
-            src={avatarUrl}
-            alt={departmentName}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <Calendar className="w-5 h-5 text-white" />
-        )}
-      </button>
+  const handleCropClose = () => {
+    setCropDialogOpen(false);
+    setSelectedFile(null);
+  };
 
-      {isLeader && (
-        <>
-          <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-sm">
-            <Camera className="w-3 h-3 text-primary-foreground" />
-          </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="hidden"
-          />
-        </>
-      )}
-    </div>
+  return (
+    <>
+      <div className="relative">
+        <button
+          onClick={handleClick}
+          disabled={!isLeader || uploading}
+          className={`
+            w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center
+            ${avatarUrl ? '' : 'gradient-vibrant'}
+            ${isLeader ? 'cursor-pointer hover:opacity-80 transition-opacity' : 'cursor-default'}
+            shadow-glow-sm
+          `}
+          title={isLeader ? 'Clique para alterar o avatar' : departmentName}
+        >
+          {uploading ? (
+            <Loader2 className="w-5 h-5 text-white animate-spin" />
+          ) : avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt={departmentName}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <Calendar className="w-5 h-5 text-white" />
+          )}
+        </button>
+
+        {isLeader && (
+          <>
+            <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-sm">
+              <Camera className="w-3 h-3 text-primary-foreground" />
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+          </>
+        )}
+      </div>
+
+      <ImageCropDialog
+        open={cropDialogOpen}
+        onClose={handleCropClose}
+        imageFile={selectedFile}
+        onCropComplete={handleCropComplete}
+      />
+    </>
   );
 }
