@@ -35,7 +35,7 @@ type DepartmentForm = z.infer<typeof departmentSchema>;
 const features = [
   'R$ 10/mês por membro',
   'Escalas ilimitadas por mês',
-  'Notificações via WhatsApp',
+  'Notificações via Email',
   'Calendário drag-and-drop',
   'Link de convite único',
   'Exportação PDF/Excel',
