@@ -34,9 +34,15 @@ const FacebookIcon = () => (
 );
 
 // Validation schemas
+const passwordSchema = z.string()
+  .min(8, 'Senha deve ter no mínimo 8 caracteres')
+  .regex(/[A-Z]/, 'Senha deve conter ao menos uma letra maiúscula')
+  .regex(/[a-z]/, 'Senha deve conter ao menos uma letra minúscula')
+  .regex(/[!@#$%^&*(),.?":{}|<>]/, 'Senha deve conter ao menos um símbolo');
+
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
-  password: z.string().min(8, 'Senha deve ter no mínimo 8 caracteres'),
+  password: z.string().min(1, 'Senha é obrigatória'),
 });
 
 const registerSchema = z.object({
@@ -45,7 +51,7 @@ const registerSchema = z.object({
   whatsapp: z.string()
     .regex(/^\d{11}$/, 'WhatsApp deve ter 11 dígitos (DDD + número)')
     .transform(val => val.replace(/\D/g, '')),
-  password: z.string().min(8, 'Senha deve ter no mínimo 8 caracteres'),
+  password: passwordSchema,
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'As senhas não coincidem',
@@ -57,7 +63,7 @@ const recoverySchema = z.object({
 });
 
 const resetPasswordSchema = z.object({
-  password: z.string().min(8, 'Senha deve ter no mínimo 8 caracteres'),
+  password: passwordSchema,
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'As senhas não coincidem',
