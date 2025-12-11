@@ -120,6 +120,18 @@ export default function ScheduleCalendar({
     return days;
   }, [currentMonth]);
 
+  // Color palette for multiple schedules on the same day
+  const scheduleColors = [
+    { bg: 'bg-primary', dot: 'bg-primary', text: 'text-primary', border: 'border-primary/30' },
+    { bg: 'bg-emerald-500', dot: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-500/30' },
+    { bg: 'bg-amber-500', dot: 'bg-amber-500', text: 'text-amber-600 dark:text-amber-400', border: 'border-amber-500/30' },
+    { bg: 'bg-rose-500', dot: 'bg-rose-500', text: 'text-rose-600 dark:text-rose-400', border: 'border-rose-500/30' },
+    { bg: 'bg-cyan-500', dot: 'bg-cyan-500', text: 'text-cyan-600 dark:text-cyan-400', border: 'border-cyan-500/30' },
+    { bg: 'bg-violet-500', dot: 'bg-violet-500', text: 'text-violet-600 dark:text-violet-400', border: 'border-violet-500/30' },
+  ];
+
+  const getScheduleColor = (index: number) => scheduleColors[index % scheduleColors.length];
+
   const weekDays = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
   const handleDeleteSchedule = async () => {
@@ -256,11 +268,11 @@ export default function ScheduleCalendar({
                 </span>
                 {hasSchedules && (
                   <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
-                    {daySchedules.slice(0, 3).map((_, i) => (
-                      <div key={i} className="w-1 h-1 rounded-full bg-primary" />
+                    {daySchedules.slice(0, 4).map((_, i) => (
+                      <div key={i} className={`w-1.5 h-1.5 rounded-full ${getScheduleColor(i).dot}`} />
                     ))}
-                    {daySchedules.length > 3 && (
-                      <div className="w-1 h-1 rounded-full bg-primary/50" />
+                    {daySchedules.length > 4 && (
+                      <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50" />
                     )}
                   </div>
                 )}
@@ -271,11 +283,14 @@ export default function ScheduleCalendar({
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-        <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full bg-primary" />
-          <span>Escala agendada</span>
-        </div>
+      <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
+        <span className="font-medium">Escalas:</span>
+        {scheduleColors.slice(0, 4).map((color, i) => (
+          <div key={i} className="flex items-center gap-1.5">
+            <div className={`w-2 h-2 rounded-full ${color.dot}`} />
+            <span>Pessoa {i + 1}</span>
+          </div>
+        ))}
       </div>
 
       {/* Day Detail Dialog */}
@@ -295,40 +310,43 @@ export default function ScheduleCalendar({
             {selectedDaySchedules.length > 0 ? (
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">Escalados neste dia:</p>
-                {selectedDaySchedules.map((schedule) => (
-                  <div
-                    key={schedule.id}
-                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                          {schedule.profile?.name?.charAt(0) || 'M'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="text-sm font-medium">{schedule.profile?.name || 'Membro'}</p>
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Clock className="w-3 h-3" />
-                          <span>{schedule.time_start.slice(0, 5)} - {schedule.time_end.slice(0, 5)}</span>
+                {selectedDaySchedules.map((schedule, index) => {
+                  const color = getScheduleColor(index);
+                  return (
+                    <div
+                      key={schedule.id}
+                      className={`flex items-center justify-between p-3 rounded-lg bg-muted/50 border-l-4 ${color.border} border border-border`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback className={`text-xs ${color.bg} text-white`}>
+                            {schedule.profile?.name?.charAt(0) || 'M'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-medium">{schedule.profile?.name || 'Membro'}</p>
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Clock className="w-3 h-3" />
+                            <span>{schedule.time_start.slice(0, 5)} - {schedule.time_end.slice(0, 5)}</span>
+                          </div>
                         </div>
                       </div>
+                      {isLeader && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => {
+                            setSelectedSchedule(schedule);
+                            setShowDeleteDialog(true);
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
-                    {isLeader && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => {
-                          setSelectedSchedule(schedule);
-                          setShowDeleteDialog(true);
-                        }}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground text-center py-4">
