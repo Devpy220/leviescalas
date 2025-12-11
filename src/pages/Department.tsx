@@ -33,6 +33,7 @@ import MemberList from '@/components/department/MemberList';
 import AddScheduleDialog from '@/components/department/AddScheduleDialog';
 import InviteMemberDialog from '@/components/department/InviteMemberDialog';
 import DepartmentAvatar from '@/components/department/DepartmentAvatar';
+import DepartmentSettingsDialog from '@/components/department/DepartmentSettingsDialog';
 import { exportToPDF, exportToExcel } from '@/lib/exportSchedules';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -88,6 +89,7 @@ export default function Department() {
   const [copiedInvite, setCopiedInvite] = useState(false);
   const [showAddSchedule, setShowAddSchedule] = useState(false);
   const [showInviteMember, setShowInviteMember] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   useEffect(() => {
@@ -314,7 +316,12 @@ export default function Department() {
                   )}
                   <span className="hidden sm:inline">Convidar</span>
                 </Button>
-                <Button variant="ghost" size="icon" className="text-muted-foreground">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="text-muted-foreground"
+                  onClick={() => setShowSettings(true)}
+                >
                   <Settings className="w-5 h-5" />
                 </Button>
               </>
@@ -419,6 +426,13 @@ export default function Department() {
         open={showInviteMember}
         onOpenChange={setShowInviteMember}
         inviteCode={department.invite_code}
+      />
+
+      <DepartmentSettingsDialog
+        open={showSettings}
+        onOpenChange={setShowSettings}
+        department={department}
+        onDepartmentUpdated={fetchDepartment}
       />
     </div>
   );
