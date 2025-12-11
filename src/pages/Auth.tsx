@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { validatePassword } from '@/lib/passwordBreachChecker';
+import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator';
 
 import { supabase } from '@/integrations/supabase/client';
 
@@ -585,6 +586,7 @@ export default function Auth() {
                 {registerForm.formState.errors.password && (
                   <p className="text-sm text-destructive">{registerForm.formState.errors.password.message}</p>
                 )}
+                <PasswordStrengthIndicator password={registerForm.watch('password') || ''} />
               </div>
 
               <div className="space-y-2">
