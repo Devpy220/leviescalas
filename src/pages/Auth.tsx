@@ -59,25 +59,34 @@ export default function Auth() {
   
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { signIn, signUp, user, loading } = useAuth();
+  const { signIn, signUp, user, loading, authEvent } = useAuth();
 
-  // Detect password recovery flow from URL hash
+  // Detect password recovery flow from auth event
+  useEffect(() => {
+    if (authEvent === 'PASSWORD_RECOVERY') {
+      console.log('Password recovery event detected');
+      setActiveTab('reset-password');
+    }
+  }, [authEvent]);
+
+  // Also check URL hash on mount for recovery link
   useEffect(() => {
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const type = hashParams.get('type');
     const accessToken = hashParams.get('access_token');
     
     if (type === 'recovery' && accessToken) {
+      console.log('Recovery token found in URL');
       setActiveTab('reset-password');
     }
   }, []);
 
   // Redirect if already logged in (but not during password reset)
   useEffect(() => {
-    if (!loading && user && activeTab !== 'reset-password') {
+    if (!loading && user && activeTab !== 'reset-password' && authEvent !== 'PASSWORD_RECOVERY') {
       navigate('/dashboard');
     }
-  }, [user, loading, navigate, activeTab]);
+  }, [user, loading, navigate, activeTab, authEvent]);
 
   const loginForm = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -186,28 +195,54 @@ export default function Auth() {
   const handleResetPassword = async (data: ResetPasswordForm) => {
     setIsLoading(true);
     
-    const { error } = await supabase.auth.updateUser({
-      password: data.password,
-    });
-    setIsLoading(false);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: data.password,
+      });
 
-    if (error) {
+      if (error) {
+        console.error('Reset password error:', error);
+        const errorMessage = error.message.includes('expired')
+          ? 'Link de recuperação expirado. Solicite um novo.'
+          : error.message.includes('same')
+          ? 'A nova senha deve ser diferente da atual.'
+          : 'Não foi possível redefinir sua senha. Tente novamente.';
+        
+        toast({
+          variant: 'destructive',
+          title: 'Erro',
+          description: errorMessage,
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      toast({
+        title: 'Senha redefinida!',
+        description: 'Sua senha foi alterada com sucesso.',
+      });
+      
+      // Clear the hash and redirect
+      window.location.hash = '';
+      setActiveTab('login');
+      
+      // Sign out to force fresh login with new password
+      await supabase.auth.signOut();
+      
+      toast({
+        title: 'Faça login novamente',
+        description: 'Use sua nova senha para entrar.',
+      });
+    } catch (err) {
+      console.error('Unexpected error:', err);
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: 'Não foi possível redefinir sua senha. Tente novamente.',
+        description: 'Ocorreu um erro inesperado. Tente novamente.',
       });
-      return;
+    } finally {
+      setIsLoading(false);
     }
-
-    toast({
-      title: 'Senha redefinida!',
-      description: 'Sua senha foi alterada com sucesso.',
-    });
-    
-    // Clear the hash and redirect
-    window.location.hash = '';
-    navigate('/dashboard');
   };
 
   if (loading) {
