@@ -133,23 +133,6 @@ export default function Landing() {
               Sem cartão de crédito • Configuração em 2 minutos
             </p>
           </div>
-          
-          {/* Hero Image/Preview */}
-          <div className="mt-16 lg:mt-24 relative">
-            <div className="absolute inset-0 gradient-glow opacity-50" />
-            <div className="relative glass rounded-3xl p-4 shadow-colored animate-fade-in border-gradient" style={{ animationDelay: '0.5s' }}>
-              <div className="aspect-[16/9] bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl flex items-center justify-center overflow-hidden">
-                <div className="text-center p-8">
-                  <div className="w-24 h-24 mx-auto mb-6 rounded-2xl gradient-vibrant flex items-center justify-center shadow-glow animate-float">
-                    <Calendar className="w-12 h-12 text-white" />
-                  </div>
-                  <p className="text-lg text-muted-foreground font-medium">
-                    Prévia do calendário de escalas
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
