@@ -5,13 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useToast } from '@/hooks/use-toast';
+import pixQrCode from '@/assets/pix-qrcode.jpg';
 
 export default function Payment() {
   const [copiedPix, setCopiedPix] = useState(false);
   const { toast } = useToast();
 
-  // PIX key - you can update this with the actual PIX key
-  const pixKey = "sua-chave-pix@email.com";
+  // PIX key - Eduardo Lino da Silva
+  const pixKey = "b8bb0848-844b-467b-8422-382720b1e980";
 
   const copyPixKey = async () => {
     await navigator.clipboard.writeText(pixKey);
@@ -68,18 +69,21 @@ export default function Payment() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* QR Code Placeholder - Replace with actual QR code image */}
+              {/* QR Code PIX */}
               <div className="flex justify-center">
-                <div className="w-64 h-64 bg-white rounded-2xl p-4 shadow-lg">
-                  {/* Replace this div with an img tag pointing to your QR code */}
-                  <div className="w-full h-full bg-muted rounded-xl flex items-center justify-center border-2 border-dashed border-border">
-                    <div className="text-center text-muted-foreground">
-                      <QrCode className="w-12 h-12 mx-auto mb-2" />
-                      <p className="text-sm">QR Code PIX</p>
-                      <p className="text-xs">(Envie a imagem)</p>
-                    </div>
-                  </div>
+                <div className="w-64 h-64 bg-white rounded-2xl p-3 shadow-lg">
+                  <img 
+                    src={pixQrCode} 
+                    alt="QR Code PIX" 
+                    className="w-full h-full object-contain rounded-xl"
+                  />
                 </div>
+              </div>
+
+              {/* Beneficiary Info */}
+              <div className="text-center text-sm text-muted-foreground">
+                <p className="font-medium text-foreground">EDUARDO LINO DA SILVA</p>
+                <p>Bradesco</p>
               </div>
 
               {/* PIX Key */}
