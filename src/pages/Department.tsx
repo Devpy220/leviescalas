@@ -32,6 +32,7 @@ import ScheduleCalendar from '@/components/department/ScheduleCalendar';
 import MemberList from '@/components/department/MemberList';
 import AddScheduleDialog from '@/components/department/AddScheduleDialog';
 import InviteMemberDialog from '@/components/department/InviteMemberDialog';
+import DepartmentAvatar from '@/components/department/DepartmentAvatar';
 import { exportToPDF, exportToExcel } from '@/lib/exportSchedules';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -44,6 +45,7 @@ interface Department {
   invite_code: string;
   subscription_status: string;
   created_at: string;
+  avatar_url: string | null;
 }
 
 interface Member {
@@ -119,7 +121,8 @@ export default function Department() {
         leader_id: data.leader_id,
         invite_code: data.invite_code || '',
         subscription_status: data.subscription_status,
-        created_at: data.created_at
+        created_at: data.created_at,
+        avatar_url: (data as any).avatar_url || null
       });
       setIsLeader(data.leader_id === user?.id);
     } catch (error) {
@@ -243,6 +246,12 @@ export default function Department() {
     fetchSchedules();
   };
 
+  const handleAvatarChange = (newUrl: string) => {
+    if (department) {
+      setDepartment({ ...department, avatar_url: newUrl });
+    }
+  };
+
   if (loading || !department) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -263,9 +272,13 @@ export default function Department() {
               </Button>
             </Link>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl gradient-vibrant flex items-center justify-center shadow-glow-sm">
-                <Calendar className="w-5 h-5 text-white" />
-              </div>
+              <DepartmentAvatar
+                departmentId={department.id}
+                avatarUrl={department.avatar_url}
+                departmentName={department.name}
+                isLeader={isLeader}
+                onAvatarChange={handleAvatarChange}
+              />
               <div>
                 <div className="flex items-center gap-2">
                   <h1 className="font-display text-lg font-bold text-foreground">

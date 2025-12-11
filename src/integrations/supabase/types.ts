@@ -330,6 +330,7 @@ export type Database = {
       get_department_basic: {
         Args: { dept_id: string }
         Returns: {
+          avatar_url: string
           created_at: string
           description: string
           id: string
@@ -400,6 +401,7 @@ export type Database = {
       get_department_secure: {
         Args: { dept_id: string }
         Returns: {
+          avatar_url: string
           created_at: string
           description: string
           id: string
