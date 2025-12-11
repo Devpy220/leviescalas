@@ -53,7 +53,7 @@ serve(async (req) => {
     const origin = req.headers.get("origin") || "https://zuksvsxnchwskqytuxxq.lovableproject.com";
 
     // Create checkout session with subscription and trial
-    // Price is R$10 per member, starting with 1 (the leader)
+    // Price is R$10 per volunteer/month, starting with 1 (the leader)
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,

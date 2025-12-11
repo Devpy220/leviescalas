@@ -213,14 +213,14 @@ export default function Landing() {
               <div className="relative glass rounded-3xl p-8 lg:p-10 border-2 border-primary/20 shadow-colored">
                 <div className="text-center mb-8">
                   <span className="inline-block px-4 py-1 rounded-full gradient-vibrant text-white text-sm font-medium mb-4">
-                    Por departamento
+                    Por voluntário
                   </span>
                   <div className="flex items-baseline justify-center gap-2">
                     <span className="text-5xl lg:text-6xl font-display font-bold text-gradient-vibrant">R$ 10</span>
                     <span className="text-muted-foreground">/mês</span>
                   </div>
                   <p className="mt-2 text-muted-foreground">
-                    7 dias de teste grátis
+                    7 dias de teste grátis • Cobrança mensal por membro
                   </p>
                 </div>
                 
