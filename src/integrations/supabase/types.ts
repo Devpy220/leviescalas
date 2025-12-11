@@ -46,6 +46,7 @@ export type Database = {
       }
       departments: {
         Row: {
+          avatar_url: string | null
           created_at: string
           description: string | null
           id: string
@@ -59,6 +60,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          avatar_url?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -72,6 +74,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          avatar_url?: string | null
           created_at?: string
           description?: string | null
           id?: string
