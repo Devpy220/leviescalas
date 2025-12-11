@@ -29,20 +29,41 @@ serve(async (req) => {
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
 
+    // Verify user authentication
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) throw new Error("No authorization header provided");
+    
+    const token = authHeader.replace("Bearer ", "");
+    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
+    if (userError) throw new Error(`Authentication error: ${userError.message}`);
+    const user = userData.user;
+    if (!user?.id) throw new Error("User not authenticated");
+    logStep("User authenticated", { userId: user.id });
+
     const { departmentId } = await req.json();
     if (!departmentId) throw new Error("Department ID is required");
+    if (typeof departmentId !== "string" || !departmentId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+      throw new Error("Invalid department ID format");
+    }
     logStep("Department ID received", { departmentId });
 
-    // Get department with subscription info
+    // Verify user is the department leader
     const { data: department, error: deptError } = await supabaseClient
       .from('departments')
-      .select('stripe_subscription_id')
+      .select('stripe_subscription_id, leader_id')
       .eq('id', departmentId)
       .single();
 
     if (deptError || !department) {
       throw new Error("Department not found");
     }
+
+    if (department.leader_id !== user.id) {
+      logStep("Unauthorized: User is not department leader", { userId: user.id, leaderId: department.leader_id });
+      throw new Error("Unauthorized: Only department leaders can update subscriptions");
+    }
+    logStep("Authorization verified: User is department leader");
+
 
     if (!department.stripe_subscription_id) {
       logStep("No subscription found for department");
