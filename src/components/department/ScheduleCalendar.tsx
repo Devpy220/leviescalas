@@ -120,14 +120,16 @@ export default function ScheduleCalendar({
     return days;
   }, [currentMonth]);
 
-  // Color palette for multiple schedules on the same day - using inline styles for reliability
+  // Color palette for multiple schedules on the same day - vibrant colors
   const scheduleColors = [
-    { bg: '#8B5CF6', dot: '#8B5CF6', text: 'text-primary', border: 'border-primary/30' },
-    { bg: '#10B981', dot: '#10B981', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-500/30' },
-    { bg: '#F59E0B', dot: '#F59E0B', text: 'text-amber-600 dark:text-amber-400', border: 'border-amber-500/30' },
-    { bg: '#F43F5E', dot: '#F43F5E', text: 'text-rose-600 dark:text-rose-400', border: 'border-rose-500/30' },
-    { bg: '#06B6D4', dot: '#06B6D4', text: 'text-cyan-600 dark:text-cyan-400', border: 'border-cyan-500/30' },
-    { bg: '#7C3AED', dot: '#7C3AED', text: 'text-violet-600 dark:text-violet-400', border: 'border-violet-500/30' },
+    { bg: '#6366F1', dot: '#6366F1', text: 'text-indigo-600 dark:text-indigo-400', border: 'border-indigo-500/50' },
+    { bg: '#22C55E', dot: '#22C55E', text: 'text-green-600 dark:text-green-400', border: 'border-green-500/50' },
+    { bg: '#F97316', dot: '#F97316', text: 'text-orange-600 dark:text-orange-400', border: 'border-orange-500/50' },
+    { bg: '#EC4899', dot: '#EC4899', text: 'text-pink-600 dark:text-pink-400', border: 'border-pink-500/50' },
+    { bg: '#14B8A6', dot: '#14B8A6', text: 'text-teal-600 dark:text-teal-400', border: 'border-teal-500/50' },
+    { bg: '#A855F7', dot: '#A855F7', text: 'text-purple-600 dark:text-purple-400', border: 'border-purple-500/50' },
+    { bg: '#EF4444', dot: '#EF4444', text: 'text-red-600 dark:text-red-400', border: 'border-red-500/50' },
+    { bg: '#3B82F6', dot: '#3B82F6', text: 'text-blue-600 dark:text-blue-400', border: 'border-blue-500/50' },
   ];
 
   const getScheduleColor = (index: number) => scheduleColors[index % scheduleColors.length];
@@ -263,7 +265,7 @@ export default function ScheduleCalendar({
                     {daySchedules.map((_, i) => (
                       <div 
                         key={i} 
-                        className="h-full opacity-30"
+                        className="h-full opacity-50"
                         style={{ 
                           backgroundColor: getScheduleColor(i).bg,
                           width: `${100 / daySchedules.length}%`
