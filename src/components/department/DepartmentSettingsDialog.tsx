@@ -34,6 +34,7 @@ interface DepartmentSettingsDialogProps {
     name: string;
     description: string | null;
     subscription_status: string;
+    stripe_customer_id?: string | null;
   };
   onDepartmentUpdated: () => void;
 }
@@ -96,6 +97,17 @@ export default function DepartmentSettingsDialog({
   };
 
   const handleManageSubscription = async () => {
+    // Check if department has a Stripe customer
+    if (!department.stripe_customer_id) {
+      toast({
+        title: 'Assinatura não encontrada',
+        description: 'Você será redirecionado para a página de pagamento.',
+      });
+      onOpenChange(false);
+      navigate(`/payment?departmentId=${department.id}`);
+      return;
+    }
+
     setLoadingPortal(true);
     try {
       // Get current session to pass token explicitly
