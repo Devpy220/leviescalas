@@ -32,6 +32,7 @@ interface Department {
   subscription_status?: string | null; // Only available for leaders
   created_at: string;
   member_count?: number;
+  avatar_url?: string | null;
 }
 
 interface DepartmentWithRole extends Department {
@@ -86,10 +87,11 @@ export default function Dashboard() {
     
     try {
       // Fetch departments where user is leader (leaders have direct SELECT access)
+      // Using 'as any' because avatar_url column was just added and types aren't regenerated yet
       const { data: leaderDepts, error: leaderError } = await supabase
         .from('departments')
-        .select('id, name, description, leader_id, invite_code, subscription_status, created_at')
-        .eq('leader_id', user.id);
+        .select('*')
+        .eq('leader_id', user.id) as any;
 
       if (leaderError) throw leaderError;
 
@@ -107,14 +109,20 @@ export default function Dashboard() {
       if (memberRelations) {
         for (const relation of memberRelations) {
           // Skip if user is also leader of this department
-          if (leaderDepts?.some(d => d.id === relation.department_id)) continue;
+          if (leaderDepts?.some((d: any) => d.id === relation.department_id)) continue;
           
           const { data: deptData, error: deptError } = await supabase
             .rpc('get_department_basic', { dept_id: relation.department_id });
           
           if (!deptError && deptData && deptData.length > 0) {
+            const dept = deptData[0] as any;
             memberDepartments.push({
-              ...deptData[0],
+              id: dept.id,
+              name: dept.name,
+              description: dept.description,
+              leader_id: dept.leader_id,
+              created_at: dept.created_at,
+              avatar_url: dept.avatar_url || null,
               role: 'member' as const
             });
           }
@@ -122,8 +130,15 @@ export default function Dashboard() {
       }
 
       // Combine leader and member departments
-      const leaderDepartments: DepartmentWithRole[] = (leaderDepts || []).map(d => ({
-        ...d,
+      const leaderDepartments: DepartmentWithRole[] = (leaderDepts || []).map((d: any) => ({
+        id: d.id,
+        name: d.name,
+        description: d.description,
+        leader_id: d.leader_id,
+        invite_code: d.invite_code,
+        subscription_status: d.subscription_status,
+        created_at: d.created_at,
+        avatar_url: d.avatar_url || null,
         role: 'leader' as const
       }));
 
@@ -346,8 +361,12 @@ function DepartmentCard({ department, colorIndex }: { department: DepartmentWith
     <Link to={`/departamento/${departmentSlug}`}>
       <div className={`group bg-gradient-to-br ${cardColor} border rounded-2xl p-6 hover-lift cursor-pointer animate-fade-in`}>
         <div className="flex items-start justify-between mb-4">
-          <div className={`w-12 h-12 rounded-xl ${iconColor} flex items-center justify-center transition-transform group-hover:scale-110`}>
-            <Calendar className="w-6 h-6" />
+          <div className={`w-12 h-12 rounded-xl overflow-hidden ${department.avatar_url ? '' : iconColor} flex items-center justify-center transition-transform group-hover:scale-110`}>
+            {department.avatar_url ? (
+              <img src={department.avatar_url} alt={department.name} className="w-full h-full object-cover" />
+            ) : (
+              <Calendar className="w-6 h-6" />
+            )}
           </div>
           <div className="flex items-center gap-2">
             {department.role === 'leader' && (
