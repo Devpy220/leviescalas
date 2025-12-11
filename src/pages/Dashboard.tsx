@@ -71,7 +71,7 @@ export default function Dashboard() {
     if (!user) return;
     
     try {
-      // Fetch departments where user is leader (only non-sensitive columns)
+      // Fetch departments where user is leader (leaders have direct SELECT access)
       const { data: leaderDepts, error: leaderError } = await supabase
         .from('departments')
         .select('id, name, description, leader_id, invite_code, subscription_status, created_at')
@@ -79,26 +79,39 @@ export default function Dashboard() {
 
       if (leaderError) throw leaderError;
 
-      // Fetch departments where user is member (exclude sensitive columns like invite_code)
-      const { data: memberDepts, error: memberError } = await supabase
+      // Fetch member relationships
+      const { data: memberRelations, error: memberError } = await supabase
         .from('members')
-        .select('department_id, departments(id, name, description, leader_id, created_at)')
+        .select('department_id')
         .eq('user_id', user.id);
 
       if (memberError) throw memberError;
 
-      // Combine and dedupe
+      // For member departments, use secure function to get basic info
+      const memberDepartments: DepartmentWithRole[] = [];
+      
+      if (memberRelations) {
+        for (const relation of memberRelations) {
+          // Skip if user is also leader of this department
+          if (leaderDepts?.some(d => d.id === relation.department_id)) continue;
+          
+          const { data: deptData, error: deptError } = await supabase
+            .rpc('get_department_basic', { dept_id: relation.department_id });
+          
+          if (!deptError && deptData && deptData.length > 0) {
+            memberDepartments.push({
+              ...deptData[0],
+              role: 'member' as const
+            });
+          }
+        }
+      }
+
+      // Combine leader and member departments
       const leaderDepartments: DepartmentWithRole[] = (leaderDepts || []).map(d => ({
         ...d,
         role: 'leader' as const
       }));
-
-      const memberDepartments: DepartmentWithRole[] = (memberDepts || [])
-        .filter(m => m.departments && (m.departments as unknown as Department).leader_id !== user.id)
-        .map(m => ({
-          ...(m.departments as unknown as Department),
-          role: 'member' as const
-        }));
 
       setDepartments([...leaderDepartments, ...memberDepartments]);
     } catch (error) {
