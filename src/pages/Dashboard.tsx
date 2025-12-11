@@ -26,8 +26,8 @@ interface Department {
   name: string;
   description: string | null;
   leader_id: string;
-  invite_code: string;
-  subscription_status: string;
+  invite_code?: string | null; // Only available for leaders
+  subscription_status?: string | null; // Only available for leaders
   created_at: string;
   member_count?: number;
 }
@@ -79,10 +79,10 @@ export default function Dashboard() {
 
       if (leaderError) throw leaderError;
 
-      // Fetch departments where user is member (only non-sensitive columns)
+      // Fetch departments where user is member (exclude sensitive columns like invite_code)
       const { data: memberDepts, error: memberError } = await supabase
         .from('members')
-        .select('department_id, departments(id, name, description, leader_id, invite_code, subscription_status, created_at)')
+        .select('department_id, departments(id, name, description, leader_id, created_at)')
         .eq('user_id', user.id);
 
       if (memberError) throw memberError;
@@ -298,7 +298,9 @@ function DepartmentCard({ department, colorIndex }: { department: DepartmentWith
     cancelled: { bg: 'bg-destructive/10 text-destructive', label: 'Cancelado' },
   };
 
-  const status = statusConfig[department.subscription_status as keyof typeof statusConfig] || statusConfig.pending;
+  const status = department.subscription_status 
+    ? (statusConfig[department.subscription_status as keyof typeof statusConfig] || statusConfig.pending)
+    : null;
   const cardColor = cardColors[colorIndex % cardColors.length];
   const iconColor = iconColors[colorIndex % iconColors.length];
 
@@ -315,9 +317,11 @@ function DepartmentCard({ department, colorIndex }: { department: DepartmentWith
                 <Crown className="w-3.5 h-3.5 text-white" />
               </div>
             )}
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${status.bg}`}>
-              {status.label}
-            </span>
+            {status && (
+              <span className={`px-2 py-1 rounded-full text-xs font-medium ${status.bg}`}>
+                {status.label}
+              </span>
+            )}
           </div>
         </div>
         
