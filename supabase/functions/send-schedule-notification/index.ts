@@ -3,6 +3,9 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const TWILIO_ACCOUNT_SID = Deno.env.get("TWILIO_ACCOUNT_SID");
+const TWILIO_AUTH_TOKEN = Deno.env.get("TWILIO_AUTH_TOKEN");
+const TWILIO_WHATSAPP_FROM = Deno.env.get("TWILIO_WHATSAPP_FROM");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -37,6 +40,54 @@ const formatDate = (dateStr: string): string => {
 
 const formatTime = (time: string): string => {
   return time.slice(0, 5);
+};
+
+// Send WhatsApp message via Twilio
+const sendWhatsAppMessage = async (to: string, message: string): Promise<{ success: boolean; error?: string }> => {
+  if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_WHATSAPP_FROM) {
+    console.log("Twilio credentials not configured, skipping WhatsApp notification");
+    return { success: false, error: "Twilio not configured" };
+  }
+
+  // Format phone number for WhatsApp
+  let formattedNumber = to.replace(/\D/g, '');
+  if (!formattedNumber.startsWith('55')) {
+    formattedNumber = '55' + formattedNumber;
+  }
+  const whatsappTo = `whatsapp:+${formattedNumber}`;
+
+  console.log("Sending WhatsApp to:", whatsappTo);
+
+  try {
+    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`;
+    const authString = btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
+
+    const response = await fetch(twilioUrl, {
+      method: "POST",
+      headers: {
+        "Authorization": `Basic ${authString}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        From: TWILIO_WHATSAPP_FROM,
+        To: whatsappTo,
+        Body: message,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error("Twilio API error:", errorData);
+      return { success: false, error: errorData };
+    }
+
+    const data = await response.json();
+    console.log("WhatsApp sent successfully:", data.sid);
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error sending WhatsApp:", error);
+    return { success: false, error: error.message };
+  }
 };
 
 const handler = async (req: Request): Promise<Response> => {
@@ -161,10 +212,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Target user verified as department member");
 
-    // Fetch user profile to get email and name
+    // Fetch user profile to get email, name and whatsapp
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('email, name')
+      .select('email, name, whatsapp')
       .eq('id', user_id)
       .single();
 
@@ -173,7 +224,7 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("User profile not found");
     }
 
-    console.log("Sending email to:", profile.email);
+    console.log("Sending notifications to:", profile.email, profile.whatsapp ? "WhatsApp: " + profile.whatsapp : "No WhatsApp");
 
     const formattedDate = formatDate(date);
     const formattedTimeStart = formatTime(time_start);
@@ -181,9 +232,11 @@ const handler = async (req: Request): Promise<Response> => {
 
     let subject: string;
     let htmlContent: string;
+    let whatsappMessage: string;
 
     if (type === 'new_schedule') {
       subject = `📅 Nova Escala - ${department_name}`;
+      whatsappMessage = `📅 *Nova Escala - ${department_name}*\n\nOlá, ${profile.name}!\n\nVocê foi escalado para:\n📆 *Data:* ${formattedDate}\n⏰ *Horário:* ${formattedTimeStart} às ${formattedTimeEnd}${notes ? `\n📝 *Observações:* ${notes}` : ''}\n\n_LEVI - Sistema de Escalas_`;
       htmlContent = `
         <!DOCTYPE html>
         <html>
@@ -243,6 +296,7 @@ const handler = async (req: Request): Promise<Response> => {
       // schedule_moved
       const formattedOldDate = old_date ? formatDate(old_date) : '';
       subject = `⚠️ Alteração de Escala - ${department_name}`;
+      whatsappMessage = `⚠️ *Alteração de Escala - ${department_name}*\n\nOlá, ${profile.name}!\n\nSua escala foi alterada:\n❌ *De:* ${formattedOldDate}\n✅ *Para:* ${formattedDate}\n⏰ *Horário:* ${formattedTimeStart} às ${formattedTimeEnd}\n\n_LEVI - Sistema de Escalas_`;
       htmlContent = `
         <!DOCTYPE html>
         <html>
@@ -287,30 +341,53 @@ const handler = async (req: Request): Promise<Response> => {
       `;
     }
 
-    // Send email via Resend API
-    const emailResponse = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${RESEND_API_KEY}`,
-      },
-      body: JSON.stringify({
-        from: "LEVI Escalas <onboarding@resend.dev>",
-        to: [profile.email],
-        subject: subject,
-        html: htmlContent,
-      }),
-    });
+    // Send notifications in parallel
+    const notificationPromises: Promise<any>[] = [];
 
-    if (!emailResponse.ok) {
-      const errorData = await emailResponse.text();
-      console.error("Resend API error:", errorData);
-      throw new Error(`Failed to send email: ${errorData}`);
+    // Email notification
+    notificationPromises.push(
+      fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${RESEND_API_KEY}`,
+        },
+        body: JSON.stringify({
+          from: "LEVI Escalas <onboarding@resend.dev>",
+          to: [profile.email],
+          subject: subject,
+          html: htmlContent,
+        }),
+      }).then(async (response) => {
+        if (!response.ok) {
+          const errorData = await response.text();
+          console.error("Resend API error:", errorData);
+          return { type: 'email', success: false, error: errorData };
+        }
+        const data = await response.json();
+        console.log("Email sent successfully:", data);
+        return { type: 'email', success: true, data };
+      }).catch((error) => {
+        console.error("Email error:", error);
+        return { type: 'email', success: false, error: error.message };
+      })
+    );
+
+    // WhatsApp notification (if user has WhatsApp)
+    if (profile.whatsapp) {
+      notificationPromises.push(
+        sendWhatsAppMessage(profile.whatsapp, whatsappMessage).then((result) => ({
+          type: 'whatsapp',
+          ...result
+        }))
+      );
     }
 
-    const emailData = await emailResponse.json();
+    const results = await Promise.all(notificationPromises);
+    console.log("Notification results:", results);
 
-    console.log("Email sent successfully:", emailData);
+    const emailResult = results.find(r => r.type === 'email');
+    const whatsappResult = results.find(r => r.type === 'whatsapp');
 
     // Create notification record
     const notificationMessage = type === 'new_schedule' 
@@ -333,7 +410,15 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, email: emailData }),
+      JSON.stringify({ 
+        success: true, 
+        email: emailResult?.success ? emailResult.data : null,
+        whatsapp: whatsappResult?.success ?? false,
+        channels: {
+          email: emailResult?.success ?? false,
+          whatsapp: whatsappResult?.success ?? false
+        }
+      }),
       {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },
