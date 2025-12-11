@@ -120,14 +120,14 @@ export default function ScheduleCalendar({
     return days;
   }, [currentMonth]);
 
-  // Color palette for multiple schedules on the same day
+  // Color palette for multiple schedules on the same day - using inline styles for reliability
   const scheduleColors = [
-    { bg: 'bg-primary', dot: 'bg-primary', text: 'text-primary', border: 'border-primary/30' },
-    { bg: 'bg-emerald-500', dot: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-500/30' },
-    { bg: 'bg-amber-500', dot: 'bg-amber-500', text: 'text-amber-600 dark:text-amber-400', border: 'border-amber-500/30' },
-    { bg: 'bg-rose-500', dot: 'bg-rose-500', text: 'text-rose-600 dark:text-rose-400', border: 'border-rose-500/30' },
-    { bg: 'bg-cyan-500', dot: 'bg-cyan-500', text: 'text-cyan-600 dark:text-cyan-400', border: 'border-cyan-500/30' },
-    { bg: 'bg-violet-500', dot: 'bg-violet-500', text: 'text-violet-600 dark:text-violet-400', border: 'border-violet-500/30' },
+    { bg: '#8B5CF6', dot: '#8B5CF6', text: 'text-primary', border: 'border-primary/30' },
+    { bg: '#10B981', dot: '#10B981', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-500/30' },
+    { bg: '#F59E0B', dot: '#F59E0B', text: 'text-amber-600 dark:text-amber-400', border: 'border-amber-500/30' },
+    { bg: '#F43F5E', dot: '#F43F5E', text: 'text-rose-600 dark:text-rose-400', border: 'border-rose-500/30' },
+    { bg: '#06B6D4', dot: '#06B6D4', text: 'text-cyan-600 dark:text-cyan-400', border: 'border-cyan-500/30' },
+    { bg: '#7C3AED', dot: '#7C3AED', text: 'text-violet-600 dark:text-violet-400', border: 'border-violet-500/30' },
   ];
 
   const getScheduleColor = (index: number) => scheduleColors[index % scheduleColors.length];
@@ -269,7 +269,11 @@ export default function ScheduleCalendar({
                 {hasSchedules && (
                   <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
                     {daySchedules.slice(0, 4).map((_, i) => (
-                      <div key={i} className={`w-1.5 h-1.5 rounded-full ${getScheduleColor(i).dot}`} />
+                      <div 
+                        key={i} 
+                        className="w-1.5 h-1.5 rounded-full" 
+                        style={{ backgroundColor: getScheduleColor(i).dot }}
+                      />
                     ))}
                     {daySchedules.length > 4 && (
                       <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50" />
@@ -287,7 +291,10 @@ export default function ScheduleCalendar({
         <span className="font-medium">Escalas:</span>
         {scheduleColors.slice(0, 4).map((color, i) => (
           <div key={i} className="flex items-center gap-1.5">
-            <div className={`w-2 h-2 rounded-full ${color.dot}`} />
+            <div 
+              className="w-2 h-2 rounded-full" 
+              style={{ backgroundColor: color.dot }}
+            />
             <span>Pessoa {i + 1}</span>
           </div>
         ))}
@@ -319,7 +326,10 @@ export default function ScheduleCalendar({
                     >
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
-                          <AvatarFallback className={`text-xs ${color.bg} text-white`}>
+                          <AvatarFallback 
+                            className="text-xs text-white"
+                            style={{ backgroundColor: color.bg }}
+                          >
                             {schedule.profile?.name?.charAt(0) || 'M'}
                           </AvatarFallback>
                         </Avatar>
