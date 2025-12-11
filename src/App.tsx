@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import Department from "./pages/Department";
 import CreateDepartment from "./pages/CreateDepartment";
 import JoinDepartment from "./pages/JoinDepartment";
+import Payment from "./pages/Payment";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
               <Route path="/departments/:id" element={<Department />} />
               <Route path="/departments/new" element={<CreateDepartment />} />
               <Route path="/join/:inviteCode" element={<JoinDepartment />} />
+              <Route path="/payment" element={<Payment />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

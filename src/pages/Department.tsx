@@ -11,10 +11,19 @@ import {
   Copy,
   Check,
   Loader2,
-  Sparkles
+  Sparkles,
+  Download,
+  FileText,
+  FileSpreadsheet
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,6 +32,9 @@ import ScheduleCalendar from '@/components/department/ScheduleCalendar';
 import MemberList from '@/components/department/MemberList';
 import AddScheduleDialog from '@/components/department/AddScheduleDialog';
 import InviteMemberDialog from '@/components/department/InviteMemberDialog';
+import { exportToPDF, exportToExcel } from '@/lib/exportSchedules';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface Department {
   id: string;
@@ -312,15 +324,48 @@ export default function Department() {
               </TabsTrigger>
             </TabsList>
 
-            {isLeader && (
-              <Button 
-                onClick={() => handleAddSchedule()}
-                className="gradient-vibrant text-white shadow-glow-sm hover:shadow-glow transition-all gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Nova Escala</span>
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Download className="w-4 h-4" />
+                    <span className="hidden sm:inline">Exportar</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem 
+                    onClick={() => exportToPDF({
+                      schedules,
+                      departmentName: department?.name || 'Departamento',
+                      monthYear: format(new Date(), 'MMMM yyyy', { locale: ptBR })
+                    })}
+                  >
+                    <FileText className="w-4 h-4 mr-2" />
+                    Exportar PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => exportToExcel({
+                      schedules,
+                      departmentName: department?.name || 'Departamento',
+                      monthYear: format(new Date(), 'MMMM yyyy', { locale: ptBR })
+                    })}
+                  >
+                    <FileSpreadsheet className="w-4 h-4 mr-2" />
+                    Exportar Excel
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {isLeader && (
+                <Button 
+                  onClick={() => handleAddSchedule()}
+                  className="gradient-vibrant text-white shadow-glow-sm hover:shadow-glow transition-all gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Nova Escala</span>
+                </Button>
+              )}
+            </div>
           </div>
 
           <TabsContent value="calendar" className="mt-6">
