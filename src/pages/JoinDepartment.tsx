@@ -44,10 +44,9 @@ export default function JoinDepartment() {
 
   const fetchDepartment = async () => {
     try {
+      // Use secure RPC function that only returns public info (no Stripe data)
       const { data, error } = await supabase
-        .from('departments')
-        .select('id, name, description, leader_id')
-        .eq('invite_code', inviteCode)
+        .rpc('get_department_by_invite_code', { code: inviteCode })
         .maybeSingle();
 
       if (error) throw error;
@@ -58,7 +57,8 @@ export default function JoinDepartment() {
         return;
       }
 
-      setDepartment(data);
+      // RPC returns only id, name, description - leader_id not exposed
+      setDepartment({ ...data, leader_id: '' } as Department);
     } catch (err) {
       console.error('Error fetching department:', err);
       setError('Erro ao carregar informações do departamento');
