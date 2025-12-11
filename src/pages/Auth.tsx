@@ -36,14 +36,23 @@ const recoverySchema = z.object({
   email: z.string().email('Email inválido'),
 });
 
+const resetPasswordSchema = z.object({
+  password: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres'),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'As senhas não coincidem',
+  path: ['confirmPassword'],
+});
+
 type LoginForm = z.infer<typeof loginSchema>;
 type RegisterForm = z.infer<typeof registerSchema>;
 type RecoveryForm = z.infer<typeof recoverySchema>;
+type ResetPasswordForm = z.infer<typeof resetPasswordSchema>;
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') === 'register' ? 'register' : 'login';
-  const [activeTab, setActiveTab] = useState<'login' | 'register' | 'recovery'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'login' | 'register' | 'recovery' | 'reset-password'>(initialTab);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [recoveryEmailSent, setRecoveryEmailSent] = useState(false);
@@ -52,12 +61,23 @@ export default function Auth() {
   const { toast } = useToast();
   const { signIn, signUp, user, loading } = useAuth();
 
-  // Redirect if already logged in
+  // Detect password recovery flow from URL hash
   useEffect(() => {
-    if (!loading && user) {
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const type = hashParams.get('type');
+    const accessToken = hashParams.get('access_token');
+    
+    if (type === 'recovery' && accessToken) {
+      setActiveTab('reset-password');
+    }
+  }, []);
+
+  // Redirect if already logged in (but not during password reset)
+  useEffect(() => {
+    if (!loading && user && activeTab !== 'reset-password') {
       navigate('/dashboard');
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, activeTab]);
 
   const loginForm = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -72,6 +92,11 @@ export default function Auth() {
   const recoveryForm = useForm<RecoveryForm>({
     resolver: zodResolver(recoverySchema),
     defaultValues: { email: '' },
+  });
+
+  const resetPasswordForm = useForm<ResetPasswordForm>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: { password: '', confirmPassword: '' },
   });
 
   const handleLogin = async (data: LoginForm) => {
@@ -158,6 +183,33 @@ export default function Auth() {
     });
   };
 
+  const handleResetPassword = async (data: ResetPasswordForm) => {
+    setIsLoading(true);
+    
+    const { error } = await supabase.auth.updateUser({
+      password: data.password,
+    });
+    setIsLoading(false);
+
+    if (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Não foi possível redefinir sua senha. Tente novamente.',
+      });
+      return;
+    }
+
+    toast({
+      title: 'Senha redefinida!',
+      description: 'Sua senha foi alterada com sucesso.',
+    });
+    
+    // Clear the hash and redirect
+    window.location.hash = '';
+    navigate('/dashboard');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -195,7 +247,7 @@ export default function Auth() {
           </div>
 
           {/* Tabs */}
-          {activeTab !== 'recovery' && (
+          {activeTab !== 'recovery' && activeTab !== 'reset-password' && (
             <div className="flex gap-1 p-1 bg-muted rounded-xl mb-8">
               <button
                 onClick={() => setActiveTab('login')}
@@ -226,6 +278,16 @@ export default function Auth() {
               <h2 className="text-2xl font-bold text-foreground mb-2">Recuperar senha</h2>
               <p className="text-muted-foreground">
                 Digite seu email para receber o link de recuperação.
+              </p>
+            </div>
+          )}
+
+          {/* Reset Password Header */}
+          {activeTab === 'reset-password' && (
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-foreground mb-2">Nova senha</h2>
+              <p className="text-muted-foreground">
+                Digite sua nova senha abaixo.
               </p>
             </div>
           )}
@@ -465,6 +527,63 @@ export default function Auth() {
                 Voltar para o login
               </button>
             </div>
+          )}
+
+          {/* Reset Password Form */}
+          {activeTab === 'reset-password' && (
+            <form onSubmit={resetPasswordForm.handleSubmit(handleResetPassword)} className="space-y-6 animate-fade-in">
+              <div className="space-y-2">
+                <Label htmlFor="reset-password">Nova senha</Label>
+                <div className="relative">
+                  <Input
+                    id="reset-password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    {...resetPasswordForm.register('password')}
+                    className="h-12 pr-12"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+                {resetPasswordForm.formState.errors.password && (
+                  <p className="text-sm text-destructive">{resetPasswordForm.formState.errors.password.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="reset-confirm">Confirmar nova senha</Label>
+                <Input
+                  id="reset-confirm"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  {...resetPasswordForm.register('confirmPassword')}
+                  className="h-12"
+                />
+                {resetPasswordForm.formState.errors.confirmPassword && (
+                  <p className="text-sm text-destructive">{resetPasswordForm.formState.errors.confirmPassword.message}</p>
+                )}
+              </div>
+
+              <Button 
+                type="submit" 
+                className="w-full h-12 gradient-vibrant text-white shadow-glow-sm hover:shadow-glow transition-all"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                    Redefinindo...
+                  </>
+                ) : (
+                  'Redefinir senha'
+                )}
+              </Button>
+            </form>
           )}
         </div>
       </div>
