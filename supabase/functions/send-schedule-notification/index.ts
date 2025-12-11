@@ -47,10 +47,41 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const supabaseClient = createClient(
+    // Create Supabase client with service role for admin operations
+    const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
+
+    // Get the authorization header to verify the caller
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      console.error("Missing authorization header");
+      return new Response(
+        JSON.stringify({ error: "Unauthorized: Missing authorization header" }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    // Verify the JWT and get the caller's user ID
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user: caller }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    
+    if (authError || !caller) {
+      console.error("Auth error:", authError);
+      return new Response(
+        JSON.stringify({ error: "Unauthorized: Invalid token" }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    console.log("Caller authenticated:", caller.id);
 
     // Parse and validate input
     const rawData = await req.json();
@@ -75,8 +106,63 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { user_id, department_id, department_name, date, time_start, time_end, notes, type, old_date } = requestData;
 
+    // AUTHORIZATION CHECK: Verify caller is the department leader
+    const { data: department, error: deptError } = await supabaseAdmin
+      .from('departments')
+      .select('leader_id')
+      .eq('id', department_id)
+      .single();
+
+    if (deptError || !department) {
+      console.error("Department not found:", deptError);
+      return new Response(
+        JSON.stringify({ error: "Department not found" }),
+        {
+          status: 404,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    if (department.leader_id !== caller.id) {
+      console.error("Authorization failed: Caller is not department leader", {
+        caller_id: caller.id,
+        leader_id: department.leader_id
+      });
+      return new Response(
+        JSON.stringify({ error: "Forbidden: Only department leaders can send notifications" }),
+        {
+          status: 403,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    console.log("Authorization passed: Caller is department leader");
+
+    // AUTHORIZATION CHECK: Verify target user is a member of the department
+    const { data: membership, error: memberError } = await supabaseAdmin
+      .from('members')
+      .select('id')
+      .eq('department_id', department_id)
+      .eq('user_id', user_id)
+      .single();
+
+    if (memberError || !membership) {
+      console.error("Target user is not a department member:", memberError);
+      return new Response(
+        JSON.stringify({ error: "Forbidden: Target user is not a member of this department" }),
+        {
+          status: 403,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    console.log("Target user verified as department member");
+
     // Fetch user profile to get email and name
-    const { data: profile, error: profileError } = await supabaseClient
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('email, name')
       .eq('id', user_id)
@@ -231,7 +317,7 @@ const handler = async (req: Request): Promise<Response> => {
       ? `Nova escala em ${department_name} para ${formattedDate}`
       : `Escala alterada em ${department_name} para ${formattedDate}`;
 
-    const { error: notificationError } = await supabaseClient
+    const { error: notificationError } = await supabaseAdmin
       .from('notifications')
       .insert({
         user_id: user_id,
