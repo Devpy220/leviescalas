@@ -10,7 +10,8 @@ import {
   Crown,
   User,
   Loader2,
-  Sparkles
+  Sparkles,
+  CreditCard
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -59,6 +60,7 @@ export default function Dashboard() {
   const [departments, setDepartments] = useState<DepartmentWithRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFirstLogin, setIsFirstLogin] = useState(false);
+  const [canCreateDepartment, setCanCreateDepartment] = useState(true);
   const { user, authEvent, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -80,7 +82,31 @@ export default function Dashboard() {
       return;
     }
     fetchDepartments();
+    checkCanCreateDepartment();
   }, [user, navigate]);
+
+  const checkCanCreateDepartment = async () => {
+    if (!user) return;
+    
+    // Check if user has any member entries (joined via invite)
+    const { data: memberEntries, error } = await supabase
+      .from('members')
+      .select('role')
+      .eq('user_id', user.id);
+    
+    if (error) {
+      console.error('Error checking member status:', error);
+      return;
+    }
+
+    // User can only create department if they have NO member entries
+    // OR if they already have at least one department as leader
+    const hasLeaderRole = memberEntries?.some(m => m.role === 'leader');
+    const hasOnlyMemberRole = memberEntries?.length > 0 && !hasLeaderRole;
+    
+    // If user joined via invite (only has member role), they can't create departments
+    setCanCreateDepartment(!hasOnlyMemberRole);
+  };
 
   const fetchDepartments = async () => {
     if (!user) return;
@@ -227,31 +253,88 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Create department CTA */}
-        <Link 
-          to="/departments/new"
-          className="block mb-10"
-        >
-          <div className="relative group">
-            <div className="absolute inset-0 gradient-vibrant rounded-2xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity" />
-            <div className="relative glass rounded-2xl p-6 border-2 border-dashed border-primary/30 hover:border-primary/50 transition-all hover-lift">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-xl gradient-vibrant flex items-center justify-center shadow-glow-sm group-hover:shadow-glow transition-all">
-                  <Plus className="w-7 h-7 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-display text-xl font-semibold text-foreground mb-1">
-                    Criar Novo Departamento
-                  </h3>
-                  <p className="text-muted-foreground">
-                    R$ 10,00/mês • 7 dias grátis
-                  </p>
-                </div>
-                <ChevronRight className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors" />
+        {/* Member Area Card */}
+        <div className="grid md:grid-cols-2 gap-6 mb-10">
+          {/* Profile Card */}
+          <div className="glass rounded-2xl p-6 border border-border/50">
+            <div className="flex items-center gap-4 mb-4">
+              <Avatar className="w-14 h-14 border-2 border-primary/20">
+                <AvatarFallback className="gradient-vibrant text-white text-xl font-medium">
+                  {user.email?.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <h3 className="font-display text-lg font-semibold text-foreground">
+                  Minha Conta
+                </h3>
+                <p className="text-sm text-muted-foreground truncate">
+                  {user.email}
+                </p>
               </div>
             </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/security')}
+                className="flex-1"
+              >
+                <Shield className="w-4 h-4 mr-2" />
+                Segurança
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/payment')}
+                className="flex-1"
+              >
+                <CreditCard className="w-4 h-4 mr-2" />
+                Pagamento
+              </Button>
+            </div>
           </div>
-        </Link>
+
+          {/* Create department CTA - Only for non-invited users */}
+          {canCreateDepartment ? (
+            <Link to="/departments/new" className="block">
+              <div className="relative group h-full">
+                <div className="absolute inset-0 gradient-vibrant rounded-2xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity" />
+                <div className="relative glass rounded-2xl p-6 border-2 border-dashed border-primary/30 hover:border-primary/50 transition-all hover-lift h-full flex items-center">
+                  <div className="flex items-center gap-4 w-full">
+                    <div className="w-14 h-14 rounded-xl gradient-vibrant flex items-center justify-center shadow-glow-sm group-hover:shadow-glow transition-all">
+                      <Plus className="w-7 h-7 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-display text-xl font-semibold text-foreground mb-1">
+                        Criar Novo Departamento
+                      </h3>
+                      <p className="text-muted-foreground">
+                        R$ 10,00/mês • 7 dias grátis
+                      </p>
+                    </div>
+                    <ChevronRight className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </div>
+                </div>
+              </div>
+            </Link>
+          ) : (
+            <div className="glass rounded-2xl p-6 border border-border/50 flex items-center">
+              <div className="flex items-center gap-4 w-full">
+                <div className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center">
+                  <User className="w-7 h-7 text-muted-foreground" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-display text-lg font-semibold text-foreground mb-1">
+                    Conta de Membro
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Para criar departamentos, registre uma nova conta.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
         {loading ? (
           <div className="space-y-6">
@@ -320,14 +403,18 @@ export default function Dashboard() {
                   Nenhum departamento ainda
                 </h3>
                 <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
-                  Crie seu primeiro departamento ou peça um convite para participar de um existente.
+                  {canCreateDepartment 
+                    ? 'Crie seu primeiro departamento ou peça um convite para participar de um existente.'
+                    : 'Peça um convite para participar de um departamento existente.'}
                 </p>
-                <Link to="/departments/new">
-                  <Button className="gradient-vibrant text-white shadow-glow-sm hover:shadow-glow transition-all">
-                    <Plus className="w-5 h-5 mr-2" />
-                    Criar Departamento
-                  </Button>
-                </Link>
+                {canCreateDepartment && (
+                  <Link to="/departments/new">
+                    <Button className="gradient-vibrant text-white shadow-glow-sm hover:shadow-glow transition-all">
+                      <Plus className="w-5 h-5 mr-2" />
+                      Criar Departamento
+                    </Button>
+                  </Link>
+                )}
               </div>
             )}
           </>
