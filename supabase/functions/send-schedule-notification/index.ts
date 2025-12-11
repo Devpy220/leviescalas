@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
@@ -8,18 +9,21 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface NotificationRequest {
-  schedule_id?: string;
-  user_id: string;
-  department_id: string;
-  department_name: string;
-  date: string;
-  time_start: string;
-  time_end: string;
-  notes?: string;
-  type: 'new_schedule' | 'schedule_moved';
-  old_date?: string;
-}
+// Input validation schema
+const notificationSchema = z.object({
+  schedule_id: z.string().uuid().optional(),
+  user_id: z.string().uuid(),
+  department_id: z.string().uuid(),
+  department_name: z.string().min(1).max(100),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format"),
+  time_start: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/, "Invalid time format"),
+  time_end: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/, "Invalid time format"),
+  notes: z.string().max(500).optional(),
+  type: z.enum(['new_schedule', 'schedule_moved']),
+  old_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+});
+
+type NotificationRequest = z.infer<typeof notificationSchema>;
 
 const formatDate = (dateStr: string): string => {
   const date = new Date(dateStr + 'T00:00:00');
@@ -48,8 +52,26 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const requestData: NotificationRequest = await req.json();
-    console.log("Request data:", requestData);
+    // Parse and validate input
+    const rawData = await req.json();
+    const validationResult = notificationSchema.safeParse(rawData);
+    
+    if (!validationResult.success) {
+      console.error("Validation error:", validationResult.error.errors);
+      return new Response(
+        JSON.stringify({ 
+          error: "Invalid input", 
+          details: validationResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`)
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    const requestData: NotificationRequest = validationResult.data;
+    console.log("Request data validated:", requestData);
 
     const { user_id, department_id, department_name, date, time_start, time_end, notes, type, old_date } = requestData;
 
