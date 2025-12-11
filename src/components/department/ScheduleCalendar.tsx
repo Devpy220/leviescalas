@@ -166,6 +166,10 @@ export default function ScheduleCalendar({
 
     if (originalDate === newDate || !isLeader) return;
 
+    // Find the schedule being moved
+    const movedSchedule = schedules.find(s => s.id === scheduleId);
+    if (!movedSchedule) return;
+
     try {
       const { error } = await supabase
         .from('schedules')
@@ -174,9 +178,35 @@ export default function ScheduleCalendar({
 
       if (error) throw error;
 
+      // Get department info for notification
+      const { data: department } = await supabase
+        .from('departments')
+        .select('name')
+        .eq('id', departmentId)
+        .single();
+
+      // Send notification about schedule change
+      try {
+        await supabase.functions.invoke('send-schedule-notification', {
+          body: {
+            schedule_id: scheduleId,
+            user_id: movedSchedule.user_id,
+            department_id: departmentId,
+            department_name: department?.name || 'Departamento',
+            date: newDate,
+            time_start: movedSchedule.time_start,
+            time_end: movedSchedule.time_end,
+            type: 'schedule_moved',
+            old_date: originalDate
+          }
+        });
+      } catch (notifError) {
+        console.error('Error sending move notification:', notifError);
+      }
+
       toast({
         title: 'Escala movida',
-        description: `Escala movida para ${format(targetDate, "d 'de' MMMM", { locale: ptBR })}.`,
+        description: `Escala movida e membro notificado!`,
       });
       
       onDeleteSchedule(); // Refresh schedules

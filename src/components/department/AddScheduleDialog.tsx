@@ -108,7 +108,14 @@ export default function AddScheduleDialog({
 
     setLoading(true);
     try {
-      const { error } = await supabase.from('schedules').insert({
+      // Get department name for notification
+      const { data: department } = await supabase
+        .from('departments')
+        .select('name')
+        .eq('id', departmentId)
+        .single();
+
+      const { data: scheduleData, error } = await supabase.from('schedules').insert({
         department_id: departmentId,
         user_id: selectedMember,
         date: format(date, 'yyyy-MM-dd'),
@@ -116,14 +123,37 @@ export default function AddScheduleDialog({
         time_end: timeEnd,
         notes: notes || null,
         created_by: user?.id
-      });
+      }).select().single();
 
       if (error) throw error;
 
-      toast({
-        title: 'Escala criada',
-        description: 'A escala foi adicionada com sucesso.',
-      });
+      // Send notification email
+      try {
+        await supabase.functions.invoke('send-schedule-notification', {
+          body: {
+            schedule_id: scheduleData.id,
+            user_id: selectedMember,
+            department_id: departmentId,
+            department_name: department?.name || 'Departamento',
+            date: format(date, 'yyyy-MM-dd'),
+            time_start: timeStart,
+            time_end: timeEnd,
+            notes: notes || undefined,
+            type: 'new_schedule'
+          }
+        });
+        
+        toast({
+          title: 'Escala criada',
+          description: 'Escala adicionada e notificação enviada!',
+        });
+      } catch (notifError) {
+        console.error('Error sending notification:', notifError);
+        toast({
+          title: 'Escala criada',
+          description: 'Escala adicionada, mas não foi possível enviar notificação.',
+        });
+      }
       
       onScheduleCreated();
     } catch (error) {
