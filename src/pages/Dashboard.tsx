@@ -5,7 +5,7 @@ import {
   Calendar, 
   Users, 
   LogOut, 
-  Settings, 
+  Shield, 
   ChevronRight,
   Crown,
   User,
@@ -144,8 +144,14 @@ export default function Dashboard() {
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <NotificationBell />
-            <Button variant="ghost" size="icon" className="text-muted-foreground">
-              <Settings className="w-5 h-5" />
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-muted-foreground"
+              onClick={() => navigate('/security')}
+              title="Segurança"
+            >
+              <Shield className="w-5 h-5" />
             </Button>
             <Button 
               variant="ghost" 
