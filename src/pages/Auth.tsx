@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { validatePassword } from '@/lib/passwordBreachChecker';
 import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator';
+import { TwoFactorVerify } from '@/components/auth/TwoFactorVerify';
 
 import { supabase } from '@/integrations/supabase/client';
 
@@ -71,7 +72,7 @@ type ResetPasswordForm = z.infer<typeof resetPasswordSchema>;
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') === 'register' ? 'register' : 'login';
-  const [activeTab, setActiveTab] = useState<'login' | 'register' | 'recovery' | 'reset-password'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'login' | 'register' | 'recovery' | 'reset-password' | '2fa-verify'>(initialTab);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [recoveryEmailSent, setRecoveryEmailSent] = useState(false);
@@ -147,11 +148,32 @@ export default function Auth() {
       return;
     }
 
+    // Check if MFA verification is required
+    const { data: mfaData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    
+    if (mfaData?.currentLevel === 'aal1' && mfaData?.nextLevel === 'aal2') {
+      setActiveTab('2fa-verify');
+      return;
+    }
+
     toast({
       title: 'Bem-vindo de volta!',
       description: 'Login realizado com sucesso.',
     });
     navigate('/dashboard');
+  };
+
+  const handle2FASuccess = () => {
+    toast({
+      title: 'Bem-vindo de volta!',
+      description: 'Login realizado com sucesso.',
+    });
+    navigate('/dashboard');
+  };
+
+  const handle2FACancel = async () => {
+    await supabase.auth.signOut();
+    setActiveTab('login');
   };
 
   const handleRegister = async (data: RegisterForm) => {
@@ -366,7 +388,7 @@ export default function Auth() {
           </div>
 
           {/* Tabs */}
-          {activeTab !== 'recovery' && activeTab !== 'reset-password' && (
+          {activeTab !== 'recovery' && activeTab !== 'reset-password' && activeTab !== '2fa-verify' && (
             <div className="flex gap-1 p-1 bg-muted rounded-xl mb-8">
               <button
                 onClick={() => setActiveTab('login')}
@@ -772,6 +794,14 @@ export default function Auth() {
                 )}
               </Button>
             </form>
+          )}
+
+          {/* 2FA Verification */}
+          {activeTab === '2fa-verify' && (
+            <TwoFactorVerify 
+              onSuccess={handle2FASuccess}
+              onCancel={handle2FACancel}
+            />
           )}
         </div>
       </div>
