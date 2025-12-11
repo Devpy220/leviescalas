@@ -1,1 +1,13 @@
 project_id = "zuksvsxnchwskqytuxxq"
+
+[functions.create-checkout]
+verify_jwt = false
+
+[functions.check-subscription]
+verify_jwt = false
+
+[functions.complete-checkout]
+verify_jwt = false
+
+[functions.customer-portal]
+verify_jwt = false
