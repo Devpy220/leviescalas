@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { Camera, Loader2, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { compressImage } from '@/lib/imageCompression';
 
 interface DepartmentAvatarProps {
   departmentId: string;
@@ -42,12 +43,12 @@ export default function DepartmentAvatar({
       return;
     }
 
-    // Validate file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
+    // Validate file size (max 5MB before compression)
+    if (file.size > 5 * 1024 * 1024) {
       toast({
         variant: 'destructive',
         title: 'Arquivo muito grande',
-        description: 'A imagem deve ter no máximo 2MB.',
+        description: 'A imagem deve ter no máximo 5MB.',
       });
       return;
     }
@@ -55,13 +56,17 @@ export default function DepartmentAvatar({
     setUploading(true);
 
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${departmentId}/avatar.${fileExt}`;
+      // Compress image before upload
+      const compressedBlob = await compressImage(file);
+      const fileName = `${departmentId}/avatar.jpg`;
 
-      // Upload to storage
+      // Upload compressed image to storage
       const { error: uploadError } = await supabase.storage
         .from('department-avatars')
-        .upload(fileName, file, { upsert: true });
+        .upload(fileName, compressedBlob, { 
+          upsert: true,
+          contentType: 'image/jpeg'
+        });
 
       if (uploadError) throw uploadError;
 
