@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,7 +10,8 @@ import {
   CheckCircle2, 
   CreditCard,
   Shield,
-  Sparkles
+  Sparkles,
+  ExternalLink
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,6 +45,7 @@ export default function CreateDepartment() {
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState<'form' | 'payment' | 'success'>('form');
   const [createdDepartment, setCreatedDepartment] = useState<{ id: string; name: string; invite_code: string } | null>(null);
+  const [searchParams] = useSearchParams();
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -53,6 +55,55 @@ export default function CreateDepartment() {
     resolver: zodResolver(departmentSchema),
     defaultValues: { name: '', description: '' },
   });
+
+  // Handle return from Stripe checkout
+  useEffect(() => {
+    const success = searchParams.get('success');
+    const sessionId = searchParams.get('session_id');
+    const canceled = searchParams.get('canceled');
+
+    if (canceled) {
+      toast({
+        variant: 'destructive',
+        title: 'Pagamento cancelado',
+        description: 'O processo de pagamento foi cancelado.',
+      });
+      return;
+    }
+
+    if (success && sessionId) {
+      completeCheckout(sessionId);
+    }
+  }, [searchParams]);
+
+  const completeCheckout = async (sessionId: string) => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('complete-checkout', {
+        body: { sessionId },
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      setCreatedDepartment(data.department);
+      setStep('success');
+      
+      toast({
+        title: 'Departamento criado!',
+        description: 'Seu período de teste de 7 dias começou.',
+      });
+    } catch (error) {
+      console.error('Error completing checkout:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao criar departamento',
+        description: 'Tente novamente em alguns instantes.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = async (data: DepartmentForm) => {
     if (!user) {
@@ -76,52 +127,27 @@ export default function CreateDepartment() {
     try {
       const formData = form.getValues();
       
-      // For now, create department with trial status
-      // Stripe integration will be added later
-      const { data: department, error } = await supabase
-        .from('departments')
-        .insert({
-          name: formData.name,
-          description: formData.description || null,
-          leader_id: user.id,
-          subscription_status: 'trial',
-          trial_ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
-        })
-        .select()
-        .single();
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: {
+          departmentName: formData.name,
+          departmentDescription: formData.description || '',
+        },
+      });
 
       if (error) throw error;
+      if (data.error) throw new Error(data.error);
 
-      // Add leader as member with 'leader' role
-      const { error: memberError } = await supabase
-        .from('members')
-        .insert({
-          department_id: department.id,
-          user_id: user.id,
-          role: 'leader',
-        });
-
-      if (memberError) throw memberError;
-
-      setCreatedDepartment({
-        id: department.id,
-        name: department.name,
-        invite_code: department.invite_code,
-      });
-      setStep('success');
-      
-      toast({
-        title: 'Departamento criado!',
-        description: 'Seu período de teste de 7 dias começou.',
-      });
+      // Redirect to Stripe Checkout
+      if (data.url) {
+        window.location.href = data.url;
+      }
     } catch (error) {
-      console.error('Error creating department:', error);
+      console.error('Error creating checkout:', error);
       toast({
         variant: 'destructive',
-        title: 'Erro ao criar departamento',
+        title: 'Erro ao iniciar pagamento',
         description: 'Tente novamente em alguns instantes.',
       });
-    } finally {
       setIsLoading(false);
     }
   };
@@ -135,6 +161,23 @@ export default function CreateDepartment() {
       description: 'Compartilhe com os membros do departamento.',
     });
   };
+
+  // Show loading state when returning from Stripe
+  if (searchParams.get('success') && searchParams.get('session_id') && !createdDepartment) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center animate-fade-in">
+          <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
+          <h2 className="font-display text-xl font-bold text-foreground mb-2">
+            Finalizando criação...
+          </h2>
+          <p className="text-muted-foreground">
+            Estamos configurando seu departamento.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -284,10 +327,13 @@ export default function CreateDepartment() {
                   {isLoading ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                      Criando departamento...
+                      Redirecionando para pagamento...
                     </>
                   ) : (
-                    'Iniciar teste grátis'
+                    <>
+                      <ExternalLink className="w-5 h-5 mr-2" />
+                      Continuar para o Stripe
+                    </>
                   )}
                 </Button>
                 
@@ -310,8 +356,8 @@ export default function CreateDepartment() {
           {/* Success Step */}
           {step === 'success' && createdDepartment && (
             <div className="max-w-md mx-auto text-center animate-fade-in">
-              <div className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-6">
-                <CheckCircle2 className="w-10 h-10 text-success" />
+              <div className="w-20 h-20 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-6">
+                <CheckCircle2 className="w-10 h-10 text-emerald-500" />
               </div>
               
               <h2 className="font-display text-2xl font-bold text-foreground mb-2">
