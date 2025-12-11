@@ -4,9 +4,8 @@ import {
   ChevronRight, 
   Plus,
   Clock,
-  User,
   Trash2,
-  GripVertical
+  Users
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -20,6 +19,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -32,7 +37,6 @@ import {
   addMonths,
   subMonths,
   isSameMonth,
-  isSameDay,
   isToday,
   parseISO
 } from 'date-fns';
@@ -84,6 +88,8 @@ export default function ScheduleCalendar({
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  const [showDayDialog, setShowDayDialog] = useState(false);
   const { toast } = useToast();
 
   const schedulesByDate = useMemo(() => {
@@ -113,7 +119,7 @@ export default function ScheduleCalendar({
     return days;
   }, [currentMonth]);
 
-  const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  const weekDays = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
   const handleDeleteSchedule = async () => {
     if (!selectedSchedule) return;
@@ -133,6 +139,13 @@ export default function ScheduleCalendar({
       });
       
       onDeleteSchedule();
+      
+      // Update the day dialog if still open
+      const dateKey = selectedSchedule.date;
+      const remainingSchedules = (schedulesByDate.get(dateKey) || []).filter(s => s.id !== selectedSchedule.id);
+      if (remainingSchedules.length === 0) {
+        setShowDayDialog(false);
+      }
     } catch (error) {
       console.error('Error deleting schedule:', error);
       toast({
@@ -147,104 +160,50 @@ export default function ScheduleCalendar({
     }
   };
 
-  const handleDragStart = (e: React.DragEvent, schedule: Schedule) => {
-    e.dataTransfer.setData('scheduleId', schedule.id);
-    e.dataTransfer.setData('scheduleDate', schedule.date);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleDrop = async (e: React.DragEvent, targetDate: Date) => {
-    e.preventDefault();
-    const scheduleId = e.dataTransfer.getData('scheduleId');
-    const originalDate = e.dataTransfer.getData('scheduleDate');
-    const newDate = format(targetDate, 'yyyy-MM-dd');
-
-    if (originalDate === newDate || !isLeader) return;
-
-    // Find the schedule being moved
-    const movedSchedule = schedules.find(s => s.id === scheduleId);
-    if (!movedSchedule) return;
-
-    try {
-      const { error } = await supabase
-        .from('schedules')
-        .update({ date: newDate })
-        .eq('id', scheduleId);
-
-      if (error) throw error;
-
-      // Get department info for notification
-      const { data: department } = await supabase
-        .from('departments')
-        .select('name')
-        .eq('id', departmentId)
-        .single();
-
-      // Send notification about schedule change
-      try {
-        await supabase.functions.invoke('send-schedule-notification', {
-          body: {
-            schedule_id: scheduleId,
-            user_id: movedSchedule.user_id,
-            department_id: departmentId,
-            department_name: department?.name || 'Departamento',
-            date: newDate,
-            time_start: movedSchedule.time_start,
-            time_end: movedSchedule.time_end,
-            type: 'schedule_moved',
-            old_date: originalDate
-          }
-        });
-      } catch (notifError) {
-        console.error('Error sending move notification:', notifError);
-      }
-
-      toast({
-        title: 'Escala movida',
-        description: `Escala movida e membro notificado!`,
-      });
-      
-      onDeleteSchedule(); // Refresh schedules
-    } catch (error) {
-      console.error('Error moving schedule:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao mover',
-        description: 'Não foi possível mover a escala.',
-      });
+  const handleDayClick = (day: Date) => {
+    const dateKey = format(day, 'yyyy-MM-dd');
+    const daySchedules = schedulesByDate.get(dateKey) || [];
+    
+    if (daySchedules.length > 0 || isLeader) {
+      setSelectedDay(day);
+      setShowDayDialog(true);
     }
   };
 
+  const selectedDaySchedules = useMemo(() => {
+    if (!selectedDay) return [];
+    const dateKey = format(selectedDay, 'yyyy-MM-dd');
+    return schedulesByDate.get(dateKey) || [];
+  }, [selectedDay, schedulesByDate]);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Calendar Header */}
       <div className="flex items-center justify-between">
-        <h2 className="font-display text-2xl font-bold text-foreground capitalize">
-          {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
+        <h2 className="font-display text-lg font-bold text-foreground capitalize">
+          {format(currentMonth, 'MMM yyyy', { locale: ptBR })}
         </h2>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <Button
-            variant="outline"
+            variant="ghost"
             size="icon"
+            className="h-8 w-8"
             onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
+            className="h-8 text-xs"
             onClick={() => setCurrentMonth(new Date())}
           >
             Hoje
           </Button>
           <Button
-            variant="outline"
+            variant="ghost"
             size="icon"
+            className="h-8 w-8"
             onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
           >
             <ChevronRight className="w-4 h-4" />
@@ -252,14 +211,14 @@ export default function ScheduleCalendar({
         </div>
       </div>
 
-      {/* Calendar Grid */}
-      <div className="bg-card border border-border rounded-2xl overflow-hidden">
+      {/* Compact Calendar Grid */}
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
         {/* Week Days Header */}
         <div className="grid grid-cols-7 border-b border-border">
-          {weekDays.map((day) => (
+          {weekDays.map((day, i) => (
             <div
-              key={day}
-              className="px-2 py-3 text-center text-sm font-medium text-muted-foreground bg-muted/30"
+              key={i}
+              className="py-2 text-center text-xs font-medium text-muted-foreground"
             >
               {day}
             </div>
@@ -273,106 +232,134 @@ export default function ScheduleCalendar({
             const daySchedules = schedulesByDate.get(dateKey) || [];
             const isCurrentMonth = isSameMonth(day, currentMonth);
             const isCurrentDay = isToday(day);
+            const hasSchedules = daySchedules.length > 0;
 
             return (
-              <div
+              <button
                 key={index}
-                className={`min-h-[120px] border-b border-r border-border p-2 transition-colors ${
-                  !isCurrentMonth ? 'bg-muted/20' : 'bg-card hover:bg-muted/10'
-                } ${index % 7 === 6 ? 'border-r-0' : ''}`}
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, day)}
+                onClick={() => handleDayClick(day)}
+                className={`relative h-10 border-b border-r border-border transition-colors ${
+                  !isCurrentMonth ? 'bg-muted/20 text-muted-foreground/40' : 'bg-card hover:bg-muted/30'
+                } ${index % 7 === 6 ? 'border-r-0' : ''} ${
+                  Math.floor(index / 7) === Math.floor((calendarDays.length - 1) / 7) ? 'border-b-0' : ''
+                }`}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <span
-                    className={`text-sm font-medium w-7 h-7 flex items-center justify-center rounded-full ${
-                      isCurrentDay
-                        ? 'bg-primary text-primary-foreground'
-                        : isCurrentMonth
-                        ? 'text-foreground'
-                        : 'text-muted-foreground/50'
-                    }`}
-                  >
-                    {format(day, 'd')}
-                  </span>
-                  {isLeader && isCurrentMonth && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="w-6 h-6 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity"
-                      onClick={() => onAddSchedule(day)}
-                    >
-                      <Plus className="w-3 h-3" />
-                    </Button>
-                  )}
-                </div>
-
-                <div className="space-y-1">
-                  {daySchedules.slice(0, 3).map((schedule) => (
-                    <div
-                      key={schedule.id}
-                      draggable={isLeader}
-                      onDragStart={(e) => handleDragStart(e, schedule)}
-                      className={`group relative px-2 py-1 rounded-md text-xs bg-primary/10 border border-primary/20 cursor-pointer hover:bg-primary/20 transition-colors ${
-                        isLeader ? 'cursor-grab active:cursor-grabbing' : ''
-                      }`}
-                      onClick={() => {
-                        setSelectedSchedule(schedule);
-                        if (isLeader) setShowDeleteDialog(true);
-                      }}
-                    >
-                      <div className="flex items-center gap-1">
-                        {isLeader && (
-                          <GripVertical className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100" />
-                        )}
-                        <span className="font-medium text-primary truncate">
-                          {schedule.profile?.name?.split(' ')[0] || 'Membro'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        <Clock className="w-2.5 h-2.5" />
-                        <span>{schedule.time_start.slice(0, 5)}</span>
-                      </div>
-                    </div>
-                  ))}
-                  {daySchedules.length > 3 && (
-                    <div className="text-xs text-muted-foreground pl-2">
-                      +{daySchedules.length - 3} mais
-                    </div>
-                  )}
-                </div>
-              </div>
+                <span
+                  className={`text-xs font-medium flex items-center justify-center w-6 h-6 mx-auto rounded-full ${
+                    isCurrentDay
+                      ? 'bg-primary text-primary-foreground'
+                      : ''
+                  }`}
+                >
+                  {format(day, 'd')}
+                </span>
+                {hasSchedules && (
+                  <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
+                    {daySchedules.slice(0, 3).map((_, i) => (
+                      <div key={i} className="w-1 h-1 rounded-full bg-primary" />
+                    ))}
+                    {daySchedules.length > 3 && (
+                      <div className="w-1 h-1 rounded-full bg-primary/50" />
+                    )}
+                  </div>
+                )}
+              </button>
             );
           })}
         </div>
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-6 text-sm text-muted-foreground">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-primary" />
+      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+        <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-primary" />
           <span>Escala agendada</span>
         </div>
-        {isLeader && (
-          <div className="flex items-center gap-2">
-            <GripVertical className="w-4 h-4" />
-            <span>Arraste para mover</span>
-          </div>
-        )}
       </div>
+
+      {/* Day Detail Dialog */}
+      <Dialog open={showDayDialog} onOpenChange={setShowDayDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              {selectedDay && format(selectedDay, "d 'de' MMMM", { locale: ptBR })}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {selectedDaySchedules.length > 0 ? (
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">Escalados neste dia:</p>
+                {selectedDaySchedules.map((schedule) => (
+                  <div
+                    key={schedule.id}
+                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                          {schedule.profile?.name?.charAt(0) || 'M'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="text-sm font-medium">{schedule.profile?.name || 'Membro'}</p>
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Clock className="w-3 h-3" />
+                          <span>{schedule.time_start.slice(0, 5)} - {schedule.time_end.slice(0, 5)}</span>
+                        </div>
+                      </div>
+                    </div>
+                    {isLeader && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => {
+                          setSelectedSchedule(schedule);
+                          setShowDeleteDialog(true);
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Nenhuma escala neste dia
+              </p>
+            )}
+
+            {isLeader && (
+              <Button
+                className="w-full"
+                onClick={() => {
+                  setShowDayDialog(false);
+                  onAddSchedule(selectedDay || undefined);
+                }}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Adicionar pessoa à escala
+              </Button>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remover Escala</AlertDialogTitle>
+            <AlertDialogTitle>Remover da Escala</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja remover esta escala de{' '}
-              <strong>{selectedSchedule?.profile?.name}</strong> no dia{' '}
+              Tem certeza que deseja remover{' '}
+              <strong>{selectedSchedule?.profile?.name}</strong> da escala do dia{' '}
               <strong>
                 {selectedSchedule && format(parseISO(selectedSchedule.date), "d 'de' MMMM", { locale: ptBR })}
               </strong>
-              ? Esta ação não pode ser desfeita.
+              ?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
