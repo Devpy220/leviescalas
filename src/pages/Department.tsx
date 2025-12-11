@@ -116,31 +116,36 @@ export default function Department() {
     if (!id) return;
     
     try {
-      const { data, error } = await supabase
+      // Use secure function that only returns non-sensitive profile data
+      const { data: basicProfiles, error: profilesError } = await supabase
+        .rpc('get_department_member_profiles', { dept_id: id });
+
+      if (profilesError) throw profilesError;
+
+      // Get member records for IDs and joined_at
+      const { data: memberRecords, error: membersError } = await supabase
         .from('members')
-        .select(`
-          id,
-          user_id,
-          role,
-          joined_at,
-          profiles:user_id (
-            name,
-            email,
-            whatsapp,
-            avatar_url
-          )
-        `)
+        .select('id, user_id, role, joined_at')
         .eq('department_id', id);
 
-      if (error) throw error;
-      
-      const formattedMembers = (data || []).map(m => ({
-        id: m.id,
-        user_id: m.user_id,
-        role: m.role,
-        joined_at: m.joined_at,
-        profile: m.profiles as unknown as Member['profile']
-      }));
+      if (membersError) throw membersError;
+
+      // Combine the data
+      const formattedMembers = (memberRecords || []).map(m => {
+        const profile = basicProfiles?.find((p: any) => p.id === m.user_id);
+        return {
+          id: m.id,
+          user_id: m.user_id,
+          role: m.role as 'leader' | 'member',
+          joined_at: m.joined_at,
+          profile: {
+            name: profile?.name || 'Usuário',
+            email: '', // Protected - only leaders can see via separate call
+            whatsapp: '', // Protected - only leaders can see via separate call
+            avatar_url: profile?.avatar_url || null
+          }
+        };
+      });
       
       setMembers(formattedMembers);
     } catch (error) {

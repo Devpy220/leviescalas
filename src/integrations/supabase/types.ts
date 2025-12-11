@@ -296,6 +296,26 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_department_member_profiles: {
+        Args: { dept_id: string }
+        Returns: {
+          avatar_url: string
+          id: string
+          joined_at: string
+          name: string
+          role: string
+        }[]
+      }
+      get_member_full_profile: {
+        Args: { dept_id: string; member_user_id: string }
+        Returns: {
+          avatar_url: string
+          email: string
+          id: string
+          name: string
+          whatsapp: string
+        }[]
+      }
       get_member_profile: {
         Args: { member_user_id: string }
         Returns: {
