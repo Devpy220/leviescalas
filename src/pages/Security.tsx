@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Shield, ShieldOff, Loader2, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Shield, ShieldOff, Loader2, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/hooks/useAuth';
 import { useTwoFactor } from '@/hooks/useTwoFactor';
 import { TwoFactorSetup } from '@/components/auth/TwoFactorSetup';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +29,52 @@ export default function Security() {
   const [showSetup, setShowSetup] = useState(false);
   const [showDisableDialog, setShowDisableDialog] = useState(false);
   const [isDisabling, setIsDisabling] = useState(false);
+  const [shareContact, setShareContact] = useState(false);
+  const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
+
+  // Fetch current privacy setting
+  useEffect(() => {
+    const fetchPrivacySetting = async () => {
+      if (!user) return;
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('share_contact')
+        .eq('id', user.id)
+        .single();
+      
+      if (!error && data) {
+        setShareContact(data.share_contact || false);
+      }
+    };
+    
+    fetchPrivacySetting();
+  }, [user]);
+
+  const handlePrivacyToggle = async (checked: boolean) => {
+    setIsUpdatingPrivacy(true);
+    
+    const { error } = await supabase.rpc('update_contact_privacy', { share: checked });
+    
+    setIsUpdatingPrivacy(false);
+    
+    if (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Não foi possível atualizar a configuração de privacidade.',
+      });
+      return;
+    }
+    
+    setShareContact(checked);
+    toast({
+      title: checked ? 'Contato compartilhado' : 'Contato oculto',
+      description: checked 
+        ? 'Membros do seu departamento agora podem ver seu email e WhatsApp.'
+        : 'Seu email e WhatsApp estão ocultos para outros membros.',
+    });
+  };
 
   if (authLoading || mfaLoading) {
     return (
@@ -142,6 +190,49 @@ export default function Security() {
                 </Button>
               )}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Privacy Card */}
+        <Card className="mt-6">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                shareContact ? 'bg-blue-500/10 text-blue-500' : 'bg-muted text-muted-foreground'
+              }`}>
+                {shareContact ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+              </div>
+              <div className="flex-1">
+                <CardTitle className="text-lg">Privacidade de contato</CardTitle>
+                <CardDescription>
+                  Controle quem pode ver seu email e WhatsApp
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+              <div className="flex-1">
+                <p className="font-medium text-foreground">
+                  {shareContact ? 'Contato visível' : 'Contato oculto'}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {shareContact 
+                    ? 'Membros do seu departamento podem ver seu email e WhatsApp.'
+                    : 'Seu email e WhatsApp estão ocultos para outros membros.'}
+                </p>
+              </div>
+              <Switch
+                checked={shareContact}
+                onCheckedChange={handlePrivacyToggle}
+                disabled={isUpdatingPrivacy}
+              />
+            </div>
+            
+            <p className="text-xs text-muted-foreground">
+              Essa configuração afeta apenas a visibilidade para outros membros dos seus departamentos. 
+              Líderes de departamento sempre podem ver informações de contato para fins de coordenação.
+            </p>
           </CardContent>
         </Card>
 

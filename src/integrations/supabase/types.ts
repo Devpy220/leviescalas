@@ -194,6 +194,30 @@ export type Database = {
           },
         ]
       }
+      profile_access_audit: {
+        Row: {
+          accessed_at: string | null
+          accessed_profile_id: string
+          accessor_user_id: string
+          department_id: string | null
+          id: string
+        }
+        Insert: {
+          accessed_at?: string | null
+          accessed_profile_id: string
+          accessor_user_id: string
+          department_id?: string | null
+          id?: string
+        }
+        Update: {
+          accessed_at?: string | null
+          accessed_profile_id?: string
+          accessor_user_id?: string
+          department_id?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -201,6 +225,7 @@ export type Database = {
           email: string
           id: string
           name: string
+          share_contact: boolean | null
           updated_at: string
           whatsapp: string
         }
@@ -210,6 +235,7 @@ export type Database = {
           email: string
           id: string
           name: string
+          share_contact?: boolean | null
           updated_at?: string
           whatsapp: string
         }
@@ -219,6 +245,7 @@ export type Database = {
           email?: string
           id?: string
           name?: string
+          share_contact?: boolean | null
           updated_at?: string
           whatsapp?: string
         }
@@ -308,6 +335,18 @@ export type Database = {
           name: string
         }[]
       }
+      get_department_contacts: {
+        Args: { dept_id: string }
+        Returns: {
+          avatar_url: string
+          email: string
+          id: string
+          name: string
+          role: string
+          share_contact: boolean
+          whatsapp: string
+        }[]
+      }
       get_department_for_member: {
         Args: { dept_id: string }
         Returns: {
@@ -389,6 +428,7 @@ export type Database = {
         Args: { _department_id: string; _user_id: string }
         Returns: boolean
       }
+      update_contact_privacy: { Args: { share: boolean }; Returns: undefined }
     }
     Enums: {
       member_role: "leader" | "member"
