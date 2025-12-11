@@ -91,18 +91,29 @@ export async function validatePassword(password: string): Promise<{
 }> {
   const errors: string[] = [];
 
-  // Validações básicas
+  // Validações de formato obrigatórias
   if (password.length < 8) {
     errors.push('Senha deve ter no mínimo 8 caracteres');
   }
+  if (!/[A-Z]/.test(password)) {
+    errors.push('Senha deve conter ao menos uma letra maiúscula');
+  }
+  if (!/[a-z]/.test(password)) {
+    errors.push('Senha deve conter ao menos uma letra minúscula');
+  }
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+    errors.push('Senha deve conter ao menos um símbolo');
+  }
 
-  // Verifica se foi vazada
-  const isPwned = await passwordChecker.isPasswordPwned(password);
-  
-  if (isPwned) {
-    const count = await passwordChecker.getPasswordBreachCount(password);
-    const countMessage = count > 0 ? ` (encontrada ${count.toLocaleString()} vezes)` : '';
-    errors.push(`Esta senha foi encontrada em vazamentos de dados${countMessage}. Por favor, escolha outra.`);
+  // Verifica se foi vazada (só se passou nas validações básicas)
+  if (errors.length === 0) {
+    const isPwned = await passwordChecker.isPasswordPwned(password);
+    
+    if (isPwned) {
+      const count = await passwordChecker.getPasswordBreachCount(password);
+      const countMessage = count > 0 ? ` (encontrada ${count.toLocaleString()} vezes)` : '';
+      errors.push(`Esta senha foi encontrada em vazamentos de dados${countMessage}. Por favor, escolha outra.`);
+    }
   }
 
   return {
