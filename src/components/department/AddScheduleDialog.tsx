@@ -108,11 +108,9 @@ export default function AddScheduleDialog({
 
     setLoading(true);
     try {
-      // Get department name for notification
+      // Get department name for notification using secure function
       const { data: department } = await supabase
-        .from('departments')
-        .select('name')
-        .eq('id', departmentId)
+        .rpc('get_department_secure', { dept_id: departmentId })
         .single();
 
       const { data: scheduleData, error } = await supabase.from('schedules').insert({

@@ -71,18 +71,18 @@ export default function Dashboard() {
     if (!user) return;
     
     try {
-      // Fetch departments where user is leader
+      // Fetch departments where user is leader (only non-sensitive columns)
       const { data: leaderDepts, error: leaderError } = await supabase
         .from('departments')
-        .select('*')
+        .select('id, name, description, leader_id, invite_code, subscription_status, created_at')
         .eq('leader_id', user.id);
 
       if (leaderError) throw leaderError;
 
-      // Fetch departments where user is member
+      // Fetch departments where user is member (only non-sensitive columns)
       const { data: memberDepts, error: memberError } = await supabase
         .from('members')
-        .select('department_id, departments(*)')
+        .select('department_id, departments(id, name, description, leader_id, invite_code, subscription_status, created_at)')
         .eq('user_id', user.id);
 
       if (memberError) throw memberError;
