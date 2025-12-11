@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, Check, CheckCheck, Calendar, Loader2 } from 'lucide-react';
+import { Bell, Check, CheckCheck, Calendar, Loader2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
@@ -13,7 +13,7 @@ import { ptBR } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
 
 export function NotificationBell() {
-  const { notifications, unreadCount, loading, markAsRead, markAllAsRead } = useNotifications();
+  const { notifications, unreadCount, loading, markAsRead, markAllAsRead, deleteNotification, deleteAllNotifications } = useNotifications();
   const [open, setOpen] = useState(false);
 
   const getNotificationIcon = (type: string) => {
@@ -24,6 +24,11 @@ export function NotificationBell() {
       default:
         return <Bell className="w-4 h-4 text-muted-foreground" />;
     }
+  };
+
+  const handleDelete = (e: React.MouseEvent, notificationId: string) => {
+    e.stopPropagation();
+    deleteNotification(notificationId);
   };
 
   return (
@@ -45,17 +50,29 @@ export function NotificationBell() {
       <PopoverContent className="w-80 p-0" align="end">
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <h3 className="font-semibold text-foreground">Notificações</h3>
-          {unreadCount > 0 && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="text-xs text-muted-foreground hover:text-foreground h-7"
-              onClick={() => markAllAsRead()}
-            >
-              <CheckCheck className="w-3.5 h-3.5 mr-1" />
-              Marcar todas
-            </Button>
-          )}
+          <div className="flex items-center gap-1">
+            {unreadCount > 0 && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-xs text-muted-foreground hover:text-foreground h-7"
+                onClick={() => markAllAsRead()}
+              >
+                <CheckCheck className="w-3.5 h-3.5 mr-1" />
+                Marcar todas
+              </Button>
+            )}
+            {notifications.length > 0 && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-xs text-destructive hover:text-destructive hover:bg-destructive/10 h-7"
+                onClick={() => deleteAllNotifications()}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
+            )}
+          </div>
         </div>
 
         <ScrollArea className="h-[300px]">
@@ -77,7 +94,7 @@ export function NotificationBell() {
               {notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`px-4 py-3 hover:bg-muted/50 cursor-pointer transition-colors ${
+                  className={`px-4 py-3 hover:bg-muted/50 cursor-pointer transition-colors group ${
                     !notification.read_at ? 'bg-primary/5' : ''
                   }`}
                   onClick={() => {
@@ -101,9 +118,19 @@ export function NotificationBell() {
                         })}
                       </p>
                     </div>
-                    {!notification.read_at && (
-                      <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0 mt-2" />
-                    )}
+                    <div className="flex items-center gap-1">
+                      {!notification.read_at && (
+                        <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-6 h-6 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        onClick={(e) => handleDelete(e, notification.id)}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
