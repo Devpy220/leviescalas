@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { DemoTour } from '@/components/DemoTour';
 import { 
   Calendar, 
   Users, 
@@ -64,8 +66,11 @@ const pricingFeatures = [
 ];
 
 export default function Landing() {
+  const [showDemo, setShowDemo] = useState(false);
+
   return (
     <div className="min-h-screen bg-background">
+      <DemoTour open={showDemo} onOpenChange={setShowDemo} />
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -127,7 +132,12 @@ export default function Landing() {
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </Link>
-              <Button size="lg" variant="outline" className="w-full sm:w-auto text-lg px-8 border-2">
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="w-full sm:w-auto text-lg px-8 border-2"
+                onClick={() => setShowDemo(true)}
+              >
                 Ver demonstração
               </Button>
             </div>
