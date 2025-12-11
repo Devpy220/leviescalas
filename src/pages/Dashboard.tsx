@@ -61,6 +61,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [isFirstLogin, setIsFirstLogin] = useState(false);
   const [canCreateDepartment, setCanCreateDepartment] = useState(true);
+  const [userName, setUserName] = useState<string>('');
   const { user, authEvent, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -83,7 +84,21 @@ export default function Dashboard() {
     }
     fetchDepartments();
     checkCanCreateDepartment();
+    fetchUserName();
   }, [user, navigate]);
+
+  const fetchUserName = async () => {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('name')
+      .eq('id', user.id)
+      .single();
+    
+    if (!error && data) {
+      setUserName(data.name);
+    }
+  };
 
   const checkCanCreateDepartment = async () => {
     if (!user) return;
@@ -239,14 +254,14 @@ export default function Dashboard() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        {/* Welcome section */}
-        <div className="mb-8">
+        {/* Welcome section - Centered */}
+        <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
             <Sparkles className="w-4 h-4" />
             <span>Dashboard</span>
           </div>
           <h1 className="font-display text-3xl font-bold text-foreground mb-2">
-            Olá, bem-vindo! 👋
+            Olá, {userName || 'bem-vindo'}! 👋
           </h1>
           <p className="text-muted-foreground">
             Gerencie seus departamentos e escalas em um só lugar.
