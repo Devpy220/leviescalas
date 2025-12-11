@@ -98,9 +98,35 @@ export default function DepartmentSettingsDialog({
   const handleManageSubscription = async () => {
     setLoadingPortal(true);
     try {
-      const { data, error } = await supabase.functions.invoke('customer-portal');
+      // Get current session to pass token explicitly
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        toast({
+          variant: 'destructive',
+          title: 'Sessão expirada',
+          description: 'Por favor, faça login novamente.',
+        });
+        return;
+      }
 
-      if (error) throw error;
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/customer-portal`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao abrir portal');
+      }
+      
       if (data?.url) {
         window.open(data.url, '_blank');
       }
@@ -109,7 +135,7 @@ export default function DepartmentSettingsDialog({
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: 'Não foi possível abrir o portal de assinatura.',
+        description: error instanceof Error ? error.message : 'Não foi possível abrir o portal de assinatura.',
       });
     } finally {
       setLoadingPortal(false);
