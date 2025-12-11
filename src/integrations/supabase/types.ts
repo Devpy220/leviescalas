@@ -260,6 +260,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_department_by_invite_code: {
+        Args: { code: string }
+        Returns: {
+          description: string
+          id: string
+          name: string
+        }[]
+      }
       is_department_leader: {
         Args: { _department_id: string; _user_id: string }
         Returns: boolean
