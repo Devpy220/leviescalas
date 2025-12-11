@@ -73,7 +73,10 @@ export default function Landing() {
             <div className="w-10 h-10 rounded-xl gradient-vibrant flex items-center justify-center shadow-glow-sm transition-all duration-300 group-hover:scale-110 group-hover:shadow-glow">
               <Calendar className="w-5 h-5 text-white" />
             </div>
-            <span className="font-display text-xl font-bold text-foreground">LEVI</span>
+            <div className="flex items-center gap-2">
+              <span className="font-display text-xl font-bold text-foreground">LEVI</span>
+              <span className="hidden md:inline text-sm text-muted-foreground border-l border-border pl-2">Logística de Escalas para Voluntários da Igreja</span>
+            </div>
           </Link>
           
           <div className="flex items-center gap-2">
