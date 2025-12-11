@@ -125,6 +125,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "members_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments_safe"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "members_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -176,6 +183,13 @@ export type Database = {
             columns: ["department_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments_safe"
             referencedColumns: ["id"]
           },
           {
@@ -304,6 +318,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "schedules_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments_safe"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "schedules_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -314,7 +335,50 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      departments_safe: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string | null
+          leader_id: string | null
+          name: string | null
+          subscription_status:
+            | Database["public"]["Enums"]["subscription_status"]
+            | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          leader_id?: string | null
+          name?: string | null
+          subscription_status?:
+            | Database["public"]["Enums"]["subscription_status"]
+            | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          leader_id?: string | null
+          name?: string | null
+          subscription_status?:
+            | Database["public"]["Enums"]["subscription_status"]
+            | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "departments_leader_id_fkey"
+            columns: ["leader_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       get_billing_audit_logs: {
@@ -325,6 +389,18 @@ export type Database = {
           id: string
           user_id: string
           user_name: string
+        }[]
+      }
+      get_department_basic: {
+        Args: { dept_id: string }
+        Returns: {
+          created_at: string
+          description: string
+          id: string
+          leader_id: string
+          name: string
+          subscription_status: string
+          updated_at: string
         }[]
       }
       get_department_by_invite_code: {
@@ -418,6 +494,18 @@ export type Database = {
           avatar_url: string
           id: string
           name: string
+        }[]
+      }
+      get_schedule_for_user: {
+        Args: { dept_id: string; target_user_id: string }
+        Returns: {
+          created_by: string
+          date: string
+          id: string
+          notes: string
+          time_end: string
+          time_start: string
+          user_id: string
         }[]
       }
       is_department_leader: {
