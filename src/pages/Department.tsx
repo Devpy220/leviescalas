@@ -47,6 +47,7 @@ interface Department {
   subscription_status: string;
   created_at: string;
   avatar_url: string | null;
+  stripe_customer_id: string | null;
 }
 
 interface Member {
@@ -124,7 +125,8 @@ export default function Department() {
         invite_code: data.invite_code || '',
         subscription_status: data.subscription_status,
         created_at: data.created_at,
-        avatar_url: (data as any).avatar_url || null
+        avatar_url: (data as any).avatar_url || null,
+        stripe_customer_id: data.stripe_customer_id || null
       });
       setIsLeader(data.leader_id === user?.id);
     } catch (error) {
