@@ -92,14 +92,23 @@ export default function Department() {
     if (!id) return;
     
     try {
+      // Use secure function that conditionally returns stripe data based on role
       const { data, error } = await supabase
-        .from('departments')
-        .select('*')
-        .eq('id', id)
+        .rpc('get_department_secure', { dept_id: id })
         .single();
 
       if (error) throw error;
-      setDepartment(data);
+      if (!data) throw new Error('Department not found');
+      
+      setDepartment({
+        id: data.id,
+        name: data.name,
+        description: data.description,
+        leader_id: data.leader_id,
+        invite_code: data.invite_code || '',
+        subscription_status: data.subscription_status,
+        created_at: data.created_at
+      });
       setIsLeader(data.leader_id === user?.id);
     } catch (error) {
       console.error('Error fetching department:', error);
