@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   Crown, 
   MoreVertical, 
@@ -6,7 +6,8 @@ import {
   Mail, 
   Phone,
   UserPlus,
-  Shield
+  Shield,
+  Lock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -43,6 +44,13 @@ interface Member {
   };
 }
 
+interface MemberContactInfo {
+  [userId: string]: {
+    email: string;
+    whatsapp: string;
+  };
+}
+
 interface MemberListProps {
   members: Member[];
   isLeader: boolean;
@@ -63,7 +71,46 @@ export default function MemberList({
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [contactInfo, setContactInfo] = useState<MemberContactInfo>({});
   const { toast } = useToast();
+
+  // Leaders can fetch contact info for members
+  const fetchContactInfo = useCallback(async (userId: string) => {
+    if (!isLeader || contactInfo[userId]) return;
+    
+    try {
+      const { data, error } = await supabase
+        .rpc('get_member_full_profile', { 
+          member_user_id: userId, 
+          dept_id: departmentId 
+        });
+      
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        setContactInfo(prev => ({
+          ...prev,
+          [userId]: {
+            email: data[0].email,
+            whatsapp: data[0].whatsapp
+          }
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching contact info:', error);
+    }
+  }, [isLeader, departmentId, contactInfo]);
+
+  // Pre-fetch contact info for all members if leader
+  useEffect(() => {
+    if (isLeader && members.length > 0) {
+      members.forEach(member => {
+        if (!contactInfo[member.user_id]) {
+          fetchContactInfo(member.user_id);
+        }
+      });
+    }
+  }, [isLeader, members, fetchContactInfo, contactInfo]);
 
   const sortedMembers = [...members].sort((a, b) => {
     if (a.role === 'leader' && b.role !== 'leader') return -1;
@@ -153,6 +200,10 @@ export default function MemberList({
             .join('')
             .slice(0, 2)
             .toUpperCase();
+          
+          // Get contact info (only available for leaders)
+          const memberContact = contactInfo[member.user_id];
+          const hasContactAccess = isLeader && memberContact;
 
           return (
             <div
@@ -182,57 +233,70 @@ export default function MemberList({
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground truncate">
-                    {member.profile.email}
-                  </p>
+                  {hasContactAccess ? (
+                    <p className="text-sm text-muted-foreground truncate">
+                      {memberContact.email}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground truncate flex items-center gap-1">
+                      <Lock className="w-3 h-3" />
+                      <span>Contato protegido</span>
+                    </p>
+                  )}
                   <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
                     <Shield className="w-3 h-3" />
                     <span>{isMemberLeader ? 'Líder' : 'Membro'}</span>
                   </div>
                 </div>
 
-                {/* Actions Dropdown */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="w-8 h-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <MoreVertical className="w-4 h-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      onClick={() => handleContactWhatsApp(member.profile.whatsapp, member.profile.name)}
-                    >
-                      <Phone className="w-4 h-4 mr-2" />
-                      WhatsApp
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => handleContactEmail(member.profile.email)}
-                    >
-                      <Mail className="w-4 h-4 mr-2" />
-                      Email
-                    </DropdownMenuItem>
-                    
-                    {isLeader && !isMemberLeader && !isCurrentUser && (
-                      <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="text-destructive focus:text-destructive"
-                          onClick={() => {
-                            setSelectedMember(member);
-                            setShowRemoveDialog(true);
-                          }}
-                        >
-                          <UserMinus className="w-4 h-4 mr-2" />
-                          Remover
-                        </DropdownMenuItem>
-                      </>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {/* Actions Dropdown - Only show contact options if leader */}
+                {isLeader && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-8 h-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {hasContactAccess && (
+                        <>
+                          <DropdownMenuItem
+                            onClick={() => handleContactWhatsApp(memberContact.whatsapp, member.profile.name)}
+                          >
+                            <Phone className="w-4 h-4 mr-2" />
+                            WhatsApp
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleContactEmail(memberContact.email)}
+                          >
+                            <Mail className="w-4 h-4 mr-2" />
+                            Email
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                      
+                      {!isMemberLeader && !isCurrentUser && (
+                        <>
+                          {hasContactAccess && <DropdownMenuSeparator />}
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => {
+                              setSelectedMember(member);
+                              setShowRemoveDialog(true);
+                            }}
+                          >
+                            <UserMinus className="w-4 h-4 mr-2" />
+                            Remover
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </div>
 
               <div className="mt-3 pt-3 border-t border-border">
