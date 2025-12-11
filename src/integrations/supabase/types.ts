@@ -268,6 +268,42 @@ export type Database = {
           name: string
         }[]
       }
+      get_department_for_member: {
+        Args: { dept_id: string }
+        Returns: {
+          created_at: string
+          description: string
+          id: string
+          invite_code: string
+          leader_id: string
+          name: string
+          updated_at: string
+        }[]
+      }
+      get_department_full: {
+        Args: { dept_id: string }
+        Returns: {
+          created_at: string
+          description: string
+          id: string
+          invite_code: string
+          leader_id: string
+          name: string
+          stripe_customer_id: string
+          stripe_subscription_id: string
+          subscription_status: string
+          trial_ends_at: string
+          updated_at: string
+        }[]
+      }
+      get_member_profile: {
+        Args: { member_user_id: string }
+        Returns: {
+          avatar_url: string
+          id: string
+          name: string
+        }[]
+      }
       is_department_leader: {
         Args: { _department_id: string; _user_id: string }
         Returns: boolean
