@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      billing_access_audit: {
+        Row: {
+          action: string
+          created_at: string | null
+          department_id: string
+          id: string
+          ip_address: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          department_id: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          department_id?: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       departments: {
         Row: {
           created_at: string
@@ -260,6 +290,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_billing_audit_logs: {
+        Args: { dept_id: string; limit_count?: number }
+        Returns: {
+          action: string
+          created_at: string
+          id: string
+          user_id: string
+          user_name: string
+        }[]
+      }
       get_department_by_invite_code: {
         Args: { code: string }
         Returns: {
@@ -304,6 +344,23 @@ export type Database = {
           joined_at: string
           name: string
           role: string
+        }[]
+      }
+      get_department_secure: {
+        Args: { dept_id: string }
+        Returns: {
+          created_at: string
+          description: string
+          id: string
+          invite_code: string
+          leader_id: string
+          name: string
+          stripe_customer_id: string
+          stripe_subscription_id: string
+          subscription_status: string
+          trial_ends_at: string
+          updated_at: string
+          user_role: string
         }[]
       }
       get_member_full_profile: {
