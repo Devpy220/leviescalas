@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { NotificationBell } from '@/components/NotificationBell';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -142,6 +143,7 @@ export default function Dashboard() {
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
+            <NotificationBell />
             <Button variant="ghost" size="icon" className="text-muted-foreground">
               <Settings className="w-5 h-5" />
             </Button>
