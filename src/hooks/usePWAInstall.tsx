@@ -5,18 +5,41 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
+type DeviceType = 'ios' | 'android' | 'desktop' | 'unknown';
+
 export function usePWAInstall() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [deviceType, setDeviceType] = useState<DeviceType>('unknown');
 
   useEffect(() => {
+    // Detect device type
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isIOS = /iphone|ipad|ipod/.test(userAgent) || 
+                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isAndroid = /android/.test(userAgent);
+    
+    if (isIOS) {
+      setDeviceType('ios');
+    } else if (isAndroid) {
+      setDeviceType('android');
+    } else {
+      setDeviceType('desktop');
+    }
+
     // Check if already installed
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches 
       || (window.navigator as any).standalone === true;
     
     if (isStandalone) {
       setIsInstalled(true);
+      return;
+    }
+
+    // For iOS, always show installable since we can't detect beforeinstallprompt
+    if (isIOS) {
+      setIsInstallable(true);
       return;
     }
 
@@ -87,5 +110,7 @@ export function usePWAInstall() {
     install,
     dismissInstallPrompt,
     shouldShowInstallPrompt,
+    deviceType,
+    isIOS: deviceType === 'ios',
   };
 }
