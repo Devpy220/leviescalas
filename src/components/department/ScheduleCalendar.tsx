@@ -22,6 +22,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -285,6 +286,9 @@ export default function ScheduleCalendar({
               <Users className="w-5 h-5" />
               {selectedDay && format(selectedDay, "d 'de' MMMM", { locale: ptBR })}
             </DialogTitle>
+            <DialogDescription>
+              Gerencie as escalas deste dia
+            </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4">
