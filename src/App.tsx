@@ -9,6 +9,7 @@ import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Department from "./pages/Department";
+import DepartmentBySlug from "./pages/DepartmentBySlug";
 import CreateDepartment from "./pages/CreateDepartment";
 import JoinDepartment from "./pages/JoinDepartment";
 import Payment from "./pages/Payment";
@@ -29,6 +30,7 @@ const App = () => (
               <Route path="/" element={<Landing />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/departamento/:slug" element={<DepartmentBySlug />} />
               <Route path="/departments/:id" element={<Department />} />
               <Route path="/departments/new" element={<CreateDepartment />} />
               <Route path="/join/:inviteCode" element={<JoinDepartment />} />

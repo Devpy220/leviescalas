@@ -17,9 +17,11 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { NotificationBell } from '@/components/NotificationBell';
+import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { slugify } from '@/lib/slugify';
 
 interface Department {
   id: string;
@@ -55,9 +57,21 @@ const iconColors = [
 export default function Dashboard() {
   const [departments, setDepartments] = useState<DepartmentWithRole[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user, signOut } = useAuth();
+  const [isFirstLogin, setIsFirstLogin] = useState(false);
+  const { user, authEvent, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Check if this is first login
+  useEffect(() => {
+    if (authEvent === 'SIGNED_IN') {
+      const hasLoggedBefore = localStorage.getItem('has-logged-before');
+      if (!hasLoggedBefore) {
+        setIsFirstLogin(true);
+        localStorage.setItem('has-logged-before', 'true');
+      }
+    }
+  }, [authEvent]);
 
   useEffect(() => {
     if (!user) {
@@ -304,6 +318,9 @@ export default function Dashboard() {
           </>
         )}
       </main>
+      
+      {/* PWA Install Prompt */}
+      <PWAInstallPrompt isFirstLogin={isFirstLogin} />
     </div>
   );
 }
@@ -323,8 +340,10 @@ function DepartmentCard({ department, colorIndex }: { department: DepartmentWith
   const cardColor = cardColors[colorIndex % cardColors.length];
   const iconColor = iconColors[colorIndex % iconColors.length];
 
+  const departmentSlug = slugify(department.name);
+
   return (
-    <Link to={`/departments/${department.id}`}>
+    <Link to={`/departamento/${departmentSlug}`}>
       <div className={`group bg-gradient-to-br ${cardColor} border rounded-2xl p-6 hover-lift cursor-pointer animate-fade-in`}>
         <div className="flex items-start justify-between mb-4">
           <div className={`w-12 h-12 rounded-xl ${iconColor} flex items-center justify-center transition-transform group-hover:scale-110`}>
