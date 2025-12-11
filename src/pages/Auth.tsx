@@ -11,6 +11,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
+import { supabase } from '@/integrations/supabase/client';
+
 // Validation schemas
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -30,15 +32,21 @@ const registerSchema = z.object({
   path: ['confirmPassword'],
 });
 
+const recoverySchema = z.object({
+  email: z.string().email('Email inválido'),
+});
+
 type LoginForm = z.infer<typeof loginSchema>;
 type RegisterForm = z.infer<typeof registerSchema>;
+type RecoveryForm = z.infer<typeof recoverySchema>;
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') === 'register' ? 'register' : 'login';
-  const [activeTab, setActiveTab] = useState<'login' | 'register'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'login' | 'register' | 'recovery'>(initialTab);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [recoveryEmailSent, setRecoveryEmailSent] = useState(false);
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -59,6 +67,11 @@ export default function Auth() {
   const registerForm = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
     defaultValues: { name: '', email: '', whatsapp: '', password: '', confirmPassword: '' },
+  });
+
+  const recoveryForm = useForm<RecoveryForm>({
+    resolver: zodResolver(recoverySchema),
+    defaultValues: { email: '' },
   });
 
   const handleLogin = async (data: LoginForm) => {
@@ -120,6 +133,31 @@ export default function Auth() {
     return numbers;
   };
 
+  const handleRecovery = async (data: RecoveryForm) => {
+    setIsLoading(true);
+    const redirectUrl = `${window.location.origin}/auth`;
+    
+    const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
+      redirectTo: redirectUrl,
+    });
+    setIsLoading(false);
+
+    if (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Não foi possível enviar o email de recuperação. Tente novamente.',
+      });
+      return;
+    }
+
+    setRecoveryEmailSent(true);
+    toast({
+      title: 'Email enviado!',
+      description: 'Verifique sua caixa de entrada para redefinir sua senha.',
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -157,28 +195,40 @@ export default function Auth() {
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-1 p-1 bg-muted rounded-xl mb-8">
-            <button
-              onClick={() => setActiveTab('login')}
-              className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
-                activeTab === 'login'
-                  ? 'bg-card text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              Entrar
-            </button>
-            <button
-              onClick={() => setActiveTab('register')}
-              className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
-                activeTab === 'register'
-                  ? 'bg-card text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              Criar conta
-            </button>
-          </div>
+          {activeTab !== 'recovery' && (
+            <div className="flex gap-1 p-1 bg-muted rounded-xl mb-8">
+              <button
+                onClick={() => setActiveTab('login')}
+                className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
+                  activeTab === 'login'
+                    ? 'bg-card text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Entrar
+              </button>
+              <button
+                onClick={() => setActiveTab('register')}
+                className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
+                  activeTab === 'register'
+                    ? 'bg-card text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Criar conta
+              </button>
+            </div>
+          )}
+
+          {/* Recovery Header */}
+          {activeTab === 'recovery' && (
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-foreground mb-2">Recuperar senha</h2>
+              <p className="text-muted-foreground">
+                Digite seu email para receber o link de recuperação.
+              </p>
+            </div>
+          )}
 
           {/* Login Form */}
           {activeTab === 'login' && (
@@ -234,6 +284,17 @@ export default function Auth() {
                   'Entrar'
                 )}
               </Button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('recovery');
+                  setRecoveryEmailSent(false);
+                }}
+                className="w-full text-center text-sm text-primary hover:underline"
+              >
+                Esqueceu sua senha?
+              </button>
             </form>
           )}
 
@@ -348,6 +409,62 @@ export default function Auth() {
                 <a href="#" className="text-primary hover:underline">Política de Privacidade</a>.
               </p>
             </form>
+          )}
+
+          {/* Recovery Form */}
+          {activeTab === 'recovery' && (
+            <div className="space-y-6 animate-fade-in">
+              {!recoveryEmailSent ? (
+                <form onSubmit={recoveryForm.handleSubmit(handleRecovery)} className="space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="recovery-email">Email</Label>
+                    <Input
+                      id="recovery-email"
+                      type="email"
+                      placeholder="seu@email.com"
+                      {...recoveryForm.register('email')}
+                      className="h-12"
+                    />
+                    {recoveryForm.formState.errors.email && (
+                      <p className="text-sm text-destructive">{recoveryForm.formState.errors.email.message}</p>
+                    )}
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    className="w-full h-12 gradient-vibrant text-white shadow-glow-sm hover:shadow-glow transition-all"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                        Enviando...
+                      </>
+                    ) : (
+                      'Enviar link de recuperação'
+                    )}
+                  </Button>
+                </form>
+              ) : (
+                <div className="text-center space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                    <Sparkles className="w-8 h-8 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground">Email enviado!</h3>
+                  <p className="text-muted-foreground">
+                    Verifique sua caixa de entrada e clique no link para redefinir sua senha.
+                  </p>
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('login')}
+                className="w-full text-center text-sm text-primary hover:underline"
+              >
+                Voltar para o login
+              </button>
+            </div>
           )}
         </div>
       </div>
