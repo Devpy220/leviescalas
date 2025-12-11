@@ -83,6 +83,15 @@ export default function MemberList({
 
       if (error) throw error;
 
+      // Update subscription quantity after member removal
+      try {
+        await supabase.functions.invoke('update-subscription-quantity', {
+          body: { departmentId },
+        });
+      } catch (subError) {
+        console.error('Error updating subscription:', subError);
+      }
+
       toast({
         title: 'Membro removido',
         description: `${selectedMember.profile.name} foi removido do departamento.`,

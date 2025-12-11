@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.customer-portal]
 verify_jwt = false
+
+[functions.update-subscription-quantity]
+verify_jwt = false

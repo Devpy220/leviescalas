@@ -111,6 +111,16 @@ export default function JoinDepartment() {
         throw error;
       }
 
+      // Update subscription quantity for new member
+      try {
+        await supabase.functions.invoke('update-subscription-quantity', {
+          body: { departmentId: department.id },
+        });
+      } catch (subError) {
+        console.error('Error updating subscription:', subError);
+        // Don't fail the join if subscription update fails
+      }
+
       setJoined(true);
       toast({
         title: 'Você entrou no departamento!',
