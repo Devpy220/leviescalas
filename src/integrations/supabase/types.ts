@@ -197,6 +197,44 @@ export type Database = {
           },
         ]
       }
+      payment_receipts: {
+        Row: {
+          department_id: string
+          id: string
+          notes: string | null
+          receipt_url: string
+          status: string
+          uploaded_at: string
+          user_id: string
+        }
+        Insert: {
+          department_id: string
+          id?: string
+          notes?: string | null
+          receipt_url: string
+          status?: string
+          uploaded_at?: string
+          user_id: string
+        }
+        Update: {
+          department_id?: string
+          id?: string
+          notes?: string | null
+          receipt_url?: string
+          status?: string
+          uploaded_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_receipts_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profile_access_audit: {
         Row: {
           accessed_at: string | null
