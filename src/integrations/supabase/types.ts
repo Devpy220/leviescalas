@@ -495,6 +495,15 @@ export type Database = {
         Args: { _department_id: string; _user_id: string }
         Returns: boolean
       }
+      join_department_by_invite: {
+        Args: { invite_code: string }
+        Returns: {
+          department_id: string
+          department_name: string
+          message: string
+          success: boolean
+        }[]
+      }
       log_billing_audit: {
         Args: {
           p_action: string
