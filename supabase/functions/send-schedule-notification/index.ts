@@ -42,6 +42,20 @@ const formatTime = (time: string): string => {
   return time.slice(0, 5);
 };
 
+// HTML escape helper to prevent XSS in email templates
+const escapeHtml = (str: string): string => {
+  return str.replace(/[&<>"']/g, (c) => {
+    const entities: Record<string, string> = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    };
+    return entities[c] || c;
+  });
+};
+
 // Send WhatsApp message via Twilio
 const sendWhatsAppMessage = async (to: string, message: string): Promise<{ success: boolean; error?: string }> => {
   if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_WHATSAPP_FROM) {
@@ -264,8 +278,8 @@ const handler = async (req: Request): Promise<Response> => {
               <h1>📅 Nova Escala</h1>
             </div>
             <div class="content">
-              <p class="greeting">Olá, <strong>${profile.name}</strong>!</p>
-              <p style="color: #52525b;">Você foi escalado para o departamento <strong>${department_name}</strong>:</p>
+              <p class="greeting">Olá, <strong>${escapeHtml(profile.name)}</strong>!</p>
+              <p style="color: #52525b;">Você foi escalado para o departamento <strong>${escapeHtml(department_name)}</strong>:</p>
               
               <div class="info-card">
                 <div class="info-row">
@@ -281,7 +295,7 @@ const handler = async (req: Request): Promise<Response> => {
               ${notes ? `
               <div class="notes">
                 <div class="notes-title">📝 Observações:</div>
-                <p style="margin: 0; color: #78350f;">${notes}</p>
+                <p style="margin: 0; color: #78350f;">${escapeHtml(notes)}</p>
               </div>
               ` : ''}
             </div>
@@ -322,8 +336,8 @@ const handler = async (req: Request): Promise<Response> => {
               <h1>⚠️ Alteração de Escala</h1>
             </div>
             <div class="content">
-              <p class="greeting">Olá, <strong>${profile.name}</strong>!</p>
-              <p style="color: #52525b;">Sua escala no departamento <strong>${department_name}</strong> foi alterada:</p>
+              <p class="greeting">Olá, <strong>${escapeHtml(profile.name)}</strong>!</p>
+              <p style="color: #52525b;">Sua escala no departamento <strong>${escapeHtml(department_name)}</strong> foi alterada:</p>
               
               <div class="change-card">
                 <p class="old-date">❌ De: ${formattedOldDate}</p>
