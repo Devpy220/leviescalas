@@ -495,6 +495,16 @@ export type Database = {
         Args: { _department_id: string; _user_id: string }
         Returns: boolean
       }
+      log_billing_audit: {
+        Args: {
+          p_action: string
+          p_department_id: string
+          p_ip_address?: string
+          p_user_agent?: string
+          p_user_id: string
+        }
+        Returns: string
+      }
       update_contact_privacy: { Args: { share: boolean }; Returns: undefined }
     }
     Enums: {
