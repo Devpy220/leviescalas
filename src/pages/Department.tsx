@@ -185,28 +185,33 @@ export default function Department() {
     if (!id) return;
     
     try {
-      const { data, error } = await supabase
+      // Fetch schedules
+      const { data: schedulesData, error: schedulesError } = await supabase
         .from('schedules')
-        .select(`
-          id,
-          user_id,
-          date,
-          time_start,
-          time_end,
-          notes,
-          profiles:user_id (
-            name,
-            avatar_url
-          )
-        `)
+        .select('id, user_id, date, time_start, time_end, notes')
         .eq('department_id', id)
         .order('date', { ascending: true });
 
-      if (error) throw error;
+      if (schedulesError) throw schedulesError;
+
+      // Get member profiles to map names
+      const { data: memberProfiles, error: profilesError } = await supabase
+        .rpc('get_department_member_profiles', { dept_id: id });
+
+      if (profilesError) throw profilesError;
+
+      // Create a map of user_id to profile
+      const profileMap = new Map<string, { name: string; avatar_url: string | null }>();
+      (memberProfiles || []).forEach((p: any) => {
+        profileMap.set(p.id, { 
+          name: p.name || 'Membro', 
+          avatar_url: p.avatar_url 
+        });
+      });
       
-      const formattedSchedules = (data || []).map(s => ({
+      const formattedSchedules = (schedulesData || []).map(s => ({
         ...s,
-        profile: s.profiles as unknown as Schedule['profile']
+        profile: profileMap.get(s.user_id) || { name: 'Membro', avatar_url: null }
       }));
       
       setSchedules(formattedSchedules);
