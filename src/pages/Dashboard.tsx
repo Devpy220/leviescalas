@@ -150,14 +150,13 @@ export default function Dashboard() {
         ...(memberRelations || []).map(r => r.department_id)
       ];
 
-      // Fetch member counts for all departments (only count role='member', not leaders)
+      // Fetch member counts for all departments (count all members including leader)
       const memberCounts: Record<string, number> = {};
       for (const deptId of allDeptIds) {
         const { count, error: countError } = await supabase
           .from('members')
           .select('*', { count: 'exact', head: true })
-          .eq('department_id', deptId)
-          .eq('role', 'member');
+          .eq('department_id', deptId);
         
         if (!countError) {
           memberCounts[deptId] = count || 0;
