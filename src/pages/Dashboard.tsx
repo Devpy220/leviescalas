@@ -482,7 +482,7 @@ function DepartmentCard({ department, colorIndex }: { department: DepartmentWith
 
   return (
     <Link to={`/departamento/${departmentSlug}`}>
-      <div className={`group bg-gradient-to-br ${cardColor} border rounded-2xl p-6 hover-lift cursor-pointer animate-fade-in`}>
+      <div className={`group bg-gradient-to-br ${cardColor} border rounded-2xl p-6 hover-lift cursor-pointer animate-fade-in shadow-lg shadow-black/5 dark:shadow-none`}>
         <div className="flex items-start justify-between mb-4">
           <div className={`w-12 h-12 rounded-xl overflow-hidden ${department.avatar_url ? '' : iconColor} flex items-center justify-center transition-transform group-hover:scale-110`}>
             {department.avatar_url ? (
