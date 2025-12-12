@@ -292,41 +292,44 @@ export default function Dashboard() {
         {/* Member Area Card */}
         <div className="grid md:grid-cols-2 gap-6 mb-10">
           {/* Profile Card */}
-          <div className="glass rounded-2xl p-6 border border-border/50">
-            <div className="flex items-center gap-4 mb-4">
-              <Avatar className="w-14 h-14 border-2 border-primary/20">
-                <AvatarFallback className="gradient-vibrant text-white text-xl font-medium">
-                  {user.email?.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <h3 className="font-display text-lg font-semibold text-foreground">
-                  Minha Conta
-                </h3>
-                <p className="text-sm text-muted-foreground truncate">
-                  {user.email}
-                </p>
+          <div className="relative group">
+            <div className="absolute inset-0 gradient-vibrant rounded-2xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity" />
+            <div className="relative glass rounded-2xl p-6 border border-border/50 hover-lift transition-all h-full">
+              <div className="flex items-center gap-4 mb-4">
+                <Avatar className="w-14 h-14 border-2 border-primary/20">
+                  <AvatarFallback className="gradient-vibrant text-white text-xl font-medium">
+                    {user.email?.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <h3 className="font-display text-lg font-semibold text-foreground">
+                    Minha Conta
+                  </h3>
+                  <p className="text-sm text-muted-foreground truncate">
+                    {user.email}
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/security')}
-                className="flex-1"
-              >
-                <Shield className="w-4 h-4 mr-2" />
-                Segurança
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/payment')}
-                className="flex-1"
-              >
-                <CreditCard className="w-4 h-4 mr-2" />
-                Pagamento
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/security')}
+                  className="flex-1"
+                >
+                  <Shield className="w-4 h-4 mr-2" />
+                  Segurança
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/payment')}
+                  className="flex-1"
+                >
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Pagamento
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -354,18 +357,21 @@ export default function Dashboard() {
               </div>
             </Link>
           ) : (
-            <div className="glass rounded-2xl p-6 border border-border/50 flex items-center">
-              <div className="flex items-center gap-4 w-full">
-                <div className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center">
-                  <User className="w-7 h-7 text-muted-foreground" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-display text-lg font-semibold text-foreground mb-1">
-                    Conta de Membro
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Para criar departamentos, registre uma nova conta.
-                  </p>
+            <div className="relative group h-full">
+              <div className="absolute inset-0 bg-muted/50 rounded-2xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity" />
+              <div className="relative glass rounded-2xl p-6 border border-border/50 hover-lift transition-all h-full flex items-center">
+                <div className="flex items-center gap-4 w-full">
+                  <div className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center transition-transform group-hover:scale-110">
+                    <User className="w-7 h-7 text-muted-foreground" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-display text-lg font-semibold text-foreground mb-1">
+                      Conta de Membro
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Para criar departamentos, registre uma nova conta.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -482,51 +488,54 @@ function DepartmentCard({ department, colorIndex }: { department: DepartmentWith
 
   return (
     <Link to={`/departamento/${departmentSlug}`}>
-      <div className={`group bg-gradient-to-br ${cardColor} border rounded-2xl p-6 hover-lift cursor-pointer animate-fade-in shadow-lg shadow-black/5 dark:shadow-none`}>
-        <div className="flex items-start justify-between mb-4">
-          <div className={`w-12 h-12 rounded-xl overflow-hidden ${department.avatar_url ? '' : iconColor} flex items-center justify-center transition-transform group-hover:scale-110`}>
-            {department.avatar_url ? (
-              <img src={department.avatar_url} alt={department.name} className="w-full h-full object-cover" />
-            ) : (
-              <Calendar className="w-6 h-6" />
-            )}
+      <div className="relative group h-full">
+        <div className={`absolute inset-0 bg-gradient-to-br ${cardColor} rounded-2xl blur-xl opacity-30 group-hover:opacity-50 transition-opacity`} />
+        <div className={`relative bg-gradient-to-br ${cardColor} border rounded-2xl p-6 hover-lift cursor-pointer animate-fade-in shadow-lg shadow-black/5 dark:shadow-none h-full`}>
+          <div className="flex items-start justify-between mb-4">
+            <div className={`w-12 h-12 rounded-xl overflow-hidden ${department.avatar_url ? '' : iconColor} flex items-center justify-center transition-transform group-hover:scale-110`}>
+              {department.avatar_url ? (
+                <img src={department.avatar_url} alt={department.name} className="w-full h-full object-cover" />
+              ) : (
+                <Calendar className="w-6 h-6" />
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {department.role === 'leader' && (
+                <div className="w-6 h-6 rounded-full gradient-vibrant flex items-center justify-center">
+                  <Crown className="w-3.5 h-3.5 text-white" />
+                </div>
+              )}
+              {status && (
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${status.bg}`}>
+                  {status.label}
+                </span>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            {department.role === 'leader' && (
-              <div className="w-6 h-6 rounded-full gradient-vibrant flex items-center justify-center">
-                <Crown className="w-3.5 h-3.5 text-white" />
-              </div>
-            )}
-            {status && (
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${status.bg}`}>
-                {status.label}
-              </span>
-            )}
+          
+          <h3 className="font-display text-lg font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
+            {department.name}
+          </h3>
+          
+          {department.description && (
+            <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+              {department.description}
+            </p>
+          )}
+          
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <Users className="w-4 h-4" />
+              <span>{department.member_count || 0} voluntário{(department.member_count || 0) !== 1 ? 's' : ''}</span>
+            </div>
           </div>
-        </div>
-        
-        <h3 className="font-display text-lg font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
-          {department.name}
-        </h3>
-        
-        {department.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-            {department.description}
-          </p>
-        )}
-        
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-1.5">
-            <Users className="w-4 h-4" />
-            <span>{department.member_count || 0} voluntário{(department.member_count || 0) !== 1 ? 's' : ''}</span>
+          
+          <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">
+              Criado em {new Date(department.created_at).toLocaleDateString('pt-BR')}
+            </span>
+            <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
           </div>
-        </div>
-        
-        <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between">
-          <span className="text-xs text-muted-foreground">
-            Criado em {new Date(department.created_at).toLocaleDateString('pt-BR')}
-          </span>
-          <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
         </div>
       </div>
     </Link>
