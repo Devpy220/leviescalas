@@ -29,8 +29,9 @@ interface Department {
   name: string;
   description: string | null;
   leader_id: string;
-  invite_code?: string | null; // Only available for leaders
-  subscription_status?: string | null; // Only available for leaders
+  invite_code?: string | null;
+  subscription_status?: string | null;
+  trial_ends_at?: string | null;
   created_at: string;
   member_count?: number;
   avatar_url?: string | null;
@@ -39,6 +40,16 @@ interface Department {
 interface DepartmentWithRole extends Department {
   role: 'leader' | 'member';
 }
+
+// Check if a date is within X days from now
+const isExpiringWithinDays = (dateStr: string | null | undefined, days: number): boolean => {
+  if (!dateStr) return false;
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffTime = date.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays >= 0 && diffDays <= days;
+};
 
 
 export default function Dashboard() {
@@ -183,6 +194,7 @@ export default function Dashboard() {
         leader_id: d.leader_id,
         invite_code: d.invite_code,
         subscription_status: d.subscription_status,
+        trial_ends_at: d.trial_ends_at,
         created_at: d.created_at,
         avatar_url: d.avatar_url || null,
         member_count: memberCounts[d.id] || 0,
@@ -207,6 +219,22 @@ export default function Dashboard() {
     navigate('/');
   };
 
+  // Check if any department has expiring trial or subscription (within 3 days)
+  const hasPaymentWarning = departments.some(dept => {
+    if (dept.role !== 'leader') return false;
+    
+    // Trial expiring soon
+    if (dept.subscription_status === 'trial' && isExpiringWithinDays(dept.trial_ends_at, 3)) {
+      return true;
+    }
+    
+    // Expired or cancelled subscription
+    if (dept.subscription_status === 'expired' || dept.subscription_status === 'cancelled') {
+      return true;
+    }
+    
+    return false;
+  });
 
   if (!user) {
     return (
@@ -234,11 +262,14 @@ export default function Dashboard() {
             <Button 
               variant="ghost" 
               size="icon" 
-              className="text-muted-foreground"
+              className="text-muted-foreground relative"
               onClick={() => navigate('/payment')}
               title="Pagamento"
             >
               <CreditCard className="w-5 h-5" />
+              {hasPaymentWarning && (
+                <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-destructive rounded-full animate-pulse" />
+              )}
             </Button>
             <Button 
               variant="ghost" 
