@@ -222,8 +222,6 @@ export default function Dashboard() {
     navigate('/');
   };
 
-  const leaderDepartments = departments.filter(d => d.role === 'leader');
-  const memberDepartments = departments.filter(d => d.role === 'member');
 
   if (!user) {
     return (
@@ -289,50 +287,8 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Member Area Card */}
-        <div className="grid md:grid-cols-2 gap-6 mb-10">
-          {/* Profile Card */}
-          <div className="relative group">
-            <div className="absolute inset-0 gradient-vibrant rounded-2xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity" />
-            <div className="relative glass rounded-2xl p-6 border border-border/50 hover-lift transition-all h-full">
-              <div className="flex items-center gap-4 mb-4">
-                <Avatar className="w-14 h-14 border-2 border-primary/20">
-                  <AvatarFallback className="gradient-vibrant text-white text-xl font-medium">
-                    {user.email?.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <h3 className="font-display text-lg font-semibold text-foreground">
-                    Minha Conta
-                  </h3>
-                  <p className="text-sm text-muted-foreground truncate">
-                    {user.email}
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate('/security')}
-                  className="flex-1"
-                >
-                  <Shield className="w-4 h-4 mr-2" />
-                  Segurança
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate('/payment')}
-                  className="flex-1"
-                >
-                  <CreditCard className="w-4 h-4 mr-2" />
-                  Pagamento
-                </Button>
-              </div>
-            </div>
-          </div>
-
+        {/* Department Cards Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
           {/* Create department CTA - Only for non-invited users */}
           {canCreateDepartment ? (
             <Link to="/departments/new" className="block">
@@ -358,8 +314,8 @@ export default function Dashboard() {
             </Link>
           ) : (
             <div className="relative group h-full">
-              <div className="absolute inset-0 bg-muted/50 rounded-2xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity" />
-              <div className="relative glass rounded-2xl p-6 border border-border/50 hover-lift transition-all h-full flex items-center">
+              <div className="absolute inset-0 gradient-vibrant rounded-2xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity" />
+              <div className="relative glass rounded-2xl p-6 border-2 border-dashed border-primary/30 transition-all hover-lift h-full flex items-center">
                 <div className="flex items-center gap-4 w-full">
                   <div className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center transition-transform group-hover:scale-110">
                     <User className="w-7 h-7 text-muted-foreground" />
@@ -376,90 +332,44 @@ export default function Dashboard() {
               </div>
             </div>
           )}
-        </div>
 
-        {loading ? (
-          <div className="space-y-6">
-            <Skeleton className="h-8 w-48" />
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
+          {/* Department cards aligned next to create card */}
+          {loading ? (
+            <>
+              {[1, 2].map((i) => (
                 <Skeleton key={i} className="h-48 rounded-2xl" />
               ))}
+            </>
+          ) : (
+            departments.map((dept, index) => (
+              <DepartmentCard key={dept.id} department={dept} colorIndex={index} />
+            ))
+          )}
+        </div>
+
+        {/* Empty state */}
+        {!loading && departments.length === 0 && (
+          <div className="text-center py-16">
+            <div className="w-20 h-20 rounded-2xl gradient-vibrant flex items-center justify-center mx-auto mb-6 opacity-50">
+              <Calendar className="w-10 h-10 text-white" />
             </div>
+            <h3 className="font-display text-xl font-semibold text-foreground mb-2">
+              Nenhum departamento ainda
+            </h3>
+            <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
+              {canCreateDepartment 
+                ? 'Crie seu primeiro departamento ou peça um convite para participar de um existente.'
+                : 'Peça um convite para participar de um departamento existente.'}
+            </p>
+            {canCreateDepartment && (
+              <Link to="/departments/new">
+                <Button className="gradient-vibrant text-white shadow-glow-sm hover:shadow-glow transition-all">
+                  <Plus className="w-5 h-5 mr-2" />
+                  Criar Departamento
+                </Button>
+              </Link>
+            )}
           </div>
-        ) : (
-          <>
-            {/* Leader departments */}
-            {leaderDepartments.length > 0 && (
-              <section className="mb-10">
-                <div className="flex items-center gap-2 mb-6">
-                  <div className="w-8 h-8 rounded-lg icon-violet flex items-center justify-center">
-                    <Crown className="w-4 h-4" />
-                  </div>
-                  <h2 className="font-display text-xl font-semibold text-foreground">
-                    Meus Departamentos
-                  </h2>
-                  <span className="px-2 py-0.5 rounded-full gradient-vibrant text-white text-sm font-medium">
-                    {leaderDepartments.length}
-                  </span>
-                </div>
-                
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {leaderDepartments.map((dept, index) => (
-                    <DepartmentCard key={dept.id} department={dept} colorIndex={index} />
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* Member departments */}
-            {memberDepartments.length > 0 && (
-              <section className="mb-10">
-                <div className="flex items-center gap-2 mb-6">
-                  <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
-                    <User className="w-4 h-4 text-muted-foreground" />
-                  </div>
-                  <h2 className="font-display text-xl font-semibold text-foreground">
-                    Participo Como Membro
-                  </h2>
-                  <span className="px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-sm font-medium">
-                    {memberDepartments.length}
-                  </span>
-                </div>
-                
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {memberDepartments.map((dept, index) => (
-                    <DepartmentCard key={dept.id} department={dept} colorIndex={index + leaderDepartments.length} />
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* Empty state */}
-            {departments.length === 0 && (
-              <div className="text-center py-16">
-                <div className="w-20 h-20 rounded-2xl gradient-vibrant flex items-center justify-center mx-auto mb-6 opacity-50">
-                  <Calendar className="w-10 h-10 text-white" />
-                </div>
-                <h3 className="font-display text-xl font-semibold text-foreground mb-2">
-                  Nenhum departamento ainda
-                </h3>
-                <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
-                  {canCreateDepartment 
-                    ? 'Crie seu primeiro departamento ou peça um convite para participar de um existente.'
-                    : 'Peça um convite para participar de um departamento existente.'}
-                </p>
-                {canCreateDepartment && (
-                  <Link to="/departments/new">
-                    <Button className="gradient-vibrant text-white shadow-glow-sm hover:shadow-glow transition-all">
-                      <Plus className="w-5 h-5 mr-2" />
-                      Criar Departamento
-                    </Button>
-                  </Link>
-                )}
-              </div>
-            )}
-          </>
         )}
       </main>
       
