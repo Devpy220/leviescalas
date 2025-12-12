@@ -12,7 +12,7 @@ export default function Payment() {
   const { toast } = useToast();
 
   // PIX key - Eduardo Lino da Silva
-  const pixKey = "b8bb0848-844b-467b-8422-382720b1e980";
+  const pixKey = "elinosilva47@gmail.com";
 
   const copyPixKey = async () => {
     await navigator.clipboard.writeText(pixKey);
