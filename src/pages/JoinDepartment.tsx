@@ -90,31 +90,39 @@ export default function JoinDepartment() {
       return;
     }
 
-    if (!department) return;
+    if (!inviteCode) return;
 
     setJoining(true);
 
     try {
-      const { error } = await supabase
-        .from('members')
-        .insert({
-          department_id: department.id,
-          user_id: user.id,
-          role: 'member',
-        });
+      // Use secure RPC function that validates invite code server-side
+      const { data, error } = await supabase
+        .rpc('join_department_by_invite', { invite_code: inviteCode })
+        .single();
 
-      if (error) {
-        if (error.code === '23505') {
+      if (error) throw error;
+
+      if (!data.success) {
+        if (data.message === 'Already a member of this department') {
           setAlreadyMember(true);
+          // Update department info from response
+          if (data.department_id && data.department_name) {
+            setDepartment(prev => prev ? { ...prev, id: data.department_id, name: data.department_name } : prev);
+          }
           return;
         }
-        throw error;
+        throw new Error(data.message || 'Failed to join department');
+      }
+
+      // Update department info from the secure response
+      if (data.department_id && data.department_name) {
+        setDepartment(prev => prev ? { ...prev, id: data.department_id, name: data.department_name } : prev);
       }
 
       // Update subscription quantity for new member
       try {
         await supabase.functions.invoke('update-subscription-quantity', {
-          body: { departmentId: department.id },
+          body: { departmentId: data.department_id },
         });
       } catch (subError) {
         console.error('Error updating subscription:', subError);
@@ -124,7 +132,7 @@ export default function JoinDepartment() {
       setJoined(true);
       toast({
         title: 'Você entrou no departamento!',
-        description: `Agora você faz parte de ${department.name}.`,
+        description: `Agora você faz parte de ${data.department_name}.`,
       });
     } catch (err) {
       console.error('Error joining department:', err);
