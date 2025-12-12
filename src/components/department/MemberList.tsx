@@ -60,6 +60,20 @@ interface MemberListProps {
   onInviteMember: () => void;
 }
 
+// Color palette for members - same as calendar
+const memberColors = [
+  '#6366F1', // Indigo
+  '#22C55E', // Green
+  '#F97316', // Orange
+  '#EC4899', // Pink
+  '#14B8A6', // Teal
+  '#A855F7', // Purple
+  '#EF4444', // Red
+  '#3B82F6', // Blue
+  '#FACC15', // Yellow
+  '#06B6D4', // Cyan
+];
+
 export default function MemberList({
   members,
   isLeader,
@@ -73,6 +87,12 @@ export default function MemberList({
   const [removing, setRemoving] = useState(false);
   const [contactInfo, setContactInfo] = useState<MemberContactInfo>({});
   const { toast } = useToast();
+
+  // Create a map of member user_id to color index
+  const getMemberColor = (userId: string): string => {
+    const memberIndex = members.findIndex(m => m.user_id === userId);
+    return memberColors[memberIndex % memberColors.length];
+  };
 
   // Leaders can fetch contact info for members
   const fetchContactInfo = useCallback(async (userId: string) => {
@@ -211,8 +231,11 @@ export default function MemberList({
               className="group relative bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-colors animate-fade-in"
             >
               <div className="flex items-start gap-3">
-                <Avatar className="w-12 h-12 border-2 border-primary/20">
-                  <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                <Avatar className="w-12 h-12 border-2" style={{ borderColor: `${getMemberColor(member.user_id)}40` }}>
+                  <AvatarFallback 
+                    className="text-white font-medium"
+                    style={{ backgroundColor: getMemberColor(member.user_id) }}
+                  >
                     {initials}
                   </AvatarFallback>
                 </Avatar>
