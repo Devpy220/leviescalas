@@ -40,21 +40,6 @@ interface DepartmentWithRole extends Department {
   role: 'leader' | 'member';
 }
 
-const cardColors = [
-  'from-violet-500/10 to-violet-600/5 border-violet-500/20',
-  'from-rose-500/10 to-rose-600/5 border-rose-500/20',
-  'from-emerald-500/10 to-emerald-600/5 border-emerald-500/20',
-  'from-amber-500/10 to-amber-600/5 border-amber-500/20',
-  'from-cyan-500/10 to-cyan-600/5 border-cyan-500/20',
-];
-
-const iconColors = [
-  'icon-violet',
-  'icon-rose',
-  'icon-emerald',
-  'icon-amber',
-  'icon-cyan',
-];
 
 export default function Dashboard() {
   const [departments, setDepartments] = useState<DepartmentWithRole[]>([]);
@@ -250,6 +235,15 @@ export default function Dashboard() {
               variant="ghost" 
               size="icon" 
               className="text-muted-foreground"
+              onClick={() => navigate('/payment')}
+              title="Pagamento"
+            >
+              <CreditCard className="w-5 h-5" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-muted-foreground"
               onClick={() => navigate('/security')}
               title="Segurança"
             >
@@ -341,8 +335,8 @@ export default function Dashboard() {
               ))}
             </>
           ) : (
-            departments.map((dept, index) => (
-              <DepartmentCard key={dept.id} department={dept} colorIndex={index} />
+            departments.map((dept) => (
+              <DepartmentCard key={dept.id} department={dept} />
             ))
           )}
         </div>
@@ -379,7 +373,7 @@ export default function Dashboard() {
   );
 }
 
-function DepartmentCard({ department, colorIndex }: { department: DepartmentWithRole; colorIndex: number }) {
+function DepartmentCard({ department }: { department: DepartmentWithRole }) {
   const statusConfig = {
     active: { bg: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400', label: 'Ativo' },
     trial: { bg: 'bg-amber-500/10 text-amber-600 dark:text-amber-400', label: 'Teste' },
@@ -391,22 +385,20 @@ function DepartmentCard({ department, colorIndex }: { department: DepartmentWith
   const status = department.subscription_status 
     ? (statusConfig[department.subscription_status as keyof typeof statusConfig] || statusConfig.pending)
     : null;
-  const cardColor = cardColors[colorIndex % cardColors.length];
-  const iconColor = iconColors[colorIndex % iconColors.length];
 
   const departmentSlug = slugify(department.name);
 
   return (
     <Link to={`/departamento/${departmentSlug}`}>
       <div className="relative group h-full">
-        <div className={`absolute inset-0 bg-gradient-to-br ${cardColor} rounded-2xl blur-xl opacity-30 group-hover:opacity-50 transition-opacity`} />
-        <div className={`relative bg-gradient-to-br ${cardColor} border rounded-2xl p-6 hover-lift cursor-pointer animate-fade-in shadow-lg shadow-black/5 dark:shadow-none h-full`}>
+        <div className="absolute inset-0 gradient-vibrant rounded-2xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity" />
+        <div className="relative glass rounded-2xl p-6 border-2 border-dashed border-primary/30 hover:border-primary/50 transition-all hover-lift h-full">
           <div className="flex items-start justify-between mb-4">
-            <div className={`w-12 h-12 rounded-xl overflow-hidden ${department.avatar_url ? '' : iconColor} flex items-center justify-center transition-transform group-hover:scale-110`}>
+            <div className={`w-12 h-12 rounded-xl overflow-hidden ${department.avatar_url ? '' : 'gradient-vibrant'} flex items-center justify-center shadow-glow-sm group-hover:shadow-glow transition-all`}>
               {department.avatar_url ? (
                 <img src={department.avatar_url} alt={department.name} className="w-full h-full object-cover" />
               ) : (
-                <Calendar className="w-6 h-6" />
+                <Calendar className="w-6 h-6 text-white" />
               )}
             </div>
             <div className="flex items-center gap-2">
