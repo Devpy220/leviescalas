@@ -83,7 +83,12 @@ export default function Payment() {
               {/* Beneficiary Info */}
               <div className="text-center text-sm text-muted-foreground">
                 <p className="font-medium text-foreground">EDUARDO LINO DA SILVA</p>
-                <p>Bradesco</p>
+                <div className="flex items-center justify-center gap-2 mt-1">
+                  <div className="w-5 h-5 rounded-full bg-[#FF7A00] flex items-center justify-center">
+                    <span className="text-white text-xs font-bold">i</span>
+                  </div>
+                  <span>Banco Inter</span>
+                </div>
               </div>
 
               {/* PIX Key */}
