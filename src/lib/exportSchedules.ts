@@ -64,7 +64,9 @@ export const exportToPDF = ({ schedules, departmentName, monthYear }: ExportOpti
     
     const formattedDate = format(parseISO(schedule.date), "dd/MM/yyyy (EEE)", { locale: ptBR });
     const timeRange = `${schedule.time_start.slice(0, 5)} - ${schedule.time_end.slice(0, 5)}`;
-    const memberName = schedule.profile?.name || 'Membro';
+    // Get first name only for cleaner display
+    const fullName = schedule.profile?.name || 'Membro';
+    const memberName = fullName.split(' ')[0];
     const notes = schedule.notes ? (schedule.notes.length > 20 ? schedule.notes.slice(0, 20) + '...' : schedule.notes) : '-';
     
     doc.text(formattedDate, 20, yPos);
@@ -100,14 +102,20 @@ export const exportToExcel = ({ schedules, departmentName, monthYear }: ExportOp
   );
 
   // Prepare data for Excel
-  const data = sortedSchedules.map((schedule) => ({
-    'Data': format(parseISO(schedule.date), "dd/MM/yyyy", { locale: ptBR }),
-    'Dia da Semana': format(parseISO(schedule.date), "EEEE", { locale: ptBR }),
-    'Membro': schedule.profile?.name || 'Membro',
-    'Início': schedule.time_start.slice(0, 5),
-    'Fim': schedule.time_end.slice(0, 5),
-    'Observações': schedule.notes || '',
-  }));
+  const data = sortedSchedules.map((schedule) => {
+    // Get first name only for cleaner display
+    const fullName = schedule.profile?.name || 'Membro';
+    const firstName = fullName.split(' ')[0];
+    
+    return {
+      'Data': format(parseISO(schedule.date), "dd/MM/yyyy", { locale: ptBR }),
+      'Dia da Semana': format(parseISO(schedule.date), "EEEE", { locale: ptBR }),
+      'Membro': firstName,
+      'Início': schedule.time_start.slice(0, 5),
+      'Fim': schedule.time_end.slice(0, 5),
+      'Observações': schedule.notes || '',
+    };
+  });
 
   // Create workbook and worksheet
   const wb = XLSX.utils.book_new();
