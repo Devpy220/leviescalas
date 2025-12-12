@@ -324,7 +324,7 @@ export default function Dashboard() {
                         Criar Novo Departamento
                       </h3>
                       <p className="text-muted-foreground">
-                        R$ 10,00/mês • 7 dias grátis
+                        R$ 25,00/mês • 7 dias grátis
                       </p>
                     </div>
                     <ChevronRight className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors" />

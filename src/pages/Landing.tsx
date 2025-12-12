@@ -212,7 +212,7 @@ export default function Landing() {
                     Por voluntário
                   </span>
                   <div className="flex items-baseline justify-center gap-2">
-                    <span className="text-5xl lg:text-6xl font-display font-bold text-gradient-vibrant">R$ 10</span>
+                    <span className="text-5xl lg:text-6xl font-display font-bold text-gradient-vibrant">R$ 25</span>
                     <span className="text-muted-foreground">/mês</span>
                   </div>
                   <p className="mt-2 text-muted-foreground">
