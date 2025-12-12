@@ -144,6 +144,26 @@ export default function Dashboard() {
 
       if (memberError) throw memberError;
 
+      // Get all department IDs to fetch member counts
+      const allDeptIds = [
+        ...(leaderDepts || []).map((d: any) => d.id),
+        ...(memberRelations || []).map(r => r.department_id)
+      ];
+
+      // Fetch member counts for all departments (only count role='member', not leaders)
+      const memberCounts: Record<string, number> = {};
+      for (const deptId of allDeptIds) {
+        const { count, error: countError } = await supabase
+          .from('members')
+          .select('*', { count: 'exact', head: true })
+          .eq('department_id', deptId)
+          .eq('role', 'member');
+        
+        if (!countError) {
+          memberCounts[deptId] = count || 0;
+        }
+      }
+
       // For member departments, use secure function to get basic info
       const memberDepartments: DepartmentWithRole[] = [];
       
@@ -164,6 +184,7 @@ export default function Dashboard() {
               leader_id: dept.leader_id,
               created_at: dept.created_at,
               avatar_url: dept.avatar_url || null,
+              member_count: memberCounts[dept.id] || 0,
               role: 'member' as const
             });
           }
@@ -180,6 +201,7 @@ export default function Dashboard() {
         subscription_status: d.subscription_status,
         created_at: d.created_at,
         avatar_url: d.avatar_url || null,
+        member_count: memberCounts[d.id] || 0,
         role: 'leader' as const
       }));
 
@@ -497,7 +519,7 @@ function DepartmentCard({ department, colorIndex }: { department: DepartmentWith
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-1.5">
             <Users className="w-4 h-4" />
-            <span>{department.member_count || 0} membros</span>
+            <span>{department.member_count || 0} voluntário{(department.member_count || 0) !== 1 ? 's' : ''}</span>
           </div>
         </div>
         
