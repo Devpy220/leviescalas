@@ -12,19 +12,25 @@ import { usePWAInstall } from '@/hooks/usePWAInstall';
 
 interface PWAInstallPromptProps {
   isFirstLogin?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function PWAInstallPrompt({ isFirstLogin = false }: PWAInstallPromptProps) {
-  const [showDialog, setShowDialog] = useState(false);
+export function PWAInstallPrompt({ isFirstLogin = false, open, onOpenChange }: PWAInstallPromptProps) {
+  const [internalShowDialog, setInternalShowDialog] = useState(false);
   const { isInstallable, install, dismissInstallPrompt, shouldShowInstallPrompt, isIOS, deviceType } = usePWAInstall();
 
+  // Use controlled or uncontrolled mode
+  const showDialog = open !== undefined ? open : internalShowDialog;
+  const setShowDialog = onOpenChange || setInternalShowDialog;
+
   useEffect(() => {
-    // Show on first login or if installable and not dismissed
-    if (isFirstLogin && shouldShowInstallPrompt()) {
-      const timer = setTimeout(() => setShowDialog(true), 1500);
+    // Show on first login or if installable and not dismissed (only for uncontrolled mode)
+    if (open === undefined && isFirstLogin && shouldShowInstallPrompt()) {
+      const timer = setTimeout(() => setInternalShowDialog(true), 1500);
       return () => clearTimeout(timer);
     }
-  }, [isFirstLogin, shouldShowInstallPrompt]);
+  }, [isFirstLogin, shouldShowInstallPrompt, open]);
 
   const handleInstall = async () => {
     if (isIOS) {

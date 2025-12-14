@@ -12,7 +12,8 @@ import {
   Loader2,
   Sparkles,
   CreditCard,
-  Settings2
+  Settings2,
+  Download
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -20,6 +21,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { NotificationBell } from '@/components/NotificationBell';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
@@ -62,6 +64,8 @@ export default function Dashboard() {
   const [userName, setUserName] = useState<string>('');
   const { user, authEvent, signOut } = useAuth();
   const { isAdmin } = useAdmin();
+  const { isInstallable, install, isIOS, shouldShowInstallPrompt } = usePWAInstall();
+  const [showInstallDialog, setShowInstallDialog] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -273,6 +277,18 @@ export default function Dashboard() {
                 <Settings2 className="w-5 h-5" />
               </Button>
             )}
+            {shouldShowInstallPrompt() && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="text-muted-foreground hover:text-primary relative"
+                onClick={() => setShowInstallDialog(true)}
+                title="Instalar App"
+              >
+                <Download className="w-5 h-5" />
+                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-primary rounded-full" />
+              </Button>
+            )}
             <Button 
               variant="ghost" 
               size="icon" 
@@ -413,7 +429,11 @@ export default function Dashboard() {
       </main>
       
       {/* PWA Install Prompt */}
-      <PWAInstallPrompt isFirstLogin={isFirstLogin} />
+      <PWAInstallPrompt 
+        isFirstLogin={isFirstLogin} 
+        open={showInstallDialog} 
+        onOpenChange={setShowInstallDialog} 
+      />
     </div>
   );
 }
