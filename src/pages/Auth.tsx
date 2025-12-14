@@ -38,7 +38,8 @@ const passwordSchema = z.string()
   .min(8, 'Senha deve ter no mínimo 8 caracteres')
   .regex(/[A-Z]/, 'Senha deve conter ao menos uma letra maiúscula')
   .regex(/[a-z]/, 'Senha deve conter ao menos uma letra minúscula')
-  .regex(/[!@#$%^&*(),.?":{}|<>]/, 'Senha deve conter ao menos um símbolo');
+  .regex(/\d/, 'Senha deve conter ao menos um número')
+  .regex(/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\;'`~]/, 'Senha deve conter ao menos um caractere especial');
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
