@@ -122,6 +122,22 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { user_id, department_id, date, time_start, time_end, notes, id: schedule_id } = record;
 
+    // Check if notification already exists for this schedule to prevent duplicates
+    const { data: existingNotification } = await supabaseAdmin
+      .from('notifications')
+      .select('id')
+      .eq('schedule_id', schedule_id)
+      .eq('type', 'new_schedule')
+      .maybeSingle();
+
+    if (existingNotification) {
+      console.log("Notification already exists for schedule:", schedule_id, "- skipping duplicate");
+      return new Response(
+        JSON.stringify({ success: true, message: "Notification already sent" }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     // Get user profile
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
