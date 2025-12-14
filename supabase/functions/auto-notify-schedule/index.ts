@@ -35,8 +35,13 @@ const escapeHtml = (str: string): string => {
 };
 
 const sendWhatsAppMessage = async (to: string, message: string): Promise<{ success: boolean; error?: string }> => {
+  console.log("=== WhatsApp Notification Attempt ===");
+  console.log("TWILIO_ACCOUNT_SID configured:", !!TWILIO_ACCOUNT_SID);
+  console.log("TWILIO_AUTH_TOKEN configured:", !!TWILIO_AUTH_TOKEN);
+  console.log("TWILIO_WHATSAPP_FROM configured:", !!TWILIO_WHATSAPP_FROM, TWILIO_WHATSAPP_FROM ? `(${TWILIO_WHATSAPP_FROM})` : '');
+  
   if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_WHATSAPP_FROM) {
-    console.log("Twilio credentials not configured");
+    console.log("Twilio credentials not configured - skipping WhatsApp");
     return { success: false, error: "Twilio not configured" };
   }
 
@@ -46,12 +51,16 @@ const sendWhatsAppMessage = async (to: string, message: string): Promise<{ succe
   }
   const whatsappTo = `whatsapp:+${formattedNumber}`;
 
-  console.log("Sending auto WhatsApp to:", whatsappTo);
+  console.log("Original number:", to);
+  console.log("Formatted WhatsApp To:", whatsappTo);
+  console.log("WhatsApp From:", TWILIO_WHATSAPP_FROM);
 
   try {
     const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`;
     const authString = btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
 
+    console.log("Calling Twilio API...");
+    
     const response = await fetch(twilioUrl, {
       method: "POST",
       headers: {
@@ -65,17 +74,23 @@ const sendWhatsAppMessage = async (to: string, message: string): Promise<{ succe
       }),
     });
 
+    const responseText = await response.text();
+    console.log("Twilio response status:", response.status);
+    console.log("Twilio response body:", responseText);
+
     if (!response.ok) {
-      const errorData = await response.text();
-      console.error("Twilio API error:", errorData);
-      return { success: false, error: errorData };
+      console.error("Twilio API error - Status:", response.status, "Body:", responseText);
+      // Common Twilio WhatsApp errors:
+      // 21608: The 'To' phone number is not currently opted in to receive messages from this number
+      // 63007: The recipient has not opted in to receive this message
+      return { success: false, error: responseText };
     }
 
-    const data = await response.json();
-    console.log("Auto WhatsApp sent:", data.sid);
+    const data = JSON.parse(responseText);
+    console.log("WhatsApp sent successfully! SID:", data.sid, "Status:", data.status);
     return { success: true };
   } catch (error: any) {
-    console.error("Error sending WhatsApp:", error);
+    console.error("Error sending WhatsApp:", error.message, error.stack);
     return { success: false, error: error.message };
   }
 };
