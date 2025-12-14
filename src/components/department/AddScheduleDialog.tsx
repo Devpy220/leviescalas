@@ -263,12 +263,12 @@ export default function AddScheduleDialog({
                 <Layers className="w-4 h-4 text-muted-foreground" />
                 Setor (opcional)
               </Label>
-              <Select value={selectedSector} onValueChange={setSelectedSector}>
+              <Select value={selectedSector} onValueChange={(value) => setSelectedSector(value === 'none' ? '' : value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione um setor" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhum setor</SelectItem>
+                  <SelectItem value="none">Nenhum setor</SelectItem>
                   {sectors.map((sector) => (
                     <SelectItem key={sector.id} value={sector.id}>
                       {sector.name}
