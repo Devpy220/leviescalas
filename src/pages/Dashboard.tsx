@@ -11,7 +11,8 @@ import {
   User,
   Loader2,
   Sparkles,
-  CreditCard
+  CreditCard,
+  Settings2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -60,16 +61,9 @@ export default function Dashboard() {
   const [canCreateDepartment, setCanCreateDepartment] = useState(true);
   const [userName, setUserName] = useState<string>('');
   const { user, authEvent, signOut } = useAuth();
-  const { isAdmin, loading: adminLoading } = useAdmin();
+  const { isAdmin } = useAdmin();
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  // Redirect admin users to admin page
-  useEffect(() => {
-    if (!adminLoading && isAdmin) {
-      navigate('/admin');
-    }
-  }, [isAdmin, adminLoading, navigate]);
 
   // Check if this is first login
   useEffect(() => {
@@ -268,6 +262,17 @@ export default function Dashboard() {
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <NotificationBell />
+            {isAdmin && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="text-muted-foreground hover:text-primary"
+                onClick={() => navigate('/admin')}
+                title="Painel Admin"
+              >
+                <Settings2 className="w-5 h-5" />
+              </Button>
+            )}
             <Button 
               variant="ghost" 
               size="icon" 
