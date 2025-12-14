@@ -78,10 +78,11 @@ type ResetPasswordForm = z.infer<typeof resetPasswordSchema>;
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') === 'register' ? 'register' : 'login';
-  const [activeTab, setActiveTab] = useState<'login' | 'register' | 'recovery' | 'reset-password' | '2fa-verify'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'login' | 'register' | 'recovery' | 'reset-password' | '2fa-verify' | '2fa-verify-password-reset'>(initialTab);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [recoveryEmailSent, setRecoveryEmailSent] = useState(false);
+  const [pendingPasswordReset, setPendingPasswordReset] = useState<string | null>(null);
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -269,18 +270,49 @@ export default function Auth() {
         setIsLoading(false);
         return;
       }
+
+      // Check if user has MFA enabled and needs AAL2
+      const { data: mfaData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
       
+      if (mfaData?.currentLevel === 'aal1' && mfaData?.nextLevel === 'aal2') {
+        // User has MFA enabled, need to verify 2FA first
+        setPendingPasswordReset(data.password);
+        setActiveTab('2fa-verify-password-reset');
+        setIsLoading(false);
+        return;
+      }
+      
+      await performPasswordReset(data.password);
+    } catch (err) {
+      console.error('Unexpected error:', err);
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Ocorreu um erro inesperado. Tente novamente.',
+      });
+      setIsLoading(false);
+    }
+  };
+
+  const performPasswordReset = async (password: string) => {
+    setIsLoading(true);
+    
+    try {
       const { error } = await supabase.auth.updateUser({
-        password: data.password,
+        password: password,
       });
 
       if (error) {
         console.error('Reset password error:', error);
-        const errorMessage = error.message.includes('expired')
-          ? 'Link de recuperação expirado. Solicite um novo.'
-          : error.message.includes('same')
-          ? 'A nova senha deve ser diferente da atual.'
-          : 'Não foi possível redefinir sua senha. Tente novamente.';
+        let errorMessage = 'Não foi possível redefinir sua senha. Tente novamente.';
+        
+        if (error.message.includes('expired')) {
+          errorMessage = 'Link de recuperação expirado. Solicite um novo.';
+        } else if (error.message.includes('same')) {
+          errorMessage = 'A nova senha deve ser diferente da atual.';
+        } else if (error.message.includes('insufficient_aal') || error.message.includes('AAL2')) {
+          errorMessage = 'Verificação 2FA necessária. Por favor, verifique seu autenticador.';
+        }
         
         toast({
           variant: 'destructive',
@@ -298,6 +330,7 @@ export default function Auth() {
       
       // Clear the hash and redirect
       window.location.hash = '';
+      setPendingPasswordReset(null);
       setActiveTab('login');
       
       // Sign out to force fresh login with new password
@@ -317,6 +350,17 @@ export default function Auth() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handle2FAPasswordResetSuccess = async () => {
+    if (pendingPasswordReset) {
+      await performPasswordReset(pendingPasswordReset);
+    }
+  };
+
+  const handle2FAPasswordResetCancel = () => {
+    setPendingPasswordReset(null);
+    setActiveTab('reset-password');
   };
 
   const handleGoogleSignIn = async () => {
@@ -394,7 +438,7 @@ export default function Auth() {
           </div>
 
           {/* Tabs */}
-          {activeTab !== 'recovery' && activeTab !== 'reset-password' && activeTab !== '2fa-verify' && (
+          {activeTab !== 'recovery' && activeTab !== 'reset-password' && activeTab !== '2fa-verify' && activeTab !== '2fa-verify-password-reset' && (
             <div className="flex gap-1 p-1 bg-muted rounded-xl mb-8">
               <button
                 onClick={() => setActiveTab('login')}
@@ -808,6 +852,22 @@ export default function Auth() {
               onSuccess={handle2FASuccess}
               onCancel={handle2FACancel}
             />
+          )}
+
+          {/* 2FA Verify for Password Reset */}
+          {activeTab === '2fa-verify-password-reset' && (
+            <div className="space-y-6 animate-fade-in">
+              <div className="mb-8">
+                <h2 className="text-2xl font-bold text-foreground mb-2">Verificação 2FA</h2>
+                <p className="text-muted-foreground">
+                  Como você tem autenticação de dois fatores ativada, por favor verifique sua identidade antes de redefinir a senha.
+                </p>
+              </div>
+              <TwoFactorVerify 
+                onSuccess={handle2FAPasswordResetSuccess}
+                onCancel={handle2FAPasswordResetCancel}
+              />
+            </div>
           )}
         </div>
       </div>
