@@ -153,33 +153,12 @@ export default function AddScheduleDialog({
 
       if (error) throw error;
 
-      // Send notification email
-      try {
-        await supabase.functions.invoke('send-schedule-notification', {
-          body: {
-            schedule_id: scheduleData.id,
-            user_id: selectedMember,
-            department_id: departmentId,
-            department_name: department?.name || 'Departamento',
-            date: format(date, 'yyyy-MM-dd'),
-            time_start: timeStart,
-            time_end: timeEnd,
-            notes: notes || undefined,
-            type: 'new_schedule'
-          }
-        });
-        
-        toast({
-          title: 'Escala criada',
-          description: 'Escala adicionada e notificação enviada!',
-        });
-      } catch (notifError) {
-        console.error('Error sending notification:', notifError);
-        toast({
-          title: 'Escala criada',
-          description: 'Escala adicionada, mas não foi possível enviar notificação.',
-        });
-      }
+      // Notification is sent automatically by database trigger (notify_on_schedule_insert)
+      // No need to call send-schedule-notification manually - this prevents duplicate notifications
+      toast({
+        title: 'Escala criada',
+        description: 'Escala adicionada e notificação enviada!',
+      });
       
       onScheduleCreated();
     } catch (error) {
