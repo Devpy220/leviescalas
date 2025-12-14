@@ -14,6 +14,7 @@ import CreateDepartment from "./pages/CreateDepartment";
 import JoinDepartment from "./pages/JoinDepartment";
 import Payment from "./pages/Payment";
 import Security from "./pages/Security";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
               <Route path="/join/:inviteCode" element={<JoinDepartment />} />
               <Route path="/payment" element={<Payment />} />
               <Route path="/security" element={<Security />} />
+              <Route path="/admin" element={<Admin />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

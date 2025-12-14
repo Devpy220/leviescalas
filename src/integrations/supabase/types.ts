@@ -353,11 +353,46 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      admin_delete_department: { Args: { dept_id: string }; Returns: boolean }
+      admin_delete_member: { Args: { member_id: string }; Returns: boolean }
+      get_all_departments_admin: {
+        Args: never
+        Returns: {
+          created_at: string
+          description: string
+          id: string
+          leader_id: string
+          leader_name: string
+          member_count: number
+          name: string
+        }[]
+      }
       get_billing_audit_logs: {
         Args: { dept_id: string; limit_count?: number }
         Returns: {
@@ -439,6 +474,17 @@ export type Database = {
           role: string
         }[]
       }
+      get_department_members_admin: {
+        Args: { dept_id: string }
+        Returns: {
+          email: string
+          id: string
+          joined_at: string
+          name: string
+          role: string
+          user_id: string
+        }[]
+      }
       get_department_secure: {
         Args: { dept_id: string }
         Returns: {
@@ -487,6 +533,13 @@ export type Database = {
           user_id: string
         }[]
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_department_leader: {
         Args: { _department_id: string; _user_id: string }
         Returns: boolean
@@ -517,6 +570,7 @@ export type Database = {
       update_contact_privacy: { Args: { share: boolean }; Returns: undefined }
     }
     Enums: {
+      app_role: "admin" | "user"
       member_role: "leader" | "member"
       notification_status: "pending" | "sent" | "failed"
       subscription_status:
@@ -652,6 +706,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "user"],
       member_role: ["leader", "member"],
       notification_status: ["pending", "sent", "failed"],
       subscription_status: [
