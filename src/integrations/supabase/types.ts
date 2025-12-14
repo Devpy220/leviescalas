@@ -300,6 +300,7 @@ export type Database = {
           department_id: string
           id: string
           notes: string | null
+          sector_id: string | null
           time_end: string
           time_start: string
           updated_at: string
@@ -312,6 +313,7 @@ export type Database = {
           department_id: string
           id?: string
           notes?: string | null
+          sector_id?: string | null
           time_end: string
           time_start: string
           updated_at?: string
@@ -324,6 +326,7 @@ export type Database = {
           department_id?: string
           id?: string
           notes?: string | null
+          sector_id?: string | null
           time_end?: string
           time_start?: string
           updated_at?: string
@@ -345,10 +348,52 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "schedules_sector_id_fkey"
+            columns: ["sector_id"]
+            isOneToOne: false
+            referencedRelation: "sectors"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "schedules_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sectors: {
+        Row: {
+          created_at: string
+          department_id: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department_id: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department_id?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sectors_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
             referencedColumns: ["id"]
           },
         ]

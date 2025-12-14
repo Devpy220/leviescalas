@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar as CalendarIcon, Clock, User, FileText } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, User, FileText, Layers } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -43,6 +43,12 @@ interface Member {
   };
 }
 
+interface Sector {
+  id: string;
+  name: string;
+  description: string | null;
+}
+
 interface AddScheduleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -62,6 +68,8 @@ export default function AddScheduleDialog({
 }: AddScheduleDialogProps) {
   const [date, setDate] = useState<Date | undefined>(selectedDate || new Date());
   const [selectedMember, setSelectedMember] = useState<string>('');
+  const [selectedSector, setSelectedSector] = useState<string>('');
+  const [sectors, setSectors] = useState<Sector[]>([]);
   const [timeStart, setTimeStart] = useState('09:00');
   const [timeEnd, setTimeEnd] = useState('17:00');
   const [notes, setNotes] = useState('');
@@ -76,14 +84,33 @@ export default function AddScheduleDialog({
   }, [selectedDate]);
 
   useEffect(() => {
-    if (!open) {
+    if (open) {
+      // Fetch sectors when dialog opens
+      fetchSectors();
+    } else {
       // Reset form when dialog closes
       setSelectedMember('');
+      setSelectedSector('');
       setTimeStart('09:00');
       setTimeEnd('17:00');
       setNotes('');
     }
   }, [open]);
+
+  const fetchSectors = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('sectors')
+        .select('id, name, description')
+        .eq('department_id', departmentId)
+        .order('name');
+
+      if (error) throw error;
+      setSectors(data || []);
+    } catch (error) {
+      console.error('Error fetching sectors:', error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,6 +143,7 @@ export default function AddScheduleDialog({
       const { data: scheduleData, error } = await supabase.from('schedules').insert({
         department_id: departmentId,
         user_id: selectedMember,
+        sector_id: selectedSector || null,
         date: format(date, 'yyyy-MM-dd'),
         time_start: timeStart,
         time_end: timeEnd,
@@ -227,6 +255,29 @@ export default function AddScheduleDialog({
               </SelectContent>
             </Select>
           </div>
+
+          {/* Sector Select */}
+          {sectors.length > 0 && (
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-muted-foreground" />
+                Setor (opcional)
+              </Label>
+              <Select value={selectedSector} onValueChange={setSelectedSector}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um setor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Nenhum setor</SelectItem>
+                  {sectors.map((sector) => (
+                    <SelectItem key={sector.id} value={sector.id}>
+                      {sector.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Time Inputs */}
           <div className="grid grid-cols-2 gap-4">
