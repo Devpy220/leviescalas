@@ -20,6 +20,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { NotificationBell } from '@/components/NotificationBell';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { useAuth } from '@/hooks/useAuth';
+import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { slugify } from '@/lib/slugify';
@@ -59,8 +60,16 @@ export default function Dashboard() {
   const [canCreateDepartment, setCanCreateDepartment] = useState(true);
   const [userName, setUserName] = useState<string>('');
   const { user, authEvent, signOut } = useAuth();
+  const { isAdmin, loading: adminLoading } = useAdmin();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Redirect admin users to admin page
+  useEffect(() => {
+    if (!adminLoading && isAdmin) {
+      navigate('/admin');
+    }
+  }, [isAdmin, adminLoading, navigate]);
 
   // Check if this is first login
   useEffect(() => {
