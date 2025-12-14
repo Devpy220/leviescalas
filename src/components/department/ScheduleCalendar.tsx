@@ -75,6 +75,8 @@ interface ScheduleCalendarProps {
   departmentId: string;
   onAddSchedule: (date?: Date) => void;
   onDeleteSchedule: () => void;
+  fixedMonth?: Date; // If provided, navigation is disabled and this month is shown
+  title?: string; // Optional custom title
 }
 
 export default function ScheduleCalendar({ 
@@ -83,9 +85,12 @@ export default function ScheduleCalendar({
   isLeader, 
   departmentId,
   onAddSchedule,
-  onDeleteSchedule 
+  onDeleteSchedule,
+  fixedMonth,
+  title
 }: ScheduleCalendarProps) {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(fixedMonth || new Date());
+  const isNavigationEnabled = !fixedMonth;
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -211,37 +216,37 @@ export default function ScheduleCalendar({
       {/* Calendar Header */}
       <div className="flex items-center justify-between">
         <h2 className="font-display text-lg font-bold text-foreground capitalize">
-          {format(currentMonth, 'MMM yyyy', { locale: ptBR })}
+          {title || format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
         </h2>
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 text-xs"
-            onClick={() => setCurrentMonth(new Date())}
-          >
-            Hoje
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-          >
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-        </div>
+        {isNavigationEnabled && (
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 text-xs"
+              onClick={() => setCurrentMonth(new Date())}
+            >
+              Hoje
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
       </div>
-
-      {/* Compact Calendar Grid */}
       <div className="bg-card border border-border rounded-xl overflow-hidden">
         {/* Week Days Header */}
         <div className="grid grid-cols-7 border-b border-border">

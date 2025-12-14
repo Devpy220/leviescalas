@@ -35,7 +35,7 @@ import InviteMemberDialog from '@/components/department/InviteMemberDialog';
 import DepartmentAvatar from '@/components/department/DepartmentAvatar';
 import DepartmentSettingsDialog from '@/components/department/DepartmentSettingsDialog';
 import { exportToPDF, exportToExcel } from '@/lib/exportSchedules';
-import { format } from 'date-fns';
+import { format, addMonths, startOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface Department {
@@ -396,14 +396,43 @@ export default function Department() {
           </div>
 
           <TabsContent value="calendar" className="mt-6">
-            <ScheduleCalendar 
-              schedules={schedules}
-              members={members}
-              isLeader={isLeader}
-              onAddSchedule={handleAddSchedule}
-              onDeleteSchedule={handleScheduleDeleted}
-              departmentId={id!}
-            />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Current Month Calendar */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-2 h-2 rounded-full bg-primary" />
+                  <span className="text-sm font-medium text-muted-foreground">Mês Atual</span>
+                </div>
+                <ScheduleCalendar 
+                  schedules={schedules}
+                  members={members}
+                  isLeader={isLeader}
+                  onAddSchedule={handleAddSchedule}
+                  onDeleteSchedule={handleScheduleDeleted}
+                  departmentId={id!}
+                  fixedMonth={startOfMonth(new Date())}
+                  title={format(new Date(), "MMMM 'de' yyyy", { locale: ptBR })}
+                />
+              </div>
+
+              {/* Next Month Calendar */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-2 h-2 rounded-full bg-accent" />
+                  <span className="text-sm font-medium text-muted-foreground">Próximo Mês</span>
+                </div>
+                <ScheduleCalendar 
+                  schedules={schedules}
+                  members={members}
+                  isLeader={isLeader}
+                  onAddSchedule={handleAddSchedule}
+                  onDeleteSchedule={handleScheduleDeleted}
+                  departmentId={id!}
+                  fixedMonth={startOfMonth(addMonths(new Date(), 1))}
+                  title={format(addMonths(new Date(), 1), "MMMM 'de' yyyy", { locale: ptBR })}
+                />
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="members" className="mt-6">
