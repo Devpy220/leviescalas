@@ -50,10 +50,14 @@ interface Schedule {
   time_start: string;
   time_end: string;
   notes: string | null;
+  sector_id: string | null;
   profile?: {
     name: string;
     avatar_url: string | null;
   };
+  sector?: {
+    name: string;
+  } | null;
 }
 
 interface Member {
@@ -373,6 +377,9 @@ export default function ScheduleCalendar({
                         </Avatar>
                         <div>
                           <p className="text-sm font-medium">{schedule.profile?.name || 'Membro'}</p>
+                          {schedule.sector && (
+                            <p className="text-xs text-primary font-medium">{schedule.sector.name}</p>
+                          )}
                           <div className="flex items-center gap-1 text-xs text-muted-foreground">
                             <Clock className="w-3 h-3" />
                             <span>{schedule.time_start.slice(0, 5)} - {schedule.time_end.slice(0, 5)}</span>

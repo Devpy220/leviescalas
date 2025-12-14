@@ -30,11 +30,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import ScheduleCalendar from '@/components/department/ScheduleCalendar';
 import MemberList from '@/components/department/MemberList';
+import SectorManagement from '@/components/department/SectorManagement';
 import AddScheduleDialog from '@/components/department/AddScheduleDialog';
 import InviteMemberDialog from '@/components/department/InviteMemberDialog';
 import DepartmentAvatar from '@/components/department/DepartmentAvatar';
 import DepartmentSettingsDialog from '@/components/department/DepartmentSettingsDialog';
 import { exportToPDF, exportToExcel } from '@/lib/exportSchedules';
+import { Layers } from 'lucide-react';
 import { format, addMonths, startOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -70,10 +72,14 @@ interface Schedule {
   time_start: string;
   time_end: string;
   notes: string | null;
+  sector_id: string | null;
   profile?: {
     name: string;
     avatar_url: string | null;
   };
+  sector?: {
+    name: string;
+  } | null;
 }
 
 export default function Department() {
@@ -185,10 +191,10 @@ export default function Department() {
     if (!id) return;
     
     try {
-      // Fetch schedules
+      // Fetch schedules with sectors
       const { data: schedulesData, error: schedulesError } = await supabase
         .from('schedules')
-        .select('id, user_id, date, time_start, time_end, notes')
+        .select('id, user_id, date, time_start, time_end, notes, sector_id, sectors(name)')
         .eq('department_id', id)
         .order('date', { ascending: true });
 
@@ -209,9 +215,16 @@ export default function Department() {
         });
       });
       
-      const formattedSchedules = (schedulesData || []).map(s => ({
-        ...s,
-        profile: profileMap.get(s.user_id) || { name: 'Membro', avatar_url: null }
+      const formattedSchedules = (schedulesData || []).map((s: any) => ({
+        id: s.id,
+        user_id: s.user_id,
+        date: s.date,
+        time_start: s.time_start,
+        time_end: s.time_end,
+        notes: s.notes,
+        sector_id: s.sector_id,
+        profile: profileMap.get(s.user_id) || { name: 'Membro', avatar_url: null },
+        sector: s.sectors ? { name: s.sectors.name } : null
       }));
       
       setSchedules(formattedSchedules);
@@ -345,6 +358,10 @@ export default function Department() {
                 <Calendar className="w-4 h-4" />
                 <span>Calendário</span>
               </TabsTrigger>
+              <TabsTrigger value="sectors" className="gap-2 data-[state=active]:gradient-vibrant data-[state=active]:text-white">
+                <Layers className="w-4 h-4" />
+                <span>Setores</span>
+              </TabsTrigger>
               <TabsTrigger value="members" className="gap-2 data-[state=active]:gradient-vibrant data-[state=active]:text-white">
                 <Users className="w-4 h-4" />
                 <span>Membros</span>
@@ -432,6 +449,15 @@ export default function Department() {
                   title={format(addMonths(new Date(), 1), "MMMM 'de' yyyy", { locale: ptBR })}
                 />
               </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="sectors" className="mt-6">
+            <div className="max-w-2xl">
+              <SectorManagement 
+                departmentId={id!}
+                isLeader={isLeader}
+              />
             </div>
           </TabsContent>
 
