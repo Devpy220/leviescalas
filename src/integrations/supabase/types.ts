@@ -128,13 +128,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "members_department_id_fkey"
-            columns: ["department_id"]
-            isOneToOne: false
-            referencedRelation: "departments_member_view"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "members_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -189,13 +182,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "notifications_department_id_fkey"
-            columns: ["department_id"]
-            isOneToOne: false
-            referencedRelation: "departments_member_view"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "notifications_schedule_id_fkey"
             columns: ["schedule_id"]
             isOneToOne: false
@@ -245,13 +231,6 @@ export type Database = {
             columns: ["department_id"]
             isOneToOne: false
             referencedRelation: "departments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "payment_receipts_department_id_fkey"
-            columns: ["department_id"]
-            isOneToOne: false
-            referencedRelation: "departments_member_view"
             referencedColumns: ["id"]
           },
         ]
@@ -369,13 +348,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "schedules_department_id_fkey"
-            columns: ["department_id"]
-            isOneToOne: false
-            referencedRelation: "departments_member_view"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "schedules_sector_id_fkey"
             columns: ["sector_id"]
             isOneToOne: false
@@ -424,13 +396,6 @@ export type Database = {
             referencedRelation: "departments"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "sectors_department_id_fkey"
-            columns: ["department_id"]
-            isOneToOne: false
-            referencedRelation: "departments_member_view"
-            referencedColumns: ["id"]
-          },
         ]
       }
       user_roles: {
@@ -456,53 +421,7 @@ export type Database = {
       }
     }
     Views: {
-      departments_member_view: {
-        Row: {
-          avatar_url: string | null
-          created_at: string | null
-          description: string | null
-          id: string | null
-          leader_id: string | null
-          name: string | null
-          subscription_status:
-            | Database["public"]["Enums"]["subscription_status"]
-            | null
-          updated_at: string | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string | null
-          leader_id?: string | null
-          name?: string | null
-          subscription_status?:
-            | Database["public"]["Enums"]["subscription_status"]
-            | null
-          updated_at?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          created_at?: string | null
-          description?: string | null
-          id?: string | null
-          leader_id?: string | null
-          name?: string | null
-          subscription_status?:
-            | Database["public"]["Enums"]["subscription_status"]
-            | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "departments_leader_id_fkey"
-            columns: ["leader_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
       admin_delete_department: { Args: { dept_id: string }; Returns: boolean }
