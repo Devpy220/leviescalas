@@ -438,6 +438,16 @@ export type Database = {
           name: string
         }[]
       }
+      get_all_profiles_admin: {
+        Args: never
+        Returns: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+          whatsapp: string
+        }[]
+      }
       get_billing_audit_logs: {
         Args: { dept_id: string; limit_count?: number }
         Returns: {

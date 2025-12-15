@@ -33,6 +33,14 @@ interface Member {
   joined_at: string;
 }
 
+interface Profile {
+  id: string;
+  name: string;
+  email: string;
+  whatsapp: string;
+  created_at: string;
+}
+
 export default function Admin() {
   const { user, signOut, loading: authLoading } = useAuth();
   const { isAdmin, loading: adminLoading, adminEmail } = useAdmin();
@@ -44,7 +52,8 @@ export default function Admin() {
   const [members, setMembers] = useState<Record<string, Member[]>>({});
   const [loadingMembers, setLoadingMembers] = useState<Record<string, boolean>>({});
   const [deleting, setDeleting] = useState(false);
-  const [totalProfiles, setTotalProfiles] = useState<number>(0);
+  const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
+  const [loadingProfiles, setLoadingProfiles] = useState(true);
 
   useEffect(() => {
     if (authLoading || adminLoading) return;
@@ -60,16 +69,24 @@ export default function Admin() {
     }
 
     fetchDepartments();
-    fetchTotalProfiles();
+    fetchAllProfiles();
   }, [user, isAdmin, authLoading, adminLoading]);
 
-  const fetchTotalProfiles = async () => {
+  const fetchAllProfiles = async () => {
+    setLoadingProfiles(true);
     try {
-      const { data, error } = await supabase.rpc('get_user_count');
+      const { data, error } = await supabase.rpc('get_all_profiles_admin');
       if (error) throw error;
-      setTotalProfiles(data || 0);
+      setAllProfiles(data || []);
     } catch (error) {
-      console.error('Error fetching total profiles:', error);
+      console.error('Error fetching profiles:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível carregar os voluntários.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoadingProfiles(false);
     }
   };
 
@@ -240,7 +257,7 @@ export default function Admin() {
               <CardDescription>Voluntários Cadastrados</CardDescription>
               <CardTitle className="text-3xl flex items-center gap-2">
                 <Users className="w-6 h-6 text-primary" />
-                {totalProfiles}
+                {allProfiles.length}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -263,6 +280,53 @@ export default function Admin() {
             </CardHeader>
           </Card>
         </div>
+
+        {/* All Volunteers List */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              Todos os Voluntários
+            </CardTitle>
+            <CardDescription>
+              Lista de todos os voluntários cadastrados na plataforma
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loadingProfiles ? (
+              <div className="flex justify-center py-4">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            ) : allProfiles.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                Nenhum voluntário cadastrado.
+              </p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>WhatsApp</TableHead>
+                    <TableHead>Cadastrado em</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {allProfiles.map((profile) => (
+                    <TableRow key={profile.id}>
+                      <TableCell className="font-medium">{profile.name || 'Sem nome'}</TableCell>
+                      <TableCell>{profile.email}</TableCell>
+                      <TableCell>{profile.whatsapp || '-'}</TableCell>
+                      <TableCell>
+                        {format(new Date(profile.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Departments List */}
         <Card>
