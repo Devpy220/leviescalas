@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { DemoTour } from '@/components/DemoTour';
+import { useUserCount } from '@/hooks/useUserCount';
 import { 
   Calendar, 
   Users, 
@@ -67,6 +68,7 @@ const pricingFeatures = [
 
 export default function Landing() {
   const [showDemo, setShowDemo] = useState(false);
+  const { count, loading: countLoading } = useUserCount();
 
   return (
     <div className="min-h-screen bg-background">
@@ -145,6 +147,29 @@ export default function Landing() {
             <p className="mt-4 text-sm text-muted-foreground">
               Sem cartão de crédito • Configuração em 2 minutos
             </p>
+
+            {/* User Counter */}
+            <div className="mt-8 flex items-center justify-center gap-3">
+              <div className="flex -space-x-2">
+                {[...Array(4)].map((_, i) => (
+                  <div 
+                    key={i} 
+                    className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/80 to-primary border-2 border-background flex items-center justify-center"
+                  >
+                    <Users className="w-4 h-4 text-white" />
+                  </div>
+                ))}
+              </div>
+              <div className="text-left">
+                <div className="flex items-center gap-1">
+                  <span className="text-2xl font-bold text-gradient-vibrant">
+                    {countLoading ? '...' : (count || 0).toLocaleString('pt-BR')}
+                  </span>
+                  <span className="text-sm text-muted-foreground">+</span>
+                </div>
+                <p className="text-xs text-muted-foreground">voluntários cadastrados</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
