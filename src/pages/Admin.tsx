@@ -44,6 +44,7 @@ export default function Admin() {
   const [members, setMembers] = useState<Record<string, Member[]>>({});
   const [loadingMembers, setLoadingMembers] = useState<Record<string, boolean>>({});
   const [deleting, setDeleting] = useState(false);
+  const [totalProfiles, setTotalProfiles] = useState<number>(0);
 
   useEffect(() => {
     if (authLoading || adminLoading) return;
@@ -59,7 +60,18 @@ export default function Admin() {
     }
 
     fetchDepartments();
+    fetchTotalProfiles();
   }, [user, isAdmin, authLoading, adminLoading]);
+
+  const fetchTotalProfiles = async () => {
+    try {
+      const { data, error } = await supabase.rpc('get_user_count');
+      if (error) throw error;
+      setTotalProfiles(data || 0);
+    } catch (error) {
+      console.error('Error fetching total profiles:', error);
+    }
+  };
 
   const fetchDepartments = async () => {
     try {
@@ -222,7 +234,16 @@ export default function Admin() {
         </Card>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Voluntários Cadastrados</CardDescription>
+              <CardTitle className="text-3xl flex items-center gap-2">
+                <Users className="w-6 h-6 text-primary" />
+                {totalProfiles}
+              </CardTitle>
+            </CardHeader>
+          </Card>
           <Card>
             <CardHeader className="pb-2">
               <CardDescription>Total de Departamentos</CardDescription>
@@ -234,7 +255,7 @@ export default function Admin() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardDescription>Total de Membros</CardDescription>
+              <CardDescription>Membros em Departamentos</CardDescription>
               <CardTitle className="text-3xl flex items-center gap-2">
                 <Users className="w-6 h-6 text-primary" />
                 {departments.reduce((acc, d) => acc + d.member_count, 0)}
