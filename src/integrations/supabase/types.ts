@@ -613,6 +613,13 @@ export type Database = {
         Returns: string
       }
       update_contact_privacy: { Args: { share: boolean }; Returns: undefined }
+      validate_invite_code_secure: {
+        Args: { code: string }
+        Returns: {
+          department_name: string
+          is_valid: boolean
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "user"
