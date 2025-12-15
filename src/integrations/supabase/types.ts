@@ -578,6 +578,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_user_count: { Args: never; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
