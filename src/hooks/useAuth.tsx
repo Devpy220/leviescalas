@@ -19,14 +19,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [authEvent, setAuthEvent] = useState<AuthChangeEvent | null>(null);
-  
+
   // Refs to prevent duplicate operations
   const lastTokenRefresh = useRef<number>(0);
+  const refreshTimeoutRef = useRef<number | null>(null);
+  const refreshInFlightRef = useRef(false);
+
+  const clearRefreshTimer = useCallback(() => {
+    if (refreshTimeoutRef.current) {
+      window.clearTimeout(refreshTimeoutRef.current);
+      refreshTimeoutRef.current = null;
+    }
+  }, []);
+
+  const scheduleNextRefresh = useCallback((sess: Session | null) => {
+    clearRefreshTimer();
+
+    if (!sess?.expires_at) return;
+
+    const nowSec = Math.floor(Date.now() / 1000);
+    // Refresh ~60s before expiry (min 10s)
+    const secondsUntilRefresh = Math.max(sess.expires_at - nowSec - 60, 10);
+
+    refreshTimeoutRef.current = window.setTimeout(async () => {
+      if (refreshInFlightRef.current) return;
+      refreshInFlightRef.current = true;
+
+      try {
+        const { data, error } = await supabase.auth.refreshSession();
+        if (error) throw error;
+        // If we got a new session, schedule next refresh
+        scheduleNextRefresh(data.session ?? null);
+      } catch (e) {
+        // Backoff on rate limit / transient failures
+        refreshTimeoutRef.current = window.setTimeout(() => {
+          refreshInFlightRef.current = false;
+          scheduleNextRefresh(sess);
+        }, 30000);
+        return;
+      } finally {
+        refreshInFlightRef.current = false;
+      }
+    }, secondsUntilRefresh * 1000);
+  }, [clearRefreshTimer]);
 
   useEffect(() => {
-    // Ensure we never keep multiple auto-refresh loops alive (dev StrictMode/HMR can otherwise duplicate it)
-    supabase.auth.stopAutoRefresh();
-
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
@@ -41,6 +78,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         setLoading(false);
+
+        scheduleNextRefresh(currentSession ?? null);
       }
     );
 
@@ -49,16 +88,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(existingSession);
       setUser(existingSession?.user ?? null);
       setLoading(false);
+      scheduleNextRefresh(existingSession ?? null);
     });
-
-    // Start refresh loop exactly once
-    supabase.auth.startAutoRefresh();
 
     return () => {
       subscription.unsubscribe();
-      supabase.auth.stopAutoRefresh();
+      clearRefreshTimer();
     };
-  }, []);
+  }, [clearRefreshTimer, scheduleNextRefresh]);
 
   const signUp = useCallback(async (email: string, password: string, name: string, whatsapp: string) => {
     try {
