@@ -21,27 +21,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authEvent, setAuthEvent] = useState<AuthChangeEvent | null>(null);
   
   // Refs to prevent duplicate operations
-  const initialized = useRef(false);
   const lastTokenRefresh = useRef<number>(0);
 
   useEffect(() => {
-    // Prevent double initialization in StrictMode
-    if (initialized.current) return;
-    initialized.current = true;
+    // Ensure we never keep multiple auto-refresh loops alive (dev StrictMode/HMR can otherwise duplicate it)
+    supabase.auth.stopAutoRefresh();
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
-        // Debounce TOKEN_REFRESHED events - ignore if less than 1 second since last one
+        // Debounce TOKEN_REFRESHED events - ignore if less than 2 seconds since last one
         if (event === 'TOKEN_REFRESHED') {
           const now = Date.now();
-          if (now - lastTokenRefresh.current < 1000) {
-            return; // Skip this event, too soon
-          }
+          if (now - lastTokenRefresh.current < 2000) return;
           lastTokenRefresh.current = now;
         }
-        
-        // Only update state if there's an actual change
+
         setAuthEvent(event);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
@@ -56,9 +51,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
+    // Start refresh loop exactly once
+    supabase.auth.startAutoRefresh();
+
     return () => {
       subscription.unsubscribe();
-      initialized.current = false;
+      supabase.auth.stopAutoRefresh();
     };
   }, []);
 
