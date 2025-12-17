@@ -47,10 +47,27 @@ interface Department {
   leader_id: string;
   invite_code: string;
   subscription_status: string;
+  trial_ends_at: string | null;
   created_at: string;
   avatar_url: string | null;
   stripe_customer_id: string | null;
 }
+
+// Check if trial has expired
+const isTrialExpired = (status: string | null, trialEndsAt: string | null): boolean => {
+  if (status !== 'trial' || !trialEndsAt) return false;
+  return new Date(trialEndsAt) < new Date();
+};
+
+// Check if subscription is inactive
+const isSubscriptionInactive = (status: string | null, trialEndsAt: string | null): boolean => {
+  if (status === 'active') return false;
+  if (status === 'expired' || status === 'cancelled') return true;
+  if (status === 'trial' && trialEndsAt) {
+    return new Date(trialEndsAt) < new Date();
+  }
+  return false;
+};
 
 interface Member {
   id: string;
@@ -125,6 +142,19 @@ export default function Department() {
 
       if (error) throw error;
       if (!data) throw new Error('Department not found');
+
+      // Check if subscription is inactive (expired trial or cancelled)
+      const subscriptionInactive = isSubscriptionInactive(data.subscription_status, data.trial_ends_at);
+      
+      if (subscriptionInactive && data.leader_id === user?.id) {
+        toast({
+          variant: 'destructive',
+          title: 'Assinatura expirada',
+          description: 'Seu período de teste expirou. Renove para continuar usando.',
+        });
+        navigate('/payment');
+        return;
+      }
       
       setDepartment({
         id: data.id,
@@ -133,6 +163,7 @@ export default function Department() {
         leader_id: data.leader_id,
         invite_code: data.invite_code || '',
         subscription_status: data.subscription_status,
+        trial_ends_at: data.trial_ends_at || null,
         created_at: data.created_at,
         avatar_url: (data as any).avatar_url || null,
         stripe_customer_id: data.stripe_customer_id || null
