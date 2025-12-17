@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
-const ADMIN_EMAIL = 'leviescalas@gmail.com';
-
 export function useAdmin() {
   const { user, loading: authLoading } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
@@ -18,36 +16,22 @@ export function useAdmin() {
       return;
     }
 
-    // Check if user email matches admin email
-    if (user.email !== ADMIN_EMAIL) {
-      setIsAdmin(false);
-      setLoading(false);
-      return;
-    }
-
-    checkAndSetupAdmin();
+    checkAdminStatus();
   }, [user, authLoading]);
 
-  const checkAndSetupAdmin = async () => {
+  const checkAdminStatus = async () => {
     if (!user) return;
 
     try {
-      // Check if user has admin role using RPC
-      const { data: hasRole } = await supabase
+      // Check if user has admin role using server-side RPC only
+      const { data: hasRole, error } = await supabase
         .rpc('has_role', { _user_id: user.id, _role: 'admin' });
 
-      if (hasRole) {
-        setIsAdmin(true);
+      if (error) {
+        console.error('Error checking admin status:', error);
+        setIsAdmin(false);
       } else {
-        // First time admin login - add admin role
-        // This will only work if no admin exists yet (first setup)
-        const { error } = await supabase
-          .from('user_roles')
-          .insert({ user_id: user.id, role: 'admin' });
-        
-        if (!error) {
-          setIsAdmin(true);
-        }
+        setIsAdmin(hasRole || false);
       }
     } catch (error) {
       console.error('Error checking admin status:', error);
@@ -57,5 +41,5 @@ export function useAdmin() {
     }
   };
 
-  return { isAdmin, loading, adminEmail: ADMIN_EMAIL };
+  return { isAdmin, loading };
 }
