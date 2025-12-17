@@ -168,8 +168,51 @@ const handler = async (req: Request): Promise<Response> => {
 
     const notificationPromises: Promise<any>[] = [];
 
-    // WhatsApp notification
-    if (profile.whatsapp) {
+    // n8n Webhook notification (primary channel for WhatsApp)
+    const n8nWebhookUrl = Deno.env.get("N8N_WEBHOOK_URL");
+    if (n8nWebhookUrl) {
+      console.log("Sending to n8n webhook...");
+      notificationPromises.push(
+        fetch(n8nWebhookUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            event: "schedule.created",
+            timestamp: new Date().toISOString(),
+            schedule: {
+              id: schedule_id,
+              date: date,
+              date_formatted: formattedDate,
+              time_start: formattedTimeStart,
+              time_end: formattedTimeEnd,
+              notes: notes || null,
+            },
+            user: {
+              id: user_id,
+              name: profile.name,
+              email: profile.email,
+              whatsapp: profile.whatsapp,
+            },
+            department: {
+              id: department_id,
+              name: department.name,
+            },
+          }),
+        }).then(async response => {
+          const responseText = await response.text();
+          console.log("n8n response:", response.status, responseText);
+          return { type: 'n8n', success: response.ok, error: response.ok ? null : responseText };
+        }).catch(error => {
+          console.error("n8n webhook error:", error);
+          return { type: 'n8n', success: false, error: error.message };
+        })
+      );
+    } else {
+      console.log("N8N_WEBHOOK_URL not configured - skipping n8n integration");
+    }
+
+    // WhatsApp notification via Twilio (fallback if n8n not configured)
+    if (profile.whatsapp && !n8nWebhookUrl) {
       const whatsappMessage = `📅 *Nova Escala - ${department.name}*\n\nOlá, ${profile.name}!\n\nVocê foi escalado para:\n📆 *Data:* ${formattedDate}\n⏰ *Horário:* ${formattedTimeStart} às ${formattedTimeEnd}${notes ? `\n📝 *Observações:* ${notes}` : ''}\n\n_LEVI - Sistema de Escalas_`;
       
       notificationPromises.push(
@@ -262,6 +305,7 @@ const handler = async (req: Request): Promise<Response> => {
       JSON.stringify({ 
         success: true,
         channels: {
+          n8n: results.find(r => r.type === 'n8n')?.success ?? false,
           whatsapp: results.find(r => r.type === 'whatsapp')?.success ?? false,
           email: results.find(r => r.type === 'email')?.success ?? false
         }
