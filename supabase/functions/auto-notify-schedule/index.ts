@@ -168,7 +168,53 @@ const handler = async (req: Request): Promise<Response> => {
 
     const notificationPromises: Promise<any>[] = [];
 
-    // n8n Webhook notification (primary channel for WhatsApp)
+    // Webhook payload (used by both n8n and FiqOn)
+    const webhookPayload = {
+      event: "schedule.created",
+      timestamp: new Date().toISOString(),
+      schedule: {
+        id: schedule_id,
+        date: date,
+        date_formatted: formattedDate,
+        time_start: formattedTimeStart,
+        time_end: formattedTimeEnd,
+        notes: notes || null,
+      },
+      user: {
+        id: user_id,
+        name: profile.name,
+        email: profile.email,
+        whatsapp: profile.whatsapp,
+      },
+      department: {
+        id: department_id,
+        name: department.name,
+      },
+    };
+
+    // FiqOn Webhook notification
+    const fiqonWebhookUrl = Deno.env.get("FIQON_WEBHOOK_URL");
+    if (fiqonWebhookUrl) {
+      console.log("Sending to FiqOn webhook...");
+      notificationPromises.push(
+        fetch(fiqonWebhookUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(webhookPayload),
+        }).then(async response => {
+          const responseText = await response.text();
+          console.log("FiqOn response:", response.status, responseText);
+          return { type: 'fiqon', success: response.ok, error: response.ok ? null : responseText };
+        }).catch(error => {
+          console.error("FiqOn webhook error:", error);
+          return { type: 'fiqon', success: false, error: error.message };
+        })
+      );
+    } else {
+      console.log("FIQON_WEBHOOK_URL not configured - skipping FiqOn integration");
+    }
+
+    // n8n Webhook notification (legacy support)
     const n8nWebhookUrl = Deno.env.get("N8N_WEBHOOK_URL");
     if (n8nWebhookUrl) {
       console.log("Sending to n8n webhook...");
@@ -176,28 +222,7 @@ const handler = async (req: Request): Promise<Response> => {
         fetch(n8nWebhookUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            event: "schedule.created",
-            timestamp: new Date().toISOString(),
-            schedule: {
-              id: schedule_id,
-              date: date,
-              date_formatted: formattedDate,
-              time_start: formattedTimeStart,
-              time_end: formattedTimeEnd,
-              notes: notes || null,
-            },
-            user: {
-              id: user_id,
-              name: profile.name,
-              email: profile.email,
-              whatsapp: profile.whatsapp,
-            },
-            department: {
-              id: department_id,
-              name: department.name,
-            },
-          }),
+          body: JSON.stringify(webhookPayload),
         }).then(async response => {
           const responseText = await response.text();
           console.log("n8n response:", response.status, responseText);
@@ -305,6 +330,7 @@ const handler = async (req: Request): Promise<Response> => {
       JSON.stringify({ 
         success: true,
         channels: {
+          fiqon: results.find(r => r.type === 'fiqon')?.success ?? false,
           n8n: results.find(r => r.type === 'n8n')?.success ?? false,
           whatsapp: results.find(r => r.type === 'whatsapp')?.success ?? false,
           email: results.find(r => r.type === 'email')?.success ?? false
