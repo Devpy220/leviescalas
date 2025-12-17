@@ -85,7 +85,7 @@ interface Schedule {
 export default function Department() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   
   const [department, setDepartment] = useState<Department | null>(null);
@@ -100,6 +100,9 @@ export default function Department() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   useEffect(() => {
+    // Wait for auth to finish loading
+    if (authLoading) return;
+    
     if (!user) {
       navigate('/auth');
       return;
@@ -109,7 +112,7 @@ export default function Department() {
       fetchMembers();
       fetchSchedules();
     }
-  }, [user, id, navigate]);
+  }, [user, id, navigate, authLoading]);
 
   const fetchDepartment = async () => {
     if (!id) return;
@@ -274,7 +277,7 @@ export default function Department() {
     }
   };
 
-  if (loading || !department) {
+  if (authLoading || loading || !department) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
