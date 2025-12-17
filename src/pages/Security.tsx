@@ -41,7 +41,7 @@ export default function Security() {
         .from('profiles')
         .select('share_contact')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
       
       if (!error && data) {
         setShareContact(data.share_contact || false);
