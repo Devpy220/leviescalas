@@ -43,7 +43,7 @@ interface Profile {
 
 export default function Admin() {
   const { user, signOut, loading: authLoading } = useAuth();
-  const { isAdmin, loading: adminLoading, adminEmail } = useAdmin();
+  const { isAdmin, loading: adminLoading } = useAdmin();
   const navigate = useNavigate();
   
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -242,10 +242,10 @@ export default function Admin() {
           </CardHeader>
           <CardContent>
             <a 
-              href={`mailto:${adminEmail}`}
+              href="mailto:suporte@levi.app"
               className="text-primary hover:underline font-medium"
             >
-              {adminEmail}
+              suporte@levi.app
             </a>
           </CardContent>
         </Card>
