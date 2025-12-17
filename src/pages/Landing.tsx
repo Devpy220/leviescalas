@@ -130,7 +130,7 @@ export default function Landing() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/auth?tab=register">
                 <Button size="lg" className="w-full sm:w-auto gradient-vibrant text-white shadow-glow hover:shadow-glow-lg transition-all text-lg px-8 animate-gradient">
-                  Começar 7 dias grátis
+                  Começar 14 dias grátis
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </Link>
@@ -241,7 +241,7 @@ export default function Landing() {
                     <span className="text-muted-foreground">/mês</span>
                   </div>
                   <p className="mt-2 text-muted-foreground">
-                    7 dias de teste grátis • Cobrança mensal por membro
+                    14 dias de teste grátis • Cobrança mensal por membro
                   </p>
                 </div>
                 
