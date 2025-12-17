@@ -1,25 +1,23 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Calendar, 
   ArrowLeft,
   Clock,
   MapPin,
-  ChevronLeft,
-  ChevronRight,
   Loader2,
   CalendarDays,
   Heart
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { NotificationBell } from '@/components/NotificationBell';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, isWithinInterval, parseISO, isSameDay } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface Schedule {
@@ -30,7 +28,7 @@ interface Schedule {
   notes: string | null;
   department_id: string;
   department_name: string;
-  sector_name?: string | null;
+  sector_name: string | null;
 }
 
 interface SupportPlan {
@@ -43,13 +41,9 @@ const SUPPORT_PRICE_ID = 'price_1SfMwvK0EKnRdptQbNDmg4CU';
 export default function MySchedules() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentWeek, setCurrentWeek] = useState(new Date());
   const [supportPlan, setSupportPlan] = useState<SupportPlan>({ isActive: false, loading: false });
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-
-  const weekStart = startOfWeek(currentWeek, { weekStartsOn: 0 });
-  const weekEnd = endOfWeek(currentWeek, { weekStartsOn: 0 });
 
   useEffect(() => {
     if (authLoading) return;
@@ -64,7 +58,6 @@ export default function MySchedules() {
     if (!user) return;
     
     try {
-      // Get all departments user is member of
       const { data: memberData, error: memberError } = await supabase
         .from('members')
         .select('department_id')
@@ -80,7 +73,6 @@ export default function MySchedules() {
 
       const deptIds = memberData.map(m => m.department_id);
 
-      // Fetch all schedules for user across all departments
       const { data: schedulesData, error: schedulesError } = await supabase
         .from('schedules')
         .select(`
@@ -98,13 +90,11 @@ export default function MySchedules() {
 
       if (schedulesError) throw schedulesError;
 
-      // Fetch department names
       const { data: deptNames } = await supabase
         .from('departments')
         .select('id, name')
         .in('id', deptIds);
 
-      // Fetch sector names
       const sectorIds = (schedulesData || []).filter(s => s.sector_id).map(s => s.sector_id);
       let sectorNames: Record<string, string> = {};
       if (sectorIds.length > 0) {
@@ -138,36 +128,6 @@ export default function MySchedules() {
       setLoading(false);
     }
   };
-
-  const weekSchedules = useMemo(() => {
-    return schedules.filter(schedule => {
-      const scheduleDate = parseISO(schedule.date);
-      return isWithinInterval(scheduleDate, { start: weekStart, end: weekEnd });
-    });
-  }, [schedules, weekStart, weekEnd]);
-
-  // Group schedules by date
-  const schedulesByDate = useMemo(() => {
-    const grouped: Record<string, Schedule[]> = {};
-    weekSchedules.forEach(schedule => {
-      if (!grouped[schedule.date]) {
-        grouped[schedule.date] = [];
-      }
-      grouped[schedule.date].push(schedule);
-    });
-    return grouped;
-  }, [weekSchedules]);
-
-  // Generate week days
-  const weekDays = useMemo(() => {
-    const days = [];
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(weekStart);
-      date.setDate(weekStart.getDate() + i);
-      days.push(date);
-    }
-    return days;
-  }, [weekStart]);
 
   const handleSupportLevi = async () => {
     setSupportPlan(prev => ({ ...prev, loading: true }));
@@ -222,136 +182,57 @@ export default function MySchedules() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        {/* Week Navigation */}
-        <div className="flex items-center justify-between mb-8">
-          <Button variant="outline" size="icon" onClick={() => setCurrentWeek(subWeeks(currentWeek, 1))}>
-            <ChevronLeft className="w-5 h-5" />
-          </Button>
-          
-          <div className="text-center">
-            <h2 className="font-display text-lg font-semibold text-foreground">
-              {format(weekStart, "d 'de' MMMM", { locale: ptBR })} - {format(weekEnd, "d 'de' MMMM", { locale: ptBR })}
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              {format(weekStart, 'yyyy')}
-            </p>
-          </div>
-
-          <Button variant="outline" size="icon" onClick={() => setCurrentWeek(addWeeks(currentWeek, 1))}>
-            <ChevronRight className="w-5 h-5" />
-          </Button>
-        </div>
-
-        {/* Week Grid */}
+        <h3 className="font-display text-xl font-semibold text-foreground mb-6">
+          Todas as Escalas
+        </h3>
+        
         {loading ? (
-          <div className="grid gap-4 md:grid-cols-7">
-            {[1, 2, 3, 4, 5, 6, 7].map(i => (
-              <Skeleton key={i} className="h-48 rounded-xl" />
+          <div className="grid gap-3">
+            {[1, 2, 3].map(i => (
+              <Skeleton key={i} className="h-24 rounded-xl" />
             ))}
           </div>
+        ) : schedules.length === 0 ? (
+          <Card className="p-8 text-center">
+            <Calendar className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+            <h4 className="font-semibold text-foreground mb-2">Nenhuma escala encontrada</h4>
+            <p className="text-sm text-muted-foreground">
+              Você ainda não foi escalado em nenhum departamento.
+            </p>
+          </Card>
         ) : (
-          <div className="grid gap-4 md:grid-cols-7">
-            {weekDays.map((day) => {
-              const dateStr = format(day, 'yyyy-MM-dd');
-              const daySchedules = schedulesByDate[dateStr] || [];
-              const isToday = isSameDay(day, new Date());
-
-              return (
-                <Card 
-                  key={dateStr} 
-                  className={`min-h-[200px] transition-all ${
-                    isToday ? 'ring-2 ring-primary shadow-glow-sm' : ''
-                  }`}
-                >
-                  <CardHeader className="pb-2">
-                    <CardTitle className={`text-center ${isToday ? 'text-primary' : ''}`}>
-                      <span className="text-xs uppercase tracking-wide text-muted-foreground block">
-                        {format(day, 'EEE', { locale: ptBR })}
-                      </span>
-                      <span className="text-2xl font-bold">
-                        {format(day, 'd')}
-                      </span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {daySchedules.length === 0 ? (
-                      <p className="text-xs text-muted-foreground text-center py-4">
-                        Sem escalas
-                      </p>
-                    ) : (
-                      daySchedules.map((schedule) => (
-                        <div
-                          key={schedule.id}
-                          className="p-2 rounded-lg bg-primary/10 border border-primary/20 space-y-1"
-                        >
-                          <div className="flex items-center gap-1 text-xs font-medium text-primary">
-                            <Clock className="w-3 h-3" />
-                            {schedule.time_start.slice(0, 5)} - {schedule.time_end.slice(0, 5)}
-                          </div>
-                          <p className="text-xs font-medium text-foreground truncate">
-                            {schedule.department_name}
-                          </p>
-                          {schedule.sector_name && (
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <MapPin className="w-3 h-3" />
-                              {schedule.sector_name}
-                            </div>
-                          )}
-                        </div>
-                      ))
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
-
-        {/* All Schedules List */}
-        <div className="mt-12">
-          <h3 className="font-display text-xl font-semibold text-foreground mb-4">
-            Todas as Escalas
-          </h3>
-          
-          {schedules.length === 0 ? (
-            <Card className="p-8 text-center">
-              <Calendar className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-              <h4 className="font-semibold text-foreground mb-2">Nenhuma escala encontrada</h4>
-              <p className="text-sm text-muted-foreground">
-                Você ainda não foi escalado em nenhum departamento.
-              </p>
-            </Card>
-          ) : (
-            <div className="grid gap-3">
-              {schedules.map((schedule) => (
-                <Card key={schedule.id} className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                        <Calendar className="w-6 h-6 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-foreground">
-                          {format(parseISO(schedule.date), "EEEE, d 'de' MMMM", { locale: ptBR })}
-                        </p>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Clock className="w-4 h-4" />
-                          {schedule.time_start.slice(0, 5)} - {schedule.time_end.slice(0, 5)}
-                        </div>
-                      </div>
+          <div className="grid gap-3">
+            {schedules.map((schedule) => (
+              <Card key={schedule.id} className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <Calendar className="w-6 h-6 text-primary" />
                     </div>
-                    <div className="text-right">
-                      <Badge variant="secondary">{schedule.department_name}</Badge>
-                      {schedule.sector_name && (
-                        <p className="text-xs text-muted-foreground mt-1">{schedule.sector_name}</p>
-                      )}
+                    <div>
+                      <p className="font-medium text-foreground">
+                        {format(parseISO(schedule.date), "EEEE, d 'de' MMMM", { locale: ptBR })}
+                      </p>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Clock className="w-4 h-4" />
+                        {schedule.time_start.slice(0, 5)} - {schedule.time_end.slice(0, 5)}
+                      </div>
                     </div>
                   </div>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
+                  <div className="text-right">
+                    <Badge variant="secondary">{schedule.department_name}</Badge>
+                    {schedule.sector_name && (
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1 justify-end">
+                        <MapPin className="w-3 h-3" />
+                        {schedule.sector_name}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
 
         {/* Support LEVI Card */}
         <Card className="mt-12 p-6 gradient-vibrant text-white">
