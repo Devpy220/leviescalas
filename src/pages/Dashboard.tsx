@@ -55,6 +55,12 @@ const isExpiringWithinDays = (dateStr: string | null | undefined, days: number):
   return diffDays >= 0 && diffDays <= days;
 };
 
+// Check if trial has already expired
+const isTrialExpired = (status: string | null | undefined, trialEndsAt: string | null | undefined): boolean => {
+  if (status !== 'trial' || !trialEndsAt) return false;
+  return new Date(trialEndsAt) < new Date();
+};
+
 
 export default function Dashboard() {
   const [departments, setDepartments] = useState<DepartmentWithRole[]>([]);
@@ -242,7 +248,12 @@ export default function Dashboard() {
   const hasPaymentWarning = departments.some(dept => {
     if (dept.role !== 'leader') return false;
     
-    // Trial expiring soon
+    // Trial already expired
+    if (isTrialExpired(dept.subscription_status, dept.trial_ends_at)) {
+      return true;
+    }
+    
+    // Trial expiring soon (within 3 days)
     if (dept.subscription_status === 'trial' && isExpiringWithinDays(dept.trial_ends_at, 3)) {
       return true;
     }
@@ -340,6 +351,27 @@ export default function Dashboard() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        {/* Trial Expired Warning Banner */}
+        {hasPaymentWarning && departments.some(d => d.role === 'leader' && isTrialExpired(d.subscription_status, d.trial_ends_at)) && (
+          <div className="mb-8 p-4 rounded-xl bg-destructive/10 border border-destructive/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center">
+                <CreditCard className="w-5 h-5 text-destructive" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">Seu período de teste expirou</h3>
+                <p className="text-sm text-muted-foreground">Renove sua assinatura para continuar gerenciando suas escalas.</p>
+              </div>
+            </div>
+            <Button 
+              onClick={() => navigate('/payment')}
+              className="gradient-vibrant text-white shadow-glow-sm hover:shadow-glow"
+            >
+              Renovar Assinatura
+            </Button>
+          </div>
+        )}
+
         {/* Welcome section - Centered */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
