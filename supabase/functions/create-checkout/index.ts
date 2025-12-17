@@ -96,7 +96,7 @@ serve(async (req) => {
       ],
       mode: "subscription",
       subscription_data: {
-        trial_period_days: 7,
+        trial_period_days: 14,
         metadata: {
           user_id: user.id,
           department_name: departmentName,
