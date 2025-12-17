@@ -62,7 +62,7 @@ export default function Dashboard() {
   const [isFirstLogin, setIsFirstLogin] = useState(false);
   const [canCreateDepartment, setCanCreateDepartment] = useState(true);
   const [userName, setUserName] = useState<string>('');
-  const { user, authEvent, signOut } = useAuth();
+  const { user, loading: authLoading, authEvent, signOut } = useAuth();
   const { isAdmin } = useAdmin();
   const { isInstallable, install, isIOS, shouldShowInstallPrompt } = usePWAInstall();
   const [showInstallDialog, setShowInstallDialog] = useState(false);
@@ -81,23 +81,26 @@ export default function Dashboard() {
   }, [authEvent]);
 
   useEffect(() => {
+    // Wait for auth to finish loading
+    if (authLoading) return;
+
     if (!user) {
       navigate('/auth');
       return;
     }
-    
+
     // Only fetch once per user session
     const fetchData = async () => {
       await Promise.all([
         fetchDepartments(),
         checkCanCreateDepartment(),
-        fetchUserName()
+        fetchUserName(),
       ]);
     };
-    
+
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  }, [user?.id, authLoading]);
 
   const fetchUserName = async () => {
     if (!user) return;

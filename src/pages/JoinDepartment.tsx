@@ -83,6 +83,8 @@ export default function JoinDepartment() {
   };
 
   const handleJoin = async () => {
+    if (authLoading) return;
+
     if (!user) {
       // Save invite code and redirect to auth
       sessionStorage.setItem('pendingInvite', inviteCode || '');
