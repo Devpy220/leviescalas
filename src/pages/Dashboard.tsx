@@ -85,10 +85,19 @@ export default function Dashboard() {
       navigate('/auth');
       return;
     }
-    fetchDepartments();
-    checkCanCreateDepartment();
-    fetchUserName();
-  }, [user, navigate]);
+    
+    // Only fetch once per user session
+    const fetchData = async () => {
+      await Promise.all([
+        fetchDepartments(),
+        checkCanCreateDepartment(),
+        fetchUserName()
+      ]);
+    };
+    
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const fetchUserName = async () => {
     if (!user) return;
@@ -96,7 +105,7 @@ export default function Dashboard() {
       .from('profiles')
       .select('name')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
     
     if (!error && data) {
       setUserName(data.name);

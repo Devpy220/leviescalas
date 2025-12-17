@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, Check, CheckCheck, Calendar, Loader2, Trash2 } from 'lucide-react';
+import { Bell, CheckCheck, Calendar, Loader2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
