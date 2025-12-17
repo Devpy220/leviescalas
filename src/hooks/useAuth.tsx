@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { useState, useEffect, createContext, useContext, ReactNode, useRef, useCallback } from 'react';
 import { User, Session, AuthChangeEvent } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -19,30 +19,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [authEvent, setAuthEvent] = useState<AuthChangeEvent | null>(null);
+  
+  // Refs to prevent duplicate operations
+  const initialized = useRef(false);
+  const lastTokenRefresh = useRef<number>(0);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
+    // Prevent double initialization in StrictMode
+    if (initialized.current) return;
+    initialized.current = true;
+
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('Auth event:', event);
+      (event, currentSession) => {
+        // Debounce TOKEN_REFRESHED events - ignore if less than 1 second since last one
+        if (event === 'TOKEN_REFRESHED') {
+          const now = Date.now();
+          if (now - lastTokenRefresh.current < 1000) {
+            return; // Skip this event, too soon
+          }
+          lastTokenRefresh.current = now;
+        }
+        
+        // Only update state if there's an actual change
         setAuthEvent(event);
-        setSession(session);
-        setUser(session?.user ?? null);
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
         setLoading(false);
       }
     );
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
+      setSession(existingSession);
+      setUser(existingSession?.user ?? null);
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      initialized.current = false;
+    };
   }, []);
 
-  const signUp = async (email: string, password: string, name: string, whatsapp: string) => {
+  const signUp = useCallback(async (email: string, password: string, name: string, whatsapp: string) => {
     try {
       const redirectUrl = `${window.location.origin}/`;
       
@@ -63,9 +83,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       return { error: error as Error };
     }
-  };
+  }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string) => {
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -77,11 +97,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       return { error: error as Error };
     }
-  };
+  }, []);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     await supabase.auth.signOut();
-  };
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, session, loading, authEvent, signUp, signIn, signOut }}>
