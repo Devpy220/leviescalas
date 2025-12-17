@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.n8n-webhook]
 verify_jwt = false
+
+[functions.create-support-checkout]
+verify_jwt = true

@@ -12,7 +12,7 @@ import Department from "./pages/Department";
 import DepartmentBySlug from "./pages/DepartmentBySlug";
 import CreateDepartment from "./pages/CreateDepartment";
 import JoinDepartment from "./pages/JoinDepartment";
-import Payment from "./pages/Payment";
+import MySchedules from "./pages/MySchedules";
 import Security from "./pages/Security";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
@@ -35,7 +35,7 @@ const App = () => (
               <Route path="/departments/:id" element={<Department />} />
               <Route path="/departments/new" element={<CreateDepartment />} />
               <Route path="/join/:inviteCode" element={<JoinDepartment />} />
-              <Route path="/payment" element={<Payment />} />
+              <Route path="/my-schedules" element={<MySchedules />} />
               <Route path="/security" element={<Security />} />
               <Route path="/admin" element={<Admin />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

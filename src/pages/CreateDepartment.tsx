@@ -33,7 +33,7 @@ const departmentSchema = z.object({
 type DepartmentForm = z.infer<typeof departmentSchema>;
 
 const features = [
-  'R$ 25/mês por membro',
+  'R$ 10/mês por membro',
   'Escalas ilimitadas por mês',
   'Notificações via Email',
   'Calendário drag-and-drop',
@@ -264,7 +264,7 @@ export default function CreateDepartment() {
                       </div>
                       
               <div className="flex items-baseline gap-2 mb-2">
-                        <span className="text-4xl font-display font-bold text-foreground">R$ 25</span>
+                        <span className="text-4xl font-display font-bold text-foreground">R$ 10</span>
                         <span className="text-muted-foreground">/mês</span>
                       </div>
                       <p className="text-sm text-muted-foreground mb-6">por membro do departamento</p>
@@ -303,7 +303,7 @@ export default function CreateDepartment() {
               </h2>
               <p className="text-muted-foreground mb-8">
                 Você terá 14 dias para testar todas as funcionalidades. 
-                Após o período de teste, a cobrança de R$ 25/mês por membro será iniciada.
+                Após o período de teste, a cobrança de R$ 10/mês por membro será iniciada.
               </p>
 
               <div className="bg-muted/50 rounded-xl p-4 mb-6">
@@ -321,7 +321,7 @@ export default function CreateDepartment() {
                 </div>
                 <div className="flex justify-between items-center pt-2 border-t border-border">
                   <span className="text-muted-foreground">Após o teste</span>
-                  <span className="font-medium text-foreground">R$ 25,00/mês por membro</span>
+                  <span className="font-medium text-foreground">R$ 10,00/mês por membro</span>
                 </div>
               </div>
 
