@@ -11,7 +11,7 @@ import {
   User,
   Loader2,
   Sparkles,
-  CreditCard,
+  CalendarDays,
   Settings2,
   Download
 } from 'lucide-react';
@@ -45,21 +45,6 @@ interface DepartmentWithRole extends Department {
   role: 'leader' | 'member';
 }
 
-// Check if a date is within X days from now
-const isExpiringWithinDays = (dateStr: string | null | undefined, days: number): boolean => {
-  if (!dateStr) return false;
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffTime = date.getTime() - now.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays >= 0 && diffDays <= days;
-};
-
-// Check if trial has already expired
-const isTrialExpired = (status: string | null | undefined, trialEndsAt: string | null | undefined): boolean => {
-  if (status !== 'trial' || !trialEndsAt) return false;
-  return new Date(trialEndsAt) < new Date();
-};
 
 
 export default function Dashboard() {
@@ -244,27 +229,6 @@ export default function Dashboard() {
     navigate('/');
   };
 
-  // Check if any department has expiring trial or subscription (within 3 days)
-  const hasPaymentWarning = departments.some(dept => {
-    if (dept.role !== 'leader') return false;
-    
-    // Trial already expired
-    if (isTrialExpired(dept.subscription_status, dept.trial_ends_at)) {
-      return true;
-    }
-    
-    // Trial expiring soon (within 3 days)
-    if (dept.subscription_status === 'trial' && isExpiringWithinDays(dept.trial_ends_at, 3)) {
-      return true;
-    }
-    
-    // Expired or cancelled subscription
-    if (dept.subscription_status === 'expired' || dept.subscription_status === 'cancelled') {
-      return true;
-    }
-    
-    return false;
-  });
 
   if (!user) {
     return (
@@ -315,14 +279,11 @@ export default function Dashboard() {
             <Button 
               variant="ghost" 
               size="icon" 
-              className="text-muted-foreground relative"
-              onClick={() => navigate('/payment')}
-              title="Pagamento"
+              className="text-muted-foreground"
+              onClick={() => navigate('/my-schedules')}
+              title="Minhas Escalas"
             >
-              <CreditCard className="w-5 h-5" />
-              {hasPaymentWarning && (
-                <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-destructive rounded-full animate-pulse" />
-              )}
+              <CalendarDays className="w-5 h-5" />
             </Button>
             <Button 
               variant="ghost" 
@@ -351,26 +312,6 @@ export default function Dashboard() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        {/* Trial Expired Warning Banner */}
-        {hasPaymentWarning && departments.some(d => d.role === 'leader' && isTrialExpired(d.subscription_status, d.trial_ends_at)) && (
-          <div className="mb-8 p-4 rounded-xl bg-destructive/10 border border-destructive/30 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center">
-                <CreditCard className="w-5 h-5 text-destructive" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-foreground">Seu período de teste expirou</h3>
-                <p className="text-sm text-muted-foreground">Renove sua assinatura para continuar gerenciando suas escalas.</p>
-              </div>
-            </div>
-            <Button 
-              onClick={() => navigate('/payment')}
-              className="gradient-vibrant text-white shadow-glow-sm hover:shadow-glow"
-            >
-              Renovar Assinatura
-            </Button>
-          </div>
-        )}
 
         {/* Welcome section - Centered */}
         <div className="text-center mb-12">
@@ -403,7 +344,7 @@ export default function Dashboard() {
                         Criar Novo Departamento
                       </h3>
                       <p className="text-muted-foreground">
-                        R$ 25,00/mês • 14 dias grátis
+                        R$ 10,00/mês por voluntário • 14 dias grátis
                       </p>
                     </div>
                     <ChevronRight className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors" />
