@@ -91,7 +91,7 @@ export default function CreateDepartment() {
       
       toast({
         title: 'Departamento criado!',
-        description: 'Seu período de teste de 7 dias começou.',
+        description: 'Seu período de teste de 14 dias começou.',
       });
     } catch (error) {
       console.error('Error completing checkout:', error);
@@ -260,7 +260,7 @@ export default function CreateDepartment() {
                     <div className="relative glass rounded-2xl p-6 border border-primary/20">
                       <div className="flex items-center gap-2 mb-4">
                         <Sparkles className="w-5 h-5 text-primary" />
-                        <span className="text-sm font-medium text-primary">7 dias grátis</span>
+                        <span className="text-sm font-medium text-primary">14 dias grátis</span>
                       </div>
                       
               <div className="flex items-baseline gap-2 mb-2">
@@ -302,7 +302,7 @@ export default function CreateDepartment() {
                 Iniciar teste grátis
               </h2>
               <p className="text-muted-foreground mb-8">
-                Você terá 7 dias para testar todas as funcionalidades. 
+                Você terá 14 dias para testar todas as funcionalidades. 
                 Após o período de teste, a cobrança de R$ 25/mês por membro será iniciada.
               </p>
 
@@ -313,7 +313,7 @@ export default function CreateDepartment() {
                 </div>
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-muted-foreground">Período de teste</span>
-                  <span className="font-medium text-foreground">7 dias</span>
+                  <span className="font-medium text-foreground">14 dias</span>
                 </div>
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-muted-foreground">Membros iniciais</span>
