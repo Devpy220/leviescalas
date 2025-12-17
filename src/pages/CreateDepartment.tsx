@@ -49,7 +49,7 @@ export default function CreateDepartment() {
   
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   const form = useForm<DepartmentForm>({
     resolver: zodResolver(departmentSchema),
@@ -106,6 +106,8 @@ export default function CreateDepartment() {
   };
 
   const handleSubmit = async (data: DepartmentForm) => {
+    if (authLoading) return;
+
     if (!user) {
       toast({
         variant: 'destructive',
