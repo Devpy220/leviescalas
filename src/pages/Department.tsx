@@ -321,14 +321,14 @@ export default function Department() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 glass border-b border-border/50">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="container mx-auto px-2 sm:px-4 h-14 sm:h-16 flex items-center justify-between max-w-7xl">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
             <Link to="/dashboard">
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground click-scale shrink-0">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
             </Link>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <DepartmentAvatar
                 departmentId={department.id}
                 avatarUrl={department.avatar_url}
@@ -336,14 +336,14 @@ export default function Department() {
                 isLeader={isLeader}
                 onAvatarChange={handleAvatarChange}
               />
-              <div>
+              <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <h1 className="font-display text-lg font-bold text-foreground">
+                  <h1 className="font-display text-base sm:text-lg font-bold text-foreground truncate max-w-[120px] sm:max-w-[200px] md:max-w-none">
                     {department.name}
                   </h1>
                   {isLeader && (
-                    <div className="w-5 h-5 rounded-full gradient-vibrant flex items-center justify-center">
-                      <Crown className="w-3 h-3 text-white" />
+                    <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full gradient-vibrant flex items-center justify-center shrink-0">
+                      <Crown className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
                     </div>
                   )}
                 </div>
@@ -354,7 +354,7 @@ export default function Department() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             <ThemeToggle />
             {isLeader && (
               <>
@@ -362,7 +362,7 @@ export default function Department() {
                   variant="outline" 
                   size="sm"
                   onClick={copyInviteLink}
-                  className="gap-2"
+                  className="gap-2 press-effect"
                 >
                   {copiedInvite ? (
                     <Check className="w-4 h-4 text-emerald-500" />
@@ -374,7 +374,7 @@ export default function Department() {
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="text-muted-foreground"
+                  className="text-muted-foreground click-scale"
                   onClick={() => setShowSettings(true)}
                 >
                   <Settings className="w-5 h-5" />
@@ -385,34 +385,44 @@ export default function Department() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6">
-        <Tabs defaultValue="calendar" className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <TabsList className="bg-muted/50 self-start">
-              <TabsTrigger value="calendar" className="gap-2 data-[state=active]:gradient-vibrant data-[state=active]:text-white">
+      <main className="container mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 max-w-7xl">
+        <Tabs defaultValue="calendar" className="space-y-4 sm:space-y-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <TabsList className="bg-muted/50 self-start w-full sm:w-auto overflow-x-auto">
+              <TabsTrigger 
+                value="calendar" 
+                className="gap-2 click-scale selection-glow data-[state=active]:gradient-vibrant data-[state=active]:text-white data-[state=active]:shadow-glow-sm transition-all"
+              >
                 <Calendar className="w-4 h-4" />
-                <span>Calendário</span>
+                <span className="hidden xs:inline">Calendário</span>
               </TabsTrigger>
-              <TabsTrigger value="sectors" className="gap-2 data-[state=active]:gradient-vibrant data-[state=active]:text-white">
+              <TabsTrigger 
+                value="sectors" 
+                className="gap-2 click-scale selection-glow data-[state=active]:gradient-vibrant data-[state=active]:text-white data-[state=active]:shadow-glow-sm transition-all"
+              >
                 <Layers className="w-4 h-4" />
-                <span>Setores</span>
+                <span className="hidden xs:inline">Setores</span>
               </TabsTrigger>
-              <TabsTrigger value="members" className="gap-2 data-[state=active]:gradient-vibrant data-[state=active]:text-white">
+              <TabsTrigger 
+                value="members" 
+                className="gap-2 click-scale selection-glow data-[state=active]:gradient-vibrant data-[state=active]:text-white data-[state=active]:shadow-glow-sm transition-all"
+              >
                 <Users className="w-4 h-4" />
-                <span>Membros</span>
+                <span className="hidden xs:inline">Membros</span>
               </TabsTrigger>
             </TabsList>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2">
+                  <Button variant="outline" size="sm" className="gap-2 press-effect">
                     <Download className="w-4 h-4" />
                     <span className="hidden sm:inline">Exportar</span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="bg-popover border-border">
                   <DropdownMenuItem 
+                    className="click-scale cursor-pointer"
                     onClick={() => exportToPDF({
                       schedules,
                       departmentName: department?.name || 'Departamento',
@@ -423,6 +433,7 @@ export default function Department() {
                     Exportar PDF
                   </DropdownMenuItem>
                   <DropdownMenuItem 
+                    className="click-scale cursor-pointer"
                     onClick={() => exportToExcel({
                       schedules,
                       departmentName: department?.name || 'Departamento',
@@ -438,19 +449,20 @@ export default function Department() {
               {isLeader && (
                 <Button 
                   onClick={() => handleAddSchedule()}
-                  className="gradient-vibrant text-white shadow-glow-sm hover:shadow-glow transition-all gap-2"
+                  className="gradient-vibrant text-white shadow-glow-sm hover:shadow-glow press-effect transition-all gap-2"
                 >
                   <Plus className="w-4 h-4" />
-                  <span>Nova Escala</span>
+                  <span className="hidden sm:inline">Nova Escala</span>
+                  <span className="sm:hidden">Nova</span>
                 </Button>
               )}
             </div>
           </div>
 
-          <TabsContent value="calendar" className="mt-6">
-            <div className="space-y-6">
-              {/* Calendars Side by Side */}
-              <div className="grid grid-cols-2 gap-3">
+          <TabsContent value="calendar" className="mt-4 sm:mt-6 animate-fade-in">
+            <div className="space-y-4 sm:space-y-6">
+              {/* Calendars - Stack on mobile, side by side on tablet+ */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                 <ScheduleCalendar 
                   schedules={schedules}
                   members={members}
@@ -475,8 +487,8 @@ export default function Department() {
                 />
               </div>
 
-              {/* Schedule Tables by Month */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Schedule Tables - Stack on mobile/tablet, side by side on desktop */}
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 sm:gap-4">
                 <ScheduleTable 
                   schedules={schedules}
                   members={members}

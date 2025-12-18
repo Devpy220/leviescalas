@@ -292,6 +292,70 @@
     box-shadow: 0 0 40px hsl(var(--primary) / 0.35);
   }
 
+  /* Click/Active effects */
+  .click-scale {
+    @apply transition-transform duration-150 ease-out;
+  }
+
+  .click-scale:active {
+    @apply scale-95;
+  }
+
+  .click-bounce {
+    @apply transition-all duration-200 ease-out;
+  }
+
+  .click-bounce:active {
+    @apply scale-90;
+  }
+
+  /* Ripple effect container */
+  .ripple-effect {
+    @apply relative overflow-hidden;
+  }
+
+  .ripple-effect::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), hsl(var(--primary) / 0.3) 0%, transparent 60%);
+    opacity: 0;
+    transform: scale(0);
+    transition: transform 0.5s ease-out, opacity 0.3s ease-out;
+  }
+
+  .ripple-effect:active::after {
+    opacity: 1;
+    transform: scale(2.5);
+  }
+
+  /* Press effect for buttons/cards */
+  .press-effect {
+    @apply transition-all duration-150 ease-out;
+  }
+
+  .press-effect:hover {
+    @apply -translate-y-0.5;
+    box-shadow: 0 8px 25px -8px hsl(var(--primary) / 0.3);
+  }
+
+  .press-effect:active {
+    @apply translate-y-0.5 scale-[0.98];
+    box-shadow: 0 2px 8px -4px hsl(var(--primary) / 0.2);
+  }
+
+  /* Selection glow */
+  .selection-glow {
+    @apply transition-all duration-200;
+  }
+
+  .selection-glow:focus,
+  .selection-glow[data-state="active"],
+  .selection-glow[data-state="on"],
+  .selection-glow[aria-selected="true"] {
+    box-shadow: 0 0 0 2px hsl(var(--primary) / 0.3), 0 4px 20px -4px hsl(var(--primary) / 0.4);
+  }
+
   /* Card glow effect - blue shadow on hover/focus */
   .card-glow {
     position: relative;
@@ -311,10 +375,14 @@
   }
 
   .card-glow:hover::before,
-  .card-glow:focus-within::before,
+  .card-glow:focus-within::before {
+    opacity: 0.35;
+    filter: blur(28px);
+  }
+
   .card-glow:active::before {
-    opacity: 0.4;
-    filter: blur(32px);
+    opacity: 0.5;
+    filter: blur(20px);
   }
 
   /* Border gradient */
