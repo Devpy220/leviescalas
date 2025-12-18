@@ -261,6 +261,31 @@
     box-shadow: 0 0 40px hsl(var(--primary) / 0.3);
   }
 
+  /* Card glow effect - purple shadow on hover/focus */
+  .card-glow {
+    position: relative;
+    transition: all 0.3s ease;
+  }
+
+  .card-glow::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, hsl(var(--gradient-start)) 0%, hsl(var(--gradient-mid)) 50%, hsl(var(--gradient-end)) 100%);
+    border-radius: inherit;
+    filter: blur(24px);
+    opacity: 0.15;
+    z-index: -1;
+    transition: opacity 0.3s ease, filter 0.3s ease;
+  }
+
+  .card-glow:hover::before,
+  .card-glow:focus-within::before,
+  .card-glow:active::before {
+    opacity: 0.35;
+    filter: blur(28px);
+  }
+
   /* Border gradient */
   .border-gradient {
     position: relative;
