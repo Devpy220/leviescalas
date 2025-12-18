@@ -216,26 +216,26 @@ export default function ScheduleCalendar({
   }, [selectedDay, schedulesByDate]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       {/* Calendar Header */}
       <div className="flex items-center justify-between">
-        <h2 className="font-display text-lg font-bold text-foreground capitalize">
+        <h2 className="font-display text-sm font-bold text-foreground capitalize">
           {title || format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
         </h2>
         {isNavigationEnabled && (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="h-6 w-6"
               onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-3 h-3" />
             </Button>
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 text-xs"
+              className="h-6 text-[10px] px-2"
               onClick={() => setCurrentMonth(new Date())}
             >
               Hoje
@@ -243,21 +243,21 @@ export default function ScheduleCalendar({
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="h-6 w-6"
               onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-3 h-3" />
             </Button>
           </div>
         )}
       </div>
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
+      <div className="bg-card border border-border rounded-lg overflow-hidden">
         {/* Week Days Header */}
         <div className="grid grid-cols-7 border-b border-border">
           {weekDays.map((day, i) => (
             <div
               key={i}
-              className="py-2 text-center text-xs font-medium text-muted-foreground"
+              className="py-1 text-center text-[10px] font-medium text-muted-foreground"
             >
               {day}
             </div>
@@ -277,7 +277,7 @@ export default function ScheduleCalendar({
               <button
                 key={index}
                 onClick={() => handleDayClick(day)}
-                className={`relative h-12 border-b border-r border-border transition-colors overflow-hidden ${
+                className={`relative h-8 border-b border-r border-border transition-colors overflow-hidden ${
                   !isCurrentMonth ? 'bg-muted/20 text-muted-foreground/40' : 'bg-card hover:bg-muted/30'
                 } ${index % 7 === 6 ? 'border-r-0' : ''} ${
                   Math.floor(index / 7) === Math.floor((calendarDays.length - 1) / 7) ? 'border-b-0' : ''
@@ -300,7 +300,7 @@ export default function ScheduleCalendar({
                 )}
                 {/* Day number */}
                 <span
-                  className={`relative z-10 text-xs font-medium flex items-center justify-center w-6 h-6 mx-auto mt-1 rounded-full ${
+                  className={`relative z-10 text-[10px] font-medium flex items-center justify-center w-5 h-5 mx-auto mt-0.5 rounded-full ${
                     isCurrentDay
                       ? 'bg-primary text-primary-foreground'
                       : hasSchedules ? 'text-foreground font-semibold' : ''
@@ -310,8 +310,8 @@ export default function ScheduleCalendar({
                 </span>
                 {/* Schedule count indicator */}
                 {hasSchedules && (
-                  <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2">
-                    <span className="text-[10px] font-medium text-foreground/70">
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2">
+                    <span className="text-[8px] font-medium text-foreground/70">
                       {daySchedules.length}
                     </span>
                   </div>
@@ -323,22 +323,21 @@ export default function ScheduleCalendar({
       </div>
 
       {/* Legend - Show members and their colors */}
-      <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-        <span className="font-medium">Membros:</span>
-        {members.slice(0, 6).map((member) => {
+      <div className="flex items-center gap-2 text-[10px] text-muted-foreground flex-wrap">
+        {members.slice(0, 4).map((member) => {
           const color = getMemberColor(member.user_id);
           return (
-            <div key={member.user_id} className="flex items-center gap-1.5">
+            <div key={member.user_id} className="flex items-center gap-1">
               <div 
-                className="w-2.5 h-2.5 rounded-full" 
+                className="w-2 h-2 rounded-full" 
                 style={{ backgroundColor: color.dot }}
               />
-              <span className="truncate max-w-[80px]">{member.profile.name.split(' ')[0]}</span>
+              <span className="truncate max-w-[50px]">{member.profile.name.split(' ')[0]}</span>
             </div>
           );
         })}
-        {members.length > 6 && (
-          <span className="text-muted-foreground">+{members.length - 6}</span>
+        {members.length > 4 && (
+          <span className="text-muted-foreground">+{members.length - 4}</span>
         )}
       </div>
 
