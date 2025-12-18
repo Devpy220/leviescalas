@@ -200,58 +200,58 @@
     background: hsl(var(--primary) / 0.1);
   }
 
-  /* Gradient backgrounds - Gray to Orange */
+  /* Gradient backgrounds - Dark Gray to Orange */
   .gradient-primary {
-    background: linear-gradient(135deg, hsl(var(--gray-700)) 0%, hsl(var(--gray-500)) 40%, hsl(var(--orange-500)) 100%);
+    background: linear-gradient(135deg, hsl(var(--gray-900)) 0%, hsl(var(--gray-700)) 40%, hsl(var(--orange-500)) 100%);
   }
 
   .gradient-vibrant {
-    background: linear-gradient(135deg, hsl(var(--gray-800)) 0%, hsl(var(--gray-600)) 30%, hsl(var(--gray-400)) 50%, hsl(var(--orange-500)) 80%, hsl(var(--orange-400)) 100%);
+    background: linear-gradient(135deg, hsl(var(--gray-900)) 0%, hsl(var(--gray-800)) 30%, hsl(var(--gray-600)) 50%, hsl(var(--orange-500)) 80%, hsl(var(--orange-400)) 100%);
   }
 
   .gradient-hero {
-    background: linear-gradient(180deg, hsl(var(--gray-200)) 0%, hsl(var(--gray-100)) 25%, hsl(var(--gray-50)) 50%, hsl(var(--orange-50)) 80%, hsl(var(--background)) 100%);
+    background: linear-gradient(180deg, hsl(var(--gray-900)) 0%, hsl(var(--gray-800)) 25%, hsl(var(--gray-700)) 50%, hsl(var(--orange-900)) 80%, hsl(var(--gray-900)) 100%);
   }
 
   .dark .gradient-hero {
-    background: linear-gradient(180deg, hsl(var(--gray-900)) 0%, hsl(var(--gray-800)) 30%, hsl(var(--gray-700) / 0.5) 60%, hsl(var(--orange-900) / 0.2) 80%, hsl(var(--background)) 100%);
+    background: linear-gradient(180deg, hsl(var(--gray-950)) 0%, hsl(var(--gray-900)) 30%, hsl(var(--gray-800)) 60%, hsl(var(--orange-900) / 0.4) 80%, hsl(var(--background)) 100%);
   }
 
   .gradient-radial {
-    background: radial-gradient(ellipse at top, hsl(var(--gray-200)) 0%, hsl(var(--orange-100)) 30%, transparent 60%);
+    background: radial-gradient(ellipse at top, hsl(var(--gray-800)) 0%, hsl(var(--orange-900)) 30%, transparent 60%);
   }
 
   .dark .gradient-radial {
-    background: radial-gradient(ellipse at top, hsl(var(--gray-800) / 0.6) 0%, hsl(var(--orange-900) / 0.4) 30%, transparent 60%);
+    background: radial-gradient(ellipse at top, hsl(var(--gray-900)) 0%, hsl(var(--orange-950) / 0.6) 30%, transparent 60%);
   }
 
   .gradient-glow {
-    background: radial-gradient(circle at 50% 50%, hsl(var(--gray-400) / 0.3) 0%, hsl(var(--primary) / 0.2) 50%, transparent 70%);
+    background: radial-gradient(circle at 50% 50%, hsl(var(--gray-700) / 0.5) 0%, hsl(var(--orange-600) / 0.3) 50%, transparent 70%);
   }
 
-  /* Mesh gradient backgrounds with gray & orange */
+  /* Mesh gradient backgrounds - Dark with orange accents */
   .mesh-gradient {
-    background-color: hsl(var(--background));
+    background-color: hsl(var(--gray-900));
     background-image: 
-      radial-gradient(at 40% 20%, hsl(var(--gray-300) / 0.7) 0px, transparent 50%),
-      radial-gradient(at 80% 0%, hsl(var(--gray-200) / 0.6) 0px, transparent 50%),
-      radial-gradient(at 0% 50%, hsl(var(--gray-300) / 0.6) 0px, transparent 50%),
-      radial-gradient(at 80% 50%, hsl(var(--orange-200) / 0.4) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, hsl(var(--gray-200) / 0.5) 0px, transparent 50%),
-      radial-gradient(at 80% 100%, hsl(var(--orange-300) / 0.3) 0px, transparent 50%),
-      radial-gradient(at 50% 50%, hsl(var(--gray-100) / 0.4) 0px, transparent 60%);
+      radial-gradient(at 40% 20%, hsl(var(--gray-800) / 0.9) 0px, transparent 50%),
+      radial-gradient(at 80% 0%, hsl(var(--gray-700) / 0.7) 0px, transparent 50%),
+      radial-gradient(at 0% 50%, hsl(var(--gray-800) / 0.8) 0px, transparent 50%),
+      radial-gradient(at 80% 50%, hsl(var(--orange-800) / 0.5) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, hsl(var(--gray-700) / 0.6) 0px, transparent 50%),
+      radial-gradient(at 80% 100%, hsl(var(--orange-700) / 0.4) 0px, transparent 50%),
+      radial-gradient(at 50% 50%, hsl(var(--gray-900) / 0.7) 0px, transparent 60%);
   }
 
   .dark .mesh-gradient {
     background-color: hsl(var(--background));
     background-image: 
-      radial-gradient(at 40% 20%, hsl(var(--gray-700) / 0.8) 0px, transparent 50%),
-      radial-gradient(at 80% 0%, hsl(var(--gray-600) / 0.6) 0px, transparent 50%),
-      radial-gradient(at 0% 50%, hsl(var(--gray-700) / 0.6) 0px, transparent 50%),
-      radial-gradient(at 80% 50%, hsl(var(--orange-800) / 0.4) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, hsl(var(--gray-600) / 0.5) 0px, transparent 50%),
-      radial-gradient(at 80% 100%, hsl(var(--orange-800) / 0.4) 0px, transparent 50%),
-      radial-gradient(at 50% 50%, hsl(var(--gray-800) / 0.5) 0px, transparent 60%);
+      radial-gradient(at 40% 20%, hsl(var(--gray-800) / 0.9) 0px, transparent 50%),
+      radial-gradient(at 80% 0%, hsl(var(--gray-700) / 0.7) 0px, transparent 50%),
+      radial-gradient(at 0% 50%, hsl(var(--gray-800) / 0.8) 0px, transparent 50%),
+      radial-gradient(at 80% 50%, hsl(var(--orange-800) / 0.5) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, hsl(var(--gray-700) / 0.6) 0px, transparent 50%),
+      radial-gradient(at 80% 100%, hsl(var(--orange-800) / 0.5) 0px, transparent 50%),
+      radial-gradient(at 50% 50%, hsl(var(--gray-900) / 0.7) 0px, transparent 60%);
   }
 
   /* Animated mesh gradient */
@@ -260,15 +260,15 @@
     animation: meshMove 15s ease infinite;
   }
 
-  /* Text gradients - Gray to Orange */
+  /* Text gradients - Dark Gray to Orange */
   .text-gradient {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(var(--gray-600)) 0%, hsl(var(--gray-500)) 40%, hsl(var(--orange-500)) 100%);
+    background-image: linear-gradient(135deg, hsl(var(--gray-400)) 0%, hsl(var(--gray-300)) 40%, hsl(var(--orange-500)) 100%);
   }
 
   .text-gradient-vibrant {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(var(--gray-700)) 0%, hsl(var(--gray-500)) 30%, hsl(var(--orange-500)) 70%, hsl(var(--orange-400)) 100%);
+    background-image: linear-gradient(135deg, hsl(var(--gray-500)) 0%, hsl(var(--gray-400)) 30%, hsl(var(--orange-500)) 70%, hsl(var(--orange-400)) 100%);
   }
 
   /* Shadow utilities with blue glow */
