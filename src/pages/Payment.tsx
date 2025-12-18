@@ -92,7 +92,7 @@ const Payment = () => {
   };
 
   const sendReceipt = () => {
-    const subject = encodeURIComponent(`Comprovante PIX - Apoio ao Levi`);
+    const subject = encodeURIComponent(`Comprovante PIX - ${department?.name || "Pagamento"}`);
     const body = encodeURIComponent(`Olá,\n\nSegue em anexo o comprovante de pagamento PIX no valor de R$ 10,00.\n\nDepartamento: ${department?.name || "N/A"}\nEmail: ${user?.email || "N/A"}\n\nAtenciosamente.`);
     window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
   };
@@ -119,11 +119,10 @@ const Payment = () => {
 
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">
-            {paymentMethod === "select" ? "Apoio ao Levi" : 
-             paymentMethod === "pix" ? "Apoio ao Levi" : "Apoio ao Levi"}
+            {department ? department.name : "Pagamento"}
           </h1>
           <p className="text-muted-foreground">
-            {department ? `Apoio para ${department.name}` : "Escolha a forma de pagamento"}
+            Escolha a forma de pagamento
           </p>
           <p className="text-2xl font-bold text-primary mt-2">R$ 10,00</p>
         </div>
@@ -178,7 +177,7 @@ const Payment = () => {
               <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
                 <QrCode className="h-6 w-6 text-primary" />
               </div>
-              <CardTitle>Apoio ao Levi</CardTitle>
+              <CardTitle>Pagamento via PIX</CardTitle>
               <CardDescription>
                 Abra o app do seu banco e escaneie o QR code
               </CardDescription>
@@ -221,7 +220,7 @@ const Payment = () => {
               <div className="border-t pt-6 space-y-4">
                 <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4 text-center">
                   <p className="text-sm text-amber-800 dark:text-amber-200 font-medium">
-                    Após o pagamento, envie o comprovante para ativar seu apoio
+                    Após o pagamento, envie o comprovante para ativar
                   </p>
                 </div>
                 
@@ -248,7 +247,7 @@ const Payment = () => {
               <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
                 <CreditCard className="h-6 w-6 text-primary" />
               </div>
-              <CardTitle>Apoio ao Levi</CardTitle>
+              <CardTitle>Pagamento via Cartão</CardTitle>
               <CardDescription>
                 Escolha o tipo de cartão
               </CardDescription>
