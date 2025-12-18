@@ -4,11 +4,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, CreditCard, QrCode, Copy, Check, ArrowLeft } from "lucide-react";
+import { Loader2, CreditCard, QrCode, Copy, Check, ArrowLeft, Mail } from "lucide-react";
 import { toast } from "sonner";
-import pixQrCode from "@/assets/pix-qrcode.jpg";
+import pixQrCode from "@/assets/pix-qrcode-10.jpg";
 
-const PIX_KEY = "00020126580014br.gov.bcb.pix0136e8f0b0c8-1234-5678-9abc-def012345678520400005303986540510.005802BR5925NOME DO RECEBEDOR6009SAO PAULO62070503***6304ABCD";
+const PIX_KEY = "b8bb0848-844b-467b-8422-382720b1e980";
+const SUPPORT_EMAIL = "leviescalas@gmail.com";
+
+type PaymentMethod = "select" | "pix" | "card";
 
 const Payment = () => {
   const [searchParams] = useSearchParams();
@@ -17,9 +20,10 @@ const Payment = () => {
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [department, setDepartment] = useState<{ id: string; name: string } | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("select");
   
   const departmentId = searchParams.get("departmentId");
-  const type = searchParams.get("type") || "subscription"; // subscription or support
+  const type = searchParams.get("type") || "subscription";
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -83,6 +87,12 @@ const Payment = () => {
     }
   };
 
+  const sendReceipt = () => {
+    const subject = encodeURIComponent(`Comprovante PIX - ${department?.name || "Assinatura"}`);
+    const body = encodeURIComponent(`Olá,\n\nSegue em anexo o comprovante de pagamento PIX no valor de R$ 10,00.\n\nDepartamento: ${department?.name || "N/A"}\nEmail: ${user?.email || "N/A"}\n\nAtenciosamente.`);
+    window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -93,10 +103,10 @@ const Payment = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 py-8 px-4">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-2xl mx-auto">
         <Button 
           variant="ghost" 
-          onClick={() => navigate(-1)}
+          onClick={() => paymentMethod === "select" ? navigate(-1) : setPaymentMethod("select")}
           className="mb-6"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -105,38 +115,86 @@ const Payment = () => {
 
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">
-            Escolha a forma de pagamento
+            {paymentMethod === "select" ? "Escolha a forma de pagamento" : 
+             paymentMethod === "pix" ? "Pagamento via PIX" : "Pagamento via Cartão"}
           </h1>
           <p className="text-muted-foreground">
             {department ? `Assinatura para ${department.name}` : "Assinatura do departamento"}
           </p>
+          <p className="text-2xl font-bold text-primary mt-2">R$ 10,00</p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* PIX Option */}
-          <Card className="border-2 hover:border-primary/50 transition-colors">
+        {paymentMethod === "select" && (
+          <div className="grid md:grid-cols-2 gap-6">
+            <Card 
+              className="border-2 hover:border-primary/50 transition-colors cursor-pointer"
+              onClick={() => setPaymentMethod("pix")}
+            >
+              <CardHeader className="text-center">
+                <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                  <QrCode className="h-8 w-8 text-primary" />
+                </div>
+                <CardTitle className="text-xl">PIX</CardTitle>
+                <CardDescription>
+                  Pagamento instantâneo
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button className="w-full" variant="outline">
+                  Selecionar PIX
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card 
+              className="border-2 hover:border-primary/50 transition-colors cursor-pointer"
+              onClick={() => setPaymentMethod("card")}
+            >
+              <CardHeader className="text-center">
+                <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                  <CreditCard className="h-8 w-8 text-primary" />
+                </div>
+                <CardTitle className="text-xl">Cartão de Crédito</CardTitle>
+                <CardDescription>
+                  Pagamento seguro via Stripe
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button className="w-full" variant="outline">
+                  Selecionar Cartão
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {paymentMethod === "pix" && (
+          <Card className="border-2 border-primary/30">
             <CardHeader className="text-center">
               <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
                 <QrCode className="h-6 w-6 text-primary" />
               </div>
-              <CardTitle>PIX</CardTitle>
+              <CardTitle>Pagamento via PIX</CardTitle>
               <CardDescription>
-                Pagamento instantâneo via PIX
+                Escaneie o QR Code ou copie a chave PIX
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               <div className="flex justify-center">
                 <img 
                   src={pixQrCode} 
                   alt="QR Code PIX" 
-                  className="w-48 h-48 rounded-lg border"
+                  className="w-56 h-56 rounded-lg border"
                 />
               </div>
               
               <div className="space-y-2">
-                <p className="text-sm text-muted-foreground text-center">
-                  Escaneie o QR Code ou copie a chave PIX
+                <p className="text-sm text-muted-foreground text-center font-medium">
+                  Chave PIX (UUID):
                 </p>
+                <div className="bg-muted/50 p-3 rounded-lg text-center">
+                  <code className="text-xs break-all">{PIX_KEY}</code>
+                </div>
                 <Button 
                   variant="outline" 
                   className="w-full"
@@ -156,40 +214,50 @@ const Payment = () => {
                 </Button>
               </div>
 
-              <div className="bg-muted/50 rounded-lg p-3 text-center">
-                <p className="text-sm text-muted-foreground">
-                  Após o pagamento, envie o comprovante para ativar sua assinatura
+              <div className="border-t pt-6 space-y-4">
+                <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4 text-center">
+                  <p className="text-sm text-amber-800 dark:text-amber-200 font-medium">
+                    Após o pagamento, envie o comprovante para ativar sua assinatura
+                  </p>
+                </div>
+                
+                <Button 
+                  className="w-full" 
+                  size="lg"
+                  onClick={sendReceipt}
+                >
+                  <Mail className="h-4 w-4 mr-2" />
+                  Enviar Comprovante por Email
+                </Button>
+                
+                <p className="text-xs text-muted-foreground text-center">
+                  O email será enviado para: <strong>{SUPPORT_EMAIL}</strong>
                 </p>
               </div>
             </CardContent>
           </Card>
+        )}
 
-          {/* Card Option via Stripe */}
-          <Card className="border-2 hover:border-primary/50 transition-colors">
+        {paymentMethod === "card" && (
+          <Card className="border-2 border-primary/30">
             <CardHeader className="text-center">
               <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
                 <CreditCard className="h-6 w-6 text-primary" />
               </div>
-              <CardTitle>Cartão de Crédito</CardTitle>
+              <CardTitle>Pagamento via Cartão</CardTitle>
               <CardDescription>
-                Pagamento seguro via Stripe
+                Você será redirecionado para o checkout seguro
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               <div className="space-y-3 py-4">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Plano mensal</span>
-                  <span className="font-medium">R$ 25,00/mês</span>
+                  <span className="text-muted-foreground">Valor</span>
+                  <span className="font-medium">R$ 10,00</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Por voluntário</span>
-                  <span className="font-medium">R$ 25,00/mês</span>
-                </div>
-                <div className="border-t pt-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Período de teste</span>
-                    <span className="font-medium text-green-600">14 dias grátis</span>
-                  </div>
+                  <span className="text-muted-foreground">Período de teste</span>
+                  <span className="font-medium text-green-600">14 dias grátis</span>
                 </div>
               </div>
 
@@ -213,15 +281,14 @@ const Payment = () => {
               </Button>
 
               <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/stripe/stripe-plain.svg" alt="Stripe" className="h-4" />
                 <span>Pagamento seguro via Stripe</span>
               </div>
             </CardContent>
           </Card>
-        </div>
+        )}
 
         <div className="mt-8 text-center text-sm text-muted-foreground">
-          <p>Dúvidas? Entre em contato conosco pelo suporte.</p>
+          <p>Dúvidas? Entre em contato: {SUPPORT_EMAIL}</p>
         </div>
       </div>
     </div>
