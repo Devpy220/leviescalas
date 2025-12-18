@@ -6,12 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, CreditCard, QrCode, Copy, Check, ArrowLeft, Mail } from "lucide-react";
 import { toast } from "sonner";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import pixQrCode from "@/assets/pix-qrcode-10.jpg";
 
 const PIX_KEY = "b8bb0848-844b-467b-8422-382720b1e980";
 const SUPPORT_EMAIL = "leviescalas@gmail.com";
 
 type PaymentMethod = "select" | "pix" | "card";
+type CardType = "credit" | "debit";
 
 const Payment = () => {
   const [searchParams] = useSearchParams();
@@ -21,6 +24,7 @@ const Payment = () => {
   const [copied, setCopied] = useState(false);
   const [department, setDepartment] = useState<{ id: string; name: string } | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("select");
+  const [cardType, setCardType] = useState<CardType>("credit");
   
   const departmentId = searchParams.get("departmentId");
   const type = searchParams.get("type") || "subscription";
@@ -88,7 +92,7 @@ const Payment = () => {
   };
 
   const sendReceipt = () => {
-    const subject = encodeURIComponent(`Comprovante PIX - ${department?.name || "Assinatura"}`);
+    const subject = encodeURIComponent(`Comprovante PIX - Apoio ao Levi`);
     const body = encodeURIComponent(`Olá,\n\nSegue em anexo o comprovante de pagamento PIX no valor de R$ 10,00.\n\nDepartamento: ${department?.name || "N/A"}\nEmail: ${user?.email || "N/A"}\n\nAtenciosamente.`);
     window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
   };
@@ -115,11 +119,11 @@ const Payment = () => {
 
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">
-            {paymentMethod === "select" ? "Escolha a forma de pagamento" : 
-             paymentMethod === "pix" ? "Pagamento via PIX" : "Pagamento via Cartão"}
+            {paymentMethod === "select" ? "Apoio ao Levi" : 
+             paymentMethod === "pix" ? "Apoio ao Levi" : "Apoio ao Levi"}
           </h1>
           <p className="text-muted-foreground">
-            {department ? `Assinatura para ${department.name}` : "Assinatura do departamento"}
+            {department ? `Apoio para ${department.name}` : "Escolha a forma de pagamento"}
           </p>
           <p className="text-2xl font-bold text-primary mt-2">R$ 10,00</p>
         </div>
@@ -154,9 +158,9 @@ const Payment = () => {
                 <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
                   <CreditCard className="h-8 w-8 text-primary" />
                 </div>
-                <CardTitle className="text-xl">Cartão de Crédito</CardTitle>
+                <CardTitle className="text-xl">Cartão</CardTitle>
                 <CardDescription>
-                  Pagamento seguro via Stripe
+                  Crédito ou Débito via Stripe
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -217,7 +221,7 @@ const Payment = () => {
               <div className="border-t pt-6 space-y-4">
                 <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4 text-center">
                   <p className="text-sm text-amber-800 dark:text-amber-200 font-medium">
-                    Após o pagamento, envie o comprovante para ativar sua assinatura
+                    Após o pagamento, envie o comprovante para ativar seu apoio
                   </p>
                 </div>
                 
@@ -244,20 +248,55 @@ const Payment = () => {
               <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
                 <CreditCard className="h-6 w-6 text-primary" />
               </div>
-              <CardTitle>Pagamento via Cartão</CardTitle>
+              <CardTitle>Apoio ao Levi</CardTitle>
               <CardDescription>
-                Você será redirecionado para o checkout seguro
+                Escolha o tipo de cartão
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-3 py-4">
+              <RadioGroup 
+                value={cardType} 
+                onValueChange={(value) => setCardType(value as CardType)}
+                className="grid grid-cols-2 gap-4"
+              >
+                <div>
+                  <RadioGroupItem 
+                    value="credit" 
+                    id="credit" 
+                    className="peer sr-only" 
+                  />
+                  <Label
+                    htmlFor="credit"
+                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                  >
+                    <CreditCard className="mb-3 h-6 w-6" />
+                    <span className="text-sm font-medium">Crédito</span>
+                  </Label>
+                </div>
+                <div>
+                  <RadioGroupItem 
+                    value="debit" 
+                    id="debit" 
+                    className="peer sr-only" 
+                  />
+                  <Label
+                    htmlFor="debit"
+                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                  >
+                    <CreditCard className="mb-3 h-6 w-6" />
+                    <span className="text-sm font-medium">Débito</span>
+                  </Label>
+                </div>
+              </RadioGroup>
+
+              <div className="space-y-3 py-4 border-t">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Valor</span>
                   <span className="font-medium">R$ 10,00</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Período de teste</span>
-                  <span className="font-medium text-green-600">14 dias grátis</span>
+                  <span className="text-muted-foreground">Tipo</span>
+                  <span className="font-medium">{cardType === "credit" ? "Cartão de Crédito" : "Cartão de Débito"}</span>
                 </div>
               </div>
 
@@ -275,7 +314,7 @@ const Payment = () => {
                 ) : (
                   <>
                     <CreditCard className="h-4 w-4 mr-2" />
-                    Pagar com Cartão
+                    Pagar com {cardType === "credit" ? "Crédito" : "Débito"}
                   </>
                 )}
               </Button>
