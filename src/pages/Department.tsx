@@ -29,6 +29,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import ScheduleCalendar from '@/components/department/ScheduleCalendar';
+import ScheduleTable from '@/components/department/ScheduleTable';
 import MemberList from '@/components/department/MemberList';
 import SectorManagement from '@/components/department/SectorManagement';
 import AddScheduleDialog from '@/components/department/AddScheduleDialog';
@@ -447,41 +448,55 @@ export default function Department() {
           </div>
 
           <TabsContent value="calendar" className="mt-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Current Month Calendar */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-2 h-2 rounded-full bg-primary" />
-                  <span className="text-sm font-medium text-muted-foreground">Mês Atual</span>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Calendars - Left Side */}
+              <div className="lg:col-span-4 space-y-4">
+                {/* Current Month Calendar */}
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    <span className="text-xs font-medium text-muted-foreground">Mês Atual</span>
+                  </div>
+                  <ScheduleCalendar 
+                    schedules={schedules}
+                    members={members}
+                    isLeader={isLeader}
+                    onAddSchedule={handleAddSchedule}
+                    onDeleteSchedule={handleScheduleDeleted}
+                    departmentId={id!}
+                    fixedMonth={startOfMonth(new Date())}
+                    title={format(new Date(), "MMMM 'de' yyyy", { locale: ptBR })}
+                  />
                 </div>
-                <ScheduleCalendar 
-                  schedules={schedules}
-                  members={members}
-                  isLeader={isLeader}
-                  onAddSchedule={handleAddSchedule}
-                  onDeleteSchedule={handleScheduleDeleted}
-                  departmentId={id!}
-                  fixedMonth={startOfMonth(new Date())}
-                  title={format(new Date(), "MMMM 'de' yyyy", { locale: ptBR })}
-                />
+
+                {/* Next Month Calendar */}
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-accent" />
+                    <span className="text-xs font-medium text-muted-foreground">Próximo Mês</span>
+                  </div>
+                  <ScheduleCalendar 
+                    schedules={schedules}
+                    members={members}
+                    isLeader={isLeader}
+                    onAddSchedule={handleAddSchedule}
+                    onDeleteSchedule={handleScheduleDeleted}
+                    departmentId={id!}
+                    fixedMonth={startOfMonth(addMonths(new Date(), 1))}
+                    title={format(addMonths(new Date(), 1), "MMMM 'de' yyyy", { locale: ptBR })}
+                  />
+                </div>
               </div>
 
-              {/* Next Month Calendar */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-2 h-2 rounded-full bg-accent" />
-                  <span className="text-sm font-medium text-muted-foreground">Próximo Mês</span>
+              {/* Schedule Table - Right Side */}
+              <div className="lg:col-span-8">
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-foreground">Próximas Escalas</h3>
+                  <ScheduleTable 
+                    schedules={schedules}
+                    members={members}
+                  />
                 </div>
-                <ScheduleCalendar 
-                  schedules={schedules}
-                  members={members}
-                  isLeader={isLeader}
-                  onAddSchedule={handleAddSchedule}
-                  onDeleteSchedule={handleScheduleDeleted}
-                  departmentId={id!}
-                  fixedMonth={startOfMonth(addMonths(new Date(), 1))}
-                  title={format(addMonths(new Date(), 1), "MMMM 'de' yyyy", { locale: ptBR })}
-                />
               </div>
             </div>
           </TabsContent>
