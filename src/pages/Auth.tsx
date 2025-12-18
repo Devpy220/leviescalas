@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -109,15 +109,23 @@ export default function Auth() {
     }
   }, []);
 
-  // Sign out user when visiting auth page (force manual login)
+  // Ref to track if we already handled the initial sign out
+  const hasSignedOut = useRef(false);
+
+  // Sign out user ONLY on initial page load (force manual login)
   useEffect(() => {
+    // Skip if already handled or during password reset flow
+    if (hasSignedOut.current) return;
+    
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const type = hashParams.get('type');
+    
+    // Don't sign out during password reset
+    if (type === 'recovery') return;
+    
+    hasSignedOut.current = true;
+    
     const signOutOnVisit = async () => {
-      // Don't sign out during password reset flow
-      if (activeTab === 'reset-password' || authEvent === 'PASSWORD_RECOVERY') {
-        return;
-      }
-      
-      // Sign out any existing session to force manual login
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         await supabase.auth.signOut();
