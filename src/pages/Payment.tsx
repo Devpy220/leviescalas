@@ -174,9 +174,9 @@ const Payment = () => {
               <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
                 <QrCode className="h-6 w-6 text-primary" />
               </div>
-              <CardTitle>Pagamento via PIX</CardTitle>
+              <CardTitle>Apoio ao Levi</CardTitle>
               <CardDescription>
-                Escaneie o QR Code ou copie a chave PIX
+                Abra o app do seu banco e escaneie o QR code
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
