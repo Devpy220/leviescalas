@@ -109,12 +109,23 @@ export default function Auth() {
     }
   }, []);
 
-  // Redirect if already logged in (but not during password reset)
+  // Sign out user when visiting auth page (force manual login)
   useEffect(() => {
-    if (!loading && user && activeTab !== 'reset-password' && authEvent !== 'PASSWORD_RECOVERY') {
-      navigate('/dashboard');
-    }
-  }, [user, loading, navigate, activeTab, authEvent]);
+    const signOutOnVisit = async () => {
+      // Don't sign out during password reset flow
+      if (activeTab === 'reset-password' || authEvent === 'PASSWORD_RECOVERY') {
+        return;
+      }
+      
+      // Sign out any existing session to force manual login
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await supabase.auth.signOut();
+      }
+    };
+    
+    signOutOnVisit();
+  }, []);
 
   const loginForm = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
