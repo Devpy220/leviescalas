@@ -110,7 +110,15 @@ const Payment = () => {
       <div className="max-w-2xl mx-auto">
         <Button 
           variant="ghost" 
-          onClick={() => paymentMethod === "select" ? navigate(-1) : setPaymentMethod("select")}
+          onClick={() => {
+            if (paymentMethod !== "select") {
+              setPaymentMethod("select");
+            } else if (departmentId) {
+              navigate(`/department/${departmentId}`);
+            } else {
+              navigate("/dashboard");
+            }
+          }}
           className="mb-6"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
