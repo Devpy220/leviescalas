@@ -92,7 +92,7 @@ const Payment = () => {
   };
 
   const sendReceipt = () => {
-    const subject = encodeURIComponent(`Comprovante PIX - ${department?.name || "Pagamento"}`);
+    const subject = encodeURIComponent("Comprovante PIX - Apoio ao Levi");
     const body = encodeURIComponent(`Olá,\n\nSegue em anexo o comprovante de pagamento PIX no valor de R$ 10,00.\n\nDepartamento: ${department?.name || "N/A"}\nEmail: ${user?.email || "N/A"}\n\nAtenciosamente.`);
     window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
   };
@@ -119,7 +119,7 @@ const Payment = () => {
 
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">
-            {department ? department.name : "Pagamento"}
+            Apoio ao Levi
           </h1>
           <p className="text-muted-foreground">
             Escolha a forma de pagamento
@@ -177,7 +177,7 @@ const Payment = () => {
               <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
                 <QrCode className="h-6 w-6 text-primary" />
               </div>
-              <CardTitle>Pagamento via PIX</CardTitle>
+              <CardTitle>Apoio ao Levi</CardTitle>
               <CardDescription>
                 Abra o app do seu banco e escaneie o QR code
               </CardDescription>
@@ -247,7 +247,7 @@ const Payment = () => {
               <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
                 <CreditCard className="h-6 w-6 text-primary" />
               </div>
-              <CardTitle>Pagamento via Cartão</CardTitle>
+              <CardTitle>Apoio ao Levi</CardTitle>
               <CardDescription>
                 Escolha o tipo de cartão
               </CardDescription>
