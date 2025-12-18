@@ -79,8 +79,9 @@ interface ScheduleCalendarProps {
   departmentId: string;
   onAddSchedule: (date?: Date) => void;
   onDeleteSchedule: () => void;
-  fixedMonth?: Date; // If provided, navigation is disabled and this month is shown
-  title?: string; // Optional custom title
+  fixedMonth?: Date;
+  title?: string;
+  compact?: boolean;
 }
 
 export default function ScheduleCalendar({ 
@@ -91,7 +92,8 @@ export default function ScheduleCalendar({
   onAddSchedule,
   onDeleteSchedule,
   fixedMonth,
-  title
+  title,
+  compact = false
 }: ScheduleCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(fixedMonth || new Date());
   const isNavigationEnabled = !fixedMonth;
@@ -216,10 +218,10 @@ export default function ScheduleCalendar({
   }, [selectedDay, schedulesByDate]);
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1">
       {/* Calendar Header */}
       <div className="flex items-center justify-between">
-        <h2 className="font-display text-sm font-bold text-foreground capitalize">
+        <h2 className={`font-display font-bold text-foreground capitalize ${compact ? 'text-xs' : 'text-sm'}`}>
           {title || format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
         </h2>
         {isNavigationEnabled && (
@@ -227,7 +229,7 @@ export default function ScheduleCalendar({
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6"
+              className="h-5 w-5"
               onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
             >
               <ChevronLeft className="w-3 h-3" />
@@ -235,7 +237,7 @@ export default function ScheduleCalendar({
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 text-[10px] px-2"
+              className="h-5 text-[9px] px-1"
               onClick={() => setCurrentMonth(new Date())}
             >
               Hoje
@@ -243,7 +245,7 @@ export default function ScheduleCalendar({
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6"
+              className="h-5 w-5"
               onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
             >
               <ChevronRight className="w-3 h-3" />
@@ -257,7 +259,7 @@ export default function ScheduleCalendar({
           {weekDays.map((day, i) => (
             <div
               key={i}
-              className="py-1 text-center text-[10px] font-medium text-muted-foreground"
+              className={`text-center font-medium text-muted-foreground ${compact ? 'py-0.5 text-[8px]' : 'py-1 text-[10px]'}`}
             >
               {day}
             </div>
@@ -277,7 +279,9 @@ export default function ScheduleCalendar({
               <button
                 key={index}
                 onClick={() => handleDayClick(day)}
-                className={`relative h-8 border-b border-r border-border transition-colors overflow-hidden ${
+                className={`relative border-b border-r border-border transition-colors overflow-hidden ${
+                  compact ? 'h-6' : 'h-8'
+                } ${
                   !isCurrentMonth ? 'bg-muted/20 text-muted-foreground/40' : 'bg-card hover:bg-muted/30'
                 } ${index % 7 === 6 ? 'border-r-0' : ''} ${
                   Math.floor(index / 7) === Math.floor((calendarDays.length - 1) / 7) ? 'border-b-0' : ''
@@ -300,7 +304,9 @@ export default function ScheduleCalendar({
                 )}
                 {/* Day number */}
                 <span
-                  className={`relative z-10 text-[10px] font-medium flex items-center justify-center w-5 h-5 mx-auto mt-0.5 rounded-full ${
+                  className={`relative z-10 font-medium flex items-center justify-center mx-auto rounded-full ${
+                    compact ? 'text-[8px] w-4 h-4 mt-0.5' : 'text-[10px] w-5 h-5 mt-0.5'
+                  } ${
                     isCurrentDay
                       ? 'bg-primary text-primary-foreground'
                       : hasSchedules ? 'text-foreground font-semibold' : ''
@@ -308,38 +314,32 @@ export default function ScheduleCalendar({
                 >
                   {format(day, 'd')}
                 </span>
-                {/* Schedule count indicator */}
-                {hasSchedules && (
-                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2">
-                    <span className="text-[8px] font-medium text-foreground/70">
-                      {daySchedules.length}
-                    </span>
-                  </div>
-                )}
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Legend - Show members and their colors */}
-      <div className="flex items-center gap-2 text-[10px] text-muted-foreground flex-wrap">
-        {members.slice(0, 4).map((member) => {
-          const color = getMemberColor(member.user_id);
-          return (
-            <div key={member.user_id} className="flex items-center gap-1">
-              <div 
-                className="w-2 h-2 rounded-full" 
-                style={{ backgroundColor: color.dot }}
-              />
-              <span className="truncate max-w-[50px]">{member.profile.name.split(' ')[0]}</span>
-            </div>
-          );
-        })}
-        {members.length > 4 && (
-          <span className="text-muted-foreground">+{members.length - 4}</span>
-        )}
-      </div>
+      {/* Legend - Hide in compact mode */}
+      {!compact && (
+        <div className="flex items-center gap-2 text-[10px] text-muted-foreground flex-wrap">
+          {members.slice(0, 4).map((member) => {
+            const color = getMemberColor(member.user_id);
+            return (
+              <div key={member.user_id} className="flex items-center gap-1">
+                <div 
+                  className="w-2 h-2 rounded-full" 
+                  style={{ backgroundColor: color.dot }}
+                />
+                <span className="truncate max-w-[50px]">{member.profile.name.split(' ')[0]}</span>
+              </div>
+            );
+          })}
+          {members.length > 4 && (
+            <span className="text-muted-foreground">+{members.length - 4}</span>
+          )}
+        </div>
+      )}
 
       {/* Day Detail Dialog */}
       <Dialog open={showDayDialog} onOpenChange={setShowDayDialog}>

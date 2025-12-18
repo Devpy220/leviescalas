@@ -448,55 +448,47 @@ export default function Department() {
           </div>
 
           <TabsContent value="calendar" className="mt-6">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Calendars - Left Side */}
-              <div className="lg:col-span-4 space-y-4">
-                {/* Current Month Calendar */}
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    <span className="text-xs font-medium text-muted-foreground">Mês Atual</span>
-                  </div>
-                  <ScheduleCalendar 
-                    schedules={schedules}
-                    members={members}
-                    isLeader={isLeader}
-                    onAddSchedule={handleAddSchedule}
-                    onDeleteSchedule={handleScheduleDeleted}
-                    departmentId={id!}
-                    fixedMonth={startOfMonth(new Date())}
-                    title={format(new Date(), "MMMM 'de' yyyy", { locale: ptBR })}
-                  />
-                </div>
-
-                {/* Next Month Calendar */}
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-accent" />
-                    <span className="text-xs font-medium text-muted-foreground">Próximo Mês</span>
-                  </div>
-                  <ScheduleCalendar 
-                    schedules={schedules}
-                    members={members}
-                    isLeader={isLeader}
-                    onAddSchedule={handleAddSchedule}
-                    onDeleteSchedule={handleScheduleDeleted}
-                    departmentId={id!}
-                    fixedMonth={startOfMonth(addMonths(new Date(), 1))}
-                    title={format(addMonths(new Date(), 1), "MMMM 'de' yyyy", { locale: ptBR })}
-                  />
-                </div>
+            <div className="space-y-6">
+              {/* Calendars Side by Side */}
+              <div className="grid grid-cols-2 gap-3">
+                <ScheduleCalendar 
+                  schedules={schedules}
+                  members={members}
+                  isLeader={isLeader}
+                  onAddSchedule={handleAddSchedule}
+                  onDeleteSchedule={handleScheduleDeleted}
+                  departmentId={id!}
+                  fixedMonth={startOfMonth(new Date())}
+                  title={format(new Date(), "MMMM", { locale: ptBR })}
+                  compact
+                />
+                <ScheduleCalendar 
+                  schedules={schedules}
+                  members={members}
+                  isLeader={isLeader}
+                  onAddSchedule={handleAddSchedule}
+                  onDeleteSchedule={handleScheduleDeleted}
+                  departmentId={id!}
+                  fixedMonth={startOfMonth(addMonths(new Date(), 1))}
+                  title={format(addMonths(new Date(), 1), "MMMM", { locale: ptBR })}
+                  compact
+                />
               </div>
 
-              {/* Schedule Table - Right Side */}
-              <div className="lg:col-span-8">
-                <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-foreground">Próximas Escalas</h3>
-                  <ScheduleTable 
-                    schedules={schedules}
-                    members={members}
-                  />
-                </div>
+              {/* Schedule Tables by Month */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <ScheduleTable 
+                  schedules={schedules}
+                  members={members}
+                  month={new Date()}
+                  title={format(new Date(), "MMMM 'de' yyyy", { locale: ptBR })}
+                />
+                <ScheduleTable 
+                  schedules={schedules}
+                  members={members}
+                  month={addMonths(new Date(), 1)}
+                  title={format(addMonths(new Date(), 1), "MMMM 'de' yyyy", { locale: ptBR })}
+                />
               </div>
             </div>
           </TabsContent>
