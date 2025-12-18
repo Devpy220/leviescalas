@@ -83,13 +83,7 @@ export default function ScheduleTable({ schedules, members, month, title }: Sche
     });
 
     return Array.from(grouped.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .filter(([date]) => {
-        const scheduleDate = parseISO(date);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        return scheduleDate >= today;
-      });
+      .sort(([a], [b]) => a.localeCompare(b));
   }, [schedules, month]);
 
   if (schedulesByDate.length === 0) {
