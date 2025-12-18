@@ -15,6 +15,7 @@ import JoinDepartment from "./pages/JoinDepartment";
 import MySchedules from "./pages/MySchedules";
 import Security from "./pages/Security";
 import Admin from "./pages/Admin";
+import Payment from "./pages/Payment";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
               <Route path="/my-schedules" element={<MySchedules />} />
               <Route path="/security" element={<Security />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="/payment" element={<Payment />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
