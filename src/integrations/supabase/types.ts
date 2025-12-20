@@ -44,9 +44,49 @@ export type Database = {
         }
         Relationships: []
       }
+      churches: {
+        Row: {
+          address: string | null
+          city: string | null
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          leader_id: string
+          name: string
+          state: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          leader_id: string
+          name: string
+          state?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          leader_id?: string
+          name?: string
+          state?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       departments: {
         Row: {
           avatar_url: string | null
+          church_id: string | null
           created_at: string
           description: string | null
           id: string
@@ -61,6 +101,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          church_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -75,6 +116,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          church_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -88,6 +130,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "departments_church_id_fkey"
+            columns: ["church_id"]
+            isOneToOne: false
+            referencedRelation: "churches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "departments_leader_id_fkey"
             columns: ["leader_id"]
@@ -426,6 +475,7 @@ export type Database = {
     Functions: {
       admin_delete_department: { Args: { dept_id: string }; Returns: boolean }
       admin_delete_member: { Args: { member_id: string }; Returns: boolean }
+      generate_church_code: { Args: never; Returns: string }
       get_all_departments_admin: {
         Args: never
         Returns: {
@@ -456,6 +506,18 @@ export type Database = {
           id: string
           user_id: string
           user_name: string
+        }[]
+      }
+      get_church_departments: {
+        Args: { p_church_id: string }
+        Returns: {
+          created_at: string
+          description: string
+          id: string
+          leader_id: string
+          leader_name: string
+          member_count: number
+          name: string
         }[]
       }
       get_department_basic: {
@@ -624,6 +686,14 @@ export type Database = {
         Returns: string
       }
       update_contact_privacy: { Args: { share: boolean }; Returns: undefined }
+      validate_church_code: {
+        Args: { p_code: string }
+        Returns: {
+          id: string
+          is_valid: boolean
+          name: string
+        }[]
+      }
       validate_invite_code_secure: {
         Args: { code: string }
         Returns: {
