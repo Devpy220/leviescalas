@@ -152,6 +152,31 @@ export default function ChurchSetup() {
     navigate(`/departments/new?church=${validatedChurch.id}`);
   };
 
+  const sendCodeByEmail = async (churchId: string) => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase.functions.invoke('send-church-code-email', {
+        body: { churchId },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast({
+        title: 'Email enviado!',
+        description: `Enviamos o código para ${user.email}`,
+      });
+    } catch (err: any) {
+      console.error('Error sending code email:', err);
+      toast({
+        variant: 'destructive',
+        title: 'Não foi possível enviar o email',
+        description: 'Tente novamente em instantes.',
+      });
+    }
+  };
+
   const handleCreateChurch = async (data: ChurchForm) => {
     if (!requireAuth()) return;
     
@@ -187,15 +212,20 @@ export default function ChurchSetup() {
       setCreatedChurch({
         id: newChurch.id,
         name: newChurch.name,
-        code: newChurch.code
+        code: newChurch.code,
       });
       setShowSuccessDialog(true);
-    } catch (error) {
+
+      // Fire-and-forget email (won't block UI)
+      setTimeout(() => {
+        sendCodeByEmail(newChurch.id);
+      }, 0);
+    } catch (error: any) {
       console.error('Error creating church:', error);
       toast({
         variant: 'destructive',
         title: 'Erro ao cadastrar igreja',
-        description: 'Tente novamente.',
+        description: error?.message || 'Tente novamente.',
       });
     } finally {
       setIsLoading(false);
@@ -500,6 +530,14 @@ export default function ChurchSetup() {
             >
               <Copy className="w-4 h-4 mr-2" />
               Copiar Código
+            </Button>
+            <Button 
+              variant="outline" 
+              className="flex-1"
+              onClick={() => createdChurch && sendCodeByEmail(createdChurch.id)}
+            >
+              <Mail className="w-4 h-4 mr-2" />
+              Enviar por email
             </Button>
             <Button 
               className="flex-1 gradient-primary text-primary-foreground"
