@@ -42,17 +42,22 @@ export default function MySchedules() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
   const [supportPlan, setSupportPlan] = useState<SupportPlan>({ isActive: false, loading: false });
-  const { user, loading: authLoading } = useAuth();
+  const { user, session, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user) {
+
+    // Redirect only if there is truly no session
+    if (!session) {
       navigate('/auth');
       return;
     }
-    fetchSchedules();
-  }, [user?.id, authLoading]);
+
+    if (user) {
+      fetchSchedules();
+    }
+  }, [user?.id, authLoading, session, navigate]);
 
   const fetchSchedules = async () => {
     if (!user) return;
