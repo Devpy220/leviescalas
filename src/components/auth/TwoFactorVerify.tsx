@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Loader2, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,12 +15,20 @@ export function TwoFactorVerify({ onSuccess, onCancel }: TwoFactorVerifyProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [code, setCode] = useState('');
   const { toast } = useToast();
+  
+  // Prevent double-click / multiple submissions
+  const isVerifying = useRef(false);
 
   const handleVerify = async () => {
-    if (code.length !== 6) return;
+    if (code.length !== 6 || isVerifying.current) return;
 
+    isVerifying.current = true;
     setIsLoading(true);
+    
     try {
+      // Stop auto-refresh temporarily to prevent race conditions
+      supabase.auth.stopAutoRefresh();
+      
       // List factors to get the TOTP factor
       const { data: factors, error: listError } = await supabase.auth.mfa.listFactors();
       if (listError) throw listError;
@@ -45,13 +53,22 @@ export function TwoFactorVerify({ onSuccess, onCancel }: TwoFactorVerifyProps) {
 
       if (verifyError) throw verifyError;
 
+      // Re-enable auto-refresh after successful verification
+      supabase.auth.startAutoRefresh();
+
       toast({
         title: 'Verificação concluída',
         description: 'Login realizado com sucesso.',
       });
       
-      onSuccess();
+      // Small delay to ensure session is properly set before navigation
+      setTimeout(() => {
+        onSuccess();
+      }, 100);
     } catch (error: any) {
+      // Re-enable auto-refresh on error
+      supabase.auth.startAutoRefresh();
+      
       const message = error.message?.includes('Invalid')
         ? 'Código inválido. Tente novamente.'
         : error.message || 'Erro na verificação.';
@@ -61,6 +78,7 @@ export function TwoFactorVerify({ onSuccess, onCancel }: TwoFactorVerifyProps) {
         title: 'Erro na verificação',
         description: message,
       });
+      isVerifying.current = false;
     } finally {
       setIsLoading(false);
     }
