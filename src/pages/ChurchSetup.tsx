@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Church, 
@@ -6,13 +6,24 @@ import {
   ArrowRight, 
   CheckCircle2,
   Plus,
-  Key
+  Key,
+  Copy,
+  Mail,
+  Phone,
+  FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,6 +38,14 @@ const churchSchema = z.object({
   name: z.string()
     .min(2, 'Nome deve ter no mínimo 2 caracteres')
     .max(100, 'Nome muito longo'),
+  email: z.string()
+    .email('Email inválido'),
+  phone: z.string()
+    .min(10, 'Telefone inválido')
+    .max(20, 'Telefone inválido'),
+  cnpj: z.string()
+    .max(18, 'CNPJ inválido')
+    .optional(),
   description: z.string()
     .max(500, 'Descrição muito longa')
     .optional(),
@@ -49,12 +68,20 @@ interface ValidatedChurch {
   name: string;
 }
 
+interface CreatedChurch {
+  id: string;
+  name: string;
+  code: string;
+}
+
 export default function ChurchSetup() {
   const [isLoading, setIsLoading] = useState(false);
   const [validatedChurch, setValidatedChurch] = useState<ValidatedChurch | null>(null);
   const [validatingCode, setValidatingCode] = useState(false);
   const [codeError, setCodeError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>('code');
+  const [createdChurch, setCreatedChurch] = useState<CreatedChurch | null>(null);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -62,7 +89,7 @@ export default function ChurchSetup() {
 
   const churchForm = useForm<ChurchForm>({
     resolver: zodResolver(churchSchema),
-    defaultValues: { name: '', description: '', address: '', city: '', state: '' },
+    defaultValues: { name: '', email: '', phone: '', cnpj: '', description: '', address: '', city: '', state: '' },
   });
 
   const codeForm = useForm<CodeForm>({
@@ -132,34 +159,37 @@ export default function ChurchSetup() {
     
     try {
       // Generate unique code
-      const { data: codeData, error: codeError } = await supabase
+      const { data: codeData, error: codeErr } = await supabase
         .rpc('generate_church_code');
       
-      if (codeError) throw codeError;
+      if (codeErr) throw codeErr;
 
       const { data: newChurch, error } = await supabase
         .from('churches')
         .insert({
           name: data.name,
+          email: data.email,
+          phone: data.phone,
+          cnpj: data.cnpj || null,
           description: data.description || null,
           address: data.address || null,
           city: data.city || null,
           state: data.state || null,
           code: codeData,
-          leader_id: user.id,
+          leader_id: user!.id,
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      toast({
-        title: 'Igreja cadastrada!',
-        description: `Código: ${codeData}`,
+      // Show success dialog with code
+      setCreatedChurch({
+        id: newChurch.id,
+        name: newChurch.name,
+        code: newChurch.code
       });
-
-      // Navigate to create department with church pre-filled
-      navigate(`/departments/new?church=${newChurch.id}`);
+      setShowSuccessDialog(true);
     } catch (error) {
       console.error('Error creating church:', error);
       toast({
@@ -170,6 +200,21 @@ export default function ChurchSetup() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const copyCode = () => {
+    if (!createdChurch) return;
+    navigator.clipboard.writeText(createdChurch.code);
+    toast({
+      title: 'Código copiado!',
+      description: 'Compartilhe com os líderes de departamento.',
+    });
+  };
+
+  const handleContinue = () => {
+    if (!createdChurch) return;
+    setShowSuccessDialog(false);
+    navigate(`/departments/new?church=${createdChurch.id}`);
   };
 
   if (authLoading) {
@@ -301,6 +346,50 @@ export default function ChurchSetup() {
                       )}
                     </div>
 
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="email" className="flex items-center gap-2">
+                          <Mail className="w-4 h-4" />
+                          Email *
+                        </Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          placeholder="contato@igreja.com"
+                          {...churchForm.register('email')}
+                        />
+                        {churchForm.formState.errors.email && (
+                          <p className="text-sm text-destructive">{churchForm.formState.errors.email.message}</p>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="phone" className="flex items-center gap-2">
+                          <Phone className="w-4 h-4" />
+                          Telefone *
+                        </Label>
+                        <Input
+                          id="phone"
+                          placeholder="(11) 99999-9999"
+                          {...churchForm.register('phone')}
+                        />
+                        {churchForm.formState.errors.phone && (
+                          <p className="text-sm text-destructive">{churchForm.formState.errors.phone.message}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="cnpj" className="flex items-center gap-2">
+                        <FileText className="w-4 h-4" />
+                        CNPJ (opcional)
+                      </Label>
+                      <Input
+                        id="cnpj"
+                        placeholder="00.000.000/0000-00"
+                        {...churchForm.register('cnpj')}
+                      />
+                    </div>
+
                     <div className="space-y-2">
                       <Label htmlFor="description">Descrição</Label>
                       <Textarea
@@ -351,7 +440,7 @@ export default function ChurchSetup() {
                         </>
                       ) : (
                         <>
-                          Cadastrar e Continuar
+                          Cadastrar Igreja
                           <ArrowRight className="w-5 h-5 ml-2" />
                         </>
                       )}
@@ -367,6 +456,61 @@ export default function ChurchSetup() {
           </div>
         </div>
       </main>
+
+      {/* Success Dialog with Code */}
+      <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-center justify-center">
+              <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+              Igreja Cadastrada!
+            </DialogTitle>
+            <DialogDescription className="text-center">
+              Sua igreja foi cadastrada com sucesso. Guarde o código abaixo para compartilhar com os líderes de departamento.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-6">
+            <div className="bg-muted rounded-xl p-6 text-center">
+              <p className="text-sm text-muted-foreground mb-2">Código da Igreja</p>
+              <div className="flex items-center justify-center gap-3">
+                <code className="text-3xl font-mono font-bold text-primary tracking-wider">
+                  {createdChurch?.code}
+                </code>
+                <Button 
+                  size="icon" 
+                  variant="outline"
+                  onClick={copyCode}
+                  className="h-10 w-10"
+                >
+                  <Copy className="w-5 h-5" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-3">
+                {createdChurch?.name}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <Button 
+              variant="outline" 
+              className="flex-1"
+              onClick={copyCode}
+            >
+              <Copy className="w-4 h-4 mr-2" />
+              Copiar Código
+            </Button>
+            <Button 
+              className="flex-1 gradient-primary text-primary-foreground"
+              onClick={handleContinue}
+            >
+              Continuar
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
