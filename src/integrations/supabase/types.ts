@@ -703,6 +703,13 @@ export type Database = {
           name: string
         }[]
       }
+      validate_church_code_secure: {
+        Args: { p_code: string }
+        Returns: {
+          church_name: string
+          is_valid: boolean
+        }[]
+      }
       validate_invite_code_secure: {
         Args: { code: string }
         Returns: {
