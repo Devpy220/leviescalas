@@ -48,36 +48,45 @@ export type Database = {
         Row: {
           address: string | null
           city: string | null
+          cnpj: string | null
           code: string
           created_at: string
           description: string | null
+          email: string | null
           id: string
           leader_id: string
           name: string
+          phone: string | null
           state: string | null
           updated_at: string
         }
         Insert: {
           address?: string | null
           city?: string | null
+          cnpj?: string | null
           code: string
           created_at?: string
           description?: string | null
+          email?: string | null
           id?: string
           leader_id: string
           name: string
+          phone?: string | null
           state?: string | null
           updated_at?: string
         }
         Update: {
           address?: string | null
           city?: string | null
+          cnpj?: string | null
           code?: string
           created_at?: string
           description?: string | null
+          email?: string | null
           id?: string
           leader_id?: string
           name?: string
+          phone?: string | null
           state?: string | null
           updated_at?: string
         }
