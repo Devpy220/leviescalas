@@ -18,6 +18,7 @@ import Admin from "./pages/Admin";
 import Payment from "./pages/Payment";
 import Churches from "./pages/Churches";
 import ChurchDetail from "./pages/ChurchDetail";
+import ChurchSetup from "./pages/ChurchSetup";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,7 @@ const App = () => (
               <Route path="/payment" element={<Payment />} />
               <Route path="/churches" element={<Churches />} />
               <Route path="/churches/:id" element={<ChurchDetail />} />
+              <Route path="/church-setup" element={<ChurchSetup />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
