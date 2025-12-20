@@ -18,6 +18,8 @@ const checkoutSchema = z.object({
     .max(500, "Description must be less than 500 characters")
     .optional()
     .nullable(),
+  churchId: z.string()
+    .uuid("Invalid church ID format"),
 });
 
 const logStep = (step: string, details?: any) => {
@@ -66,8 +68,8 @@ serve(async (req) => {
       );
     }
 
-    const { departmentName, departmentDescription } = validationResult.data;
-    logStep("Request body validated", { departmentName, departmentDescription });
+    const { departmentName, departmentDescription, churchId } = validationResult.data;
+    logStep("Request body validated", { departmentName, departmentDescription, churchId });
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
@@ -101,14 +103,16 @@ serve(async (req) => {
           user_id: user.id,
           department_name: departmentName,
           department_description: departmentDescription || "",
+          church_id: churchId,
         },
       },
-      success_url: `${origin}/create-department?success=true&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/create-department?canceled=true`,
+      success_url: `${origin}/departments/new?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/departments/new?canceled=true`,
       metadata: {
         user_id: user.id,
         department_name: departmentName,
         department_description: departmentDescription || "",
+        church_id: churchId,
       },
     });
 

@@ -11,7 +11,9 @@ import {
   CreditCard,
   Shield,
   Sparkles,
-  ExternalLink
+  ExternalLink,
+  Church,
+  AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +22,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const departmentSchema = z.object({
   name: z.string()
@@ -28,6 +31,9 @@ const departmentSchema = z.object({
   description: z.string()
     .max(500, 'Descrição muito longa')
     .optional(),
+  churchCode: z.string()
+    .min(1, 'Código da igreja é obrigatório')
+    .max(20, 'Código inválido'),
 });
 
 type DepartmentForm = z.infer<typeof departmentSchema>;
@@ -41,21 +47,31 @@ const features = [
   'Exportação PDF/Excel',
 ];
 
+interface ValidatedChurch {
+  id: string;
+  name: string;
+}
+
 export default function CreateDepartment() {
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState<'form' | 'payment' | 'success'>('form');
   const [createdDepartment, setCreatedDepartment] = useState<{ id: string; name: string; invite_code: string } | null>(null);
   const [searchParams] = useSearchParams();
+  const [validatedChurch, setValidatedChurch] = useState<ValidatedChurch | null>(null);
+  const [validatingCode, setValidatingCode] = useState(false);
+  const [codeError, setCodeError] = useState<string | null>(null);
   
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
 
+  // Check if coming from church page with pre-filled church
+  const prefilledChurchId = searchParams.get('church');
+
   const form = useForm<DepartmentForm>({
     resolver: zodResolver(departmentSchema),
-    defaultValues: { name: '', description: '' },
+    defaultValues: { name: '', description: '', churchCode: '' },
   });
-
   // Handle return from Stripe checkout
   useEffect(() => {
     const success = searchParams.get('success');
@@ -75,6 +91,61 @@ export default function CreateDepartment() {
       completeCheckout(sessionId);
     }
   }, [searchParams]);
+
+  // Pre-fill church if coming from church page
+  useEffect(() => {
+    if (prefilledChurchId) {
+      fetchChurchById(prefilledChurchId);
+    }
+  }, [prefilledChurchId]);
+
+  const fetchChurchById = async (churchId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('churches')
+        .select('id, name, code')
+        .eq('id', churchId)
+        .maybeSingle();
+
+      if (!error && data) {
+        setValidatedChurch({ id: data.id, name: data.name });
+        form.setValue('churchCode', data.code);
+      }
+    } catch (error) {
+      console.error('Error fetching church:', error);
+    }
+  };
+
+  const validateChurchCode = async (code: string) => {
+    if (!code || code.length < 4) {
+      setValidatedChurch(null);
+      setCodeError(null);
+      return;
+    }
+
+    setValidatingCode(true);
+    setCodeError(null);
+
+    try {
+      const { data, error } = await supabase
+        .rpc('validate_church_code', { p_code: code });
+
+      if (error) throw error;
+
+      if (data && data.length > 0 && data[0].is_valid) {
+        setValidatedChurch({ id: data[0].id, name: data[0].name });
+        setCodeError(null);
+      } else {
+        setValidatedChurch(null);
+        setCodeError('Código de igreja não encontrado');
+      }
+    } catch (error) {
+      console.error('Error validating church code:', error);
+      setCodeError('Erro ao validar código');
+    } finally {
+      setValidatingCode(false);
+    }
+  };
 
   const completeCheckout = async (sessionId: string) => {
     setIsLoading(true);
@@ -118,11 +189,20 @@ export default function CreateDepartment() {
       return;
     }
 
+    if (!validatedChurch) {
+      toast({
+        variant: 'destructive',
+        title: 'Igreja não validada',
+        description: 'Por favor, insira um código de igreja válido.',
+      });
+      return;
+    }
+
     setStep('payment');
   };
 
   const handlePayment = async () => {
-    if (!user) return;
+    if (!user || !validatedChurch) return;
     
     setIsLoading(true);
     
@@ -133,6 +213,7 @@ export default function CreateDepartment() {
         body: {
           departmentName: formData.name,
           departmentDescription: formData.description || '',
+          churchId: validatedChurch.id,
         },
       });
 
@@ -217,6 +298,56 @@ export default function CreateDepartment() {
                 </div>
 
                 <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+                  {/* Church Code Field */}
+                  <div className="space-y-2">
+                    <Label htmlFor="churchCode" className="flex items-center gap-2">
+                      <Church className="w-4 h-4 text-primary" />
+                      Código da Igreja *
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="churchCode"
+                        placeholder="Digite o código da igreja"
+                        {...form.register('churchCode')}
+                        className="h-12 uppercase font-mono"
+                        onChange={(e) => {
+                          form.setValue('churchCode', e.target.value.toUpperCase());
+                          validateChurchCode(e.target.value);
+                        }}
+                        disabled={!!prefilledChurchId}
+                      />
+                      {validatingCode && (
+                        <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin text-muted-foreground" />
+                      )}
+                    </div>
+                    {form.formState.errors.churchCode && (
+                      <p className="text-sm text-destructive">{form.formState.errors.churchCode.message}</p>
+                    )}
+                    {codeError && (
+                      <p className="text-sm text-destructive">{codeError}</p>
+                    )}
+                    {validatedChurch && (
+                      <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Igreja: {validatedChurch.name}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {!validatedChurch && !prefilledChurchId && (
+                    <Alert>
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>Igreja não cadastrada?</AlertTitle>
+                      <AlertDescription>
+                        Se sua igreja ainda não está cadastrada, peça ao administrador para{' '}
+                        <Link to="/churches" className="text-primary hover:underline font-medium">
+                          cadastrar a igreja
+                        </Link>{' '}
+                        primeiro e obtenha o código.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
                   <div className="space-y-2">
                     <Label htmlFor="name">Nome do Departamento</Label>
                     <Input
@@ -246,6 +377,7 @@ export default function CreateDepartment() {
                   <Button 
                     type="submit" 
                     className="w-full h-12 gradient-primary text-primary-foreground shadow-glow-sm hover:shadow-glow transition-all"
+                    disabled={!validatedChurch}
                   >
                     Continuar para pagamento
                   </Button>
