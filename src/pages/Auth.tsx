@@ -89,6 +89,9 @@ export default function Auth() {
   const { toast } = useToast();
   const { signIn, signUp, user, session, loading, authEvent } = useAuth();
 
+  const redirectParam = searchParams.get('redirect');
+  const postAuthRedirect = redirectParam && redirectParam.startsWith('/') ? redirectParam : '/dashboard';
+
   // Detect password recovery flow from auth event
   useEffect(() => {
     if (authEvent === 'PASSWORD_RECOVERY') {
@@ -115,9 +118,9 @@ export default function Auth() {
     const type = hashParams.get('type');
 
     if (!loading && session && type !== 'recovery') {
-      navigate('/dashboard');
+      navigate(postAuthRedirect);
     }
-  }, [loading, session, navigate]);
+  }, [loading, session, navigate, postAuthRedirect]);
 
   const loginForm = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -171,7 +174,7 @@ export default function Auth() {
       title: 'Bem-vindo de volta!',
       description: 'Login realizado com sucesso.',
     });
-    navigate('/dashboard');
+    navigate(postAuthRedirect);
   };
 
   const handle2FASuccess = () => {
@@ -179,7 +182,7 @@ export default function Auth() {
       title: 'Bem-vindo de volta!',
       description: 'Login realizado com sucesso.',
     });
-    navigate('/dashboard');
+    navigate(postAuthRedirect);
   };
 
   const handle2FACancel = async () => {
@@ -225,7 +228,7 @@ export default function Auth() {
       title: 'Conta criada com sucesso!',
       description: 'Você já pode fazer login.',
     });
-    navigate('/dashboard');
+    navigate(postAuthRedirect);
   };
 
   const formatWhatsapp = (value: string) => {
