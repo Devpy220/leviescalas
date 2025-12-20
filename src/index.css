@@ -84,13 +84,22 @@
     --orange-800: 15 79% 34%;
     --orange-900: 15 75% 28%;
 
+    /* Red Accent Palette - Subtle */
+    --red-50: 0 86% 97%;
+    --red-100: 0 93% 94%;
+    --red-200: 0 96% 89%;
+    --red-300: 0 94% 82%;
+    --red-400: 0 91% 71%;
+    --red-500: 0 84% 60%;
+    --red-600: 0 72% 51%;
+
     --coral: 12 76% 61%;
     --coral-foreground: 0 0% 100%;
     --emerald: 160 84% 39%;
     --emerald-foreground: 0 0% 100%;
     --amber: 38 92% 50%;
     --amber-foreground: 0 0% 0%;
-    --rose: 330 81% 60%;
+    --rose: 346 77% 50%;
     --rose-foreground: 0 0% 100%;
     --cyan: 192 91% 36%;
     --cyan-foreground: 0 0% 100%;
@@ -98,15 +107,17 @@
     --success: 160 84% 39%;
     --warning: 38 92% 50%;
     --info: 217 91% 60%;
+    --danger: 0 84% 60%;
 
     /* Glass Effects */
     --glass-bg: 0 0% 100% / 0.7;
     --glass-border: 220 13% 91% / 0.5;
 
-    /* Gradient Colors - Blue & Gray */
+    /* Gradient Colors - Blue, Gray & Red accent */
     --gradient-start: 217 91% 60%;
     --gradient-mid: 221 83% 53%;
     --gradient-end: 220 20% 12%;
+    --gradient-accent: 0 84% 60%;
 
     /* Shadows */
     --shadow-color: 217 91% 60%;
@@ -156,6 +167,7 @@
     --gradient-start: 217 91% 60%;
     --gradient-mid: 213 94% 68%;
     --gradient-end: 221 39% 11%;
+    --gradient-accent: 0 72% 51%;
 
     --sidebar-background: 222 47% 11%;
     --sidebar-foreground: 210 40% 98%;
@@ -206,7 +218,7 @@
   }
 
   .gradient-vibrant {
-    background: linear-gradient(135deg, hsl(var(--blue-500)) 0%, hsl(var(--blue-400)) 40%, hsl(var(--blue-600)) 70%, hsl(var(--gray-700)) 100%);
+    background: linear-gradient(135deg, hsl(var(--blue-500)) 0%, hsl(var(--blue-400)) 35%, hsl(var(--red-500) / 0.8) 70%, hsl(var(--red-600)) 100%);
   }
 
   .gradient-hero {
@@ -266,7 +278,7 @@
 
   .text-gradient-vibrant {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(var(--blue-400)) 0%, hsl(var(--blue-500)) 40%, hsl(var(--blue-600)) 70%, hsl(var(--gray-700)) 100%);
+    background-image: linear-gradient(135deg, hsl(var(--blue-500)) 0%, hsl(var(--blue-400)) 40%, hsl(var(--red-500)) 80%, hsl(var(--red-600)) 100%);
   }
 
   /* Shadow utilities with blue glow */
@@ -493,6 +505,10 @@
   .icon-cyan {
     background: hsl(var(--cyan) / 0.1);
     color: hsl(var(--cyan));
+  }
+  .icon-red {
+    background: hsl(var(--red-500) / 0.1);
+    color: hsl(var(--red-500));
   }
 }
 
