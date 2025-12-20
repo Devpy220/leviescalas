@@ -87,7 +87,7 @@ export default function Auth() {
   
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { signIn, signUp, user, loading, authEvent } = useAuth();
+  const { signIn, signUp, user, session, loading, authEvent } = useAuth();
 
   // Detect password recovery flow from auth event
   useEffect(() => {
@@ -109,40 +109,15 @@ export default function Auth() {
     }
   }, []);
 
-  // Ref to track if we already handled the initial sign out
-  const hasSignedOut = useRef(false);
-  // Ref to track if user just completed 2FA - prevent sign out
-  const justCompleted2FA = useRef(false);
-
-  // Sign out user ONLY on initial page load (force manual login)
+  // If user is already authenticated, redirect away from /auth (except password recovery flow)
   useEffect(() => {
-    // Skip if already handled or during password reset flow or just completed 2FA
-    if (hasSignedOut.current || justCompleted2FA.current) return;
-    
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const type = hashParams.get('type');
-    
-    // Don't sign out during password reset
-    if (type === 'recovery') return;
-    
-    hasSignedOut.current = true;
-    
-    const signOutOnVisit = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        // Check if user has valid AAL2 (completed 2FA) - don't sign out
-        const { data: mfaData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-        if (mfaData?.currentLevel === 'aal2') {
-          // User has completed 2FA, redirect to dashboard
-          navigate('/dashboard');
-          return;
-        }
-        await supabase.auth.signOut();
-      }
-    };
-    
-    signOutOnVisit();
-  }, [navigate]);
+
+    if (!loading && session && type !== 'recovery') {
+      navigate('/dashboard');
+    }
+  }, [loading, session, navigate]);
 
   const loginForm = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -200,8 +175,6 @@ export default function Auth() {
   };
 
   const handle2FASuccess = () => {
-    // Mark that 2FA was just completed to prevent sign out on navigation
-    justCompleted2FA.current = true;
     toast({
       title: 'Bem-vindo de volta!',
       description: 'Login realizado com sucesso.',
