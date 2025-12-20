@@ -93,7 +93,7 @@ export default function Landing() {
                 Entrar
               </Button>
             </Link>
-            <Link to="/auth?tab=register">
+            <Link to="/church-setup">
               <Button className="gradient-vibrant text-white shadow-glow-sm hover:shadow-glow transition-all">
                 Começar Grátis
                 <ArrowRight className="w-4 h-4 ml-1" />
@@ -128,7 +128,7 @@ export default function Landing() {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/auth?tab=register">
+              <Link to="/church-setup">
                 <Button size="lg" className="w-full sm:w-auto gradient-vibrant text-white shadow-glow hover:shadow-glow-lg transition-all text-lg px-8 animate-gradient">
                   Começar 14 dias grátis
                   <ArrowRight className="w-5 h-5 ml-2" />
@@ -256,7 +256,7 @@ export default function Landing() {
                   ))}
                 </ul>
                 
-                <Link to="/auth?tab=register" className="block">
+                <Link to="/church-setup" className="block">
                   <Button className="w-full gradient-vibrant text-white shadow-glow hover:shadow-glow-lg transition-all text-lg py-6">
                     Começar teste grátis
                     <ChevronRight className="w-5 h-5 ml-1" />
@@ -279,7 +279,7 @@ export default function Landing() {
             <p className="text-lg text-muted-foreground mb-8">
               Junte-se a centenas de igrejas que já simplificaram sua gestão de voluntários.
             </p>
-            <Link to="/auth?tab=register">
+            <Link to="/church-setup">
               <Button size="lg" className="gradient-vibrant text-white shadow-glow hover:shadow-glow-lg transition-all text-lg px-8">
                 Criar conta gratuita
                 <ArrowRight className="w-5 h-5 ml-2" />
