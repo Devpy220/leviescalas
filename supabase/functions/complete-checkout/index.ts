@@ -85,11 +85,16 @@ serve(async (req) => {
 
     const departmentName = session.metadata?.department_name;
     const departmentDescription = session.metadata?.department_description;
+    const churchId = session.metadata?.church_id;
     const subscriptionId = session.subscription as string;
     const customerId = session.customer as string;
 
     if (!departmentName) {
       throw new Error("Department name not found in session metadata");
+    }
+
+    if (!churchId) {
+      throw new Error("Church ID not found in session metadata");
     }
 
     // Get subscription details for trial end date
@@ -98,13 +103,14 @@ serve(async (req) => {
       ? new Date(subscription.trial_end * 1000).toISOString()
       : null;
 
-    // Create the department
+    // Create the department with church_id
     const { data: department, error: deptError } = await supabaseClient
       .from('departments')
       .insert({
         name: departmentName,
         description: departmentDescription || null,
         leader_id: user.id,
+        church_id: churchId,
         subscription_status: subscription.status === 'trialing' ? 'trial' : 'active',
         trial_ends_at: trialEndsAt,
         stripe_customer_id: customerId,

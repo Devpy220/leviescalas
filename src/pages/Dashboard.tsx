@@ -13,7 +13,8 @@ import {
   Sparkles,
   CalendarDays,
   Settings2,
-  Download
+  Download,
+  Church
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -276,6 +277,15 @@ export default function Dashboard() {
                 <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-primary rounded-full" />
               </Button>
             )}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-muted-foreground"
+              onClick={() => navigate('/churches')}
+              title="Igrejas"
+            >
+              <Church className="w-5 h-5" />
+            </Button>
             <Button 
               variant="ghost" 
               size="icon" 
