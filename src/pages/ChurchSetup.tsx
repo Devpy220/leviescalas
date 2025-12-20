@@ -70,11 +70,13 @@ export default function ChurchSetup() {
     defaultValues: { code: '' },
   });
 
-  useEffect(() => {
-    if (!authLoading && !user) {
+  const requireAuth = () => {
+    if (!user) {
       navigate('/auth?tab=register&redirect=/church-setup');
+      return false;
     }
-  }, [user, authLoading, navigate]);
+    return true;
+  };
 
   const validateChurchCode = async (code: string) => {
     if (!code || code.length < 4) {
@@ -117,12 +119,14 @@ export default function ChurchSetup() {
       return;
     }
 
+    if (!requireAuth()) return;
+
     // Navigate to create department with church pre-filled
     navigate(`/departments/new?church=${validatedChurch.id}`);
   };
 
   const handleCreateChurch = async (data: ChurchForm) => {
-    if (!user) return;
+    if (!requireAuth()) return;
     
     setIsLoading(true);
     
