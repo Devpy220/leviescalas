@@ -47,6 +47,7 @@ const loginSchema = z.object({
 });
 
 const registerSchema = z.object({
+  churchCode: z.string().min(1, 'Código da igreja é obrigatório').max(20, 'Código muito longo'),
   name: z.string().min(2, 'Nome deve ter no mínimo 2 caracteres').max(100, 'Nome muito longo'),
   email: z.string().email('Email inválido').max(255, 'Email muito longo'),
   whatsapp: z.string()
@@ -84,6 +85,8 @@ export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [recoveryEmailSent, setRecoveryEmailSent] = useState(false);
   const [pendingPasswordReset, setPendingPasswordReset] = useState<string | null>(null);
+  const [churchValidated, setChurchValidated] = useState<{ valid: boolean; name: string | null }>({ valid: false, name: null });
+  const [isValidatingChurch, setIsValidatingChurch] = useState(false);
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -129,8 +132,41 @@ export default function Auth() {
 
   const registerForm = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { name: '', email: '', whatsapp: '', password: '', confirmPassword: '' },
+    defaultValues: { churchCode: '', name: '', email: '', whatsapp: '', password: '', confirmPassword: '' },
   });
+
+  // Validate church code
+  const validateChurchCode = async (code: string) => {
+    if (!code || code.length < 1) {
+      setChurchValidated({ valid: false, name: null });
+      return;
+    }
+
+    setIsValidatingChurch(true);
+    try {
+      const { data, error } = await supabase.rpc('validate_church_code_secure', { p_code: code.toUpperCase() });
+      
+      if (error) {
+        console.error('Error validating church code:', error);
+        setChurchValidated({ valid: false, name: null });
+        return;
+      }
+
+      if (data && data.length > 0 && data[0].is_valid) {
+        setChurchValidated({ valid: true, name: data[0].church_name });
+      } else {
+        setChurchValidated({ valid: false, name: null });
+      }
+    } catch (err) {
+      console.error('Error validating church code:', err);
+      setChurchValidated({ valid: false, name: null });
+    } finally {
+      setIsValidatingChurch(false);
+    }
+  };
+
+  // Watch church code changes
+  const churchCodeValue = registerForm.watch('churchCode');
 
   const recoveryForm = useForm<RecoveryForm>({
     resolver: zodResolver(recoverySchema),
@@ -193,6 +229,17 @@ export default function Auth() {
   const handleRegister = async (data: RegisterForm) => {
     setIsLoading(true);
     
+    // Verificar se a igreja foi validada
+    if (!churchValidated.valid) {
+      toast({
+        variant: 'destructive',
+        title: 'Igreja não encontrada',
+        description: 'O código da igreja informado não é válido. Verifique com o líder da sua igreja.',
+      });
+      setIsLoading(false);
+      return;
+    }
+    
     // Verificação de senha vazada
     const passwordValidation = await validatePassword(data.password);
     
@@ -226,7 +273,7 @@ export default function Auth() {
 
     toast({
       title: 'Conta criada com sucesso!',
-      description: 'Você já pode fazer login.',
+      description: `Bem-vindo à ${churchValidated.name}! Você já pode fazer login.`,
     });
     navigate(postAuthRedirect);
   };
@@ -592,6 +639,54 @@ export default function Auth() {
           {/* Register Form */}
           {activeTab === 'register' && (
             <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-5 animate-fade-in">
+              {/* Church Code Field */}
+              <div className="space-y-2">
+                <Label htmlFor="register-church-code">Código da Igreja</Label>
+                <div className="relative">
+                  <Input
+                    id="register-church-code"
+                    type="text"
+                    placeholder="Ex: ABC12345"
+                    {...registerForm.register('churchCode')}
+                    onChange={(e) => {
+                      const value = e.target.value.toUpperCase();
+                      registerForm.setValue('churchCode', value);
+                      validateChurchCode(value);
+                    }}
+                    className={`h-12 uppercase ${
+                      churchValidated.valid 
+                        ? 'border-emerald ring-emerald/20' 
+                        : churchCodeValue && !isValidatingChurch 
+                        ? 'border-destructive ring-destructive/20' 
+                        : ''
+                    }`}
+                  />
+                  {isValidatingChurch && (
+                    <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin text-muted-foreground" />
+                  )}
+                </div>
+                {registerForm.formState.errors.churchCode && (
+                  <p className="text-sm text-destructive">{registerForm.formState.errors.churchCode.message}</p>
+                )}
+                {churchValidated.valid && churchValidated.name && (
+                  <p className="text-sm text-emerald flex items-center gap-1">
+                    ✓ Igreja: <span className="font-medium">{churchValidated.name}</span>
+                  </p>
+                )}
+                {churchCodeValue && !churchValidated.valid && !isValidatingChurch && (
+                  <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                    <p className="text-sm text-destructive font-medium">Igreja não encontrada</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Verifique o código com o líder da sua igreja. Se sua igreja ainda não está cadastrada, 
+                      peça ao líder para criar uma conta e cadastrar a igreja primeiro.
+                    </p>
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Solicite o código ao líder da sua igreja
+                </p>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="register-name">Nome completo</Label>
                 <Input
@@ -600,6 +695,7 @@ export default function Auth() {
                   placeholder="Seu nome"
                   {...registerForm.register('name')}
                   className="h-12"
+                  disabled={!churchValidated.valid}
                 />
                 {registerForm.formState.errors.name && (
                   <p className="text-sm text-destructive">{registerForm.formState.errors.name.message}</p>
@@ -614,6 +710,7 @@ export default function Auth() {
                   placeholder="seu@email.com"
                   {...registerForm.register('email')}
                   className="h-12"
+                  disabled={!churchValidated.valid}
                 />
                 {registerForm.formState.errors.email && (
                   <p className="text-sm text-destructive">{registerForm.formState.errors.email.message}</p>
@@ -632,6 +729,7 @@ export default function Auth() {
                     registerForm.setValue('whatsapp', formatted);
                   }}
                   className="h-12"
+                  disabled={!churchValidated.valid}
                 />
                 {registerForm.formState.errors.whatsapp && (
                   <p className="text-sm text-destructive">{registerForm.formState.errors.whatsapp.message}</p>
@@ -650,11 +748,13 @@ export default function Auth() {
                     placeholder="••••••••"
                     {...registerForm.register('password')}
                     className="h-12 pr-12"
+                    disabled={!churchValidated.valid}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    disabled={!churchValidated.valid}
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -673,6 +773,7 @@ export default function Auth() {
                   placeholder="••••••••"
                   {...registerForm.register('confirmPassword')}
                   className="h-12"
+                  disabled={!churchValidated.valid}
                 />
                 {registerForm.formState.errors.confirmPassword && (
                   <p className="text-sm text-destructive">{registerForm.formState.errors.confirmPassword.message}</p>
@@ -682,13 +783,15 @@ export default function Auth() {
               <Button 
                 type="submit" 
                 className="w-full h-12 gradient-vibrant text-white shadow-glow-sm hover:shadow-glow transition-all"
-                disabled={isLoading}
+                disabled={isLoading || !churchValidated.valid}
               >
                 {isLoading ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin mr-2" />
                     Criando conta...
                   </>
+                ) : !churchValidated.valid ? (
+                  'Informe o código da igreja'
                 ) : (
                   'Criar conta'
                 )}
@@ -701,36 +804,51 @@ export default function Auth() {
                 <a href="#" className="text-primary hover:underline">Política de Privacidade</a>.
               </p>
 
-              {/* Social Login Divider */}
-              <div className="relative my-4">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-border"></div>
-                </div>
+              {/* Info box for leaders */}
+              <div className="p-4 rounded-xl glass border border-border/50">
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-medium text-foreground">É líder de uma igreja?</span>
+                  <br />
+                  <Link to="/church-setup" className="text-primary hover:underline">
+                    Clique aqui para cadastrar sua igreja
+                  </Link> e receber o código de acesso.
+                </p>
               </div>
 
-              {/* Social Login Buttons */}
-              <div className="flex justify-center gap-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="w-12 h-12 rounded-xl"
-                  onClick={handleGoogleSignIn}
-                  disabled={isLoading}
-                >
-                  <GoogleIcon />
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="w-12 h-12 rounded-xl"
-                  onClick={handleFacebookSignIn}
-                  disabled={isLoading}
-                >
-                  <FacebookIcon />
-                </Button>
-              </div>
+              {/* Social Login Divider */}
+              {churchValidated.valid && (
+                <>
+                  <div className="relative my-4">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-border"></div>
+                    </div>
+                  </div>
+
+                  {/* Social Login Buttons */}
+                  <div className="flex justify-center gap-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="w-12 h-12 rounded-xl"
+                      onClick={handleGoogleSignIn}
+                      disabled={isLoading}
+                    >
+                      <GoogleIcon />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="w-12 h-12 rounded-xl"
+                      onClick={handleFacebookSignIn}
+                      disabled={isLoading}
+                    >
+                      <FacebookIcon />
+                    </Button>
+                  </div>
+                </>
+              )}
             </form>
           )}
 
