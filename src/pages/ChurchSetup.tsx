@@ -246,6 +246,13 @@ export default function ChurchSetup() {
   const handleContinue = () => {
     if (!createdChurch) return;
     setShowSuccessDialog(false);
+    // Redireciona para o dashboard em vez de criar departamento automaticamente
+    navigate('/dashboard');
+  };
+
+  const handleCreateDepartment = () => {
+    if (!createdChurch) return;
+    setShowSuccessDialog(false);
     navigate(`/departments/new?church=${createdChurch.id}`);
   };
 
@@ -524,28 +531,38 @@ export default function ChurchSetup() {
             </div>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-3">
+            <div className="flex gap-3">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={copyCode}
+              >
+                <Copy className="w-4 h-4 mr-2" />
+                Copiar Código
+              </Button>
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => createdChurch && sendCodeByEmail(createdChurch.id)}
+              >
+                <Mail className="w-4 h-4 mr-2" />
+                Enviar por email
+              </Button>
+            </div>
             <Button 
-              variant="outline" 
-              className="flex-1"
-              onClick={copyCode}
+              className="w-full gradient-primary text-primary-foreground"
+              onClick={handleCreateDepartment}
             >
-              <Copy className="w-4 h-4 mr-2" />
-              Copiar Código
+              <Plus className="w-4 h-4 mr-2" />
+              Criar Departamento Agora
             </Button>
             <Button 
-              variant="outline" 
-              className="flex-1"
-              onClick={() => createdChurch && sendCodeByEmail(createdChurch.id)}
-            >
-              <Mail className="w-4 h-4 mr-2" />
-              Enviar por email
-            </Button>
-            <Button 
-              className="flex-1 gradient-primary text-primary-foreground"
+              variant="ghost"
+              className="w-full"
               onClick={handleContinue}
             >
-              Continuar
+              Ir para o Dashboard
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
