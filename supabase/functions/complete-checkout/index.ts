@@ -85,7 +85,7 @@ serve(async (req) => {
 
     const departmentName = session.metadata?.department_name;
     const departmentDescription = session.metadata?.department_description;
-    const churchId = session.metadata?.church_id;
+    const churchCode = session.metadata?.church_code;
     const subscriptionId = session.subscription as string;
     const customerId = session.customer as string;
 
@@ -93,9 +93,24 @@ serve(async (req) => {
       throw new Error("Department name not found in session metadata");
     }
 
-    if (!churchId) {
-      throw new Error("Church ID not found in session metadata");
+    if (!churchCode) {
+      throw new Error("Church code not found in session metadata");
     }
+
+    // Resolve church code to church ID securely on the backend
+    const { data: churchData, error: churchError } = await supabaseClient
+      .from('churches')
+      .select('id')
+      .ilike('code', churchCode)
+      .maybeSingle();
+
+    if (churchError || !churchData) {
+      logStep("Error finding church by code", { error: churchError, code: churchCode });
+      throw new Error("Invalid church code");
+    }
+
+    const churchId = churchData.id;
+    logStep("Church resolved from code", { churchCode, churchId });
 
     // Get subscription details for trial end date
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
