@@ -93,9 +93,9 @@ export default function Landing() {
                 Entrar
               </Button>
             </Link>
-            <Link to="/church-setup">
+            <Link to="/">
               <Button className="gradient-vibrant text-white shadow-glow-sm hover:shadow-glow transition-all">
-                Começar Grátis
+                Acessar Igreja
                 <ArrowRight className="w-4 h-4 ml-1" />
               </Button>
             </Link>
@@ -128,9 +128,9 @@ export default function Landing() {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/church-setup">
+              <Link to="/">
                 <Button size="lg" className="w-full sm:w-auto gradient-vibrant text-white shadow-glow hover:shadow-glow-lg transition-all text-lg px-8 animate-gradient">
-                  Começar 14 dias grátis
+                  Acessar com Código
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </Link>
@@ -145,7 +145,7 @@ export default function Landing() {
             </div>
             
             <p className="mt-4 text-sm text-muted-foreground">
-              Sem cartão de crédito • Configuração em 2 minutos
+              Digite o código da sua igreja para começar
             </p>
 
             {/* User Counter */}
@@ -256,9 +256,9 @@ export default function Landing() {
                   ))}
                 </ul>
                 
-                <Link to="/church-setup" className="block">
+                <Link to="/" className="block">
                   <Button className="w-full gradient-vibrant text-white shadow-glow hover:shadow-glow-lg transition-all text-lg py-6">
-                    Começar teste grátis
+                    Acessar com Código
                     <ChevronRight className="w-5 h-5 ml-1" />
                   </Button>
                 </Link>
@@ -279,9 +279,9 @@ export default function Landing() {
             <p className="text-lg text-muted-foreground mb-8">
               Junte-se a centenas de igrejas que já simplificaram sua gestão de voluntários.
             </p>
-            <Link to="/church-setup">
+            <Link to="/">
               <Button size="lg" className="gradient-vibrant text-white shadow-glow hover:shadow-glow-lg transition-all text-lg px-8">
-                Criar conta gratuita
+                Acessar com Código
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </Link>
