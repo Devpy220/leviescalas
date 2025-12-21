@@ -277,9 +277,9 @@ export default function Auth() {
     }
     
     const { error } = await signUp(data.email, data.password, data.name, data.whatsapp);
-    setIsLoading(false);
 
     if (error) {
+      setIsLoading(false);
       const errorMessage = error.message.includes('User already registered')
         ? 'Este email já está cadastrado'
         : error.message.includes('Password')
@@ -293,6 +293,35 @@ export default function Auth() {
       });
       return;
     }
+
+    // Se é fluxo de líder, tentar torná-lo admin (primeiro usuário vira admin automaticamente)
+    if (isLeaderFlow) {
+      try {
+        // Aguardar um pouco para garantir que a sessão está pronta
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Buscar sessão atual
+        const { data: sessionData } = await supabase.auth.getSession();
+        
+        if (sessionData?.session?.user) {
+          // Tentar inserir como admin (só funciona se não houver admin ainda - política RLS)
+          const { error: roleError } = await supabase
+            .from('user_roles')
+            .insert({ user_id: sessionData.session.user.id, role: 'admin' });
+          
+          if (!roleError) {
+            toast({
+              title: '🎉 Você é o administrador!',
+              description: 'Como primeiro usuário, você tem acesso total ao sistema.',
+            });
+          }
+        }
+      } catch (err) {
+        console.log('Não foi possível definir role de admin (já existe admin):', err);
+      }
+    }
+
+    setIsLoading(false);
 
     toast({
       title: 'Conta criada com sucesso!',
