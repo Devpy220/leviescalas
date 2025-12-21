@@ -105,27 +105,55 @@ export default function Auth() {
   // Detect password recovery flow from auth event
   useEffect(() => {
     if (authEvent === 'PASSWORD_RECOVERY') {
-      console.log('Password recovery event detected');
       setActiveTab('reset-password');
     }
   }, [authEvent]);
 
-  // Also check URL hash on mount for recovery link
-  useEffect(() => {
+  const getRecoveryTypeFromUrl = () => {
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const type = hashParams.get('type');
-    const accessToken = hashParams.get('access_token');
-    
-    if (type === 'recovery' && accessToken) {
-      console.log('Recovery token found in URL');
-      setActiveTab('reset-password');
-    }
+    const hashType = hashParams.get('type');
+    const queryParams = new URLSearchParams(window.location.search);
+    const queryType = queryParams.get('type');
+    return queryType ?? hashType;
+  };
+
+  // Handle recovery links that arrive either via URL hash (implicit) or via ?code=... (PKCE)
+  useEffect(() => {
+    const run = async () => {
+      const type = getRecoveryTypeFromUrl();
+      const queryParams = new URLSearchParams(window.location.search);
+      const code = queryParams.get('code');
+
+      // PKCE-style recovery link
+      if (type === 'recovery' && code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error) {
+          toast({
+            variant: 'destructive',
+            title: 'Link inválido',
+            description: 'Esse link de recuperação expirou. Solicite um novo email de recuperação.',
+          });
+          return;
+        }
+        setActiveTab('reset-password');
+        return;
+      }
+
+      // Implicit-style recovery link (hash)
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get('access_token');
+      if (type === 'recovery' && accessToken) {
+        setActiveTab('reset-password');
+      }
+    };
+
+    run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // If user is already authenticated, redirect away from /auth (except password recovery flow)
   useEffect(() => {
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const type = hashParams.get('type');
+    const type = getRecoveryTypeFromUrl();
 
     if (!loading && session && type !== 'recovery') {
       navigate(postAuthRedirect);
