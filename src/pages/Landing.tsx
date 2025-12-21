@@ -89,7 +89,7 @@ export default function Landing() {
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <Link to="/auth">
-              <Button variant="ghost" className="hidden sm:inline-flex">
+              <Button variant="ghost">
                 Entrar
               </Button>
             </Link>
