@@ -93,7 +93,7 @@ export default function Landing() {
                 Entrar
               </Button>
             </Link>
-            <Link to="/">
+            <Link to="/acessar">
               <Button className="gradient-vibrant text-white shadow-glow-sm hover:shadow-glow transition-all">
                 Acessar Igreja
                 <ArrowRight className="w-4 h-4 ml-1" />
@@ -103,8 +103,17 @@ export default function Landing() {
         </div>
       </nav>
 
+      {/* Support Notice */}
+      <div className="fixed top-16 left-0 right-0 z-40 bg-amber-500/10 border-b border-amber-500/30 backdrop-blur-sm">
+        <div className="container mx-auto px-4 py-2 text-center">
+          <p className="text-sm text-amber-700 dark:text-amber-300">
+            <strong>Atenção:</strong> Para cadastrar sua igreja, entre em contato com o suporte: <a href="mailto:leviescalas@gmail.com" className="underline font-semibold hover:text-amber-800 dark:hover:text-amber-200">leviescalas@gmail.com</a>
+          </p>
+        </div>
+      </div>
+
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 lg:pt-40 lg:pb-32 overflow-hidden">
+      <section className="relative pt-44 pb-20 lg:pt-52 lg:pb-32 overflow-hidden">
         {/* Background decorations */}
         <div className="absolute inset-0 mesh-gradient mesh-gradient-animated" />
         <div className="absolute inset-0 gradient-radial opacity-60" />
@@ -128,7 +137,7 @@ export default function Landing() {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/">
+              <Link to="/acessar">
                 <Button size="lg" className="w-full sm:w-auto gradient-vibrant text-white shadow-glow hover:shadow-glow-lg transition-all text-lg px-8 animate-gradient">
                   Acessar com Código
                   <ArrowRight className="w-5 h-5 ml-2" />
@@ -256,7 +265,7 @@ export default function Landing() {
                   ))}
                 </ul>
                 
-                <Link to="/" className="block">
+                <Link to="/acessar" className="block">
                   <Button className="w-full gradient-vibrant text-white shadow-glow hover:shadow-glow-lg transition-all text-lg py-6">
                     Acessar com Código
                     <ChevronRight className="w-5 h-5 ml-1" />
@@ -279,7 +288,7 @@ export default function Landing() {
             <p className="text-lg text-muted-foreground mb-8">
               Junte-se a centenas de igrejas que já simplificaram sua gestão de voluntários.
             </p>
-            <Link to="/">
+            <Link to="/acessar">
               <Button size="lg" className="gradient-vibrant text-white shadow-glow hover:shadow-glow-lg transition-all text-lg px-8">
                 Acessar com Código
                 <ArrowRight className="w-5 h-5 ml-2" />
