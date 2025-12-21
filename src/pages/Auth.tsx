@@ -48,21 +48,6 @@ const loginSchema = z.object({
 
 // Schema for regular members (church code required)
 const registerSchema = z.object({
-  churchCode: z.string().min(1, 'Código da igreja é obrigatório').max(20, 'Código muito longo'),
-  name: z.string().min(2, 'Nome deve ter no mínimo 2 caracteres').max(100, 'Nome muito longo'),
-  email: z.string().email('Email inválido').max(255, 'Email muito longo'),
-  whatsapp: z.string()
-    .regex(/^\d{11}$/, 'WhatsApp deve ter 11 dígitos (DDD + número)')
-    .transform(val => val.replace(/\D/g, '')),
-  password: passwordSchema,
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'As senhas não coincidem',
-  path: ['confirmPassword'],
-});
-
-// Schema for leaders (church code optional - they'll create the church after signup)
-const leaderRegisterSchema = z.object({
   churchCode: z.string().max(20, 'Código muito longo').optional(),
   name: z.string().min(2, 'Nome deve ter no mínimo 2 caracteres').max(100, 'Nome muito longo'),
   email: z.string().email('Email inválido').max(255, 'Email muito longo'),
@@ -71,6 +56,7 @@ const leaderRegisterSchema = z.object({
     .transform(val => val.replace(/\D/g, '')),
   password: passwordSchema,
   confirmPassword: z.string(),
+  isAdminSignup: z.boolean().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'As senhas não coincidem',
   path: ['confirmPassword'],
@@ -103,6 +89,7 @@ export default function Auth() {
   const [pendingPasswordReset, setPendingPasswordReset] = useState<string | null>(null);
   const [churchValidated, setChurchValidated] = useState<{ valid: boolean; name: string | null; slug: string | null }>({ valid: false, name: null, slug: null });
   const [isValidatingChurch, setIsValidatingChurch] = useState(false);
+  const [isAdminSignup, setIsAdminSignup] = useState(false);
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -163,8 +150,8 @@ export default function Auth() {
     defaultValues: { churchCode: '', name: '', email: '', whatsapp: '', password: '', confirmPassword: '' },
   });
 
-  // Form is ready when church is validated
-  const isFormReadyToSubmit = churchValidated.valid;
+  // Form is ready when church is validated OR it's admin signup
+  const isFormReadyToSubmit = churchValidated.valid || isAdminSignup;
 
   // Validate church by slug (from URL)
   const validateChurchBySlug = async (slug: string) => {
@@ -287,12 +274,12 @@ export default function Auth() {
   const handleRegister = async (data: RegisterForm) => {
     setIsLoading(true);
     
-    // Church must be validated
-    if (!churchValidated.valid) {
+    // Church must be validated unless it's admin signup
+    if (!churchValidated.valid && !isAdminSignup) {
       toast({
         variant: 'destructive',
         title: 'Igreja não encontrada',
-        description: 'Você precisa acessar a página de uma igreja para criar conta. Volte e digite o código da igreja.',
+        description: 'Você precisa acessar a página de uma igreja para criar conta ou marcar "Sou administrador/líder".',
       });
       setIsLoading(false);
       return;
@@ -360,13 +347,19 @@ export default function Auth() {
 
     setIsLoading(false);
 
+    const welcomeMessage = isAdminSignup 
+      ? 'Bem-vindo! Você pode agora acessar o painel administrativo.'
+      : `Bem-vindo à ${churchValidated.name}!`;
+
     toast({
       title: 'Conta criada com sucesso!',
-      description: `Bem-vindo à ${churchValidated.name}!`,
+      description: welcomeMessage,
     });
     
-    // Redirect to church page or dashboard
-    const redirectTo = churchValidated.slug ? `/igreja/${churchValidated.slug}` : postAuthRedirect;
+    // Redirect to dashboard for admin signup, or church page for regular signup
+    const redirectTo = isAdminSignup 
+      ? '/dashboard' 
+      : (churchValidated.slug ? `/igreja/${churchValidated.slug}` : postAuthRedirect);
     navigate(redirectTo);
   };
 
@@ -731,8 +724,28 @@ export default function Auth() {
           {/* Register Form */}
           {activeTab === 'register' && (
             <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-5 animate-fade-in">
+              {/* Admin/Leader Signup Option */}
+              {!hasChurchContext && (
+                <div className="flex items-center space-x-3 p-4 rounded-xl glass border border-border/50 mb-4">
+                  <input
+                    type="checkbox"
+                    id="admin-signup"
+                    checked={isAdminSignup}
+                    onChange={(e) => setIsAdminSignup(e.target.checked)}
+                    className="w-5 h-5 rounded border-border text-primary focus:ring-primary"
+                  />
+                  <label htmlFor="admin-signup" className="text-sm cursor-pointer">
+                    <span className="font-medium text-foreground">Sou administrador/líder</span>
+                    <br />
+                    <span className="text-muted-foreground text-xs">
+                      Marque se você é líder de igreja e vai cadastrar sua igreja depois
+                    </span>
+                  </label>
+                </div>
+              )}
+
               {/* Church Context Info */}
-              {churchValidated.valid && churchValidated.name && (
+              {churchValidated.valid && churchValidated.name && !isAdminSignup && (
                 <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 mb-4">
                   <p className="text-sm text-foreground">
                     <span className="font-medium">Criando conta para:</span>
@@ -742,14 +755,27 @@ export default function Auth() {
                 </div>
               )}
 
-              {/* No church context - show error */}
-              {!hasChurchContext && !churchValidated.valid && (
+              {/* Admin signup info */}
+              {isAdminSignup && (
+                <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 mb-4">
+                  <p className="text-sm text-foreground">
+                    <span className="font-medium">Cadastro de Administrador/Líder</span>
+                    <br />
+                    <span className="text-muted-foreground">
+                      Você poderá cadastrar sua igreja após criar sua conta.
+                    </span>
+                  </p>
+                </div>
+              )}
+
+              {/* No church context - show error only if not admin signup */}
+              {!hasChurchContext && !churchValidated.valid && !isAdminSignup && (
                 <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 mb-4">
                   <p className="text-sm text-foreground">
                     <span className="font-medium text-destructive">Código da igreja necessário</span>
                     <br />
                     <span className="text-muted-foreground">
-                      Para criar uma conta, você precisa primeiro acessar a página da sua igreja.
+                      Para criar uma conta como membro, acesse a página da sua igreja ou marque a opção acima se você é líder.
                     </span>
                   </p>
                   <Link to="/" className="inline-block mt-2">
