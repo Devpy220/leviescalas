@@ -44,13 +44,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Ref to track if we've initialized
   const hasInitialized = useRef(false);
 
+  const bootstrapUser = useCallback(async (u: User) => {
+    try {
+      // Ensure profile exists (some flows like password recovery won't recreate it).
+      const email = u.email ?? '';
+      const name = (u.user_metadata?.name as string | undefined) ?? '';
+      const whatsapp = (u.user_metadata?.whatsapp as string | undefined) ?? '';
+
+      await supabase
+        .from('profiles')
+        .upsert(
+          {
+            id: u.id,
+            email,
+            name,
+            whatsapp,
+            updated_at: new Date().toISOString(),
+          } as any,
+          { onConflict: 'id' }
+        );
+
+      // Auto-grant admin role ONLY for the designated bootstrap email.
+      const ADMIN_EMAIL = 'leviescalas@gmail.com';
+      if (email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+        const { data: existing } = await supabase
+          .from('user_roles')
+          .select('id')
+          .eq('user_id', u.id)
+          .eq('role', 'admin')
+          .maybeSingle();
+
+        if (!existing?.id) {
+          await supabase.from('user_roles').insert({ user_id: u.id, role: 'admin' });
+        }
+      }
+    } catch {
+      // Silent: bootstrap should never block auth flow.
+    }
+  }, []);
+
   useEffect(() => {
     // Prevent duplicate initialization
     if (hasInitialized.current) return;
     hasInitialized.current = true;
 
     const guard = getAuthGuard();
-    
+
     // Only the first instance manages auto-refresh
     if (guard.refCount === 0 && !guard.initialized) {
       guard.initialized = true;
@@ -63,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
         const now = Date.now();
-        
+
         // Debounce TOKEN_REFRESHED events - ignore if less than 5 seconds since last one
         if (event === 'TOKEN_REFRESHED') {
           if (now - guard.lastTokenRefresh < 5000) return;
@@ -79,6 +118,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         setLoading(false);
+
+        // Never call supabase inside the callback; defer.
+        if (currentSession?.user) {
+          setTimeout(() => {
+            bootstrapUser(currentSession.user);
+          }, 0);
+        }
       }
     );
 
@@ -87,6 +133,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(existingSession);
       setUser(existingSession?.user ?? null);
       setLoading(false);
+
+      if (existingSession?.user) {
+        setTimeout(() => {
+          bootstrapUser(existingSession.user);
+        }, 0);
+      }
     });
 
     return () => {
@@ -97,7 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         guard.initialized = false;
       }
     };
-  }, []);
+  }, [bootstrapUser]);
 
   const signUp = useCallback(async (email: string, password: string, name: string, whatsapp: string) => {
     try {
