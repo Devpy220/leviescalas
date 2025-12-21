@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
   Church, 
   MapPin, 
@@ -10,7 +10,8 @@ import {
   ChevronRight,
   Plus,
   Share2,
-  Copy
+  LogIn,
+  UserPlus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { format, startOfMonth, endOfMonth, addMonths, subMonths, eachDayOfInterval, isSameMonth, isToday, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -52,6 +54,7 @@ interface ScheduleData {
 
 export default function ChurchPublic() {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const [church, setChurch] = useState<ChurchData | null>(null);
   const [departments, setDepartments] = useState<DepartmentData[]>([]);
   const [schedules, setSchedules] = useState<ScheduleData[]>([]);
@@ -60,6 +63,7 @@ export default function ChurchPublic() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const { toast } = useToast();
+  const { session } = useAuth();
 
   useEffect(() => {
     if (slug) {
@@ -200,6 +204,28 @@ export default function ChurchPublic() {
               <Share2 className="w-5 h-5" />
             </Button>
             <ThemeToggle />
+            
+            {/* Auth buttons */}
+            {session ? (
+              <Button onClick={() => navigate('/dashboard')} className="gradient-vibrant text-white">
+                Meu Painel
+              </Button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link to={`/auth?church=${slug}`}>
+                  <Button variant="outline" size="sm">
+                    <LogIn className="w-4 h-4 mr-1" />
+                    Entrar
+                  </Button>
+                </Link>
+                <Link to={`/auth?tab=register&church=${slug}`}>
+                  <Button size="sm" className="gradient-vibrant text-white">
+                    <UserPlus className="w-4 h-4 mr-1" />
+                    Criar Conta
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -297,17 +323,33 @@ export default function ChurchPublic() {
               </div>
             )}
 
-            {/* CTA to create department */}
+            {/* CTA to create account or department */}
             <div className="mt-8 text-center">
-              <p className="text-muted-foreground mb-4">
-                Quer criar um departamento nesta igreja?
-              </p>
-              <Link to={`/join?church=${slug}`}>
-                <Button className="gradient-primary text-primary-foreground">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Criar Departamento
-                </Button>
-              </Link>
+              {session ? (
+                <>
+                  <p className="text-muted-foreground mb-4">
+                    Quer criar um departamento nesta igreja?
+                  </p>
+                  <Link to={`/criar-departamento?church=${slug}`}>
+                    <Button className="gradient-primary text-primary-foreground">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Criar Departamento
+                    </Button>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <p className="text-muted-foreground mb-4">
+                    Crie uma conta para participar dos departamentos desta igreja
+                  </p>
+                  <Link to={`/auth?tab=register&church=${slug}`}>
+                    <Button className="gradient-vibrant text-white">
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Criar Conta
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
           </TabsContent>
 

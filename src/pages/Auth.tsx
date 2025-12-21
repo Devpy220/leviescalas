@@ -101,7 +101,7 @@ export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [recoveryEmailSent, setRecoveryEmailSent] = useState(false);
   const [pendingPasswordReset, setPendingPasswordReset] = useState<string | null>(null);
-  const [churchValidated, setChurchValidated] = useState<{ valid: boolean; name: string | null }>({ valid: false, name: null });
+  const [churchValidated, setChurchValidated] = useState<{ valid: boolean; name: string | null; slug: string | null }>({ valid: false, name: null, slug: null });
   const [isValidatingChurch, setIsValidatingChurch] = useState(false);
   
   const navigate = useNavigate();
@@ -109,10 +109,11 @@ export default function Auth() {
   const { signIn, signUp, user, session, loading, authEvent } = useAuth();
 
   const redirectParam = searchParams.get('redirect');
+  const churchSlugParam = searchParams.get('church');
   const postAuthRedirect = redirectParam && redirectParam.startsWith('/') ? redirectParam : '/dashboard';
   
-  // Check if this is a leader flow (creating a church)
-  const isLeaderFlow = redirectParam === '/church-setup';
+  // Church slug from URL - this is the only way to register now
+  const hasChurchContext = !!churchSlugParam;
 
   // Detect password recovery flow from auth event
   useEffect(() => {
@@ -144,24 +145,58 @@ export default function Auth() {
     }
   }, [loading, session, navigate, postAuthRedirect]);
 
+  // Validate church from slug when accessing register tab
+  useEffect(() => {
+    if (churchSlugParam && activeTab === 'register') {
+      validateChurchBySlug(churchSlugParam);
+    }
+  }, [churchSlugParam, activeTab]);
+
   const loginForm = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
   });
 
-  // Use different schema based on flow type
+  // Use different schema - church code is always required for registration
   const registerForm = useForm<RegisterForm>({
-    resolver: zodResolver(isLeaderFlow ? leaderRegisterSchema : registerSchema),
+    resolver: zodResolver(registerSchema),
     defaultValues: { churchCode: '', name: '', email: '', whatsapp: '', password: '', confirmPassword: '' },
   });
 
-  // For leader flow, form is always "valid" (no church code needed)
-  const isFormReadyToSubmit = isLeaderFlow || churchValidated.valid;
+  // Form is ready when church is validated
+  const isFormReadyToSubmit = churchValidated.valid;
 
-  // Validate church code
+  // Validate church by slug (from URL)
+  const validateChurchBySlug = async (slug: string) => {
+    setIsValidatingChurch(true);
+    try {
+      const { data, error } = await supabase.rpc('get_church_public', { p_slug: slug });
+      
+      if (error) {
+        console.error('Error fetching church:', error);
+        setChurchValidated({ valid: false, name: null, slug: null });
+        return;
+      }
+
+      if (data && data.length > 0) {
+        setChurchValidated({ valid: true, name: data[0].name, slug: slug });
+        // Set a placeholder for church code since we're validating by slug
+        registerForm.setValue('churchCode', 'VALIDATED');
+      } else {
+        setChurchValidated({ valid: false, name: null, slug: null });
+      }
+    } catch (err) {
+      console.error('Error fetching church:', err);
+      setChurchValidated({ valid: false, name: null, slug: null });
+    } finally {
+      setIsValidatingChurch(false);
+    }
+  };
+
+  // Validate church code manually (fallback)
   const validateChurchCode = async (code: string) => {
     if (!code || code.length < 1) {
-      setChurchValidated({ valid: false, name: null });
+      setChurchValidated({ valid: false, name: null, slug: null });
       return;
     }
 
@@ -171,18 +206,18 @@ export default function Auth() {
       
       if (error) {
         console.error('Error validating church code:', error);
-        setChurchValidated({ valid: false, name: null });
+        setChurchValidated({ valid: false, name: null, slug: null });
         return;
       }
 
       if (data && data.length > 0 && data[0].is_valid) {
-        setChurchValidated({ valid: true, name: data[0].church_name });
+        setChurchValidated({ valid: true, name: data[0].church_name, slug: null });
       } else {
-        setChurchValidated({ valid: false, name: null });
+        setChurchValidated({ valid: false, name: null, slug: null });
       }
     } catch (err) {
       console.error('Error validating church code:', err);
-      setChurchValidated({ valid: false, name: null });
+      setChurchValidated({ valid: false, name: null, slug: null });
     } finally {
       setIsValidatingChurch(false);
     }
@@ -252,12 +287,12 @@ export default function Auth() {
   const handleRegister = async (data: RegisterForm) => {
     setIsLoading(true);
     
-    // Verificar se a igreja foi validada (apenas para membros, não líderes)
-    if (!isLeaderFlow && !churchValidated.valid) {
+    // Church must be validated
+    if (!churchValidated.valid) {
       toast({
         variant: 'destructive',
         title: 'Igreja não encontrada',
-        description: 'O código da igreja informado não é válido. Verifique com o líder da sua igreja.',
+        description: 'Você precisa acessar a página de uma igreja para criar conta. Volte e digite o código da igreja.',
       });
       setIsLoading(false);
       return;
@@ -327,11 +362,12 @@ export default function Auth() {
 
     toast({
       title: 'Conta criada com sucesso!',
-      description: isLeaderFlow 
-        ? 'Bem-vindo! Agora você pode cadastrar sua igreja.' 
-        : `Bem-vindo à ${churchValidated.name}!`,
+      description: `Bem-vindo à ${churchValidated.name}!`,
     });
-    navigate(postAuthRedirect);
+    
+    // Redirect to church page or dashboard
+    const redirectTo = churchValidated.slug ? `/igreja/${churchValidated.slug}` : postAuthRedirect;
+    navigate(redirectTo);
   };
 
   const formatWhatsapp = (value: string) => {
@@ -695,66 +731,40 @@ export default function Auth() {
           {/* Register Form */}
           {activeTab === 'register' && (
             <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-5 animate-fade-in">
-              {/* Leader Flow Header */}
-              {isLeaderFlow && (
+              {/* Church Context Info */}
+              {churchValidated.valid && churchValidated.name && (
                 <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 mb-4">
                   <p className="text-sm text-foreground">
-                    <span className="font-medium">Cadastro de Líder</span>
+                    <span className="font-medium">Criando conta para:</span>
                     <br />
-                    <span className="text-muted-foreground">
-                      Após criar sua conta, você poderá cadastrar sua igreja e receber o código de acesso.
-                    </span>
+                    <span className="text-primary font-semibold text-lg">{churchValidated.name}</span>
                   </p>
                 </div>
               )}
 
-              {/* Church Code Field - Only show for non-leader flow */}
-              {!isLeaderFlow && (
-                <div className="space-y-2">
-                  <Label htmlFor="register-church-code">Código da Igreja</Label>
-                  <div className="relative">
-                    <Input
-                      id="register-church-code"
-                      type="text"
-                      placeholder="Ex: ABC12345"
-                      {...registerForm.register('churchCode')}
-                      onChange={(e) => {
-                        const value = e.target.value.toUpperCase();
-                        registerForm.setValue('churchCode', value);
-                        validateChurchCode(value);
-                      }}
-                      className={`h-12 uppercase ${
-                        churchValidated.valid 
-                          ? 'border-emerald ring-emerald/20' 
-                          : churchCodeValue && !isValidatingChurch 
-                          ? 'border-destructive ring-destructive/20' 
-                          : ''
-                      }`}
-                    />
-                    {isValidatingChurch && (
-                      <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin text-muted-foreground" />
-                    )}
-                  </div>
-                  {registerForm.formState.errors.churchCode && (
-                    <p className="text-sm text-destructive">{registerForm.formState.errors.churchCode.message}</p>
-                  )}
-                  {churchValidated.valid && churchValidated.name && (
-                    <p className="text-sm text-emerald flex items-center gap-1">
-                      ✓ Igreja: <span className="font-medium">{churchValidated.name}</span>
-                    </p>
-                  )}
-                  {churchCodeValue && !churchValidated.valid && !isValidatingChurch && (
-                    <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
-                      <p className="text-sm text-destructive font-medium">Igreja não encontrada</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Verifique o código com o líder da sua igreja. Se sua igreja ainda não está cadastrada, 
-                        peça ao líder para criar uma conta e cadastrar a igreja primeiro.
-                      </p>
-                    </div>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    Solicite o código ao líder da sua igreja
+              {/* No church context - show error */}
+              {!hasChurchContext && !churchValidated.valid && (
+                <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 mb-4">
+                  <p className="text-sm text-foreground">
+                    <span className="font-medium text-destructive">Código da igreja necessário</span>
+                    <br />
+                    <span className="text-muted-foreground">
+                      Para criar uma conta, você precisa primeiro acessar a página da sua igreja.
+                    </span>
                   </p>
+                  <Link to="/" className="inline-block mt-2">
+                    <Button variant="outline" size="sm">
+                      Digitar código da igreja
+                    </Button>
+                  </Link>
+                </div>
+              )}
+
+              {/* Loading church validation */}
+              {isValidatingChurch && (
+                <div className="flex items-center justify-center p-4">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary mr-2" />
+                  <span className="text-muted-foreground">Verificando igreja...</span>
                 </div>
               )}
 
@@ -862,9 +872,7 @@ export default function Auth() {
                     Criando conta...
                   </>
                 ) : !isFormReadyToSubmit ? (
-                  'Informe o código da igreja'
-                ) : isLeaderFlow ? (
-                  'Criar conta de líder'
+                  'Acesse a página da igreja primeiro'
                 ) : (
                   'Criar conta'
                 )}
@@ -877,15 +885,13 @@ export default function Auth() {
                 <a href="#" className="text-primary hover:underline">Política de Privacidade</a>.
               </p>
 
-              {/* Info box for leaders - Only show for non-leader flow */}
-              {!isLeaderFlow && (
+              {/* Info for users without church context */}
+              {!hasChurchContext && (
                 <div className="p-4 rounded-xl glass border border-border/50">
                   <p className="text-sm text-muted-foreground">
-                    <span className="font-medium text-foreground">É líder de uma igreja?</span>
+                    <span className="font-medium text-foreground">Não tem o código da igreja?</span>
                     <br />
-                    <Link to="/auth?tab=register&redirect=/church-setup" className="text-primary hover:underline">
-                      Clique aqui para cadastrar sua igreja
-                    </Link> e receber o código de acesso.
+                    Solicite ao administrador da sua igreja. Igrejas são cadastradas apenas por administradores autorizados.
                   </p>
                 </div>
               )}
