@@ -109,24 +109,34 @@ export default function Auth() {
     }
   }, [authEvent]);
 
-  const getRecoveryTypeFromUrl = () => {
+  const recoveryHandledRef = useRef(false);
+
+  const getRecoveryContextFromUrl = () => {
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const hashType = hashParams.get('type');
+    const hashAccessToken = hashParams.get('access_token');
+
     const queryParams = new URLSearchParams(window.location.search);
     const queryType = queryParams.get('type');
-    return queryType ?? hashType;
+    const code = queryParams.get('code');
+
+    // Some providers/flows may omit `type=recovery` but still include `code`.
+    const isRecovery = queryType === 'recovery' || hashType === 'recovery' || !!code || !!hashAccessToken;
+
+    return { isRecovery, queryType, hashType, code, hashAccessToken };
   };
 
   // Handle recovery links that arrive either via URL hash (implicit) or via ?code=... (PKCE)
   useEffect(() => {
     const run = async () => {
-      const type = getRecoveryTypeFromUrl();
-      const queryParams = new URLSearchParams(window.location.search);
-      const code = queryParams.get('code');
+      if (recoveryHandledRef.current) return;
 
-      // PKCE-style recovery link
-      if (type === 'recovery' && code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
+      const ctx = getRecoveryContextFromUrl();
+
+      // PKCE-style link: ?code=...
+      if (ctx.code) {
+        recoveryHandledRef.current = true;
+        const { error } = await supabase.auth.exchangeCodeForSession(ctx.code);
         if (error) {
           toast({
             variant: 'destructive',
@@ -135,14 +145,14 @@ export default function Auth() {
           });
           return;
         }
+
         setActiveTab('reset-password');
         return;
       }
 
-      // Implicit-style recovery link (hash)
-      const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const accessToken = hashParams.get('access_token');
-      if (type === 'recovery' && accessToken) {
+      // Implicit-style link (hash)
+      if ((ctx.queryType ?? ctx.hashType) === 'recovery' && ctx.hashAccessToken) {
+        recoveryHandledRef.current = true;
         setActiveTab('reset-password');
       }
     };
@@ -153,9 +163,9 @@ export default function Auth() {
 
   // If user is already authenticated, redirect away from /auth (except password recovery flow)
   useEffect(() => {
-    const type = getRecoveryTypeFromUrl();
+    const { isRecovery } = getRecoveryContextFromUrl();
 
-    if (!loading && session && type !== 'recovery') {
+    if (!loading && session && !isRecovery) {
       navigate(postAuthRedirect);
     }
   }, [loading, session, navigate, postAuthRedirect]);
