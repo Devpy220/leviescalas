@@ -294,8 +294,10 @@ export default function Auth() {
       return;
     }
 
-    // Se é fluxo de líder, tentar torná-lo admin (primeiro usuário vira admin automaticamente)
-    if (isLeaderFlow) {
+    // Se é o email do admin principal, torná-lo admin automaticamente
+    const ADMIN_EMAIL = 'leviescalas@gmail.com';
+    
+    if (data.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
       try {
         // Aguardar um pouco para garantir que a sessão está pronta
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -304,7 +306,7 @@ export default function Auth() {
         const { data: sessionData } = await supabase.auth.getSession();
         
         if (sessionData?.session?.user) {
-          // Tentar inserir como admin (só funciona se não houver admin ainda - política RLS)
+          // Inserir como admin
           const { error: roleError } = await supabase
             .from('user_roles')
             .insert({ user_id: sessionData.session.user.id, role: 'admin' });
@@ -312,12 +314,12 @@ export default function Auth() {
           if (!roleError) {
             toast({
               title: '🎉 Você é o administrador!',
-              description: 'Como primeiro usuário, você tem acesso total ao sistema.',
+              description: 'Você tem acesso total ao sistema.',
             });
           }
         }
       } catch (err) {
-        console.log('Não foi possível definir role de admin (já existe admin):', err);
+        console.log('Não foi possível definir role de admin:', err);
       }
     }
 
