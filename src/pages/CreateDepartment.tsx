@@ -65,8 +65,8 @@ export default function CreateDepartment() {
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
 
-  // Check if coming from church page with pre-filled church
-  const prefilledChurchId = searchParams.get('church');
+  // Check if coming from church page with pre-filled church code
+  const prefilledChurchCode = searchParams.get('churchCode');
 
   const form = useForm<DepartmentForm>({
     resolver: zodResolver(departmentSchema),
@@ -92,29 +92,13 @@ export default function CreateDepartment() {
     }
   }, [searchParams]);
 
-  // Pre-fill church if coming from church page
+  // Pre-fill church code if coming from church page
   useEffect(() => {
-    if (prefilledChurchId) {
-      fetchChurchById(prefilledChurchId);
+    if (prefilledChurchCode) {
+      form.setValue('churchCode', prefilledChurchCode);
+      validateChurchCode(prefilledChurchCode);
     }
-  }, [prefilledChurchId]);
-
-  const fetchChurchById = async (churchId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('churches')
-        .select('id, name, code')
-        .eq('id', churchId)
-        .maybeSingle();
-
-      if (!error && data) {
-        setValidatedChurch({ id: data.id, name: data.name });
-        form.setValue('churchCode', data.code);
-      }
-    } catch (error) {
-      console.error('Error fetching church:', error);
-    }
-  };
+  }, [prefilledChurchCode]);
 
   const validateChurchCode = async (code: string) => {
     if (!code || code.length < 4) {
@@ -127,13 +111,15 @@ export default function CreateDepartment() {
     setCodeError(null);
 
     try {
+      // Use secure function that doesn't expose internal IDs
       const { data, error } = await supabase
-        .rpc('validate_church_code', { p_code: code });
+        .rpc('validate_church_code_secure', { p_code: code });
 
       if (error) throw error;
 
       if (data && data.length > 0 && data[0].is_valid) {
-        setValidatedChurch({ id: data[0].id, name: data[0].name });
+        // Store the code as identifier instead of internal ID
+        setValidatedChurch({ id: code.toUpperCase(), name: data[0].church_name });
         setCodeError(null);
       } else {
         setValidatedChurch(null);
@@ -209,11 +195,12 @@ export default function CreateDepartment() {
     try {
       const formData = form.getValues();
       
+      // Pass church code instead of ID - backend will resolve to ID securely
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: {
           departmentName: formData.name,
           departmentDescription: formData.description || '',
-          churchId: validatedChurch.id,
+          churchCode: validatedChurch.id, // This is now the code, not UUID
         },
       });
 
@@ -314,7 +301,7 @@ export default function CreateDepartment() {
                           form.setValue('churchCode', e.target.value.toUpperCase());
                           validateChurchCode(e.target.value);
                         }}
-                        disabled={!!prefilledChurchId}
+                        disabled={!!prefilledChurchCode}
                       />
                       {validatingCode && (
                         <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin text-muted-foreground" />
@@ -334,7 +321,7 @@ export default function CreateDepartment() {
                     )}
                   </div>
 
-                  {!validatedChurch && !prefilledChurchId && (
+                  {!validatedChurch && !prefilledChurchCode && (
                     <Alert>
                       <AlertCircle className="h-4 w-4" />
                       <AlertTitle>Igreja não cadastrada?</AlertTitle>

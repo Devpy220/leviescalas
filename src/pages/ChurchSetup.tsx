@@ -116,13 +116,15 @@ export default function ChurchSetup() {
     setCodeError(null);
 
     try {
+      // Use secure function that doesn't expose internal IDs
       const { data, error } = await supabase
-        .rpc('validate_church_code', { p_code: code });
+        .rpc('validate_church_code_secure', { p_code: code });
 
       if (error) throw error;
 
       if (data && data.length > 0 && data[0].is_valid) {
-        setValidatedChurch({ id: data[0].id, name: data[0].name });
+        // Store the code instead of ID for security
+        setValidatedChurch({ id: code.toUpperCase(), name: data[0].church_name });
         setCodeError(null);
       } else {
         setValidatedChurch(null);
@@ -148,8 +150,8 @@ export default function ChurchSetup() {
 
     if (!requireAuth()) return;
 
-    // Navigate to create department with church pre-filled
-    navigate(`/departments/new?church=${validatedChurch.id}`);
+    // Navigate to create department with church code (not ID) for security
+    navigate(`/departments/new?churchCode=${validatedChurch.id}`);
   };
 
   const sendCodeByEmail = async (churchId: string) => {

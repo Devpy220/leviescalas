@@ -18,8 +18,9 @@ const checkoutSchema = z.object({
     .max(500, "Description must be less than 500 characters")
     .optional()
     .nullable(),
-  churchId: z.string()
-    .uuid("Invalid church ID format"),
+  churchCode: z.string()
+    .min(4, "Church code must be at least 4 characters")
+    .max(20, "Church code must be at most 20 characters"),
 });
 
 const logStep = (step: string, details?: any) => {
@@ -68,8 +69,8 @@ serve(async (req) => {
       );
     }
 
-    const { departmentName, departmentDescription, churchId } = validationResult.data;
-    logStep("Request body validated", { departmentName, departmentDescription, churchId });
+    const { departmentName, departmentDescription, churchCode } = validationResult.data;
+    logStep("Request body validated", { departmentName, departmentDescription, churchCode });
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
@@ -86,7 +87,7 @@ serve(async (req) => {
     const origin = req.headers.get("origin") || "https://zuksvsxnchwskqytuxxq.lovableproject.com";
 
     // Create checkout session with subscription and trial
-    // Price is R$25 per volunteer/month, starting with 1 (the leader)
+    // Store church code in metadata - will be resolved to ID in complete-checkout
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
@@ -103,7 +104,7 @@ serve(async (req) => {
           user_id: user.id,
           department_name: departmentName,
           department_description: departmentDescription || "",
-          church_id: churchId,
+          church_code: churchCode,
         },
       },
       success_url: `${origin}/departments/new?success=true&session_id={CHECKOUT_SESSION_ID}`,
@@ -112,7 +113,7 @@ serve(async (req) => {
         user_id: user.id,
         department_name: departmentName,
         department_description: departmentDescription || "",
-        church_id: churchId,
+        church_code: churchCode,
       },
     });
 
