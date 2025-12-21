@@ -473,30 +473,40 @@ export default function Auth() {
 
   const performPasswordReset = async (password: string) => {
     setIsLoading(true);
-    
+
     try {
+      // Sem uma sessão de recuperação válida, updateUser vai falhar (e parece que “não redefiniu”).
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        toast({
+          variant: 'destructive',
+          title: 'Sessão de recuperação ausente',
+          description: 'Abra novamente o link de recuperação do email e tente de novo.',
+        });
+        return;
+      }
+
       const { error } = await supabase.auth.updateUser({
-        password: password,
+        password,
       });
 
       if (error) {
         console.error('Reset password error:', error);
-        let errorMessage = 'Não foi possível redefinir sua senha. Tente novamente.';
-        
+        let friendly = 'Não foi possível redefinir sua senha. Tente novamente.';
+
         if (error.message.includes('expired')) {
-          errorMessage = 'Link de recuperação expirado. Solicite um novo.';
+          friendly = 'Link de recuperação expirado. Solicite um novo.';
         } else if (error.message.includes('same')) {
-          errorMessage = 'A nova senha deve ser diferente da atual.';
+          friendly = 'A nova senha deve ser diferente da atual.';
         } else if (error.message.includes('insufficient_aal') || error.message.includes('AAL2')) {
-          errorMessage = 'Verificação 2FA necessária. Por favor, verifique seu autenticador.';
+          friendly = 'Verificação 2FA necessária. Por favor, verifique seu autenticador.';
         }
-        
+
         toast({
           variant: 'destructive',
-          title: 'Erro',
-          description: errorMessage,
+          title: 'Erro ao redefinir senha',
+          description: `${friendly} (detalhe: ${error.message})`,
         });
-        setIsLoading(false);
         return;
       }
 
@@ -504,15 +514,15 @@ export default function Auth() {
         title: 'Senha redefinida!',
         description: 'Sua senha foi alterada com sucesso.',
       });
-      
+
       // Clear the hash and redirect
       window.location.hash = '';
       setPendingPasswordReset(null);
       setActiveTab('login');
-      
+
       // Sign out to force fresh login with new password
       await supabase.auth.signOut();
-      
+
       toast({
         title: 'Faça login novamente',
         description: 'Use sua nova senha para entrar.',
