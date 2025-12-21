@@ -55,6 +55,7 @@ export type Database = {
           email: string | null
           id: string
           leader_id: string
+          logo_url: string | null
           name: string
           phone: string | null
           state: string | null
@@ -70,6 +71,7 @@ export type Database = {
           email?: string | null
           id?: string
           leader_id: string
+          logo_url?: string | null
           name: string
           phone?: string | null
           state?: string | null
@@ -85,6 +87,7 @@ export type Database = {
           email?: string | null
           id?: string
           leader_id?: string
+          logo_url?: string | null
           name?: string
           phone?: string | null
           state?: string | null
