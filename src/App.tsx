@@ -19,6 +19,8 @@ import Payment from "./pages/Payment";
 import Churches from "./pages/Churches";
 import ChurchDetail from "./pages/ChurchDetail";
 import ChurchSetup from "./pages/ChurchSetup";
+import ChurchPublic from "./pages/ChurchPublic";
+import JoinChurch from "./pages/JoinChurch";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +41,8 @@ const App = () => (
               <Route path="/departments/:id" element={<Department />} />
               <Route path="/departments/new" element={<CreateDepartment />} />
               <Route path="/join/:inviteCode" element={<JoinDepartment />} />
+              <Route path="/join" element={<JoinChurch />} />
+              <Route path="/igreja/:slug" element={<ChurchPublic />} />
               <Route path="/my-schedules" element={<MySchedules />} />
               <Route path="/security" element={<Security />} />
               <Route path="/admin" element={<Admin />} />
