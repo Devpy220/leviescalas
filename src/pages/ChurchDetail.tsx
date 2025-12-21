@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -11,7 +11,9 @@ import {
   MapPin,
   Crown,
   Edit2,
-  Trash2
+  Trash2,
+  Camera,
+  ImageIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,6 +43,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { slugify } from '@/lib/slugify';
+import ImageCropDialog from '@/components/department/ImageCropDialog';
 
 const churchSchema = z.object({
   name: z.string()
@@ -65,6 +68,7 @@ interface ChurchData {
   address: string | null;
   city: string | null;
   state: string | null;
+  logo_url: string | null;
   created_at: string;
 }
 
@@ -87,6 +91,12 @@ export default function ChurchDetail() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  
+  // Logo upload state
+  const [showCropDialog, setShowCropDialog] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -250,6 +260,130 @@ export default function ChurchDetail() {
     });
   };
 
+  // Logo upload handlers
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        variant: 'destructive',
+        title: 'Arquivo inválido',
+        description: 'Por favor, selecione uma imagem.',
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        variant: 'destructive',
+        title: 'Arquivo muito grande',
+        description: 'A imagem deve ter no máximo 5MB.',
+      });
+      return;
+    }
+
+    setSelectedFile(file);
+    setShowCropDialog(true);
+    
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    if (!church || !user) return;
+    
+    setShowCropDialog(false);
+    setUploadingLogo(true);
+
+    try {
+      // Delete old logo if exists
+      if (church.logo_url) {
+        const oldPath = church.logo_url.split('/').slice(-2).join('/');
+        await supabase.storage.from('church-logos').remove([oldPath]);
+      }
+
+      // Upload new logo
+      const fileName = `${church.id}/logo-${Date.now()}.jpg`;
+      const { error: uploadError } = await supabase.storage
+        .from('church-logos')
+        .upload(fileName, croppedBlob, {
+          contentType: 'image/jpeg',
+          upsert: true,
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('church-logos')
+        .getPublicUrl(fileName);
+
+      // Update church record
+      const { error: updateError } = await supabase
+        .from('churches')
+        .update({ logo_url: publicUrl })
+        .eq('id', church.id);
+
+      if (updateError) throw updateError;
+
+      setChurch(prev => prev ? { ...prev, logo_url: publicUrl } : null);
+
+      toast({
+        title: 'Logo atualizado!',
+      });
+    } catch (error) {
+      console.error('Error uploading logo:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao atualizar logo',
+      });
+    } finally {
+      setUploadingLogo(false);
+      setSelectedFile(null);
+    }
+  };
+
+  const handleRemoveLogo = async () => {
+    if (!church) return;
+    
+    setUploadingLogo(true);
+
+    try {
+      // Delete from storage
+      if (church.logo_url) {
+        const oldPath = church.logo_url.split('/').slice(-2).join('/');
+        await supabase.storage.from('church-logos').remove([oldPath]);
+      }
+
+      // Update church record
+      const { error } = await supabase
+        .from('churches')
+        .update({ logo_url: null })
+        .eq('id', church.id);
+
+      if (error) throw error;
+
+      setChurch(prev => prev ? { ...prev, logo_url: null } : null);
+
+      toast({
+        title: 'Logo removido!',
+      });
+    } catch (error) {
+      console.error('Error removing logo:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao remover logo',
+      });
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -299,9 +433,58 @@ export default function ChurchDetail() {
         {/* Church Header */}
         <div className="mb-8">
           <div className="flex items-start gap-4 mb-4">
-            <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center shadow-glow">
-              <Church className="w-8 h-8 text-primary-foreground" />
+            {/* Logo with edit capability */}
+            <div className="relative group">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              {church.logo_url ? (
+                <div className="w-20 h-20 rounded-2xl overflow-hidden shadow-glow border-2 border-primary/20">
+                  <img 
+                    src={church.logo_url} 
+                    alt={church.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="w-20 h-20 rounded-2xl gradient-primary flex items-center justify-center shadow-glow">
+                  <Church className="w-10 h-10 text-primary-foreground" />
+                </div>
+              )}
+              
+              {/* Overlay with edit button */}
+              <div className="absolute inset-0 rounded-2xl bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 text-white hover:bg-white/20"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingLogo}
+                >
+                  {uploadingLogo ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Camera className="w-4 h-4" />
+                  )}
+                </Button>
+                {church.logo_url && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 text-white hover:bg-white/20"
+                    onClick={handleRemoveLogo}
+                    disabled={uploadingLogo}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
             </div>
+
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <h1 className="font-display text-2xl font-bold text-foreground">
@@ -318,6 +501,9 @@ export default function ChurchDetail() {
               {church.description && (
                 <p className="text-muted-foreground mt-2">{church.description}</p>
               )}
+              <p className="text-xs text-muted-foreground mt-1">
+                Passe o mouse sobre o logo para alterar
+              </p>
             </div>
           </div>
 
@@ -496,6 +682,17 @@ export default function ChurchDetail() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Image Crop Dialog */}
+      <ImageCropDialog
+        open={showCropDialog}
+        onClose={() => {
+          setShowCropDialog(false);
+          setSelectedFile(null);
+        }}
+        imageFile={selectedFile}
+        onCropComplete={handleCropComplete}
+      />
     </div>
   );
 }
