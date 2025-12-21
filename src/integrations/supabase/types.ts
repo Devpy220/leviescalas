@@ -58,6 +58,7 @@ export type Database = {
           logo_url: string | null
           name: string
           phone: string | null
+          slug: string | null
           state: string | null
           updated_at: string
         }
@@ -74,6 +75,7 @@ export type Database = {
           logo_url?: string | null
           name: string
           phone?: string | null
+          slug?: string | null
           state?: string | null
           updated_at?: string
         }
@@ -90,6 +92,7 @@ export type Database = {
           logo_url?: string | null
           name?: string
           phone?: string | null
+          slug?: string | null
           state?: string | null
           updated_at?: string
         }
@@ -485,6 +488,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_create_church: {
+        Args: {
+          p_address?: string
+          p_city?: string
+          p_description?: string
+          p_email?: string
+          p_name: string
+          p_phone?: string
+          p_slug: string
+          p_state?: string
+        }
+        Returns: string
+      }
       admin_delete_department: { Args: { dept_id: string }; Returns: boolean }
       admin_delete_member: { Args: { member_id: string }; Returns: boolean }
       generate_church_code: { Args: never; Returns: string }
@@ -530,6 +546,47 @@ export type Database = {
           leader_name: string
           member_count: number
           name: string
+        }[]
+      }
+      get_church_departments_public: {
+        Args: { p_church_id: string }
+        Returns: {
+          avatar_url: string
+          description: string
+          id: string
+          member_count: number
+          name: string
+        }[]
+      }
+      get_church_invite_info: {
+        Args: { p_code: string }
+        Returns: {
+          church_name: string
+          church_slug: string
+          is_valid: boolean
+        }[]
+      }
+      get_church_public: {
+        Args: { p_slug: string }
+        Returns: {
+          address: string
+          city: string
+          description: string
+          id: string
+          logo_url: string
+          name: string
+          state: string
+        }[]
+      }
+      get_church_schedules_public: {
+        Args: { p_church_id: string; p_end_date: string; p_start_date: string }
+        Returns: {
+          date: string
+          department_avatar: string
+          department_name: string
+          id: string
+          time_end: string
+          time_start: string
         }[]
       }
       get_department_basic: {

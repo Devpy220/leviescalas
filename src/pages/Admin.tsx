@@ -3,17 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Trash2, Users, Building2, Mail, ChevronDown, ChevronUp, Shield, LogOut } from 'lucide-react';
+import { Loader2, Trash2, Users, Building2, Mail, ChevronDown, ChevronUp, Shield, LogOut, Church, Plus, Copy, Link as LinkIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-
+import { slugify } from '@/lib/slugify';
 interface Department {
   id: string;
   name: string;
@@ -41,6 +44,16 @@ interface Profile {
   created_at: string;
 }
 
+interface ChurchData {
+  id: string;
+  name: string;
+  slug: string | null;
+  code: string;
+  city: string | null;
+  state: string | null;
+  created_at: string;
+}
+
 export default function Admin() {
   const { user, signOut, loading: authLoading } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdmin();
@@ -54,6 +67,16 @@ export default function Admin() {
   const [deleting, setDeleting] = useState(false);
   const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
   const [loadingProfiles, setLoadingProfiles] = useState(true);
+  
+  // Churches state
+  const [churches, setChurches] = useState<ChurchData[]>([]);
+  const [loadingChurches, setLoadingChurches] = useState(true);
+  const [showCreateChurch, setShowCreateChurch] = useState(false);
+  const [creatingChurch, setCreatingChurch] = useState(false);
+  const [newChurchName, setNewChurchName] = useState('');
+  const [newChurchSlug, setNewChurchSlug] = useState('');
+  const [newChurchCity, setNewChurchCity] = useState('');
+  const [newChurchState, setNewChurchState] = useState('');
 
   useEffect(() => {
     if (authLoading || adminLoading) return;
@@ -70,7 +93,89 @@ export default function Admin() {
 
     fetchDepartments();
     fetchAllProfiles();
+    fetchChurches();
   }, [user, isAdmin, authLoading, adminLoading]);
+
+  const fetchChurches = async () => {
+    setLoadingChurches(true);
+    try {
+      const { data, error } = await supabase
+        .from('churches')
+        .select('id, name, slug, code, city, state, created_at')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setChurches(data || []);
+    } catch (error) {
+      console.error('Error fetching churches:', error);
+    } finally {
+      setLoadingChurches(false);
+    }
+  };
+
+  const handleCreateChurch = async () => {
+    if (!newChurchName.trim()) {
+      toast({
+        title: 'Erro',
+        description: 'Nome da igreja é obrigatório.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const slug = newChurchSlug.trim() || slugify(newChurchName);
+
+    setCreatingChurch(true);
+    try {
+      const { data, error } = await supabase.rpc('admin_create_church', {
+        p_name: newChurchName.trim(),
+        p_slug: slug,
+        p_city: newChurchCity.trim() || null,
+        p_state: newChurchState.trim() || null,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Igreja criada!',
+        description: 'A igreja foi criada com sucesso.',
+      });
+
+      setShowCreateChurch(false);
+      setNewChurchName('');
+      setNewChurchSlug('');
+      setNewChurchCity('');
+      setNewChurchState('');
+      fetchChurches();
+    } catch (error: any) {
+      console.error('Error creating church:', error);
+      toast({
+        title: 'Erro',
+        description: error?.message || 'Não foi possível criar a igreja.',
+        variant: 'destructive',
+      });
+    } finally {
+      setCreatingChurch(false);
+    }
+  };
+
+  const copyInviteLink = (code: string) => {
+    const url = `${window.location.origin}/join?code=${code}`;
+    navigator.clipboard.writeText(url);
+    toast({
+      title: 'Link copiado!',
+      description: 'Compartilhe com os líderes de departamento.',
+    });
+  };
+
+  const copyChurchUrl = (slug: string) => {
+    const url = `${window.location.origin}/igreja/${slug}`;
+    navigator.clipboard.writeText(url);
+    toast({
+      title: 'Link copiado!',
+      description: 'Link da página pública da igreja.',
+    });
+  };
 
   const fetchAllProfiles = async () => {
     setLoadingProfiles(true);
@@ -251,7 +356,16 @@ export default function Admin() {
         </Card>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Igrejas Cadastradas</CardDescription>
+              <CardTitle className="text-3xl flex items-center gap-2">
+                <Church className="w-6 h-6 text-primary" />
+                {churches.length}
+              </CardTitle>
+            </CardHeader>
+          </Card>
           <Card>
             <CardHeader className="pb-2">
               <CardDescription>Voluntários Cadastrados</CardDescription>
@@ -280,6 +394,164 @@ export default function Admin() {
             </CardHeader>
           </Card>
         </div>
+
+        {/* Churches Section */}
+        <Card className="mb-6">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Church className="w-5 h-5" />
+                  Igrejas
+                </CardTitle>
+                <CardDescription>
+                  Gerencie as igrejas cadastradas no sistema
+                </CardDescription>
+              </div>
+              <Dialog open={showCreateChurch} onOpenChange={setShowCreateChurch}>
+                <DialogTrigger asChild>
+                  <Button size="sm">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Nova Igreja
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Criar Nova Igreja</DialogTitle>
+                    <DialogDescription>
+                      Cadastre uma nova igreja no sistema
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="churchName">Nome da Igreja *</Label>
+                      <Input
+                        id="churchName"
+                        value={newChurchName}
+                        onChange={(e) => {
+                          setNewChurchName(e.target.value);
+                          if (!newChurchSlug) {
+                            setNewChurchSlug(slugify(e.target.value));
+                          }
+                        }}
+                        placeholder="Ex: Igreja Batista Central"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="churchSlug">URL Amigável (slug)</Label>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">/igreja/</span>
+                        <Input
+                          id="churchSlug"
+                          value={newChurchSlug}
+                          onChange={(e) => setNewChurchSlug(slugify(e.target.value))}
+                          placeholder="igreja-batista-central"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="churchCity">Cidade</Label>
+                        <Input
+                          id="churchCity"
+                          value={newChurchCity}
+                          onChange={(e) => setNewChurchCity(e.target.value)}
+                          placeholder="São Paulo"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="churchState">Estado</Label>
+                        <Input
+                          id="churchState"
+                          value={newChurchState}
+                          onChange={(e) => setNewChurchState(e.target.value)}
+                          placeholder="SP"
+                        />
+                      </div>
+                    </div>
+                    <Button 
+                      onClick={handleCreateChurch} 
+                      className="w-full"
+                      disabled={creatingChurch || !newChurchName.trim()}
+                    >
+                      {creatingChurch ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Criando...
+                        </>
+                      ) : (
+                        'Criar Igreja'
+                      )}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loadingChurches ? (
+              <div className="flex justify-center py-4">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            ) : churches.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                Nenhuma igreja cadastrada.
+              </p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Código</TableHead>
+                    <TableHead>Cidade/Estado</TableHead>
+                    <TableHead>Criado em</TableHead>
+                    <TableHead className="w-[120px]">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {churches.map((church) => (
+                    <TableRow key={church.id}>
+                      <TableCell className="font-medium">{church.name}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="font-mono">
+                          {church.code}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {[church.city, church.state].filter(Boolean).join(', ') || '-'}
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(church.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => copyInviteLink(church.code)}
+                            title="Copiar link de convite"
+                          >
+                            <Copy className="w-4 h-4" />
+                          </Button>
+                          {church.slug && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => copyChurchUrl(church.slug!)}
+                              title="Copiar link da página"
+                            >
+                              <LinkIcon className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
 
         {/* All Volunteers List */}
         <Card className="mb-6">
