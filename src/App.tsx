@@ -23,6 +23,7 @@ import ChurchSetup from "./pages/ChurchSetup";
 import ChurchPublic from "./pages/ChurchPublic";
 import JoinChurch from "./pages/JoinChurch";
 import NotFound from "./pages/NotFound";
+import AdminLogin from "./pages/AdminLogin";
 
 const queryClient = new QueryClient();
 
@@ -35,23 +36,34 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<Landing />} />
+              {/* Admin area - restricted to leviescalas@gmail.com */}
+              <Route path="/" element={<AdminLogin />} />
+              <Route path="/admin" element={<Admin />} />
+              
+              {/* Public marketing page */}
+              <Route path="/sobre" element={<Landing />} />
+              
+              {/* Church access */}
               <Route path="/acessar" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/join" element={<JoinChurch />} />
+              <Route path="/join/:inviteCode" element={<JoinDepartment />} />
+              <Route path="/igreja/:slug" element={<ChurchPublic />} />
+              
+              {/* User dashboard */}
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/departamento/:slug" element={<DepartmentBySlug />} />
               <Route path="/departments/:id" element={<Department />} />
               <Route path="/departments/new" element={<CreateDepartment />} />
-              <Route path="/join/:inviteCode" element={<JoinDepartment />} />
-              <Route path="/join" element={<JoinChurch />} />
-              <Route path="/igreja/:slug" element={<ChurchPublic />} />
               <Route path="/my-schedules" element={<MySchedules />} />
               <Route path="/security" element={<Security />} />
-              <Route path="/admin" element={<Admin />} />
               <Route path="/payment" element={<Payment />} />
+              
+              {/* Church management */}
               <Route path="/churches" element={<Churches />} />
               <Route path="/churches/:id" element={<ChurchDetail />} />
               <Route path="/church-setup" element={<ChurchSetup />} />
+              
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
