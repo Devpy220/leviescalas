@@ -93,16 +93,19 @@ export default function AdminLogin() {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email.trim() || !password.trim() || !confirmPassword.trim()) {
+    if (!password.trim() || !confirmPassword.trim()) {
       toast({
         variant: 'destructive',
         title: 'Campos obrigatórios',
-        description: 'Preencha todos os campos.',
+        description: 'Preencha a senha e a confirmação.',
       });
       return;
     }
 
-    if (!validateAdminEmail(email)) return;
+    // Use the admin email automatically for signup
+    const signupEmail = ADMIN_EMAIL;
+
+    // No need to validate - we use the predefined admin email
 
     if (password !== confirmPassword) {
       toast({
@@ -125,7 +128,7 @@ export default function AdminLogin() {
     setIsLoading(true);
 
     try {
-      const { error } = await signUp(email, password, 'Administrador LEVI', '');
+      const { error } = await signUp(signupEmail, password, 'Administrador LEVI', '');
       
       if (error) {
         if (error.message?.includes('already registered')) {
@@ -330,22 +333,13 @@ export default function AdminLogin() {
 
                 <TabsContent value="signup">
                   <form onSubmit={handleSignUp} className="space-y-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-email" className="flex items-center gap-2">
-                        <Shield className="w-4 h-4 text-primary" />
-                        Email do Administrador
-                      </Label>
-                      <Input
-                        id="signup-email"
-                        type="email"
-                        placeholder="leviescalas@gmail.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="h-12"
-                        autoComplete="email"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Use o email: <strong>{ADMIN_EMAIL}</strong>
+                    <div className="p-4 rounded-lg bg-primary/10 border border-primary/20 mb-2">
+                      <p className="text-sm text-foreground">
+                        <Shield className="w-4 h-4 text-primary inline mr-2" />
+                        Email do administrador: <strong className="text-primary">{ADMIN_EMAIL}</strong>
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        A conta será criada automaticamente com este email.
                       </p>
                     </div>
 
