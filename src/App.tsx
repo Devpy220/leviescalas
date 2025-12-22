@@ -36,12 +36,12 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
-              {/* Admin area - restricted to leviescalas@gmail.com */}
-              <Route path="/" element={<AdminLogin />} />
-              <Route path="/admin" element={<Admin />} />
-              
               {/* Public marketing page */}
-              <Route path="/sobre" element={<Landing />} />
+              <Route path="/" element={<Landing />} />
+              
+              {/* Admin area - restricted to leviescalas@gmail.com */}
+              <Route path="/admin-login" element={<AdminLogin />} />
+              <Route path="/admin" element={<Admin />} />
               
               {/* Church access */}
               <Route path="/acessar" element={<Index />} />
