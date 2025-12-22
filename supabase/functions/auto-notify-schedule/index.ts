@@ -11,6 +11,41 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Security: Validate webhook URLs to prevent SSRF attacks
+const validateWebhookUrl = (url: string): boolean => {
+  try {
+    const parsed = new URL(url);
+    
+    // Block private IPs and metadata endpoints
+    const hostname = parsed.hostname.toLowerCase();
+    if (
+      hostname === 'localhost' ||
+      hostname.startsWith('127.') ||
+      hostname.startsWith('169.254.') ||
+      hostname.startsWith('10.') ||
+      hostname.startsWith('192.168.') ||
+      /^172\.(1[6-9]|2[0-9]|3[01])\./.test(hostname) ||
+      hostname === '0.0.0.0' ||
+      hostname.endsWith('.local') ||
+      hostname.endsWith('.internal')
+    ) {
+      console.error("Blocked webhook URL pointing to private/internal address:", hostname);
+      return false;
+    }
+    
+    // Require HTTPS for security
+    if (parsed.protocol !== 'https:') {
+      console.error("Blocked non-HTTPS webhook URL:", parsed.protocol);
+      return false;
+    }
+    
+    return true;
+  } catch (e) {
+    console.error("Invalid webhook URL:", e);
+    return false;
+  }
+};
+
 const formatDate = (dateStr: string): string => {
   const date = new Date(dateStr + 'T00:00:00');
   return date.toLocaleDateString('pt-BR', {
@@ -192,46 +227,62 @@ const handler = async (req: Request): Promise<Response> => {
       },
     };
 
-    // FiqOn Webhook notification
+    // FiqOn Webhook notification - with SSRF protection
     const fiqonWebhookUrl = Deno.env.get("FIQON_WEBHOOK_URL");
-    if (fiqonWebhookUrl) {
+    if (fiqonWebhookUrl && validateWebhookUrl(fiqonWebhookUrl)) {
       console.log("Sending to FiqOn webhook...");
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+      
       notificationPromises.push(
         fetch(fiqonWebhookUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(webhookPayload),
+          signal: controller.signal,
         }).then(async response => {
+          clearTimeout(timeoutId);
           const responseText = await response.text();
           console.log("FiqOn response:", response.status, responseText);
           return { type: 'fiqon', success: response.ok, error: response.ok ? null : responseText };
         }).catch(error => {
+          clearTimeout(timeoutId);
           console.error("FiqOn webhook error:", error);
           return { type: 'fiqon', success: false, error: error.message };
         })
       );
+    } else if (fiqonWebhookUrl) {
+      console.error("FIQON_WEBHOOK_URL failed validation - skipping for security");
     } else {
       console.log("FIQON_WEBHOOK_URL not configured - skipping FiqOn integration");
     }
 
-    // n8n Webhook notification (legacy support)
+    // n8n Webhook notification (legacy support) - with SSRF protection
     const n8nWebhookUrl = Deno.env.get("N8N_WEBHOOK_URL");
-    if (n8nWebhookUrl) {
+    if (n8nWebhookUrl && validateWebhookUrl(n8nWebhookUrl)) {
       console.log("Sending to n8n webhook...");
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+      
       notificationPromises.push(
         fetch(n8nWebhookUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(webhookPayload),
+          signal: controller.signal,
         }).then(async response => {
+          clearTimeout(timeoutId);
           const responseText = await response.text();
           console.log("n8n response:", response.status, responseText);
           return { type: 'n8n', success: response.ok, error: response.ok ? null : responseText };
         }).catch(error => {
+          clearTimeout(timeoutId);
           console.error("n8n webhook error:", error);
           return { type: 'n8n', success: false, error: error.message };
         })
       );
+    } else if (n8nWebhookUrl) {
+      console.error("N8N_WEBHOOK_URL failed validation - skipping for security");
     } else {
       console.log("N8N_WEBHOOK_URL not configured - skipping n8n integration");
     }
