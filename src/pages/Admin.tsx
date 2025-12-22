@@ -54,6 +54,8 @@ interface ChurchData {
   created_at: string;
 }
 
+const ADMIN_EMAIL = 'leviescalas@gmail.com';
+
 export default function Admin() {
   const { user, signOut, loading: authLoading } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdmin();
@@ -77,17 +79,25 @@ export default function Admin() {
   const [newChurchSlug, setNewChurchSlug] = useState('');
   const [newChurchCity, setNewChurchCity] = useState('');
   const [newChurchState, setNewChurchState] = useState('');
+  const [newChurchEmail, setNewChurchEmail] = useState('');
 
   useEffect(() => {
     if (authLoading || adminLoading) return;
     
     if (!user) {
-      navigate('/auth');
+      navigate('/');
       return;
     }
     
-    if (!isAdmin) {
-      navigate('/dashboard');
+    // Double check: only allow the specific admin email
+    const userEmail = user.email?.toLowerCase();
+    if (userEmail !== ADMIN_EMAIL.toLowerCase() || !isAdmin) {
+      toast({
+        title: 'Acesso Negado',
+        description: 'Esta área é restrita ao administrador do sistema.',
+        variant: 'destructive',
+      });
+      navigate('/');
       return;
     }
 
@@ -123,6 +133,15 @@ export default function Admin() {
       return;
     }
 
+    if (!newChurchEmail.trim()) {
+      toast({
+        title: 'Erro',
+        description: 'Email da igreja é obrigatório para enviar o código.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const slug = newChurchSlug.trim() || slugify(newChurchName);
 
     setCreatingChurch(true);
@@ -130,22 +149,39 @@ export default function Admin() {
       const { data, error } = await supabase.rpc('admin_create_church', {
         p_name: newChurchName.trim(),
         p_slug: slug,
+        p_email: newChurchEmail.trim(),
         p_city: newChurchCity.trim() || null,
         p_state: newChurchState.trim() || null,
       });
 
       if (error) throw error;
 
-      toast({
-        title: 'Igreja criada!',
-        description: 'A igreja foi criada com sucesso.',
-      });
+      // Send email with the church code
+      try {
+        await supabase.functions.invoke('send-church-code-email', {
+          body: {
+            churchId: data,
+          },
+        });
+        
+        toast({
+          title: 'Igreja criada!',
+          description: 'O código foi enviado para o email cadastrado.',
+        });
+      } catch (emailError) {
+        console.error('Error sending email:', emailError);
+        toast({
+          title: 'Igreja criada!',
+          description: 'Igreja criada, mas houve erro ao enviar email. Copie o código manualmente.',
+        });
+      }
 
       setShowCreateChurch(false);
       setNewChurchName('');
       setNewChurchSlug('');
       setNewChurchCity('');
       setNewChurchState('');
+      setNewChurchEmail('');
       fetchChurches();
     } catch (error: any) {
       console.error('Error creating church:', error);
@@ -303,7 +339,7 @@ export default function Admin() {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/');
+    window.location.href = '/';
   };
 
   if (authLoading || adminLoading || loadingDepts) {
@@ -449,6 +485,19 @@ export default function Admin() {
                         />
                       </div>
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="churchEmail">Email da Igreja *</Label>
+                      <Input
+                        id="churchEmail"
+                        type="email"
+                        value={newChurchEmail}
+                        onChange={(e) => setNewChurchEmail(e.target.value)}
+                        placeholder="contato@igreja.com.br"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        O código da igreja será enviado para este email
+                      </p>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="churchCity">Cidade</Label>
@@ -472,15 +521,15 @@ export default function Admin() {
                     <Button 
                       onClick={handleCreateChurch} 
                       className="w-full"
-                      disabled={creatingChurch || !newChurchName.trim()}
+                      disabled={creatingChurch || !newChurchName.trim() || !newChurchEmail.trim()}
                     >
                       {creatingChurch ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Criando...
+                          Criando e enviando email...
                         </>
                       ) : (
-                        'Criar Igreja'
+                        'Criar Igreja e Enviar Código'
                       )}
                     </Button>
                   </div>
