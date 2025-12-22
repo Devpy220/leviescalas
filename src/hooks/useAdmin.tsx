@@ -23,6 +23,9 @@ export function useAdmin() {
     if (!user) return;
 
     try {
+      // Ensure admin role is set (server-side, bypasses RLS)
+      await supabase.rpc('ensure_admin_role');
+
       // Check if user has admin role using server-side RPC only
       const { data: hasRole, error } = await supabase
         .rpc('has_role', { _user_id: user.id, _role: 'admin' });

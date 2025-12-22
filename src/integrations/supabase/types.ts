@@ -542,6 +542,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      ensure_admin_role: { Args: never; Returns: boolean }
       generate_church_code: { Args: never; Returns: string }
       get_all_departments_admin: {
         Args: never
