@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Calendar, Shield, Loader2, AlertTriangle, Lock } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Calendar, Shield, Loader2, AlertTriangle, Lock, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,17 +8,20 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const ADMIN_EMAIL = 'leviescalas@gmail.com';
 
 export default function AdminLogin() {
-  const { user, session, loading, signIn, signOut } = useAuth();
+  const { user, session, loading, signIn, signUp, signOut } = useAuth();
   const navigate = useNavigate();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showUnauthorized, setShowUnauthorized] = useState(false);
+  const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
 
   useEffect(() => {
     if (loading) return;
@@ -38,6 +41,18 @@ export default function AdminLogin() {
     }
   }, [user, session, loading, navigate]);
 
+  const validateAdminEmail = (emailToCheck: string): boolean => {
+    if (emailToCheck.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+      toast({
+        variant: 'destructive',
+        title: 'Acesso Negado',
+        description: 'Esta área é restrita ao administrador do sistema.',
+      });
+      return false;
+    }
+    return true;
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -50,15 +65,7 @@ export default function AdminLogin() {
       return;
     }
 
-    // Check if it's the admin email BEFORE attempting login
-    if (email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
-      toast({
-        variant: 'destructive',
-        title: 'Acesso Negado',
-        description: 'Esta área é restrita ao administrador do sistema.',
-      });
-      return;
-    }
+    if (!validateAdminEmail(email)) return;
 
     setIsLoading(true);
 
@@ -83,11 +90,81 @@ export default function AdminLogin() {
     }
   };
 
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email.trim() || !password.trim() || !confirmPassword.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Campos obrigatórios',
+        description: 'Preencha todos os campos.',
+      });
+      return;
+    }
+
+    if (!validateAdminEmail(email)) return;
+
+    if (password !== confirmPassword) {
+      toast({
+        variant: 'destructive',
+        title: 'Senhas não conferem',
+        description: 'A senha e a confirmação devem ser iguais.',
+      });
+      return;
+    }
+
+    if (password.length < 6) {
+      toast({
+        variant: 'destructive',
+        title: 'Senha muito curta',
+        description: 'A senha deve ter pelo menos 6 caracteres.',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const { error } = await signUp(email, password, 'Administrador LEVI', '');
+      
+      if (error) {
+        if (error.message?.includes('already registered')) {
+          toast({
+            variant: 'destructive',
+            title: 'Email já cadastrado',
+            description: 'Este email já possui uma conta. Use a aba "Entrar" para fazer login.',
+          });
+          setActiveTab('login');
+        } else {
+          toast({
+            variant: 'destructive',
+            title: 'Erro no cadastro',
+            description: error.message || 'Não foi possível criar a conta.',
+          });
+        }
+      } else {
+        toast({
+          title: 'Conta criada com sucesso!',
+          description: 'Você já pode acessar o painel administrativo.',
+        });
+      }
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Não foi possível criar a conta. Tente novamente.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleLogout = async () => {
     await signOut();
     setShowUnauthorized(false);
     setEmail('');
     setPassword('');
+    setConfirmPassword('');
   };
 
   if (loading) {
@@ -104,12 +181,12 @@ export default function AdminLogin() {
       <div className="min-h-screen bg-background flex flex-col">
         <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
           <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
+            <Link to="/" className="flex items-center gap-2 group">
+              <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center transition-transform group-hover:scale-110">
                 <Shield className="w-5 h-5 text-destructive" />
               </div>
               <span className="font-display text-xl font-bold text-foreground">LEVI Admin</span>
-            </div>
+            </Link>
             <ThemeToggle />
           </div>
         </header>
@@ -147,8 +224,8 @@ export default function AdminLogin() {
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl gradient-vibrant flex items-center justify-center shadow-glow-sm">
+          <Link to="/" className="flex items-center gap-2 group">
+            <div className="w-10 h-10 rounded-xl gradient-vibrant flex items-center justify-center shadow-glow-sm transition-transform group-hover:scale-110">
               <Calendar className="w-5 h-5 text-white" />
             </div>
             <div className="flex items-center gap-2">
@@ -157,7 +234,7 @@ export default function AdminLogin() {
                 Painel Administrativo
               </span>
             </div>
-          </div>
+          </Link>
           <ThemeToggle />
         </div>
       </header>
@@ -186,56 +263,138 @@ export default function AdminLogin() {
               </p>
             </div>
 
-            {/* Login Form Card */}
+            {/* Login/Signup Form Card */}
             <div className="glass rounded-2xl p-6 sm:p-8 border border-border/50 shadow-xl">
-              <form onSubmit={handleLogin} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-primary" />
-                    Email do Administrador
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="admin@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="h-12"
-                    autoComplete="email"
-                  />
-                </div>
+              <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'login' | 'signup')} className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-6">
+                  <TabsTrigger value="login" className="flex items-center gap-2">
+                    <Shield className="w-4 h-4" />
+                    Entrar
+                  </TabsTrigger>
+                  <TabsTrigger value="signup" className="flex items-center gap-2">
+                    <UserPlus className="w-4 h-4" />
+                    Criar Senha
+                  </TabsTrigger>
+                </TabsList>
 
-                <div className="space-y-2">
-                  <Label htmlFor="password">Senha</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="h-12"
-                    autoComplete="current-password"
-                  />
-                </div>
+                <TabsContent value="login">
+                  <form onSubmit={handleLogin} className="space-y-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="login-email" className="flex items-center gap-2">
+                        <Shield className="w-4 h-4 text-primary" />
+                        Email do Administrador
+                      </Label>
+                      <Input
+                        id="login-email"
+                        type="email"
+                        placeholder="leviescalas@gmail.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="h-12"
+                        autoComplete="email"
+                      />
+                    </div>
 
-                <Button 
-                  type="submit" 
-                  className="w-full h-12 gradient-vibrant text-white shadow-glow-sm hover:shadow-glow transition-all"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                      Entrando...
-                    </>
-                  ) : (
-                    <>
-                      <Shield className="w-5 h-5 mr-2" />
-                      Acessar Painel Admin
-                    </>
-                  )}
-                </Button>
-              </form>
+                    <div className="space-y-2">
+                      <Label htmlFor="login-password">Senha</Label>
+                      <Input
+                        id="login-password"
+                        type="password"
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="h-12"
+                        autoComplete="current-password"
+                      />
+                    </div>
+
+                    <Button 
+                      type="submit" 
+                      className="w-full h-12 gradient-vibrant text-white shadow-glow-sm hover:shadow-glow transition-all"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                          Entrando...
+                        </>
+                      ) : (
+                        <>
+                          <Shield className="w-5 h-5 mr-2" />
+                          Acessar Painel Admin
+                        </>
+                      )}
+                    </Button>
+                  </form>
+                </TabsContent>
+
+                <TabsContent value="signup">
+                  <form onSubmit={handleSignUp} className="space-y-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-email" className="flex items-center gap-2">
+                        <Shield className="w-4 h-4 text-primary" />
+                        Email do Administrador
+                      </Label>
+                      <Input
+                        id="signup-email"
+                        type="email"
+                        placeholder="leviescalas@gmail.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="h-12"
+                        autoComplete="email"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Use o email: <strong>{ADMIN_EMAIL}</strong>
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-password">Criar Senha</Label>
+                      <Input
+                        id="signup-password"
+                        type="password"
+                        placeholder="Mínimo 6 caracteres"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="h-12"
+                        autoComplete="new-password"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="confirm-password">Confirmar Senha</Label>
+                      <Input
+                        id="confirm-password"
+                        type="password"
+                        placeholder="Digite a senha novamente"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="h-12"
+                        autoComplete="new-password"
+                      />
+                    </div>
+
+                    <Button 
+                      type="submit" 
+                      className="w-full h-12 gradient-vibrant text-white shadow-glow-sm hover:shadow-glow transition-all"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                          Criando conta...
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="w-5 h-5 mr-2" />
+                          Criar Conta Admin
+                        </>
+                      )}
+                    </Button>
+                  </form>
+                </TabsContent>
+              </Tabs>
             </div>
 
             {/* Footer info */}
