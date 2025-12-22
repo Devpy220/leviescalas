@@ -29,7 +29,7 @@ export default function AdminLogin() {
       
       // If it's the admin, redirect to admin panel
       if (userEmail === ADMIN_EMAIL.toLowerCase()) {
-        navigate('/admin');
+        navigate('/admin', { replace: true });
         return;
       }
       

@@ -85,7 +85,7 @@ export default function Admin() {
     if (authLoading || adminLoading) return;
     
     if (!user) {
-      navigate('/');
+      navigate('/admin-login');
       return;
     }
     
@@ -97,7 +97,7 @@ export default function Admin() {
         description: 'Esta área é restrita ao administrador do sistema.',
         variant: 'destructive',
       });
-      navigate('/');
+      navigate('/admin-login');
       return;
     }
 
@@ -339,7 +339,7 @@ export default function Admin() {
 
   const handleSignOut = async () => {
     await signOut();
-    window.location.href = '/';
+    window.location.href = '/admin-login';
   };
 
   if (authLoading || adminLoading || loadingDepts) {
