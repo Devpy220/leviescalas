@@ -6,6 +6,41 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Security: Validate webhook URLs to prevent SSRF attacks
+const validateWebhookUrl = (url: string): boolean => {
+  try {
+    const parsed = new URL(url);
+    
+    // Block private IPs and metadata endpoints
+    const hostname = parsed.hostname.toLowerCase();
+    if (
+      hostname === 'localhost' ||
+      hostname.startsWith('127.') ||
+      hostname.startsWith('169.254.') ||
+      hostname.startsWith('10.') ||
+      hostname.startsWith('192.168.') ||
+      /^172\.(1[6-9]|2[0-9]|3[01])\./.test(hostname) ||
+      hostname === '0.0.0.0' ||
+      hostname.endsWith('.local') ||
+      hostname.endsWith('.internal')
+    ) {
+      console.error("Blocked webhook URL pointing to private/internal address:", hostname);
+      return false;
+    }
+    
+    // Require HTTPS for security
+    if (parsed.protocol !== 'https:') {
+      console.error("Blocked non-HTTPS webhook URL:", parsed.protocol);
+      return false;
+    }
+    
+    return true;
+  } catch (e) {
+    console.error("Invalid webhook URL:", e);
+    return false;
+  }
+};
+
 interface SchedulePayload {
   id: string;
   user_id: string;
@@ -75,6 +110,19 @@ const handler = async (req: Request): Promise<Response> => {
           message: "Configure a secret N8N_WEBHOOK_URL para ativar integração n8n"
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Security: Validate webhook URL to prevent SSRF
+    if (!validateWebhookUrl(n8nWebhookUrl)) {
+      console.error("n8n-webhook: N8N_WEBHOOK_URL failed security validation");
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "Invalid webhook URL",
+          message: "A URL do webhook não passou na validação de segurança"
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -163,14 +211,20 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("n8n-webhook: Sending payload to n8n:", JSON.stringify(n8nPayload));
 
-    // Send to n8n webhook
+    // Send to n8n webhook with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+    
     const n8nResponse = await fetch(n8nWebhookUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(n8nPayload),
+      signal: controller.signal,
     });
+    
+    clearTimeout(timeoutId);
 
     const responseText = await n8nResponse.text();
     console.log("n8n-webhook: n8n response status:", n8nResponse.status, "body:", responseText);
