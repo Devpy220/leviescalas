@@ -13,7 +13,8 @@ import {
   CheckCircle2,
   ArrowRight,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  Heart
 } from 'lucide-react';
 
 const features = [
@@ -55,12 +56,12 @@ const features = [
   },
 ];
 
-const pricingFeatures = [
+const appFeatures = [
+  '100% gratuito para usar',
   'Membros ilimitados',
   'Escalas ilimitadas',
   'Notificações por Email',
   'Calendário drag-and-drop',
-  'Link de convite único',
   'Exportação PDF/Excel',
   'Sincronização em tempo real',
   'Suporte por email',
@@ -222,19 +223,20 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Pricing Section */}
+      {/* Support Section */}
       <section className="py-20 lg:py-32 relative overflow-hidden">
         <div className="absolute inset-0 mesh-gradient opacity-30" />
         <div className="container mx-auto px-4 relative">
           <div className="text-center mb-16">
             <span className="inline-block px-4 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
-              Preços
+              Apoie o Projeto
             </span>
             <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-4">
-              Preço simples e transparente
+              LEVI é 100% gratuito
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Pague apenas pelo que usar. Sem taxas escondidas ou surpresas.
+              Desenvolvido com amor para servir igrejas. Se o LEVI abençoou seu ministério, 
+              considere apoiar o projeto com uma contribuição voluntária.
             </p>
           </div>
           
@@ -243,20 +245,19 @@ export default function Landing() {
               <div className="absolute inset-0 gradient-vibrant rounded-3xl blur-2xl opacity-20" />
               <div className="relative glass rounded-3xl p-8 lg:p-10 border-2 border-primary/20 shadow-colored">
                 <div className="text-center mb-8">
-                  <span className="inline-block px-4 py-1 rounded-full gradient-vibrant text-white text-sm font-medium mb-4">
-                    Por voluntário
-                  </span>
-                  <div className="flex items-baseline justify-center gap-2">
-                    <span className="text-5xl lg:text-6xl font-display font-bold text-gradient-vibrant">R$ 10</span>
-                    <span className="text-muted-foreground">/mês</span>
+                  <div className="w-20 h-20 rounded-full gradient-vibrant flex items-center justify-center mx-auto mb-4 shadow-glow">
+                    <Heart className="w-10 h-10 text-white" />
                   </div>
-                  <p className="mt-2 text-muted-foreground">
-                    14 dias de teste grátis • Cobrança mensal por membro
+                  <h3 className="text-2xl font-display font-bold text-foreground mb-2">
+                    Apoio Voluntário
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Qualquer valor é bem-vindo e ajuda a manter o projeto ativo
                   </p>
                 </div>
                 
                 <ul className="space-y-4 mb-8">
-                  {pricingFeatures.map((feature, index) => (
+                  {appFeatures.map((feature) => (
                     <li key={feature} className="flex items-center gap-3">
                       <div className="w-6 h-6 rounded-full gradient-vibrant flex items-center justify-center flex-shrink-0">
                         <CheckCircle2 className="w-4 h-4 text-white" />
@@ -266,12 +267,16 @@ export default function Landing() {
                   ))}
                 </ul>
                 
-                <Link to="/acessar" className="block">
+                <Link to="/payment" className="block">
                   <Button className="w-full gradient-vibrant text-white shadow-glow hover:shadow-glow-lg transition-all text-lg py-6">
-                    Acessar com Código
-                    <ChevronRight className="w-5 h-5 ml-1" />
+                    <Heart className="w-5 h-5 mr-2" />
+                    Apoiar com PIX
                   </Button>
                 </Link>
+                
+                <p className="text-center text-sm text-muted-foreground mt-4">
+                  Contribuição 100% voluntária • Sem obrigatoriedade
+                </p>
               </div>
             </div>
           </div>
