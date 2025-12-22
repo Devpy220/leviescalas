@@ -71,8 +71,11 @@ export default function AdminLogin() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!email.trim() || !password.trim()) {
+
+    const emailValue = email.trim();
+    const passwordValue = password.trim();
+
+    if (!emailValue || !passwordValue) {
       toast({
         variant: 'destructive',
         title: 'Campos obrigatórios',
@@ -81,13 +84,13 @@ export default function AdminLogin() {
       return;
     }
 
-    if (!validateAdminEmail(email)) return;
+    if (!validateAdminEmail(emailValue)) return;
 
     setIsLoading(true);
 
     try {
-      const { error } = await signIn(email, password);
-      
+      const { error } = await signIn(emailValue, passwordValue);
+
       if (error) {
         toast({
           variant: 'destructive',
