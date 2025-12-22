@@ -496,7 +496,7 @@ export default function AdminLogin() {
                       <Input
                         id="login-email"
                         type="email"
-                        placeholder="leviescalas@gmail.com"
+                        placeholder="exemplo@email.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="h-12"
@@ -542,10 +542,7 @@ export default function AdminLogin() {
                     <div className="p-4 rounded-lg bg-primary/10 border border-primary/20 mb-2">
                       <p className="text-sm text-foreground">
                         <Shield className="w-4 h-4 text-primary inline mr-2" />
-                        Email do administrador: <strong className="text-primary">{ADMIN_EMAIL}</strong>
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        A conta será criada automaticamente com este email.
+                        Crie uma senha para acessar o painel administrativo.
                       </p>
                     </div>
 
@@ -600,9 +597,8 @@ export default function AdminLogin() {
                     <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
                       <p className="text-sm text-foreground">
                         <Mail className="w-4 h-4 text-primary inline mr-2" />
-                        Um link de recuperação será enviado para:
+                        Clique abaixo para receber um link de recuperação de senha.
                       </p>
-                      <p className="text-primary font-semibold mt-1">{ADMIN_EMAIL}</p>
                     </div>
 
                     <p className="text-sm text-muted-foreground">
