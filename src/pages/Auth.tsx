@@ -402,10 +402,24 @@ export default function Auth() {
       description: welcomeMessage,
     });
     
-    // Redirect to dashboard for admin signup, or church page for regular signup
-    const redirectTo = isAdminSignup 
-      ? '/dashboard' 
-      : (churchValidated.slug ? `/igreja/${churchValidated.slug}` : postAuthRedirect);
+    // Redirect logic:
+    // 1. Admin signup -> dashboard
+    // 2. Church code from URL (volunteer via /join link) -> create department page
+    // 3. Church slug -> church public page
+    // 4. Otherwise -> postAuthRedirect (which includes redirect param from URL)
+    let redirectTo = '/dashboard';
+    
+    if (isAdminSignup) {
+      redirectTo = '/dashboard';
+    } else if (churchCodeParam) {
+      // Volunteer coming from /join link - go to create department
+      redirectTo = `/departments/new?churchCode=${churchCodeParam.toUpperCase()}`;
+    } else if (churchValidated.slug) {
+      redirectTo = `/igreja/${churchValidated.slug}`;
+    } else {
+      redirectTo = postAuthRedirect;
+    }
+    
     navigate(redirectTo);
   };
 
@@ -800,14 +814,26 @@ export default function Auth() {
                 </div>
               )}
 
-              {/* Church Context Info */}
+              {/* Church Context Info - Show church name and code when validated from URL */}
               {churchValidated.valid && churchValidated.name && !isAdminSignup && (
-                <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 mb-4">
+                <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 mb-4 space-y-3">
                   <p className="text-sm text-foreground">
                     <span className="font-medium">Criando conta para:</span>
                     <br />
                     <span className="text-primary font-semibold text-lg">{churchValidated.name}</span>
                   </p>
+                  {/* Show church code if it came from URL */}
+                  {churchCodeParam && (
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Código da Igreja</Label>
+                      <Input
+                        type="text"
+                        value={churchCodeParam.toUpperCase()}
+                        disabled
+                        className="h-10 bg-muted/50 font-mono text-sm"
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 
