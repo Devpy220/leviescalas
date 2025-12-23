@@ -43,7 +43,7 @@ const App = () => (
               <Route path="/admin-login" element={<AdminLogin />} />
               <Route path="/admin" element={<Admin />} />
               
-              {/* Church access */}
+              {/* Church access - updated 2023-12-23 */}
               <Route path="/acessar" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/join" element={<JoinChurch />} />
