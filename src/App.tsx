@@ -24,6 +24,7 @@ import ChurchPublic from "./pages/ChurchPublic";
 import JoinChurch from "./pages/JoinChurch";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/AdminLogin";
+import VolunteerLogin from "./pages/VolunteerLogin";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,9 @@ const App = () => (
               {/* Admin area - restricted to leviescalas@gmail.com */}
               <Route path="/admin-login" element={<AdminLogin />} />
               <Route path="/admin" element={<Admin />} />
+              
+              {/* Volunteer login */}
+              <Route path="/login" element={<VolunteerLogin />} />
               
               {/* Church access - updated 2023-12-23 */}
               <Route path="/acessar" element={<Index />} />
