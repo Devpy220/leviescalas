@@ -97,10 +97,11 @@ export default function Auth() {
 
   const redirectParam = searchParams.get('redirect');
   const churchSlugParam = searchParams.get('church');
+  const churchCodeParam = searchParams.get('churchCode');
   const postAuthRedirect = redirectParam && redirectParam.startsWith('/') ? redirectParam : '/dashboard';
   
-  // Church slug from URL - this is the only way to register now
-  const hasChurchContext = !!churchSlugParam;
+  // Church slug or code from URL - this is the only way to register now
+  const hasChurchContext = !!churchSlugParam || !!churchCodeParam;
 
   // Detect password recovery flow from auth event
   useEffect(() => {
@@ -171,11 +172,18 @@ export default function Auth() {
   }, [loading, session, navigate, postAuthRedirect]);
 
   // Validate church from slug when accessing register tab
+  // Validate church from URL params when accessing register tab
   useEffect(() => {
-    if (churchSlugParam && activeTab === 'register') {
-      validateChurchBySlug(churchSlugParam);
+    if (activeTab === 'register') {
+      if (churchSlugParam) {
+        validateChurchBySlug(churchSlugParam);
+      } else if (churchCodeParam) {
+        // If we have a church code from URL, validate it automatically
+        registerForm.setValue('churchCode', churchCodeParam.toUpperCase());
+        validateChurchCode(churchCodeParam);
+      }
     }
-  }, [churchSlugParam, activeTab]);
+  }, [churchSlugParam, churchCodeParam, activeTab]);
 
   const loginForm = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),

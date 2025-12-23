@@ -101,9 +101,9 @@ export default function JoinChurch() {
       return;
     }
 
-    // If not logged in, redirect to auth first
+    // If not logged in, redirect to auth with church slug for registration
     if (!user) {
-      navigate(`/auth?tab=register&redirect=/departments/new?churchCode=${data.code.toUpperCase()}`);
+      navigate(`/auth?tab=register&church=${validatedChurch.slug}&churchCode=${data.code.toUpperCase()}&redirect=/departments/new?churchCode=${data.code.toUpperCase()}`);
       return;
     }
 
