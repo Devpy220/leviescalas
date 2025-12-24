@@ -122,9 +122,14 @@ export default function Landing() {
                 <span className="hidden sm:inline">Admin</span>
               </Button>
             </Link>
+            <Link to="/entrar">
+              <Button variant="outline" size="sm" className="border-primary/50 text-primary hover:bg-primary/10">
+                Entrar
+              </Button>
+            </Link>
             <Link to="/acessar">
               <Button className="gradient-vibrant text-white shadow-glow-sm hover:shadow-glow transition-all">
-                Acessar Igreja
+                Criar Conta
                 <ArrowRight className="w-4 h-4 ml-1" />
               </Button>
             </Link>

@@ -8,6 +8,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import Landing from "./pages/Landing";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Department from "./pages/Department";
 import DepartmentBySlug from "./pages/DepartmentBySlug";
@@ -46,6 +47,7 @@ const App = () => (
               
               {/* Volunteer login */}
               <Route path="/login" element={<VolunteerLogin />} />
+              <Route path="/entrar" element={<Login />} />
               
               {/* Church access - updated 2023-12-23 */}
               <Route path="/acessar" element={<Index />} />
