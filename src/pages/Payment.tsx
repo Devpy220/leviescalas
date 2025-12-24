@@ -3,12 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, QrCode, Copy, Check, ArrowLeft, Heart } from "lucide-react";
+import { Loader2, QrCode, Copy, Check, ArrowLeft, Heart, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import pixQrCode from "@/assets/pix-qrcode-levi.jpg";
 
 const PIX_KEY = "b8bb0848-844b-467b-8422-382720b1e980";
 const SUPPORT_EMAIL = "leviescalas@gmail.com";
+const SUGGESTED_VALUE = "R$ 10,00";
 
 const Payment = () => {
   const navigate = useNavigate();
@@ -47,21 +48,29 @@ const Payment = () => {
         </Button>
 
         <div className="text-center mb-8">
-          <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-            <Heart className="h-8 w-8 text-primary" />
+          <div className="mx-auto w-16 h-16 bg-rose-500/10 rounded-full flex items-center justify-center mb-4">
+            <Heart className="h-8 w-8 text-rose-500" />
           </div>
           <h1 className="text-3xl font-bold text-foreground mb-2">
-            Apoio ao Levi
+            Apoie o Projeto
           </h1>
-          <p className="text-muted-foreground">
-            Sua contribuição voluntária ajuda a manter o projeto
+          <p className="text-muted-foreground mb-4">
+            Sua contribuição voluntária ajuda a manter o projeto gratuito para todos
           </p>
+          
+          {/* Suggested value badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
+            <Sparkles className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium text-primary">
+              Sugestão: {SUGGESTED_VALUE}
+            </span>
+          </div>
         </div>
 
-        <Card className="border-2 border-primary/30">
+        <Card className="border-2 border-rose-500/30">
           <CardHeader className="text-center">
-            <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-              <QrCode className="h-6 w-6 text-primary" />
+            <div className="mx-auto w-12 h-12 bg-rose-500/10 rounded-full flex items-center justify-center mb-4">
+              <QrCode className="h-6 w-6 text-rose-500" />
             </div>
             <CardTitle>PIX</CardTitle>
             <CardDescription>
@@ -72,14 +81,14 @@ const Payment = () => {
             <div className="flex justify-center">
               <img 
                 src={pixQrCode} 
-                alt="QR Code PIX - Apoio ao Levi" 
+                alt="QR Code PIX - Apoio Voluntário" 
                 className="w-64 h-64 rounded-lg border object-contain bg-white"
               />
             </div>
             
             <div className="text-center space-y-1">
               <p className="text-sm font-medium text-foreground">EDUARDO LINO DA SILVA</p>
-              <p className="text-xs text-muted-foreground">Levi agradece, Deus abençoe!</p>
+              <p className="text-xs text-muted-foreground">Obrigado pelo seu apoio! Deus abençoe!</p>
             </div>
             
             <div className="space-y-2">
@@ -110,7 +119,9 @@ const Payment = () => {
 
             <div className="border-t pt-4">
               <p className="text-xs text-muted-foreground text-center">
-                Este QR Code não possui valor definido. Informe o valor que desejar no momento do pagamento.
+                Este QR Code não possui valor definido. Informe qualquer valor que desejar no momento do pagamento.
+                <br />
+                <span className="font-medium">Sugestão: {SUGGESTED_VALUE}</span>
               </p>
             </div>
           </CardContent>
