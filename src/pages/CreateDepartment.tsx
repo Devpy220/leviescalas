@@ -324,11 +324,7 @@ export default function CreateDepartment() {
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>Igreja não cadastrada?</AlertTitle>
                     <AlertDescription>
-                      Se sua igreja ainda não está cadastrada, peça ao administrador para{' '}
-                      <Link to="/churches" className="text-primary hover:underline font-medium">
-                        cadastrar a igreja
-                      </Link>{' '}
-                      primeiro e obtenha o código.
+                      Se sua igreja ainda não está cadastrada, entre em contato com o administrador do sistema para obter o código.
                     </AlertDescription>
                   </Alert>
                 )}
