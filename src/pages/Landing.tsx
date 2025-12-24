@@ -141,7 +141,7 @@ export default function Landing() {
       <div className="fixed top-16 left-0 right-0 z-40 bg-amber-500/10 border-b border-amber-500/30 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-2 text-center">
           <p className="text-sm text-amber-700 dark:text-amber-300">
-            <strong>Atenção:</strong> Para cadastrar sua igreja, entre em contato com o suporte: <a href="mailto:suport@leviescalas.com.br" className="underline font-semibold hover:text-amber-800 dark:hover:text-amber-200">suport@leviescalas.com.br</a>
+            <strong>Atenção:</strong> Para cadastrar sua igreja, <a href="mailto:suport@leviescalas.com.br" className="underline font-semibold hover:text-amber-800 dark:hover:text-amber-200">entre em contato</a> com o suporte.
           </p>
         </div>
       </div>
