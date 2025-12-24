@@ -11,7 +11,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 
-const ADMIN_EMAIL = 'leviescalas@gmail.com';
+// Admin access is controlled by server-side has_role() function
 
 export default function AdminLogin() {
   const { user, session, loading, signIn, signUp, signOut, resetPassword } = useAuth();
@@ -44,30 +44,13 @@ export default function AdminLogin() {
       // If in reset mode, allow user to set new password
       if (isResetMode) return;
       
-      const userEmail = user.email?.toLowerCase();
-      
-      // If it's the admin, redirect to admin panel
-      if (userEmail === ADMIN_EMAIL.toLowerCase()) {
-        navigate('/admin', { replace: true });
-        return;
-      }
-      
-      // If it's not the admin, show unauthorized message
-      setShowUnauthorized(true);
+      // Redirect to admin panel - the Admin page will verify admin role
+      navigate('/admin', { replace: true });
     }
   }, [user, session, loading, navigate, isResetMode]);
 
-  const validateAdminEmail = (emailToCheck: string): boolean => {
-    if (emailToCheck.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
-      toast({
-        variant: 'destructive',
-        title: 'Acesso Negado',
-        description: 'Esta área é restrita ao administrador do sistema.',
-      });
-      return false;
-    }
-    return true;
-  };
+  // Note: Admin validation is done server-side via has_role() after login
+  // No client-side email validation needed - the server will reject unauthorized access
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,7 +67,7 @@ export default function AdminLogin() {
       return;
     }
 
-    if (!validateAdminEmail(emailValue)) return;
+    // No client-side email validation - server will validate via has_role() after login
 
     setIsLoading(true);
 
@@ -112,6 +95,17 @@ export default function AdminLogin() {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    const emailValue = email.trim();
+    
+    if (!emailValue) {
+      toast({
+        variant: 'destructive',
+        title: 'Email obrigatório',
+        description: 'Preencha o email para criar a conta.',
+      });
+      return;
+    }
+    
     if (!password.trim() || !confirmPassword.trim()) {
       toast({
         variant: 'destructive',
@@ -120,11 +114,6 @@ export default function AdminLogin() {
       });
       return;
     }
-
-    // Use the admin email automatically for signup
-    const signupEmail = ADMIN_EMAIL;
-
-    // No need to validate - we use the predefined admin email
 
     if (password !== confirmPassword) {
       toast({
@@ -147,7 +136,8 @@ export default function AdminLogin() {
     setIsLoading(true);
 
     try {
-      const { error } = await signUp(signupEmail, password, 'Administrador LEVI', '');
+      // Server-side ensure_admin_role will grant admin only if email matches
+      const { error } = await signUp(emailValue, password, 'Administrador LEVI', '');
       
       if (error) {
         if (error.message?.includes('already registered')) {
@@ -184,10 +174,21 @@ export default function AdminLogin() {
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    const emailValue = email.trim();
+    
+    if (!emailValue) {
+      toast({
+        variant: 'destructive',
+        title: 'Email obrigatório',
+        description: 'Preencha o email para recuperar a senha.',
+      });
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
-      const { error } = await resetPassword(ADMIN_EMAIL);
+      const { error } = await resetPassword(emailValue);
       
       if (error) {
         toast({
@@ -198,7 +199,7 @@ export default function AdminLogin() {
       } else {
         toast({
           title: 'Email enviado!',
-          description: `Um link para redefinir a senha foi enviado para ${ADMIN_EMAIL}`,
+          description: `Um link para redefinir a senha foi enviado para ${emailValue}`,
         });
         setActiveTab('login');
       }

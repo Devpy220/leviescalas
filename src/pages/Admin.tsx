@@ -54,7 +54,7 @@ interface ChurchData {
   created_at: string;
 }
 
-const ADMIN_EMAIL = 'leviescalas@gmail.com';
+// Admin access is controlled by server-side has_role() function via useAdmin hook
 
 export default function Admin() {
   const { user, signOut, loading: authLoading } = useAuth();
@@ -89,9 +89,8 @@ export default function Admin() {
       return;
     }
     
-    // Double check: only allow the specific admin email
-    const userEmail = user.email?.toLowerCase();
-    if (userEmail !== ADMIN_EMAIL.toLowerCase() || !isAdmin) {
+    // Server-side role check only (via useAdmin hook which uses has_role RPC)
+    if (!isAdmin) {
       toast({
         title: 'Acesso Negado',
         description: 'Esta área é restrita ao administrador do sistema.',

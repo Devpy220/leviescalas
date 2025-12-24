@@ -65,11 +65,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           { onConflict: 'id' }
         );
 
-      // Auto-grant admin role via server-side function (bypasses RLS issues)
-      const ADMIN_EMAIL = 'leviescalas@gmail.com';
-      if (email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-        await supabase.rpc('ensure_admin_role');
-      }
+      // Admin role is granted server-side via ensure_admin_role RPC
+      // which checks the email in the database function itself
+      await supabase.rpc('ensure_admin_role');
     } catch {
       // Silent: bootstrap should never block auth flow.
     }

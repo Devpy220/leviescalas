@@ -8,7 +8,6 @@ const corsHeaders = {
 };
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-const ADMIN_EMAIL = "leviescalas@gmail.com";
 
 const requestSchema = z.object({
   churchId: z.string().uuid(),
@@ -94,19 +93,20 @@ serve(async (req) => {
       });
     }
 
-    const userEmail = userData.user.email?.toLowerCase();
+    // Use service role client for admin operations
+    const serviceClient = createClient(supabaseUrl, supabaseServiceRoleKey);
+
+    // Check admin role via database function (server-side validation)
+    const { data: isAdmin, error: roleErr } = await serviceClient
+      .rpc('has_role', { _user_id: userData.user.id, _role: 'admin' });
     
-    // Only admin can send church code emails
-    if (userEmail !== ADMIN_EMAIL.toLowerCase()) {
-      console.error("Forbidden: user is not admin", userEmail);
+    if (roleErr || !isAdmin) {
+      console.error("Forbidden: user is not admin", roleErr);
       return new Response(JSON.stringify({ error: "Forbidden - Admin only" }), {
         status: 403,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
-
-    // Use service role to read church
-    const serviceClient = createClient(supabaseUrl, supabaseServiceRoleKey);
 
     const { data: church, error: churchErr } = await serviceClient
       .from("churches")
