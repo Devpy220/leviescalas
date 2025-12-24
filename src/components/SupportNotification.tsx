@@ -123,6 +123,9 @@ export function SupportNotification() {
           <p className="text-xs text-white/60 mt-2">
             * Esta contribuição é opcional e pode ser cancelada a qualquer momento.
           </p>
+          <p className="text-xs text-white/60">
+            Dúvidas? <a href="mailto:suport@leviescalas.com.br" className="underline hover:text-white">suport@leviescalas.com.br</a>
+          </p>
         </div>
       </Card>
     </div>
