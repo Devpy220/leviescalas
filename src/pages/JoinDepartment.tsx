@@ -87,9 +87,9 @@ export default function JoinDepartment() {
     if (authLoading) return;
 
     if (!user) {
-      // Save invite code and redirect to conecte-se
+      // Save invite code and redirect to volunteer login
       sessionStorage.setItem('pendingInvite', inviteCode || '');
-      navigate('/conecte-se');
+      navigate('/login');
       return;
     }
 
