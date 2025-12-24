@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -65,6 +66,7 @@ export default function Churches() {
   const [dialogOpen, setDialogOpen] = useState(false);
   
   const { user, loading: authLoading } = useAuth();
+  const { isAdmin, loading: adminLoading } = useAdmin();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -74,13 +76,23 @@ export default function Churches() {
   });
 
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading || adminLoading) return;
     if (!user) {
       navigate('/auth');
       return;
     }
+    // Only admins can access this page
+    if (!isAdmin) {
+      toast({
+        variant: 'destructive',
+        title: 'Acesso negado',
+        description: 'Apenas administradores podem cadastrar igrejas.',
+      });
+      navigate('/dashboard');
+      return;
+    }
     fetchChurches();
-  }, [user, authLoading]);
+  }, [user, authLoading, isAdmin, adminLoading]);
 
   const fetchChurches = async () => {
     if (!user) return;
@@ -178,7 +190,7 @@ export default function Churches() {
     });
   };
 
-  if (authLoading || loading) {
+  if (authLoading || adminLoading || loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
