@@ -15,7 +15,8 @@ import {
   CalendarDays,
   Settings2,
   Download,
-  Church
+  Church,
+  Heart
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -424,6 +425,38 @@ export default function Dashboard() {
             )}
           </div>
         )}
+
+        {/* Support LEVI Section */}
+        <div className="mt-12 mb-8">
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-rose-500/20 to-primary/20 rounded-2xl blur-xl opacity-50 group-hover:opacity-70 transition-opacity" />
+            <div className="relative glass rounded-2xl p-6 border-2 border-rose-500/30 hover:border-rose-500/50 transition-all">
+              <div className="flex flex-col sm:flex-row items-center gap-6">
+                <div className="w-16 h-16 rounded-xl bg-rose-500/10 flex items-center justify-center shrink-0">
+                  <Heart className="w-8 h-8 text-rose-500" />
+                </div>
+                <div className="flex-1 text-center sm:text-left">
+                  <h3 className="font-display text-xl font-semibold text-foreground mb-1">
+                    Apoie o Projeto LEVI
+                  </h3>
+                  <p className="text-muted-foreground text-sm mb-3">
+                    O LEVI é 100% gratuito. Sua contribuição voluntária ajuda a manter o projeto disponível para todos.
+                  </p>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                    <Sparkles className="w-3 h-3" />
+                    <span>Sugestão: R$ 10,00</span>
+                  </div>
+                </div>
+                <Link to="/payment">
+                  <Button className="bg-rose-500 hover:bg-rose-600 text-white shadow-lg hover:shadow-xl transition-all gap-2">
+                    <Heart className="w-4 h-4" />
+                    Apoiar via PIX
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
       </main>
       
       <Footer />
