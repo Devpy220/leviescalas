@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import Footer from '@/components/Footer';
 import { 
   Church, 
   MapPin, 
@@ -188,7 +189,7 @@ export default function ChurchPublic() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="sticky top-0 z-50 glass border-b border-border/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -230,7 +231,7 @@ export default function ChurchPublic() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 flex-1">
         {/* Church Header */}
         <div className="text-center mb-8">
           <div className="relative inline-block mb-4">
@@ -459,6 +460,8 @@ export default function ChurchPublic() {
           </TabsContent>
         </Tabs>
       </main>
+      
+      <Footer />
     </div>
   );
 }
