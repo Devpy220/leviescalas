@@ -253,7 +253,7 @@ export default function ScheduleCalendar({
           </div>
         )}
       </div>
-      <div className="bg-card border-2 border-primary rounded-lg overflow-hidden">
+      <div className="bg-card border-[3px] border-primary rounded-lg overflow-hidden">
         {/* Week Days Header */}
         <div className="grid grid-cols-7 border-b border-border">
           {weekDays.map((day, i) => (
