@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { DemoTour } from '@/components/DemoTour';
+import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useUserCount } from '@/hooks/useUserCount';
 import { 
   Calendar, 
@@ -14,7 +16,8 @@ import {
   ArrowRight,
   ChevronRight,
   Sparkles,
-  Heart
+  Heart,
+  Download
 } from 'lucide-react';
 
 const features = [
@@ -69,11 +72,24 @@ const appFeatures = [
 
 export default function Landing() {
   const [showDemo, setShowDemo] = useState(false);
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const { count, loading: countLoading } = useUserCount();
+  const { isInstallable, shouldShowInstallPrompt } = usePWAInstall();
+
+  // Show PWA install prompt after 5 seconds if installable
+  useEffect(() => {
+    if (shouldShowInstallPrompt()) {
+      const timer = setTimeout(() => {
+        setShowInstallPrompt(true);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [shouldShowInstallPrompt]);
 
   return (
     <div className="min-h-screen bg-background">
       <DemoTour open={showDemo} onOpenChange={setShowDemo} />
+      <PWAInstallPrompt open={showInstallPrompt} onOpenChange={setShowInstallPrompt} />
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -89,6 +105,17 @@ export default function Landing() {
           
           <div className="flex items-center gap-2">
             <ThemeToggle />
+            {isInstallable && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-muted-foreground hover:text-foreground"
+                onClick={() => setShowInstallPrompt(true)}
+              >
+                <Download className="w-4 h-4 mr-1" />
+                <span className="hidden sm:inline">Instalar</span>
+              </Button>
+            )}
             <Link to="/admin-login">
               <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
                 <Shield className="w-4 h-4 mr-1" />
