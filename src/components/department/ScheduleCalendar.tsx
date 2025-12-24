@@ -255,11 +255,11 @@ export default function ScheduleCalendar({
       </div>
       <div className="bg-card border-[3px] border-primary rounded-lg overflow-hidden">
         {/* Week Days Header */}
-        <div className="grid grid-cols-7 border-b border-border">
+        <div className="grid grid-cols-7 border-b border-border bg-primary">
           {weekDays.map((day, i) => (
             <div
               key={i}
-              className={`text-center font-medium text-muted-foreground ${compact ? 'py-0.5 text-[8px]' : 'py-1 text-[10px]'}`}
+              className={`text-center font-medium text-white ${compact ? 'py-0.5 text-[8px]' : 'py-1 text-[10px]'}`}
             >
               {day}
             </div>
