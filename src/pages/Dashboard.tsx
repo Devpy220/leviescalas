@@ -22,6 +22,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { NotificationBell } from '@/components/NotificationBell';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
+import { SupportNotification } from '@/components/SupportNotification';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
@@ -241,6 +242,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SupportNotification />
       {/* Header */}
       <header className="sticky top-0 z-50 glass border-b border-border/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
