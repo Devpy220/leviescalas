@@ -542,6 +542,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      check_rate_limit_public: {
+        Args: {
+          p_endpoint: string
+          p_max_requests: number
+          p_window_minutes: number
+        }
+        Returns: boolean
+      }
       ensure_admin_role: { Args: never; Returns: boolean }
       generate_church_code: { Args: never; Returns: string }
       get_all_departments_admin: {
