@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import Footer from '@/components/Footer';
 import { Calendar, Loader2, CheckCircle2, AlertCircle, Users, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -244,70 +245,74 @@ export default function JoinDepartment() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="absolute inset-0 gradient-hero" />
-      <div className="absolute inset-0 gradient-radial opacity-40" />
-      
-      <div className="relative max-w-md w-full animate-fade-in">
-        <div className="glass rounded-3xl p-8 shadow-2xl border border-border/50">
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-6 shadow-glow">
-              <Calendar className="w-8 h-8 text-primary-foreground" />
+    <div className="min-h-screen flex flex-col bg-background">
+      <div className="flex-1 flex items-center justify-center px-4">
+        <div className="absolute inset-0 gradient-hero" />
+        <div className="absolute inset-0 gradient-radial opacity-40" />
+        
+        <div className="relative max-w-md w-full animate-fade-in">
+          <div className="glass rounded-3xl p-8 shadow-2xl border border-border/50">
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-6 shadow-glow">
+                <Calendar className="w-8 h-8 text-primary-foreground" />
+              </div>
+              
+              <p className="text-sm text-muted-foreground mb-2">Você foi convidado para</p>
+              <h1 className="font-display text-2xl font-bold text-foreground mb-2">
+                {department?.name}
+              </h1>
+              {department?.description && (
+                <p className="text-muted-foreground">
+                  {department.description}
+                </p>
+              )}
             </div>
-            
-            <p className="text-sm text-muted-foreground mb-2">Você foi convidado para</p>
-            <h1 className="font-display text-2xl font-bold text-foreground mb-2">
-              {department?.name}
-            </h1>
-            {department?.description && (
-              <p className="text-muted-foreground">
-                {department.description}
-              </p>
-            )}
-          </div>
 
-          <div className="space-y-3">
-            {user ? (
-              <Button 
-                onClick={handleJoin}
-                className="w-full h-12 gradient-primary text-primary-foreground shadow-glow-sm hover:shadow-glow transition-all"
-                disabled={joining}
-              >
-                {joining ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                    Entrando...
-                  </>
-                ) : (
-                  <>
-                    Entrar no departamento
-                    <ArrowRight className="w-5 h-5 ml-2" />
-                  </>
-                )}
-              </Button>
-            ) : (
-              <>
+            <div className="space-y-3">
+              {user ? (
                 <Button 
                   onClick={handleJoin}
                   className="w-full h-12 gradient-primary text-primary-foreground shadow-glow-sm hover:shadow-glow transition-all"
+                  disabled={joining}
                 >
-                  Criar conta e entrar
-                  <ArrowRight className="w-5 h-5 ml-2" />
+                  {joining ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                      Entrando...
+                    </>
+                  ) : (
+                    <>
+                      Entrar no departamento
+                      <ArrowRight className="w-5 h-5 ml-2" />
+                    </>
+                  )}
                 </Button>
-                <Link to={`/entrar?redirect=/join/${inviteCode}`} className="block">
-                  <Button variant="ghost" className="w-full">
-                    Já tenho uma conta
+              ) : (
+                <>
+                  <Button 
+                    onClick={handleJoin}
+                    className="w-full h-12 gradient-primary text-primary-foreground shadow-glow-sm hover:shadow-glow transition-all"
+                  >
+                    Criar conta e entrar
+                    <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
-                </Link>
-              </>
-            )}
-          </div>
+                  <Link to={`/entrar?redirect=/join/${inviteCode}`} className="block">
+                    <Button variant="ghost" className="w-full">
+                      Já tenho uma conta
+                    </Button>
+                  </Link>
+                </>
+              )}
+            </div>
 
-          <p className="mt-6 text-center text-xs text-muted-foreground">
-            Ao entrar, você poderá visualizar as escalas e receber notificações.
-          </p>
+            <p className="mt-6 text-center text-xs text-muted-foreground">
+              Ao entrar, você poderá visualizar as escalas e receber notificações.
+            </p>
+          </div>
         </div>
       </div>
+      
+      <Footer />
     </div>
   );
 }

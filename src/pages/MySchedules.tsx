@@ -9,6 +9,7 @@ import {
   CalendarDays,
   Heart
 } from 'lucide-react';
+import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -164,7 +165,7 @@ export default function MySchedules() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <SupportNotification />
       {/* Header */}
       <header className="sticky top-0 z-50 glass border-b border-border/50">
@@ -188,7 +189,7 @@ export default function MySchedules() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 flex-1">
         <h3 className="font-display text-xl font-semibold text-foreground mb-6">
           Todas as Escalas
         </h3>
@@ -273,6 +274,8 @@ export default function MySchedules() {
           </p>
         </Card>
       </main>
+      
+      <Footer />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import Footer from '@/components/Footer';
 import { 
   Church, 
   Loader2, 
@@ -120,7 +121,7 @@ export default function JoinChurch() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -135,7 +136,7 @@ export default function JoinChurch() {
         </div>
       </nav>
 
-      <main className="container mx-auto px-4 pt-32 pb-16">
+      <main className="container mx-auto px-4 pt-32 pb-16 flex-1">
         <div className="max-w-md mx-auto">
           {/* Header */}
           <div className="text-center mb-8 animate-fade-in">
@@ -214,6 +215,8 @@ export default function JoinChurch() {
           )}
         </div>
       </main>
+      
+      <Footer />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Footer from '@/components/Footer';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   Plus, 
@@ -425,20 +426,7 @@ export default function Dashboard() {
         )}
       </main>
       
-      {/* Footer with support email */}
-      <footer className="border-t border-border/50 py-6 mt-auto">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-sm text-muted-foreground">
-            Dúvidas ou sugestões? Entre em contato: {' '}
-            <a 
-              href="mailto:suport@leviescalas.com.br" 
-              className="text-primary hover:underline"
-            >
-              suport@leviescalas.com.br
-            </a>
-          </p>
-        </div>
-      </footer>
+      <Footer />
       
       {/* PWA Install Prompt */}
       <PWAInstallPrompt 

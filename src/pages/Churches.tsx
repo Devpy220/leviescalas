@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import Footer from '@/components/Footer';
 import { 
   ArrowLeft, 
   Plus, 
@@ -199,7 +200,7 @@ export default function Churches() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="sticky top-0 z-50 glass border-b border-border/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -309,7 +310,7 @@ export default function Churches() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 flex-1">
         {/* Title */}
         <div className="text-center mb-12">
           <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4 shadow-glow">
@@ -408,6 +409,8 @@ export default function Churches() {
           </div>
         )}
       </main>
+      
+      <Footer />
     </div>
   );
 }

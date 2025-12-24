@@ -347,7 +347,10 @@ export default function Landing() {
               <span className="font-display font-semibold text-foreground">LEVI</span>
             </Link>
             <p className="text-sm text-muted-foreground">
-              Logística de Escalas de Voluntários da Igreja
+              Dúvidas ou sugestões? Entre em contato:{' '}
+              <a href="mailto:suport@leviescalas.com.br" className="text-primary hover:underline">
+                suport@leviescalas.com.br
+              </a>
             </p>
             <p className="text-sm text-muted-foreground">
               © {new Date().getFullYear()} LEVI. Todos os direitos reservados.

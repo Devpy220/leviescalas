@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Footer from '@/components/Footer';
 import { ArrowLeft, Shield, ShieldOff, Loader2, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -111,8 +112,8 @@ export default function Security() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container max-w-2xl py-8 px-4">
+    <div className="min-h-screen bg-background flex flex-col">
+      <div className="container max-w-2xl py-8 px-4 flex-1">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <Button 
@@ -255,6 +256,8 @@ export default function Security() {
           </ul>
         </div>
       </div>
+
+      <Footer />
 
       {/* Setup Dialog */}
       <TwoFactorSetup 
