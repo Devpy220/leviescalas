@@ -433,7 +433,7 @@ export default function Dashboard() {
             <div className="relative glass rounded-2xl p-6 border-2 border-rose-500/30 hover:border-rose-500/50 transition-all">
               <div className="flex flex-col sm:flex-row items-center gap-6">
                 <div className="w-16 h-16 rounded-xl bg-rose-500/10 flex items-center justify-center shrink-0">
-                  <Heart className="w-8 h-8 text-rose-500" />
+                  <Heart className="w-8 h-8 text-rose-500 animate-pulse" />
                 </div>
                 <div className="flex-1 text-center sm:text-left">
                   <h3 className="font-display text-xl font-semibold text-foreground mb-1">
