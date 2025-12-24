@@ -251,127 +251,176 @@ export default function CreateDepartment() {
       </header>
 
       <main className="container mx-auto px-4 py-12">
-        <div className="max-w-lg mx-auto">
-          <div className="animate-fade-in">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center shadow-glow-sm">
-                <Calendar className="w-6 h-6 text-primary-foreground" />
+        <div className="max-w-5xl mx-auto">
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Form Column */}
+            <div className="lg:col-span-2 animate-fade-in">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center shadow-glow-sm">
+                  <Calendar className="w-6 h-6 text-primary-foreground" />
+                </div>
+                <div>
+                  <h1 className="font-display text-2xl font-bold text-foreground">
+                    Criar Departamento
+                  </h1>
+                  <p className="text-muted-foreground">
+                    Configure seu novo departamento
+                  </p>
+                </div>
               </div>
-              <div>
-                <h1 className="font-display text-2xl font-bold text-foreground">
-                  Criar Departamento
-                </h1>
-                <p className="text-muted-foreground">
-                  Configure seu novo departamento
+
+              {/* Free badge */}
+              <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                  <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                    100% Gratuito
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Crie seu departamento sem nenhum custo.
                 </p>
               </div>
-            </div>
 
-            {/* Free badge */}
-            <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                <span className="font-medium text-emerald-600 dark:text-emerald-400">
-                  100% Gratuito
-                </span>
-              </div>
-              <p className="text-sm text-muted-foreground mt-1">
-                Crie seu departamento sem nenhum custo. Se quiser apoiar o projeto, pode fazer uma contribuição voluntária.
-              </p>
-            </div>
-
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-              {/* Church Code Field */}
-              <div className="space-y-2">
-                <Label htmlFor="churchCode" className="flex items-center gap-2">
-                  <Church className="w-4 h-4 text-primary" />
-                  Código da Igreja *
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="churchCode"
-                    placeholder="Digite o código da igreja"
-                    {...form.register('churchCode')}
-                    className="h-12 uppercase font-mono"
-                    onChange={(e) => {
-                      form.setValue('churchCode', e.target.value.toUpperCase());
-                      validateChurchCode(e.target.value);
-                    }}
-                    disabled={!!prefilledChurchCode}
-                  />
-                  {validatingCode && (
-                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin text-muted-foreground" />
+              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+                {/* Church Code Field */}
+                <div className="space-y-2">
+                  <Label htmlFor="churchCode" className="flex items-center gap-2">
+                    <Church className="w-4 h-4 text-primary" />
+                    Código da Igreja *
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="churchCode"
+                      placeholder="Digite o código da igreja"
+                      {...form.register('churchCode')}
+                      className="h-12 uppercase font-mono"
+                      onChange={(e) => {
+                        form.setValue('churchCode', e.target.value.toUpperCase());
+                        validateChurchCode(e.target.value);
+                      }}
+                      disabled={!!prefilledChurchCode}
+                    />
+                    {validatingCode && (
+                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin text-muted-foreground" />
+                    )}
+                  </div>
+                  {form.formState.errors.churchCode && (
+                    <p className="text-sm text-destructive">{form.formState.errors.churchCode.message}</p>
+                  )}
+                  {codeError && (
+                    <p className="text-sm text-destructive">{codeError}</p>
+                  )}
+                  {validatedChurch && (
+                    <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Igreja: {validatedChurch.name}</span>
+                    </div>
                   )}
                 </div>
-                {form.formState.errors.churchCode && (
-                  <p className="text-sm text-destructive">{form.formState.errors.churchCode.message}</p>
+
+                {!validatedChurch && !prefilledChurchCode && (
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Igreja não cadastrada?</AlertTitle>
+                    <AlertDescription>
+                      Se sua igreja ainda não está cadastrada, peça ao administrador para{' '}
+                      <Link to="/churches" className="text-primary hover:underline font-medium">
+                        cadastrar a igreja
+                      </Link>{' '}
+                      primeiro e obtenha o código.
+                    </AlertDescription>
+                  </Alert>
                 )}
-                {codeError && (
-                  <p className="text-sm text-destructive">{codeError}</p>
-                )}
-                {validatedChurch && (
-                  <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>Igreja: {validatedChurch.name}</span>
+
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nome do Departamento</Label>
+                  <Input
+                    id="name"
+                    placeholder="Ex: Louvor, Mídia, Recepção..."
+                    {...form.register('name')}
+                    className="h-12"
+                  />
+                  {form.formState.errors.name && (
+                    <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">Descrição (opcional)</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="Descreva as atividades e responsabilidades do departamento..."
+                    {...form.register('description')}
+                    className="min-h-[120px] resize-none"
+                  />
+                  {form.formState.errors.description && (
+                    <p className="text-sm text-destructive">{form.formState.errors.description.message}</p>
+                  )}
+                </div>
+
+                <Button 
+                  type="submit" 
+                  className="w-full h-12 gradient-primary text-primary-foreground shadow-glow-sm hover:shadow-glow transition-all"
+                  disabled={!validatedChurch || isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                      Criando departamento...
+                    </>
+                  ) : (
+                    'Criar Departamento'
+                  )}
+                </Button>
+              </form>
+            </div>
+
+            {/* Support Card Column */}
+            <div className="lg:col-span-1 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+              <div className="sticky top-24">
+                <div className="rounded-2xl border border-rose-500/20 bg-gradient-to-br from-rose-500/5 to-pink-500/5 p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-rose-500/10 flex items-center justify-center">
+                      <Heart className="w-6 h-6 text-rose-500" />
+                    </div>
+                    <div>
+                      <h3 className="font-display font-semibold text-foreground">
+                        Apoie o Projeto
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        Contribuição voluntária
+                      </p>
+                    </div>
                   </div>
-                )}
+                  
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Gostou do EscalaMaker? Ajude a manter o projeto ativo com uma contribuição a partir de <strong className="text-foreground">R$ 10,00</strong>.
+                  </p>
+
+                  <div className="space-y-3">
+                    <div className="p-3 rounded-lg bg-background/50 border border-border/50">
+                      <p className="text-xs text-muted-foreground mb-1">Sugestão</p>
+                      <p className="text-lg font-semibold text-foreground">R$ 10,00</p>
+                    </div>
+                    
+                    <Link to="/apoio" className="block">
+                      <Button 
+                        variant="outline" 
+                        className="w-full h-12 gap-2 border-rose-500/30 hover:bg-rose-500/10 hover:border-rose-500/50 transition-all"
+                      >
+                        <Heart className="w-5 h-5 text-rose-500" />
+                        Quero Apoiar
+                      </Button>
+                    </Link>
+                  </div>
+
+                  <p className="text-xs text-muted-foreground text-center mt-4">
+                    Sua contribuição é 100% voluntária
+                  </p>
+                </div>
               </div>
-
-              {!validatedChurch && !prefilledChurchCode && (
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Igreja não cadastrada?</AlertTitle>
-                  <AlertDescription>
-                    Se sua igreja ainda não está cadastrada, peça ao administrador para{' '}
-                    <Link to="/churches" className="text-primary hover:underline font-medium">
-                      cadastrar a igreja
-                    </Link>{' '}
-                    primeiro e obtenha o código.
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="name">Nome do Departamento</Label>
-                <Input
-                  id="name"
-                  placeholder="Ex: Louvor, Mídia, Recepção..."
-                  {...form.register('name')}
-                  className="h-12"
-                />
-                {form.formState.errors.name && (
-                  <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Descrição (opcional)</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Descreva as atividades e responsabilidades do departamento..."
-                  {...form.register('description')}
-                  className="min-h-[120px] resize-none"
-                />
-                {form.formState.errors.description && (
-                  <p className="text-sm text-destructive">{form.formState.errors.description.message}</p>
-                )}
-              </div>
-
-              <Button 
-                type="submit" 
-                className="w-full h-12 gradient-primary text-primary-foreground shadow-glow-sm hover:shadow-glow transition-all"
-                disabled={!validatedChurch || isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                    Criando departamento...
-                  </>
-                ) : (
-                  'Criar Departamento'
-                )}
-              </Button>
-            </form>
+            </div>
           </div>
         </div>
       </main>
