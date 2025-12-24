@@ -356,7 +356,7 @@ export default function Dashboard() {
                         Criar Novo Departamento
                       </h3>
                       <p className="text-muted-foreground">
-                        R$ 10,00/mês por voluntário • 14 dias grátis
+                        100% Gratuito • Apoie o projeto
                       </p>
                     </div>
                     <ChevronRight className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors" />
