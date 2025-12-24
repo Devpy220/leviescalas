@@ -88,7 +88,7 @@ export default function ScheduleTable({ schedules, members, month, title }: Sche
 
   if (schedulesByDate.length === 0) {
     return (
-      <div className="bg-card border border-border rounded-xl p-6 text-center">
+      <div className="bg-card border-2 border-primary rounded-xl p-6 text-center">
         {title && (
           <div className="flex items-center justify-center gap-2 mb-3">
             <Calendar className="w-4 h-4 text-primary" />
@@ -102,7 +102,7 @@ export default function ScheduleTable({ schedules, members, month, title }: Sche
   }
 
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden">
+    <div className="bg-card border-2 border-primary rounded-xl overflow-hidden">
       {title && (
         <div className="flex items-center gap-2 px-4 py-2 border-b border-border bg-muted/30">
           <Calendar className="w-4 h-4 text-primary" />
