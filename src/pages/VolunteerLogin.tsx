@@ -13,6 +13,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { PasswordStrengthIndicator, validatePasswordStrength } from '@/components/PasswordStrengthIndicator';
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -23,7 +24,11 @@ const registerSchema = z.object({
   name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
   email: z.string().email('Email inválido'),
   whatsapp: z.string().min(10, 'WhatsApp inválido'),
-  password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
+  password: z.string()
+    .min(8, 'Senha deve ter pelo menos 8 caracteres')
+    .refine((password) => validatePasswordStrength(password).isValid, {
+      message: 'A senha não atende aos requisitos de segurança',
+    }),
   confirmPassword: z.string(),
   churchCode: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -424,7 +429,7 @@ export default function VolunteerLogin() {
                                 <Input
                                   {...field}
                                   type={showPassword ? 'text' : 'password'}
-                                  placeholder="Mínimo 6 caracteres"
+                                  placeholder="Senha segura"
                                   className="h-12 pr-10"
                                 />
                                 <Button
@@ -438,6 +443,7 @@ export default function VolunteerLogin() {
                                 </Button>
                               </div>
                             </FormControl>
+                            <PasswordStrengthIndicator password={field.value} showSecurityTips={false} />
                             <FormMessage />
                           </FormItem>
                         )}
