@@ -386,7 +386,7 @@ export default function Admin() {
                 </CardDescription>
               </div>
               <Button 
-                onClick={() => window.open('https://webmail.kinghost.net/', '_blank')}
+                onClick={() => window.open('https://webmail.kinghost.com.br/leviescalas.com.br', '_blank')}
                 className="gap-2"
               >
                 <ExternalLink className="w-4 h-4" />
