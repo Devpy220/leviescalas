@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Trash2, Users, Building2, Mail, ChevronDown, ChevronUp, Shield, LogOut, Church, Plus, Copy, Link as LinkIcon } from 'lucide-react';
+import { Loader2, Trash2, Users, Building2, ChevronDown, ChevronUp, Shield, LogOut, Church, Plus, Copy, Link as LinkIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -372,24 +372,6 @@ export default function Admin() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        {/* Support Contact Card */}
-        <Card className="mb-6">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Mail className="w-5 h-5 text-primary" />
-              Contato de Suporte
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <a 
-              href="mailto:suporte@levi.app"
-              className="text-primary hover:underline font-medium"
-            >
-              suporte@levi.app
-            </a>
-          </CardContent>
-        </Card>
-
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <Card>
