@@ -40,6 +40,7 @@ import DepartmentSettingsDialog from '@/components/department/DepartmentSettings
 import SmartScheduleDialog from '@/components/department/SmartScheduleDialog';
 import AvailabilityCalendar from '@/components/department/AvailabilityCalendar';
 import MemberPreferences from '@/components/department/MemberPreferences';
+import LeaderAvailabilityView from '@/components/department/LeaderAvailabilityView';
 import { exportToPDF, exportToExcel } from '@/lib/exportSchedules';
 import { Layers } from 'lucide-react';
 import { SupportNotification } from '@/components/SupportNotification';
@@ -535,10 +536,26 @@ export default function Department() {
           </TabsContent>
 
           <TabsContent value="availability" className="mt-6 animate-fade-in">
-            <div className="grid gap-6 md:grid-cols-2 max-w-4xl">
-              <AvailabilityCalendar departmentId={id!} userId={user?.id || ''} />
-              <MemberPreferences departmentId={id!} userId={user?.id || ''} />
-            </div>
+            {isLeader ? (
+              <div className="space-y-6">
+                <LeaderAvailabilityView 
+                  departmentId={id!} 
+                  onOpenSmartSchedule={() => setShowSmartSchedule(true)} 
+                />
+                <div className="border-t border-border/50 pt-6">
+                  <h3 className="text-lg font-semibold mb-4">Sua própria disponibilidade</h3>
+                  <div className="grid gap-6 md:grid-cols-2 max-w-4xl">
+                    <AvailabilityCalendar departmentId={id!} userId={user?.id || ''} />
+                    <MemberPreferences departmentId={id!} userId={user?.id || ''} />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="grid gap-6 md:grid-cols-2 max-w-4xl">
+                <AvailabilityCalendar departmentId={id!} userId={user?.id || ''} />
+                <MemberPreferences departmentId={id!} userId={user?.id || ''} />
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="sectors" className="mt-6">
