@@ -2,14 +2,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AdminRedirect } from "@/components/AdminRedirect";
 import Landing from "./pages/Landing";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
-import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Department from "./pages/Department";
 import DepartmentBySlug from "./pages/DepartmentBySlug";
@@ -26,7 +25,6 @@ import ChurchPublic from "./pages/ChurchPublic";
 import JoinChurch from "./pages/JoinChurch";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/AdminLogin";
-import VolunteerLogin from "./pages/VolunteerLogin";
 import ConfirmSchedule from "./pages/ConfirmSchedule";
 
 const queryClient = new QueryClient();
@@ -48,9 +46,9 @@ const App = () => (
                 <Route path="/admin-login" element={<AdminLogin />} />
                 <Route path="/admin" element={<Admin />} />
                 
-                {/* Volunteer login */}
-                <Route path="/login" element={<VolunteerLogin />} />
-                <Route path="/entrar" element={<Login />} />
+                {/* Redirects from old login routes */}
+                <Route path="/login" element={<Navigate to="/auth" replace />} />
+                <Route path="/entrar" element={<Navigate to="/auth" replace />} />
                 
                 {/* Church access - updated 2023-12-23 */}
                 <Route path="/acessar" element={<Index />} />
