@@ -161,6 +161,78 @@ export type Database = {
           },
         ]
       }
+      member_availability: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          department_id: string
+          id: string
+          is_available: boolean
+          time_end: string
+          time_start: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          department_id: string
+          id?: string
+          is_available?: boolean
+          time_end: string
+          time_start: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          department_id?: string
+          id?: string
+          is_available?: boolean
+          time_end?: string
+          time_start?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      member_preferences: {
+        Row: {
+          blackout_dates: string[] | null
+          created_at: string
+          department_id: string
+          id: string
+          max_schedules_per_month: number
+          min_days_between_schedules: number
+          preferred_sector_ids: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          blackout_dates?: string[] | null
+          created_at?: string
+          department_id: string
+          id?: string
+          max_schedules_per_month?: number
+          min_days_between_schedules?: number
+          preferred_sector_ids?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          blackout_dates?: string[] | null
+          created_at?: string
+          department_id?: string
+          id?: string
+          max_schedules_per_month?: number
+          min_days_between_schedules?: number
+          preferred_sector_ids?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       members: {
         Row: {
           department_id: string
