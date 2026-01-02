@@ -83,7 +83,7 @@ export default function SmartScheduleDialog({
     return format(next, 'yyyy-MM');
   });
   const [membersPerSlot, setMembersPerSlot] = useState(2);
-  const [sectorId, setSectorId] = useState<string>('');
+  const [sectorId, setSectorId] = useState<string>('all');
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [sendNotificationsOnConfirm, setSendNotificationsOnConfirm] = useState(true);
   
@@ -131,7 +131,7 @@ export default function SmartScheduleDialog({
           start_date: format(start, 'yyyy-MM-dd'),
           end_date: format(end, 'yyyy-MM-dd'),
           members_per_day: membersPerSlot,
-          sector_id: sectorId || undefined,
+          sector_id: sectorId === 'all' ? undefined : sectorId,
           fixed_slots: FIXED_SLOTS
         }
       });
@@ -336,7 +336,7 @@ export default function SmartScheduleDialog({
                     <SelectValue placeholder="Todos os setores" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos os setores</SelectItem>
+                    <SelectItem value="all">Todos os setores</SelectItem>
                     {sectors.map(s => (
                       <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                     ))}
