@@ -460,9 +460,13 @@ export type Database = {
       }
       schedules: {
         Row: {
+          confirmation_status: Database["public"]["Enums"]["confirmation_status"]
+          confirmation_token: string | null
+          confirmed_at: string | null
           created_at: string
           created_by: string
           date: string
+          decline_reason: string | null
           department_id: string
           id: string
           notes: string | null
@@ -473,9 +477,13 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          confirmation_status?: Database["public"]["Enums"]["confirmation_status"]
+          confirmation_token?: string | null
+          confirmed_at?: string | null
           created_at?: string
           created_by: string
           date: string
+          decline_reason?: string | null
           department_id: string
           id?: string
           notes?: string | null
@@ -486,9 +494,13 @@ export type Database = {
           user_id: string
         }
         Update: {
+          confirmation_status?: Database["public"]["Enums"]["confirmation_status"]
+          confirmation_token?: string | null
+          confirmed_at?: string | null
           created_at?: string
           created_by?: string
           date?: string
+          decline_reason?: string | null
           department_id?: string
           id?: string
           notes?: string | null
@@ -900,6 +912,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      confirmation_status: "pending" | "confirmed" | "declined"
       member_role: "leader" | "member"
       notification_status: "pending" | "sent" | "failed"
       subscription_status:
@@ -1036,6 +1049,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      confirmation_status: ["pending", "confirmed", "declined"],
       member_role: ["leader", "member"],
       notification_status: ["pending", "sent", "failed"],
       subscription_status: [

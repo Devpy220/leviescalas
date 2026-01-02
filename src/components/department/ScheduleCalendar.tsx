@@ -5,10 +5,15 @@ import {
   Plus,
   Clock,
   Trash2,
-  Users
+  Users,
+  CheckCircle2,
+  XCircle,
+  HelpCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,6 +48,8 @@ import {
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+type ConfirmationStatus = 'pending' | 'confirmed' | 'declined';
+
 interface Schedule {
   id: string;
   user_id: string;
@@ -51,6 +58,8 @@ interface Schedule {
   time_end: string;
   notes: string | null;
   sector_id: string | null;
+  confirmation_status?: ConfirmationStatus;
+  decline_reason?: string | null;
   profile?: {
     name: string;
     avatar_url: string | null;
@@ -158,6 +167,28 @@ export default function ScheduleCalendar({
   const getMemberColor = (userId: string) => {
     const colorIndex = memberColorMap.get(userId) ?? 0;
     return memberColors[colorIndex];
+  };
+
+  const getConfirmationIcon = (status?: ConfirmationStatus) => {
+    switch (status) {
+      case 'confirmed':
+        return <CheckCircle2 className="w-3 h-3 text-green-500" />;
+      case 'declined':
+        return <XCircle className="w-3 h-3 text-red-500" />;
+      default:
+        return <HelpCircle className="w-3 h-3 text-amber-500" />;
+    }
+  };
+
+  const getConfirmationText = (status?: ConfirmationStatus, declineReason?: string | null) => {
+    switch (status) {
+      case 'confirmed':
+        return 'Presença confirmada';
+      case 'declined':
+        return `Não poderá comparecer${declineReason ? `: ${declineReason}` : ''}`;
+      default:
+        return 'Aguardando confirmação';
+    }
   };
 
   const weekDays = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
@@ -360,10 +391,15 @@ export default function ScheduleCalendar({
                 <p className="text-sm text-muted-foreground">Escalados neste dia:</p>
                 {selectedDaySchedules.map((schedule) => {
                   const color = getMemberColor(schedule.user_id);
+                  const statusBg = schedule.confirmation_status === 'confirmed' 
+                    ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800'
+                    : schedule.confirmation_status === 'declined'
+                    ? 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800'
+                    : 'bg-muted/50';
                   return (
                     <div
                       key={schedule.id}
-                      className={`flex items-center justify-between p-3 rounded-lg bg-muted/50 border-l-4 ${color.border} border border-border`}
+                      className={`flex items-center justify-between p-3 rounded-lg border-l-4 ${color.border} border ${statusBg}`}
                     >
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
@@ -375,7 +411,17 @@ export default function ScheduleCalendar({
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="text-sm font-medium">{schedule.profile?.name || 'Membro'}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium">{schedule.profile?.name || 'Membro'}</p>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                {getConfirmationIcon(schedule.confirmation_status)}
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {getConfirmationText(schedule.confirmation_status, schedule.decline_reason)}
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
                           {schedule.sector && (
                             <p className="text-xs text-primary font-medium">{schedule.sector.name}</p>
                           )}

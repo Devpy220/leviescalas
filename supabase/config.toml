@@ -1,5 +1,8 @@
 project_id = "zuksvsxnchwskqytuxxq"
 
+[functions.confirm-schedule]
+verify_jwt = false
+
 [functions.create-checkout]
 verify_jwt = true
 

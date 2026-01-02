@@ -27,6 +27,7 @@ import JoinChurch from "./pages/JoinChurch";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/AdminLogin";
 import VolunteerLogin from "./pages/VolunteerLogin";
+import ConfirmSchedule from "./pages/ConfirmSchedule";
 
 const queryClient = new QueryClient();
 
@@ -57,6 +58,7 @@ const App = () => (
                 <Route path="/join" element={<JoinChurch />} />
                 <Route path="/join/:inviteCode" element={<JoinDepartment />} />
                 <Route path="/igreja/:slug" element={<ChurchPublic />} />
+                <Route path="/confirm/:token" element={<ConfirmSchedule />} />
                 
                 {/* User dashboard */}
                 <Route path="/dashboard" element={<Dashboard />} />
