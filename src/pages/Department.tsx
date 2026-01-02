@@ -370,19 +370,6 @@ export default function Department() {
             {isLeader && (
               <>
                 <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={copyInviteLink}
-                  className="gap-2 press-effect"
-                >
-                  {copiedInvite ? (
-                    <Check className="w-4 h-4 text-emerald-500" />
-                  ) : (
-                    <Share2 className="w-4 h-4" />
-                  )}
-                  <span className="hidden sm:inline">Convidar</span>
-                </Button>
-                <Button 
                   variant="ghost" 
                   size="icon" 
                   className="text-muted-foreground click-scale"
