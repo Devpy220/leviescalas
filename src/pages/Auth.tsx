@@ -100,7 +100,10 @@ export default function Auth() {
   const churchCodeParam = searchParams.get('churchCode');
   const postAuthRedirect = redirectParam && redirectParam.startsWith('/') ? redirectParam : '/dashboard';
   
-  // Church slug or code from URL - this is the only way to register now
+  // Check if coming from a department invite link
+  const isDepartmentInvite = redirectParam?.startsWith('/join/') || false;
+  
+  // Church slug or code from URL - this is the only way to register now (except department invites)
   const hasChurchContext = !!churchSlugParam || !!churchCodeParam;
 
   // Detect password recovery flow from auth event
@@ -196,8 +199,8 @@ export default function Auth() {
     defaultValues: { churchCode: '', name: '', email: '', whatsapp: '', password: '', confirmPassword: '' },
   });
 
-  // Form is ready when church is validated OR it's admin signup
-  const isFormReadyToSubmit = churchValidated.valid || isAdminSignup;
+  // Form is ready when church is validated OR it's admin signup OR it's a department invite
+  const isFormReadyToSubmit = churchValidated.valid || isAdminSignup || isDepartmentInvite;
 
   // Validate church by slug (from URL)
   const validateChurchBySlug = async (slug: string) => {
@@ -320,8 +323,8 @@ export default function Auth() {
   const handleRegister = async (data: RegisterForm) => {
     setIsLoading(true);
     
-    // Church must be validated unless it's admin signup
-    if (!churchValidated.valid && !isAdminSignup) {
+    // Church must be validated unless it's admin signup or department invite
+    if (!churchValidated.valid && !isAdminSignup && !isDepartmentInvite) {
       toast({
         variant: 'destructive',
         title: 'Igreja não encontrada',
@@ -395,6 +398,8 @@ export default function Auth() {
 
     const welcomeMessage = isAdminSignup 
       ? 'Bem-vindo! Você pode agora acessar o painel administrativo.'
+      : isDepartmentInvite
+      ? 'Conta criada! Você será redirecionado para entrar no departamento.'
       : `Bem-vindo à ${churchValidated.name}!`;
 
     toast({
@@ -403,16 +408,20 @@ export default function Auth() {
     });
     
     // Redirect logic:
-    // 1. Admin signup -> dashboard
-    // 2. Church code from URL (volunteer via /join link) -> create department page
-    // 3. Church slug -> church public page
-    // 4. Otherwise -> postAuthRedirect (which includes redirect param from URL)
+    // 1. Department invite -> redirect to join page (postAuthRedirect contains /join/:code)
+    // 2. Admin signup -> dashboard
+    // 3. Church code from URL (volunteer via /join link) -> create department page
+    // 4. Church slug -> church public page
+    // 5. Otherwise -> postAuthRedirect
     let redirectTo = '/dashboard';
     
-    if (isAdminSignup) {
+    if (isDepartmentInvite) {
+      // Department invite - go back to join page to complete joining
+      redirectTo = postAuthRedirect;
+    } else if (isAdminSignup) {
       redirectTo = '/dashboard';
     } else if (churchCodeParam) {
-      // Volunteer coming from /join link - go to create department
+      // Volunteer coming from church code link - go to create department
       redirectTo = `/departments/new?churchCode=${churchCodeParam.toUpperCase()}`;
     } else if (churchValidated.slug) {
       redirectTo = `/igreja/${churchValidated.slug}`;

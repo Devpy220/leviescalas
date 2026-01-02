@@ -88,9 +88,9 @@ export default function JoinDepartment() {
     if (authLoading) return;
 
     if (!user) {
-      // Save invite code and redirect to volunteer login with redirect parameter
+      // Save invite code and redirect to auth page with redirect parameter
       sessionStorage.setItem('pendingInvite', inviteCode || '');
-      navigate(`/acessar?redirect=/join/${inviteCode}`);
+      navigate(`/auth?tab=register&redirect=/join/${inviteCode}`);
       return;
     }
 
@@ -296,7 +296,7 @@ export default function JoinDepartment() {
                     Criar conta e entrar
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
-                  <Link to={`/entrar?redirect=/join/${inviteCode}`} className="block">
+                  <Link to={`/auth?tab=login&redirect=/join/${inviteCode}`} className="block">
                     <Button variant="ghost" className="w-full">
                       Já tenho uma conta
                     </Button>
