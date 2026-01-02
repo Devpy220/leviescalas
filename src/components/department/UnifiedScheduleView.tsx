@@ -54,11 +54,38 @@ import { ptBR } from 'date-fns/locale';
 
 type ConfirmationStatus = 'pending' | 'confirmed' | 'declined';
 
-// Fixed slots for scheduling
+// Fixed slots for scheduling with vibrant colors
 const FIXED_SLOTS = [
-  { dayOfWeek: 3, timeStart: '19:20', timeEnd: '22:00', label: 'Quarta à noite', shortLabel: 'QUA' },
-  { dayOfWeek: 0, timeStart: '09:00', timeEnd: '12:00', label: 'Domingo manhã', shortLabel: 'DOM-M' },
-  { dayOfWeek: 0, timeStart: '18:00', timeEnd: '22:00', label: 'Domingo noite', shortLabel: 'DOM-N' },
+  { 
+    dayOfWeek: 3, 
+    timeStart: '19:20', 
+    timeEnd: '22:00', 
+    label: 'Quarta à noite', 
+    shortLabel: 'QUA',
+    gradient: 'from-violet-500/80 via-purple-500/70 to-fuchsia-500/60',
+    glow: 'shadow-violet-500/30',
+    borderColor: 'border-violet-400/50'
+  },
+  { 
+    dayOfWeek: 0, 
+    timeStart: '09:00', 
+    timeEnd: '12:00', 
+    label: 'Domingo manhã', 
+    shortLabel: 'DOM-M',
+    gradient: 'from-cyan-500/80 via-blue-500/70 to-sky-500/60',
+    glow: 'shadow-cyan-500/30',
+    borderColor: 'border-cyan-400/50'
+  },
+  { 
+    dayOfWeek: 0, 
+    timeStart: '18:00', 
+    timeEnd: '22:00', 
+    label: 'Domingo noite', 
+    shortLabel: 'DOM-N',
+    gradient: 'from-orange-500/80 via-amber-500/70 to-yellow-500/60',
+    glow: 'shadow-orange-500/30',
+    borderColor: 'border-orange-400/50'
+  },
 ];
 
 interface Schedule {
@@ -156,6 +183,21 @@ export default function UnifiedScheduleView({
   const getFixedSlotsForDay = (day: Date) => {
     const dayOfWeek = getDay(day);
     return FIXED_SLOTS.filter(slot => slot.dayOfWeek === dayOfWeek);
+  };
+
+  // Get the primary slot styling for a day (for background)
+  const getDaySlotStyle = (day: Date) => {
+    const slots = getFixedSlotsForDay(day);
+    if (slots.length === 0) return null;
+    
+    // For Sunday, use the morning slot's style as primary
+    // For Wednesday, use the evening slot's style
+    const primarySlot = slots[0];
+    return {
+      gradient: primarySlot.gradient,
+      glow: primarySlot.glow,
+      borderColor: primarySlot.borderColor
+    };
   };
 
   // Color palette for members
@@ -325,14 +367,18 @@ export default function UnifiedScheduleView({
         </CardHeader>
         <CardContent className="pt-0">
           {/* Fixed slots legend */}
-          <div className="flex items-center gap-4 mb-3 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded border-2 border-primary bg-primary/20" />
-              <span>Dia de escala</span>
+          <div className="flex flex-wrap items-center gap-3 mb-4 text-xs">
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-4 rounded bg-gradient-to-br from-violet-500 to-fuchsia-500 shadow-sm" />
+              <span className="text-muted-foreground">Quarta</span>
             </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-green-500/30" />
-              <span>Escalado</span>
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-4 rounded bg-gradient-to-br from-cyan-500 to-sky-500 shadow-sm" />
+              <span className="text-muted-foreground">Dom. manhã</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-4 rounded bg-gradient-to-br from-orange-500 to-amber-500 shadow-sm" />
+              <span className="text-muted-foreground">Dom. noite</span>
             </div>
           </div>
 
@@ -361,78 +407,108 @@ export default function UnifiedScheduleView({
                 const isFixed = isFixedSlotDay(day);
                 const fixedSlots = getFixedSlotsForDay(day);
 
+                const slotStyle = getDaySlotStyle(day);
+
                 return (
                   <button
                     key={index}
                     onClick={() => handleDayClick(day)}
                     disabled={!isCurrentMonth || (!isFixed && !hasSchedules && !isLeader)}
-                    className={`relative border-b border-r border-border transition-colors min-h-[60px] sm:min-h-[80px] p-1 ${
-                      !isCurrentMonth ? 'bg-muted/20 text-muted-foreground/40' : 
-                      isFixed ? 'bg-primary/5 hover:bg-primary/10 cursor-pointer' : 
-                      'bg-card'
+                    className={`relative border-r border-b transition-all duration-300 min-h-[60px] sm:min-h-[80px] p-1 overflow-hidden group ${
+                      !isCurrentMonth 
+                        ? 'bg-muted/20 text-muted-foreground/40 border-border' 
+                        : isFixed 
+                          ? `cursor-pointer hover:scale-[1.02] hover:z-10 border-2 ${slotStyle?.borderColor || 'border-border'}` 
+                          : 'bg-card border-border'
                     } ${index % 7 === 6 ? 'border-r-0' : ''} ${
                       Math.floor(index / 7) === Math.floor((calendarDays.length - 1) / 7) ? 'border-b-0' : ''
                     }`}
                   >
-                    {/* Day number */}
-                    <div className="flex items-center justify-between mb-1">
-                      <span
-                        className={`text-xs font-medium flex items-center justify-center w-5 h-5 rounded-full ${
-                          isCurrentDay
-                            ? 'bg-primary text-primary-foreground'
-                            : isFixed && isCurrentMonth
-                            ? 'text-primary font-bold'
-                            : ''
-                        }`}
-                      >
-                        {format(day, 'd')}
-                      </span>
-                      {isFixed && isCurrentMonth && (
-                        <div className="flex gap-0.5">
-                          {fixedSlots.map((slot, i) => (
-                            <Badge 
-                              key={i} 
-                              variant="outline" 
-                              className="text-[8px] px-1 py-0 h-4 border-primary/50 text-primary hidden sm:inline-flex"
-                            >
-                              {slot.shortLabel}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                    {/* Vibrant gradient background with blur for fixed slot days */}
+                    {isFixed && isCurrentMonth && (
+                      <>
+                        <div 
+                          className={`absolute inset-0 bg-gradient-to-br ${slotStyle?.gradient} backdrop-blur-sm opacity-90`}
+                        />
+                        <div 
+                          className={`absolute inset-0 shadow-lg ${slotStyle?.glow} group-hover:opacity-100 opacity-80 transition-opacity`}
+                        />
+                        {/* Subtle inner glow effect */}
+                        <div className="absolute inset-0 bg-white/10 backdrop-blur-[1px]" />
+                      </>
+                    )}
 
-                    {/* Scheduled members */}
-                    {hasSchedules && isCurrentMonth && (
-                      <div className="flex flex-wrap gap-0.5">
-                        {daySchedules.slice(0, 4).map((schedule, i) => {
-                          const color = getMemberColor(schedule.user_id);
-                          return (
-                            <Tooltip key={i}>
-                              <TooltipTrigger asChild>
-                                <div
-                                  className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] text-white font-medium"
-                                  style={{ backgroundColor: color.bg }}
-                                >
-                                  {schedule.profile?.name?.charAt(0) || 'M'}
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>{schedule.profile?.name || 'Membro'}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {schedule.time_start?.slice(0, 5)} - {schedule.time_end?.slice(0, 5)}
-                                </p>
-                              </TooltipContent>
-                            </Tooltip>
-                          );
-                        })}
-                        {daySchedules.length > 4 && (
-                          <div className="w-4 h-4 rounded-full bg-muted flex items-center justify-center text-[8px] font-medium">
-                            +{daySchedules.length - 4}
+                    {/* Content wrapper */}
+                    <div className="relative z-10">
+                      {/* Day number */}
+                      <div className="flex items-center justify-between mb-1">
+                        <span
+                          className={`text-xs font-bold flex items-center justify-center w-5 h-5 rounded-full ${
+                            isCurrentDay
+                              ? 'bg-white text-primary shadow-md'
+                              : isFixed && isCurrentMonth
+                                ? 'text-white drop-shadow-md'
+                                : ''
+                          }`}
+                        >
+                          {format(day, 'd')}
+                        </span>
+                        {isFixed && isCurrentMonth && (
+                          <div className="flex gap-0.5">
+                            {fixedSlots.map((slot, i) => (
+                              <Badge 
+                                key={i} 
+                                variant="secondary" 
+                                className="text-[8px] px-1 py-0 h-4 bg-white/30 text-white border-0 backdrop-blur-sm hidden sm:inline-flex"
+                              >
+                                {slot.shortLabel}
+                              </Badge>
+                            ))}
                           </div>
                         )}
                       </div>
-                    )}
+
+                      {/* Scheduled members */}
+                      {hasSchedules && isCurrentMonth && (
+                        <div className="flex flex-wrap gap-0.5">
+                          {daySchedules.slice(0, 4).map((schedule, i) => {
+                            const color = getMemberColor(schedule.user_id);
+                            return (
+                              <Tooltip key={i}>
+                                <TooltipTrigger asChild>
+                                  <div
+                                    className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] text-white font-bold shadow-md border-2 border-white/50"
+                                    style={{ backgroundColor: color.bg }}
+                                  >
+                                    {schedule.profile?.name?.charAt(0) || 'M'}
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{schedule.profile?.name || 'Membro'}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {schedule.time_start?.slice(0, 5)} - {schedule.time_end?.slice(0, 5)}
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            );
+                          })}
+                          {daySchedules.length > 4 && (
+                            <div className="w-5 h-5 rounded-full bg-white/30 backdrop-blur-sm flex items-center justify-center text-[9px] font-bold text-white shadow-md">
+                              +{daySchedules.length - 4}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Empty slot indicator for fixed days without schedules */}
+                      {isFixed && isCurrentMonth && !hasSchedules && (
+                        <div className="flex items-center justify-center mt-1">
+                          <div className="w-6 h-6 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                            <Plus className="w-3 h-3 text-white/80" />
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </button>
                 );
               })}
