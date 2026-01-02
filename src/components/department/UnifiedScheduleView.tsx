@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { createMemberColorMap, getMemberColor } from '@/lib/memberColors';
 import {
   format,
   startOfMonth,
@@ -247,30 +248,10 @@ export default function UnifiedScheduleView({
     };
   };
 
-  // Color palette for members
-  const memberColors = [
-    { bg: '#6366F1', dot: '#6366F1', text: 'text-indigo-600 dark:text-indigo-400', border: 'border-indigo-500/50', name: 'Índigo' },
-    { bg: '#22C55E', dot: '#22C55E', text: 'text-green-600 dark:text-green-400', border: 'border-green-500/50', name: 'Verde' },
-    { bg: '#F97316', dot: '#F97316', text: 'text-orange-600 dark:text-orange-400', border: 'border-orange-500/50', name: 'Laranja' },
-    { bg: '#EC4899', dot: '#EC4899', text: 'text-pink-600 dark:text-pink-400', border: 'border-pink-500/50', name: 'Rosa' },
-    { bg: '#14B8A6', dot: '#14B8A6', text: 'text-teal-600 dark:text-teal-400', border: 'border-teal-500/50', name: 'Turquesa' },
-    { bg: '#A855F7', dot: '#A855F7', text: 'text-purple-600 dark:text-purple-400', border: 'border-purple-500/50', name: 'Roxo' },
-    { bg: '#EF4444', dot: '#EF4444', text: 'text-red-600 dark:text-red-400', border: 'border-red-500/50', name: 'Vermelho' },
-    { bg: '#3B82F6', dot: '#3B82F6', text: 'text-blue-600 dark:text-blue-400', border: 'border-blue-500/50', name: 'Azul' },
-  ];
+  // Create a map of member user_id to unique color index
+  const memberColorMap = useMemo(() => createMemberColorMap(members), [members]);
 
-  const memberColorMap = useMemo(() => {
-    const map = new Map<string, number>();
-    members.forEach((member, index) => {
-      map.set(member.user_id, index % memberColors.length);
-    });
-    return map;
-  }, [members]);
-
-  const getMemberColor = (userId: string) => {
-    const colorIndex = memberColorMap.get(userId) ?? 0;
-    return memberColors[colorIndex];
-  };
+  const getMemberColorValue = (userId: string) => getMemberColor(memberColorMap, userId);
 
   const getConfirmationIcon = (status?: ConfirmationStatus) => {
     switch (status) {
@@ -577,7 +558,7 @@ export default function UnifiedScheduleView({
                       {hasSchedules && isCurrentMonthDay && (
                         <div className="flex flex-wrap gap-0.5">
                           {daySchedules.slice(0, 4).map((schedule, i) => {
-                            const color = getMemberColor(schedule.user_id);
+                            const color = getMemberColorValue(schedule.user_id);
                             return (
                               <Tooltip key={i}>
                                 <TooltipTrigger asChild>
@@ -724,7 +705,7 @@ export default function UnifiedScheduleView({
                         {hasSchedules && isNextMonthDay && (
                           <div className="flex flex-wrap gap-0.5">
                             {daySchedules.slice(0, 4).map((schedule, i) => {
-                              const color = getMemberColor(schedule.user_id);
+                              const color = getMemberColorValue(schedule.user_id);
                               return (
                                 <Tooltip key={i}>
                                   <TooltipTrigger asChild>
@@ -807,7 +788,7 @@ export default function UnifiedScheduleView({
         <CardContent>
           <div className="flex flex-wrap gap-2">
             {members.map((member) => {
-              const color = getMemberColor(member.user_id);
+              const color = getMemberColorValue(member.user_id);
               return (
                 <div key={member.user_id} className="flex items-center gap-1.5 text-xs">
                   <div 
@@ -840,7 +821,7 @@ export default function UnifiedScheduleView({
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">Escalados neste dia:</p>
                 {selectedDaySchedules.map((schedule) => {
-                  const color = getMemberColor(schedule.user_id);
+                  const color = getMemberColorValue(schedule.user_id);
                   const statusBg = schedule.confirmation_status === 'confirmed' 
                     ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800'
                     : schedule.confirmation_status === 'declined'
