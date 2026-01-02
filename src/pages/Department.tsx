@@ -418,38 +418,40 @@ export default function Department() {
             </TabsList>
 
             <div className="flex items-center gap-2 flex-wrap">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2 press-effect">
-                    <Download className="w-4 h-4" />
-                    <span className="hidden sm:inline">Exportar</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-popover border-border">
-                  <DropdownMenuItem 
-                    className="click-scale cursor-pointer"
-                    onClick={() => exportToPDF({
-                      schedules,
-                      departmentName: department?.name || 'Departamento',
-                      monthYear: format(new Date(), 'MMMM yyyy', { locale: ptBR })
-                    })}
-                  >
-                    <FileText className="w-4 h-4 mr-2" />
-                    Exportar PDF
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    className="click-scale cursor-pointer"
-                    onClick={() => exportToExcel({
-                      schedules,
-                      departmentName: department?.name || 'Departamento',
-                      monthYear: format(new Date(), 'MMMM yyyy', { locale: ptBR })
-                    })}
-                  >
-                    <FileSpreadsheet className="w-4 h-4 mr-2" />
-                    Exportar Excel
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {isLeader && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-2 press-effect">
+                      <Download className="w-4 h-4" />
+                      <span className="hidden sm:inline">Exportar</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="bg-popover border-border">
+                    <DropdownMenuItem 
+                      className="click-scale cursor-pointer"
+                      onClick={() => exportToPDF({
+                        schedules,
+                        departmentName: department?.name || 'Departamento',
+                        monthYear: format(new Date(), 'MMMM yyyy', { locale: ptBR })
+                      })}
+                    >
+                      <FileText className="w-4 h-4 mr-2" />
+                      Exportar PDF
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      className="click-scale cursor-pointer"
+                      onClick={() => exportToExcel({
+                        schedules,
+                        departmentName: department?.name || 'Departamento',
+                        monthYear: format(new Date(), 'MMMM yyyy', { locale: ptBR })
+                      })}
+                    >
+                      <FileSpreadsheet className="w-4 h-4 mr-2" />
+                      Exportar Excel
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
 
               {isLeader && (
                 <Button 
