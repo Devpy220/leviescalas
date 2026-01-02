@@ -89,7 +89,7 @@ export default function Auth() {
   const [pendingPasswordReset, setPendingPasswordReset] = useState<string | null>(null);
   const [churchValidated, setChurchValidated] = useState<{ valid: boolean; name: string | null; slug: string | null }>({ valid: false, name: null, slug: null });
   const [isValidatingChurch, setIsValidatingChurch] = useState(false);
-  const [isAdminSignup, setIsAdminSignup] = useState(false);
+  // Admin is identified by email only (leviescalas@gmail.com)
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -199,8 +199,8 @@ export default function Auth() {
     defaultValues: { churchCode: '', name: '', email: '', whatsapp: '', password: '', confirmPassword: '' },
   });
 
-  // Form is ready when church is validated OR it's admin signup OR it's a department invite
-  const isFormReadyToSubmit = churchValidated.valid || isAdminSignup || isDepartmentInvite;
+  // Form is ready when church is validated OR it's a department invite
+  const isFormReadyToSubmit = churchValidated.valid || isDepartmentInvite;
 
   // Validate church by slug (from URL)
   const validateChurchBySlug = async (slug: string) => {
@@ -323,12 +323,12 @@ export default function Auth() {
   const handleRegister = async (data: RegisterForm) => {
     setIsLoading(true);
     
-    // Church must be validated unless it's admin signup or department invite
-    if (!churchValidated.valid && !isAdminSignup && !isDepartmentInvite) {
+    // Church must be validated unless it's a department invite
+    if (!churchValidated.valid && !isDepartmentInvite) {
       toast({
         variant: 'destructive',
         title: 'Igreja não encontrada',
-        description: 'Você precisa acessar a página de uma igreja para criar conta ou marcar "Sou administrador/líder".',
+        description: 'Você precisa acessar a página de uma igreja ou usar um código de convite para criar conta.',
       });
       setIsLoading(false);
       return;
@@ -396,9 +396,7 @@ export default function Auth() {
 
     setIsLoading(false);
 
-    const welcomeMessage = isAdminSignup 
-      ? 'Bem-vindo! Você pode agora acessar o painel administrativo.'
-      : isDepartmentInvite
+    const welcomeMessage = isDepartmentInvite
       ? 'Conta criada! Você será redirecionado para entrar no departamento.'
       : `Bem-vindo à ${churchValidated.name}!`;
 
@@ -409,17 +407,14 @@ export default function Auth() {
     
     // Redirect logic:
     // 1. Department invite -> redirect to join page (postAuthRedirect contains /join/:code)
-    // 2. Admin signup -> dashboard
-    // 3. Church code from URL (volunteer via /join link) -> create department page
-    // 4. Church slug -> church public page
-    // 5. Otherwise -> postAuthRedirect
+    // 2. Church code from URL (volunteer via /join link) -> create department page
+    // 3. Church slug -> church public page
+    // 4. Otherwise -> postAuthRedirect
     let redirectTo = '/dashboard';
     
     if (isDepartmentInvite) {
       // Department invite - go back to join page to complete joining
       redirectTo = postAuthRedirect;
-    } else if (isAdminSignup) {
-      redirectTo = '/dashboard';
     } else if (churchCodeParam) {
       // Volunteer coming from church code link - go to create department
       redirectTo = `/departments/new?churchCode=${churchCodeParam.toUpperCase()}`;
@@ -803,28 +798,8 @@ export default function Auth() {
           {/* Register Form */}
           {activeTab === 'register' && (
             <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-5 animate-fade-in">
-              {/* Admin/Leader Signup Option */}
-              {!hasChurchContext && (
-                <div className="flex items-center space-x-3 p-4 rounded-xl glass border border-border/50 mb-4">
-                  <input
-                    type="checkbox"
-                    id="admin-signup"
-                    checked={isAdminSignup}
-                    onChange={(e) => setIsAdminSignup(e.target.checked)}
-                    className="w-5 h-5 rounded border-border text-primary focus:ring-primary"
-                  />
-                  <label htmlFor="admin-signup" className="text-sm cursor-pointer">
-                    <span className="font-medium text-foreground">Sou administrador/líder</span>
-                    <br />
-                    <span className="text-muted-foreground text-xs">
-                      Marque se você é líder de igreja e vai cadastrar sua igreja depois
-                    </span>
-                  </label>
-                </div>
-              )}
-
               {/* Church Context Info - Show church name and code when validated from URL */}
-              {churchValidated.valid && churchValidated.name && !isAdminSignup && (
+              {churchValidated.valid && churchValidated.name && (
                 <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 mb-4 space-y-3">
                   <p className="text-sm text-foreground">
                     <span className="font-medium">Criando conta para:</span>
@@ -846,27 +821,14 @@ export default function Auth() {
                 </div>
               )}
 
-              {/* Admin signup info */}
-              {isAdminSignup && (
-                <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 mb-4">
-                  <p className="text-sm text-foreground">
-                    <span className="font-medium">Cadastro de Administrador/Líder</span>
-                    <br />
-                    <span className="text-muted-foreground">
-                      Você poderá cadastrar sua igreja após criar sua conta.
-                    </span>
-                  </p>
-                </div>
-              )}
-
-              {/* No church context - show error only if not admin signup */}
-              {!hasChurchContext && !churchValidated.valid && !isAdminSignup && (
+              {/* No church context - show error */}
+              {!hasChurchContext && !churchValidated.valid && (
                 <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 mb-4">
                   <p className="text-sm text-foreground">
                     <span className="font-medium text-destructive">Código da igreja necessário</span>
                     <br />
                     <span className="text-muted-foreground">
-                      Para criar uma conta como membro, acesse a página da sua igreja ou marque a opção acima se você é líder.
+                      Para criar uma conta, você precisa do código da sua igreja ou um link de convite.
                     </span>
                   </p>
                   <Link to="/" className="inline-block mt-2">
