@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Trash2, Users, Building2, ChevronDown, ChevronUp, Shield, LogOut, Church, Plus, Copy, Link as LinkIcon, Mail, ExternalLink } from 'lucide-react';
+import { Loader2, Trash2, Users, Building2, ChevronDown, ChevronUp, Shield, LogOut, Church, Plus, Copy, Link as LinkIcon, Mail, ExternalLink, ChevronRight } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -695,86 +696,94 @@ export default function Admin() {
         </Card>
 
         {/* All Volunteers List */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              Todos os Voluntários
-            </CardTitle>
-            <CardDescription>
-              Lista de todos os voluntários cadastrados na plataforma
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loadingProfiles ? (
-              <div className="flex justify-center py-4">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
-              </div>
-            ) : allProfiles.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">
-                Nenhum voluntário cadastrado.
-              </p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>WhatsApp</TableHead>
-                    <TableHead>Cadastrado em</TableHead>
-                    <TableHead className="w-[80px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {allProfiles.map((profile) => (
-                    <TableRow key={profile.id}>
-                      <TableCell className="font-medium">{profile.name || 'Sem nome'}</TableCell>
-                      <TableCell>{profile.email}</TableCell>
-                      <TableCell>{profile.whatsapp || '-'}</TableCell>
-                      <TableCell>
-                        {format(new Date(profile.created_at), "dd/MM/yyyy", { locale: ptBR })}
-                      </TableCell>
-                      <TableCell>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              disabled={deletingVolunteer === profile.id}
-                            >
-                              {deletingVolunteer === profile.id ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                              ) : (
-                                <Trash2 className="w-4 h-4 text-destructive" />
-                              )}
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Excluir voluntário?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Esta ação excluirá permanentemente o voluntário "{profile.name || profile.email}" e todos os seus dados (participações em departamentos, escalas, disponibilidade, etc). Esta ação não pode ser desfeita.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDeleteVolunteer(profile.id)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                Excluir
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+        <Collapsible>
+          <Card className="mb-6">
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  Todos os Voluntários
+                  <Badge variant="secondary" className="ml-2">{allProfiles.length}</Badge>
+                  <ChevronRight className="w-4 h-4 ml-auto transition-transform duration-200 group-data-[state=open]:rotate-90" />
+                </CardTitle>
+                <CardDescription>
+                  Clique para expandir a lista de voluntários
+                </CardDescription>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent>
+                {loadingProfiles ? (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  </div>
+                ) : allProfiles.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">
+                    Nenhum voluntário cadastrado.
+                  </p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nome</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>WhatsApp</TableHead>
+                        <TableHead>Cadastrado em</TableHead>
+                        <TableHead className="w-[80px]"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {allProfiles.map((profile) => (
+                        <TableRow key={profile.id}>
+                          <TableCell className="font-medium">{profile.name || 'Sem nome'}</TableCell>
+                          <TableCell>{profile.email}</TableCell>
+                          <TableCell>{profile.whatsapp || '-'}</TableCell>
+                          <TableCell>
+                            {format(new Date(profile.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                          </TableCell>
+                          <TableCell>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  disabled={deletingVolunteer === profile.id}
+                                >
+                                  {deletingVolunteer === profile.id ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="w-4 h-4 text-destructive" />
+                                  )}
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Excluir voluntário?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Esta ação excluirá permanentemente o voluntário "{profile.name || profile.email}" e todos os seus dados (participações em departamentos, escalas, disponibilidade, etc). Esta ação não pode ser desfeita.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDeleteVolunteer(profile.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Excluir
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
 
         {/* Departments List */}
         <Card>
