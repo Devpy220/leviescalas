@@ -67,6 +67,8 @@ export default function Admin() {
   const [members, setMembers] = useState<Record<string, Member[]>>({});
   const [loadingMembers, setLoadingMembers] = useState<Record<string, boolean>>({});
   const [deleting, setDeleting] = useState(false);
+  const [deletingChurch, setDeletingChurch] = useState<string | null>(null);
+  const [deletingVolunteer, setDeletingVolunteer] = useState<string | null>(null);
   const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
   const [loadingProfiles, setLoadingProfiles] = useState(true);
   
@@ -336,6 +338,58 @@ export default function Admin() {
     }
   };
 
+  const handleDeleteChurch = async (churchId: string) => {
+    setDeletingChurch(churchId);
+    try {
+      const { error } = await supabase.rpc('admin_delete_church', { church_id: churchId });
+      
+      if (error) throw error;
+      
+      setChurches(prev => prev.filter(c => c.id !== churchId));
+      toast({
+        title: 'Sucesso',
+        description: 'Igreja excluída com sucesso.',
+      });
+      // Refresh departments as they may have been deleted
+      fetchDepartments();
+    } catch (error) {
+      console.error('Error deleting church:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível excluir a igreja.',
+        variant: 'destructive',
+      });
+    } finally {
+      setDeletingChurch(null);
+    }
+  };
+
+  const handleDeleteVolunteer = async (profileId: string) => {
+    setDeletingVolunteer(profileId);
+    try {
+      const { error } = await supabase.rpc('admin_delete_volunteer', { profile_id: profileId });
+      
+      if (error) throw error;
+      
+      setAllProfiles(prev => prev.filter(p => p.id !== profileId));
+      toast({
+        title: 'Sucesso',
+        description: 'Voluntário excluído com sucesso.',
+      });
+      // Refresh departments as member counts may have changed
+      fetchDepartments();
+    } catch (error) {
+      console.error('Error deleting volunteer:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível excluir o voluntário.',
+        variant: 'destructive',
+      });
+    } finally {
+      setDeletingVolunteer(null);
+    }
+  };
+
   const handleSignOut = async () => {
     await signOut();
     window.location.href = '/admin-login';
@@ -559,7 +613,7 @@ export default function Admin() {
                     <TableHead>Código</TableHead>
                     <TableHead>Cidade/Estado</TableHead>
                     <TableHead>Criado em</TableHead>
-                    <TableHead className="w-[120px]">Ações</TableHead>
+                    <TableHead className="w-[150px]">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -597,6 +651,39 @@ export default function Admin() {
                               <LinkIcon className="w-4 h-4" />
                             </Button>
                           )}
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                disabled={deletingChurch === church.id}
+                                title="Excluir igreja"
+                              >
+                                {deletingChurch === church.id ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="w-4 h-4 text-destructive" />
+                                )}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Excluir igreja?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Esta ação excluirá permanentemente a igreja "{church.name}" e todos os seus departamentos, membros, escalas e dados relacionados. Esta ação não pode ser desfeita.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteChurch(church.id)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Excluir
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -635,6 +722,7 @@ export default function Admin() {
                     <TableHead>Email</TableHead>
                     <TableHead>WhatsApp</TableHead>
                     <TableHead>Cadastrado em</TableHead>
+                    <TableHead className="w-[80px]"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -645,6 +733,40 @@ export default function Admin() {
                       <TableCell>{profile.whatsapp || '-'}</TableCell>
                       <TableCell>
                         {format(new Date(profile.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                      </TableCell>
+                      <TableCell>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              disabled={deletingVolunteer === profile.id}
+                            >
+                              {deletingVolunteer === profile.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-4 h-4 text-destructive" />
+                              )}
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Excluir voluntário?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Esta ação excluirá permanentemente o voluntário "{profile.name || profile.email}" e todos os seus dados (participações em departamentos, escalas, disponibilidade, etc). Esta ação não pode ser desfeita.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteVolunteer(profile.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Excluir
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </TableCell>
                     </TableRow>
                   ))}

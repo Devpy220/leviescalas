@@ -300,15 +300,6 @@ export default function Dashboard() {
               variant="ghost" 
               size="icon" 
               className="text-muted-foreground"
-              onClick={() => navigate('/churches')}
-              title="Igrejas"
-            >
-              <Church className="w-5 h-5" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="text-muted-foreground"
               onClick={() => navigate('/my-schedules')}
               title="Minhas Escalas"
             >
