@@ -159,6 +159,7 @@ export default function UnifiedScheduleView({
     return map;
   }, [schedules]);
 
+  // Calendar days for current month
   const calendarDays = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(currentMonth);
@@ -173,6 +174,23 @@ export default function UnifiedScheduleView({
     }
     return days;
   }, [currentMonth]);
+
+  // Calendar days for next month
+  const nextMonth = addMonths(currentMonth, 1);
+  const nextMonthCalendarDays = useMemo(() => {
+    const monthStart = startOfMonth(nextMonth);
+    const monthEnd = endOfMonth(nextMonth);
+    const startDate = startOfWeek(monthStart, { locale: ptBR });
+    const endDate = endOfWeek(monthEnd, { locale: ptBR });
+
+    const days: Date[] = [];
+    let day = startDate;
+    while (day <= endDate) {
+      days.push(day);
+      day = addDays(day, 1);
+    }
+    return days;
+  }, [nextMonth]);
 
   // Check if a day is a fixed slot day (Wednesday or Sunday)
   const isFixedSlotDay = (day: Date) => {
@@ -459,7 +477,7 @@ export default function UnifiedScheduleView({
             </div>
           </div>
 
-          {/* Calendar Grid */}
+          {/* Current Month Calendar Grid */}
           <div className="bg-card border-2 border-primary rounded-lg overflow-hidden">
             {/* Week Days Header */}
             <div className="grid grid-cols-7 border-b border-border bg-primary">
@@ -478,7 +496,7 @@ export default function UnifiedScheduleView({
               {calendarDays.map((day, index) => {
                 const dateKey = format(day, 'yyyy-MM-dd');
                 const daySchedules = schedulesByDate.get(dateKey) || [];
-                const isCurrentMonth = isSameMonth(day, currentMonth);
+                const isCurrentMonthDay = isSameMonth(day, currentMonth);
                 const isCurrentDay = isToday(day);
                 const hasSchedules = daySchedules.length > 0;
                 const isFixed = isFixedSlotDay(day);
@@ -490,9 +508,9 @@ export default function UnifiedScheduleView({
                   <button
                     key={index}
                     onClick={() => handleDayClick(day)}
-                    disabled={!isCurrentMonth || (!isFixed && !hasSchedules && !isLeader)}
+                    disabled={!isCurrentMonthDay || (!isFixed && !hasSchedules && !isLeader)}
                     className={`relative border-r border-b transition-all duration-300 min-h-[60px] sm:min-h-[80px] p-1 overflow-hidden group ${
-                      !isCurrentMonth 
+                      !isCurrentMonthDay 
                         ? 'bg-muted/20 text-muted-foreground/40 border-border' 
                         : isFixed 
                           ? `cursor-pointer hover:scale-[1.02] hover:z-10 border-2 ${slotStyle?.borderColor || 'border-border'}` 
@@ -506,7 +524,7 @@ export default function UnifiedScheduleView({
                     }`}
                   >
                     {/* Background for fixed slot days */}
-                    {isFixed && isCurrentMonth && slotStyle && (
+                    {isFixed && isCurrentMonthDay && slotStyle && (
                       <>
                         {slotStyle.isSplit ? (
                           /* Split background for Sunday - half morning, half night with divider */
@@ -533,14 +551,14 @@ export default function UnifiedScheduleView({
                           className={`text-xs font-bold flex items-center justify-center w-5 h-5 rounded-full ${
                             isCurrentDay
                               ? 'bg-primary text-primary-foreground shadow-md'
-                              : isFixed && isCurrentMonth
+                              : isFixed && isCurrentMonthDay
                                 ? 'text-foreground font-semibold'
                                 : ''
                           }`}
                         >
                           {format(day, 'd')}
                         </span>
-                        {isFixed && isCurrentMonth && (
+                        {isFixed && isCurrentMonthDay && (
                           <div className="flex gap-0.5">
                             {fixedSlots.map((slot, i) => (
                               <Badge 
@@ -556,7 +574,7 @@ export default function UnifiedScheduleView({
                       </div>
 
                       {/* Scheduled members */}
-                      {hasSchedules && isCurrentMonth && (
+                      {hasSchedules && isCurrentMonthDay && (
                         <div className="flex flex-wrap gap-0.5">
                           {daySchedules.slice(0, 4).map((schedule, i) => {
                             const color = getMemberColor(schedule.user_id);
@@ -588,7 +606,7 @@ export default function UnifiedScheduleView({
                       )}
 
                       {/* Empty slot indicator for fixed days without schedules */}
-                      {isFixed && isCurrentMonth && !hasSchedules && (
+                      {isFixed && isCurrentMonthDay && !hasSchedules && (
                         <div className="flex items-center justify-center mt-1">
                           <div className="w-6 h-6 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
                             <Plus className="w-3 h-3 text-white/80" />
@@ -599,6 +617,154 @@ export default function UnifiedScheduleView({
                   </button>
                 );
               })}
+            </div>
+          </div>
+
+          {/* Next Month Calendar Grid */}
+          <div className="mt-6">
+            <h3 className="text-sm font-semibold text-muted-foreground mb-3 capitalize">
+              {format(nextMonth, 'MMMM yyyy', { locale: ptBR })}
+            </h3>
+            <div className="bg-card border-2 border-border rounded-lg overflow-hidden">
+              {/* Week Days Header */}
+              <div className="grid grid-cols-7 border-b border-border bg-muted">
+                {weekDays.map((day, i) => (
+                  <div
+                    key={i}
+                    className="text-center font-medium text-muted-foreground py-2 text-xs"
+                  >
+                    {day}
+                  </div>
+                ))}
+              </div>
+
+              {/* Calendar Days */}
+              <div className="grid grid-cols-7">
+                {nextMonthCalendarDays.map((day, index) => {
+                  const dateKey = format(day, 'yyyy-MM-dd');
+                  const daySchedules = schedulesByDate.get(dateKey) || [];
+                  const isNextMonthDay = isSameMonth(day, nextMonth);
+                  const isCurrentDay = isToday(day);
+                  const hasSchedules = daySchedules.length > 0;
+                  const isFixed = isFixedSlotDay(day);
+                  const fixedSlots = getFixedSlotsForDay(day);
+
+                  const slotStyle = getDaySlotStyle(day);
+
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => handleDayClick(day)}
+                      disabled={!isNextMonthDay || (!isFixed && !hasSchedules && !isLeader)}
+                      className={`relative border-r border-b transition-all duration-300 min-h-[60px] sm:min-h-[80px] p-1 overflow-hidden group ${
+                        !isNextMonthDay 
+                          ? 'bg-muted/20 text-muted-foreground/40 border-border' 
+                          : isFixed 
+                            ? `cursor-pointer hover:scale-[1.02] hover:z-10 border-2 ${slotStyle?.borderColor || 'border-border'}` 
+                            : hasSchedules
+                              ? 'bg-primary/10 cursor-pointer hover:bg-primary/20 border-primary/30'
+                              : isLeader 
+                                ? `cursor-pointer hover:bg-muted/50 border-border ${getDayBackgroundColor(day)}`
+                                : `border-border ${getDayBackgroundColor(day)}`
+                      } ${index % 7 === 6 ? 'border-r-0' : ''} ${
+                        Math.floor(index / 7) === Math.floor((nextMonthCalendarDays.length - 1) / 7) ? 'border-b-0' : ''
+                      }`}
+                    >
+                      {/* Background for fixed slot days */}
+                      {isFixed && isNextMonthDay && slotStyle && (
+                        <>
+                          {slotStyle.isSplit ? (
+                            /* Split background for Sunday - half morning, half night with divider */
+                            <div className="absolute inset-0 flex overflow-hidden">
+                              <div className={`w-1/2 ${slotStyle.morningBgColor} backdrop-blur-sm`} />
+                              <div className="absolute left-1/2 top-0 bottom-0 w-[2px] bg-white/40 z-10" />
+                              <div className={`w-1/2 ${slotStyle.nightBgColor} backdrop-blur-sm`} />
+                            </div>
+                          ) : (
+                            /* Solid background for Wednesday */
+                            <div className={`absolute inset-0 ${slotStyle.bgColor} backdrop-blur-sm`} />
+                          )}
+                          <div 
+                            className={`absolute inset-0 shadow-lg ${slotStyle.glow || ''} group-hover:opacity-100 opacity-80 transition-opacity`}
+                          />
+                        </>
+                      )}
+
+                      {/* Content wrapper */}
+                      <div className="relative z-10">
+                        {/* Day number */}
+                        <div className="flex items-center justify-between mb-1">
+                          <span
+                            className={`text-xs font-bold flex items-center justify-center w-5 h-5 rounded-full ${
+                              isCurrentDay
+                                ? 'bg-primary text-primary-foreground shadow-md'
+                                : isFixed && isNextMonthDay
+                                  ? 'text-foreground font-semibold'
+                                  : ''
+                            }`}
+                          >
+                            {format(day, 'd')}
+                          </span>
+                          {isFixed && isNextMonthDay && (
+                            <div className="flex gap-0.5">
+                              {fixedSlots.map((slot, i) => (
+                                <Badge 
+                                  key={i} 
+                                  variant="secondary" 
+                                  className="text-[8px] px-1 py-0 h-4 bg-foreground/10 text-foreground/80 border-0 hidden sm:inline-flex"
+                                >
+                                  {slot.shortLabel}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Scheduled members */}
+                        {hasSchedules && isNextMonthDay && (
+                          <div className="flex flex-wrap gap-0.5">
+                            {daySchedules.slice(0, 4).map((schedule, i) => {
+                              const color = getMemberColor(schedule.user_id);
+                              return (
+                                <Tooltip key={i}>
+                                  <TooltipTrigger asChild>
+                                    <div
+                                      className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] text-white font-bold shadow-md border-2 border-white/50"
+                                      style={{ backgroundColor: color.bg }}
+                                    >
+                                      {schedule.profile?.name?.charAt(0) || 'M'}
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{schedule.profile?.name || 'Membro'}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {schedule.time_start?.slice(0, 5)} - {schedule.time_end?.slice(0, 5)}
+                                    </p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              );
+                            })}
+                            {daySchedules.length > 4 && (
+                              <div className="w-5 h-5 rounded-full bg-white/30 backdrop-blur-sm flex items-center justify-center text-[9px] font-bold text-white shadow-md">
+                                +{daySchedules.length - 4}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Empty slot indicator for fixed days without schedules */}
+                        {isFixed && isNextMonthDay && !hasSchedules && (
+                          <div className="flex items-center justify-center mt-1">
+                            <div className="w-6 h-6 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                              <Plus className="w-3 h-3 text-white/80" />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </CardContent>
