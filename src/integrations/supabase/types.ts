@@ -197,6 +197,36 @@ export type Database = {
         }
         Relationships: []
       }
+      member_date_availability: {
+        Row: {
+          created_at: string
+          date: string
+          department_id: string
+          id: string
+          is_available: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          department_id: string
+          id?: string
+          is_available?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          department_id?: string
+          id?: string
+          is_available?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       member_preferences: {
         Row: {
           blackout_dates: string[] | null
