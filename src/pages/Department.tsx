@@ -401,20 +401,24 @@ export default function Department() {
                 <Clock className="w-4 h-4" />
                 <span className="hidden xs:inline">Disponibilidade</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="sectors" 
-                className="gap-2 click-scale selection-glow data-[state=active]:gradient-vibrant data-[state=active]:text-white data-[state=active]:shadow-glow-sm transition-all"
-              >
-                <Layers className="w-4 h-4" />
-                <span className="hidden xs:inline">Setores</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="members" 
-                className="gap-2 click-scale selection-glow data-[state=active]:gradient-vibrant data-[state=active]:text-white data-[state=active]:shadow-glow-sm transition-all"
-              >
-                <Users className="w-4 h-4" />
-                <span className="hidden xs:inline">Membros</span>
-              </TabsTrigger>
+              {isLeader && (
+                <TabsTrigger 
+                  value="sectors" 
+                  className="gap-2 click-scale selection-glow data-[state=active]:gradient-vibrant data-[state=active]:text-white data-[state=active]:shadow-glow-sm transition-all"
+                >
+                  <Layers className="w-4 h-4" />
+                  <span className="hidden xs:inline">Setores</span>
+                </TabsTrigger>
+              )}
+              {isLeader && (
+                <TabsTrigger 
+                  value="members" 
+                  className="gap-2 click-scale selection-glow data-[state=active]:gradient-vibrant data-[state=active]:text-white data-[state=active]:shadow-glow-sm transition-all"
+                >
+                  <Users className="w-4 h-4" />
+                  <span className="hidden xs:inline">Membros</span>
+                </TabsTrigger>
+              )}
             </TabsList>
 
             <div className="flex items-center gap-2 flex-wrap">
