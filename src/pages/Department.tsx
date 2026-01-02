@@ -11,11 +11,11 @@ import {
   Copy,
   Check,
   Loader2,
-  Sparkles,
   Download,
   FileText,
   FileSpreadsheet,
-  Clock
+  Clock,
+  Layers
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -29,8 +29,6 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import ScheduleCalendar from '@/components/department/ScheduleCalendar';
-import ScheduleTable from '@/components/department/ScheduleTable';
 import MemberList from '@/components/department/MemberList';
 import SectorManagement from '@/components/department/SectorManagement';
 import AddScheduleDialog from '@/components/department/AddScheduleDialog';
@@ -41,8 +39,8 @@ import SmartScheduleDialog from '@/components/department/SmartScheduleDialog';
 import AvailabilityCalendar from '@/components/department/AvailabilityCalendar';
 import MemberPreferences from '@/components/department/MemberPreferences';
 import LeaderAvailabilityView from '@/components/department/LeaderAvailabilityView';
+import UnifiedScheduleView from '@/components/department/UnifiedScheduleView';
 import { exportToPDF, exportToExcel } from '@/lib/exportSchedules';
-import { Layers } from 'lucide-react';
 import { SupportNotification } from '@/components/SupportNotification';
 import { format, addMonths, startOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -399,15 +397,15 @@ export default function Department() {
       </header>
 
       <main className="container mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 max-w-7xl">
-        <Tabs defaultValue="calendar" className="space-y-4 sm:space-y-6">
+        <Tabs defaultValue="schedules" className="space-y-4 sm:space-y-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <TabsList className="bg-muted/50 self-start w-full sm:w-auto overflow-x-auto">
               <TabsTrigger 
-                value="calendar" 
+                value="schedules" 
                 className="gap-2 click-scale selection-glow data-[state=active]:gradient-vibrant data-[state=active]:text-white data-[state=active]:shadow-glow-sm transition-all"
               >
                 <Calendar className="w-4 h-4" />
-                <span className="hidden xs:inline">Calendário</span>
+                <span className="hidden xs:inline">Escalas</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="availability" 
@@ -467,95 +465,45 @@ export default function Department() {
               </DropdownMenu>
 
               {isLeader && (
-                <>
-                  <Button 
-                    onClick={() => setShowSmartSchedule(true)}
-                    variant="outline"
-                    className="gap-2 border-primary/50 text-primary hover:bg-primary/10"
-                  >
-                    <Sparkles className="w-4 h-4" />
-                    <span className="hidden sm:inline">IA</span>
-                  </Button>
-                  <Button 
-                    onClick={() => handleAddSchedule()}
-                    className="gradient-vibrant text-white shadow-glow-sm hover:shadow-glow press-effect transition-all gap-2"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span className="hidden sm:inline">Nova Escala</span>
-                    <span className="sm:hidden">Nova</span>
-                  </Button>
-                </>
+                <Button 
+                  onClick={() => setShowInviteMember(true)}
+                  variant="outline"
+                  className="gap-2 press-effect"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span className="hidden sm:inline">Convidar Membro</span>
+                </Button>
               )}
             </div>
           </div>
 
-          <TabsContent value="calendar" className="mt-4 sm:mt-6 animate-fade-in">
-            <div className="space-y-4 sm:space-y-6">
-              {/* Calendars - Stack on mobile, side by side on tablet+ */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                <ScheduleCalendar 
-                  schedules={schedules}
-                  members={members}
-                  isLeader={isLeader}
-                  onAddSchedule={handleAddSchedule}
-                  onDeleteSchedule={handleScheduleDeleted}
-                  departmentId={id!}
-                  fixedMonth={startOfMonth(new Date())}
-                  title={format(new Date(), "MMMM", { locale: ptBR })}
-                  compact
-                />
-                <ScheduleCalendar 
-                  schedules={schedules}
-                  members={members}
-                  isLeader={isLeader}
-                  onAddSchedule={handleAddSchedule}
-                  onDeleteSchedule={handleScheduleDeleted}
-                  departmentId={id!}
-                  fixedMonth={startOfMonth(addMonths(new Date(), 1))}
-                  title={format(addMonths(new Date(), 1), "MMMM", { locale: ptBR })}
-                  compact
-                />
-              </div>
-
-              {/* Schedule Tables - Stack on mobile/tablet, side by side on desktop */}
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 sm:gap-4">
-                <ScheduleTable 
-                  schedules={schedules}
-                  members={members}
-                  month={new Date()}
-                  title={format(new Date(), "MMMM 'de' yyyy", { locale: ptBR })}
-                />
-                <ScheduleTable 
-                  schedules={schedules}
-                  members={members}
-                  month={addMonths(new Date(), 1)}
-                  title={format(addMonths(new Date(), 1), "MMMM 'de' yyyy", { locale: ptBR })}
-                />
-              </div>
-            </div>
+          <TabsContent value="schedules" className="mt-4 sm:mt-6 animate-fade-in">
+            <UnifiedScheduleView 
+              schedules={schedules}
+              members={members}
+              isLeader={isLeader}
+              onAddSchedule={handleAddSchedule}
+              onDeleteSchedule={handleScheduleDeleted}
+              departmentId={id!}
+              onOpenSmartSchedule={() => setShowSmartSchedule(true)}
+            />
           </TabsContent>
 
           <TabsContent value="availability" className="mt-6 animate-fade-in">
-            {isLeader ? (
-              <div className="space-y-6">
-                <LeaderAvailabilityView 
-                  departmentId={id!} 
-                  onOpenSmartSchedule={() => setShowSmartSchedule(true)} 
-                />
-                <div className="border-t border-border/50 pt-6">
-                  <h3 className="text-lg font-semibold mb-4">Sua própria disponibilidade</h3>
-                  <div className="grid gap-6 md:grid-cols-2 max-w-4xl">
-                    <AvailabilityCalendar departmentId={id!} userId={user?.id || ''} />
-                    <MemberPreferences departmentId={id!} userId={user?.id || ''} />
-                  </div>
-                </div>
-              </div>
-            ) : (
+            <div className="space-y-6">
               <div className="grid gap-6 md:grid-cols-2 max-w-4xl">
                 <AvailabilityCalendar departmentId={id!} userId={user?.id || ''} />
                 <MemberPreferences departmentId={id!} userId={user?.id || ''} />
               </div>
-            )}
+              {isLeader && (
+                <div className="border-t border-border/50 pt-6">
+                  <LeaderAvailabilityView 
+                    departmentId={id!} 
+                    onOpenSmartSchedule={() => setShowSmartSchedule(true)} 
+                  />
+                </div>
+              )}
+            </div>
           </TabsContent>
 
           <TabsContent value="sectors" className="mt-6">
