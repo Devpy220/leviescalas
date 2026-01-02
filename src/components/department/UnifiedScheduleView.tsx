@@ -62,7 +62,7 @@ const FIXED_SLOTS = [
     timeEnd: '22:00', 
     label: 'Quarta à noite', 
     shortLabel: 'QUA',
-    gradient: 'from-violet-500/80 via-purple-500/70 to-fuchsia-500/60',
+    bgColor: 'bg-violet-500/80',
     glow: 'shadow-violet-500/30',
     borderColor: 'border-violet-400/50'
   },
@@ -72,7 +72,7 @@ const FIXED_SLOTS = [
     timeEnd: '12:00', 
     label: 'Domingo manhã', 
     shortLabel: 'DOM-M',
-    gradient: 'from-cyan-500/80 via-blue-500/70 to-sky-500/60',
+    bgColor: 'bg-cyan-500/80',
     glow: 'shadow-cyan-500/30',
     borderColor: 'border-cyan-400/50'
   },
@@ -82,7 +82,7 @@ const FIXED_SLOTS = [
     timeEnd: '22:00', 
     label: 'Domingo noite', 
     shortLabel: 'DOM-N',
-    gradient: 'from-orange-500/80 via-amber-500/70 to-yellow-500/60',
+    bgColor: 'bg-orange-500/80',
     glow: 'shadow-orange-500/30',
     borderColor: 'border-orange-400/50'
   },
@@ -194,7 +194,7 @@ export default function UnifiedScheduleView({
     // For Wednesday, use the evening slot's style
     const primarySlot = slots[0];
     return {
-      gradient: primarySlot.gradient,
+      bgColor: primarySlot.bgColor,
       glow: primarySlot.glow,
       borderColor: primarySlot.borderColor
     };
@@ -369,15 +369,15 @@ export default function UnifiedScheduleView({
           {/* Fixed slots legend */}
           <div className="flex flex-wrap items-center gap-3 mb-4 text-xs">
             <div className="flex items-center gap-1.5">
-              <div className="w-4 h-4 rounded bg-gradient-to-br from-violet-500 to-fuchsia-500 shadow-sm" />
+              <div className="w-4 h-4 rounded bg-violet-500 shadow-sm" />
               <span className="text-muted-foreground">Quarta</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-4 h-4 rounded bg-gradient-to-br from-cyan-500 to-sky-500 shadow-sm" />
+              <div className="w-4 h-4 rounded bg-cyan-500 shadow-sm" />
               <span className="text-muted-foreground">Dom. manhã</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-4 h-4 rounded bg-gradient-to-br from-orange-500 to-amber-500 shadow-sm" />
+              <div className="w-4 h-4 rounded bg-orange-500 shadow-sm" />
               <span className="text-muted-foreground">Dom. noite</span>
             </div>
           </div>
@@ -424,17 +424,15 @@ export default function UnifiedScheduleView({
                       Math.floor(index / 7) === Math.floor((calendarDays.length - 1) / 7) ? 'border-b-0' : ''
                     }`}
                   >
-                    {/* Vibrant gradient background with blur for fixed slot days */}
+                    {/* Solid vibrant background with blur for fixed slot days */}
                     {isFixed && isCurrentMonth && (
                       <>
                         <div 
-                          className={`absolute inset-0 bg-gradient-to-br ${slotStyle?.gradient} backdrop-blur-sm opacity-90`}
+                          className={`absolute inset-0 ${slotStyle?.bgColor} backdrop-blur-sm`}
                         />
                         <div 
                           className={`absolute inset-0 shadow-lg ${slotStyle?.glow} group-hover:opacity-100 opacity-80 transition-opacity`}
                         />
-                        {/* Subtle inner glow effect */}
-                        <div className="absolute inset-0 bg-white/10 backdrop-blur-[1px]" />
                       </>
                     )}
 
