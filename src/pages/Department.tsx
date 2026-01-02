@@ -127,15 +127,20 @@ export default function Department() {
     // Wait for auth to finish loading
     if (authLoading) return;
     
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-    if (id) {
-      fetchDepartment();
-      fetchMembers();
-      fetchSchedules();
-    }
+    // Give a small delay to ensure session is fully established
+    const timeoutId = setTimeout(() => {
+      if (!user) {
+        navigate('/auth');
+        return;
+      }
+      if (id) {
+        fetchDepartment();
+        fetchMembers();
+        fetchSchedules();
+      }
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
   }, [user, id, navigate, authLoading]);
 
   const fetchDepartment = async () => {

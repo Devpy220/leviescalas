@@ -12,14 +12,19 @@ export default function DepartmentBySlug() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Wait for auth to finish loading before making any decisions
     if (authLoading) return;
     
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
+    // Give a small delay to ensure session is fully established
+    const timeoutId = setTimeout(() => {
+      if (!user) {
+        navigate('/auth');
+        return;
+      }
+      findDepartmentBySlug();
+    }, 100);
 
-    findDepartmentBySlug();
+    return () => clearTimeout(timeoutId);
   }, [slug, user, authLoading]);
 
   const findDepartmentBySlug = async () => {

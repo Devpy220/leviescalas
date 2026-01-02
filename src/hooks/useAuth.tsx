@@ -83,19 +83,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Only the first instance manages auto-refresh
     if (guard.refCount === 0 && !guard.initialized) {
       guard.initialized = true;
-      supabase.auth.stopAutoRefresh();
+      // Don't restart auto-refresh if already running
       supabase.auth.startAutoRefresh();
     }
     guard.refCount += 1;
 
-    // Set up auth state listener
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
         const now = Date.now();
 
-        // Debounce TOKEN_REFRESHED events - ignore if less than 5 seconds since last one
+        // Debounce TOKEN_REFRESHED events - ignore if less than 30 seconds since last one
         if (event === 'TOKEN_REFRESHED') {
-          if (now - guard.lastTokenRefresh < 5000) return;
+          if (now - guard.lastTokenRefresh < 30000) return;
           guard.lastTokenRefresh = now;
         }
 
@@ -118,10 +118,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    // Check for existing session only once
+    // THEN check for existing session only once
     supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
-      setSession(existingSession);
-      setUser(existingSession?.user ?? null);
+      // Only update if not already set by onAuthStateChange
+      setSession(prev => prev ?? existingSession);
+      setUser(prev => prev ?? existingSession?.user ?? null);
       setLoading(false);
 
       if (existingSession?.user) {
@@ -134,10 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       subscription.unsubscribe();
       guard.refCount = Math.max(0, guard.refCount - 1);
-      if (guard.refCount === 0) {
-        supabase.auth.stopAutoRefresh();
-        guard.initialized = false;
-      }
+      // Don't stop auto-refresh on cleanup to prevent rate limiting issues
     };
   }, [bootstrapUser]);
 
