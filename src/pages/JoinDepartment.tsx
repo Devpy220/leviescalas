@@ -150,16 +150,23 @@ export default function JoinDepartment() {
     }
   };
 
-  // Check for pending invite after login
+  // Check for pending invite after login - auto-join if user came from registration
   useEffect(() => {
-    if (user && !authLoading && department && !alreadyMember && !joined) {
-      const pendingInvite = sessionStorage.getItem('pendingInvite');
-      if (pendingInvite === inviteCode) {
-        sessionStorage.removeItem('pendingInvite');
-        handleJoin();
+    const autoJoin = async () => {
+      if (user && !authLoading && department && !alreadyMember && !joined && !joining) {
+        const pendingInvite = sessionStorage.getItem('pendingInvite');
+        // Auto-join if there's a pending invite OR if user just registered and was redirected here
+        if (pendingInvite === inviteCode) {
+          sessionStorage.removeItem('pendingInvite');
+          // Small delay to ensure auth state is fully settled
+          setTimeout(() => {
+            handleJoin();
+          }, 500);
+        }
       }
-    }
-  }, [user, authLoading, department, alreadyMember, joined]);
+    };
+    autoJoin();
+  }, [user, authLoading, department, alreadyMember, joined, joining, inviteCode]);
 
   if (loading || authLoading) {
     return (
