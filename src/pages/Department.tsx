@@ -14,7 +14,8 @@ import {
   Sparkles,
   Download,
   FileText,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Clock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -36,6 +37,9 @@ import AddScheduleDialog from '@/components/department/AddScheduleDialog';
 import InviteMemberDialog from '@/components/department/InviteMemberDialog';
 import DepartmentAvatar from '@/components/department/DepartmentAvatar';
 import DepartmentSettingsDialog from '@/components/department/DepartmentSettingsDialog';
+import SmartScheduleDialog from '@/components/department/SmartScheduleDialog';
+import AvailabilityCalendar from '@/components/department/AvailabilityCalendar';
+import MemberPreferences from '@/components/department/MemberPreferences';
 import { exportToPDF, exportToExcel } from '@/lib/exportSchedules';
 import { Layers } from 'lucide-react';
 import { SupportNotification } from '@/components/SupportNotification';
@@ -116,6 +120,7 @@ export default function Department() {
   const [showAddSchedule, setShowAddSchedule] = useState(false);
   const [showInviteMember, setShowInviteMember] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showSmartSchedule, setShowSmartSchedule] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   useEffect(() => {
@@ -399,6 +404,13 @@ export default function Department() {
                 <span className="hidden xs:inline">Calendário</span>
               </TabsTrigger>
               <TabsTrigger 
+                value="availability" 
+                className="gap-2 click-scale selection-glow data-[state=active]:gradient-vibrant data-[state=active]:text-white data-[state=active]:shadow-glow-sm transition-all"
+              >
+                <Clock className="w-4 h-4" />
+                <span className="hidden xs:inline">Disponibilidade</span>
+              </TabsTrigger>
+              <TabsTrigger 
                 value="sectors" 
                 className="gap-2 click-scale selection-glow data-[state=active]:gradient-vibrant data-[state=active]:text-white data-[state=active]:shadow-glow-sm transition-all"
               >
@@ -449,14 +461,24 @@ export default function Department() {
               </DropdownMenu>
 
               {isLeader && (
-                <Button 
-                  onClick={() => handleAddSchedule()}
-                  className="gradient-vibrant text-white shadow-glow-sm hover:shadow-glow press-effect transition-all gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span className="hidden sm:inline">Nova Escala</span>
-                  <span className="sm:hidden">Nova</span>
-                </Button>
+                <>
+                  <Button 
+                    onClick={() => setShowSmartSchedule(true)}
+                    variant="outline"
+                    className="gap-2 border-primary/50 text-primary hover:bg-primary/10"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span className="hidden sm:inline">IA</span>
+                  </Button>
+                  <Button 
+                    onClick={() => handleAddSchedule()}
+                    className="gradient-vibrant text-white shadow-glow-sm hover:shadow-glow press-effect transition-all gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span className="hidden sm:inline">Nova Escala</span>
+                    <span className="sm:hidden">Nova</span>
+                  </Button>
+                </>
               )}
             </div>
           </div>
@@ -507,6 +529,13 @@ export default function Department() {
             </div>
           </TabsContent>
 
+          <TabsContent value="availability" className="mt-6 animate-fade-in">
+            <div className="grid gap-6 md:grid-cols-2 max-w-4xl">
+              <AvailabilityCalendar departmentId={id!} userId={user?.id || ''} />
+              <MemberPreferences departmentId={id!} userId={user?.id || ''} />
+            </div>
+          </TabsContent>
+
           <TabsContent value="sectors" className="mt-6">
             <div className="max-w-2xl">
               <SectorManagement 
@@ -550,6 +579,13 @@ export default function Department() {
         onOpenChange={setShowSettings}
         department={department}
         onDepartmentUpdated={fetchDepartment}
+      />
+
+      <SmartScheduleDialog
+        open={showSmartSchedule}
+        onOpenChange={setShowSmartSchedule}
+        departmentId={id!}
+        onSchedulesCreated={fetchSchedules}
       />
     </div>
   );
