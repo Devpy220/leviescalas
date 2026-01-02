@@ -645,8 +645,10 @@ export type Database = {
         }
         Returns: string
       }
+      admin_delete_church: { Args: { church_id: string }; Returns: boolean }
       admin_delete_department: { Args: { dept_id: string }; Returns: boolean }
       admin_delete_member: { Args: { member_id: string }; Returns: boolean }
+      admin_delete_volunteer: { Args: { profile_id: string }; Returns: boolean }
       check_rate_limit: {
         Args: {
           p_endpoint: string
