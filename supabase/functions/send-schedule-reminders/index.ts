@@ -70,7 +70,17 @@ const sendWhatsAppMessage = async (to: string, message: string): Promise<{ succe
   }
 };
 
-const sendEmailReminder = async (email: string, name: string, departmentName: string, date: string, timeStart: string, timeEnd: string): Promise<{ success: boolean; error?: string }> => {
+const sendEmailReminder = async (
+  email: string, 
+  name: string, 
+  departmentName: string, 
+  date: string, 
+  timeStart: string, 
+  timeEnd: string,
+  confirmToken: string,
+  supabaseUrl: string,
+  isPendingConfirmation: boolean
+): Promise<{ success: boolean; error?: string }> => {
   if (!RESEND_API_KEY) {
     console.log("Resend API key not configured");
     return { success: false, error: "Resend not configured" };
@@ -80,6 +90,30 @@ const sendEmailReminder = async (email: string, name: string, departmentName: st
   const formattedTimeStart = formatTime(timeStart);
   const formattedTimeEnd = formatTime(timeEnd);
 
+  const confirmUrlDirect = `${supabaseUrl}/functions/v1/confirm-schedule?token=${confirmToken}&action=confirm`;
+  const declineUrlDirect = `${supabaseUrl}/functions/v1/confirm-schedule?token=${confirmToken}&action=decline`;
+
+  const confirmationButtons = isPendingConfirmation ? `
+    <div style="text-align: center; margin: 20px 0;">
+      <p style="color: #d97706; font-weight: bold; margin-bottom: 16px;">⚠️ Você ainda não confirmou sua presença!</p>
+      <a href="${confirmUrlDirect}" style="display: inline-block; background: #10b981; color: white; padding: 14px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; margin-right: 8px;">
+        ✅ Confirmar Presença
+      </a>
+      <a href="${declineUrlDirect}" style="display: inline-block; background: #ef4444; color: white; padding: 14px 24px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+        ❌ Não Poderei
+      </a>
+    </div>
+  ` : '';
+
+  const headerColor = isPendingConfirmation 
+    ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
+    : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)';
+
+  const subjectEmoji = isPendingConfirmation ? '⚠️' : '⏰';
+  const subjectText = isPendingConfirmation 
+    ? `${subjectEmoji} CONFIRME: Escala amanhã - ${departmentName}`
+    : `${subjectEmoji} Lembrete: Escala amanhã - ${departmentName}`;
+
   const htmlContent = `
     <!DOCTYPE html>
     <html>
@@ -88,7 +122,7 @@ const sendEmailReminder = async (email: string, name: string, departmentName: st
       <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f4f5; margin: 0; padding: 20px; }
         .container { max-width: 500px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .header { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 24px; text-align: center; }
+        .header { background: ${headerColor}; color: white; padding: 24px; text-align: center; }
         .header h1 { margin: 0; font-size: 24px; }
         .content { padding: 24px; }
         .info-card { background: #fef3c7; border-radius: 12px; padding: 16px; margin: 16px 0; }
@@ -98,17 +132,19 @@ const sendEmailReminder = async (email: string, name: string, departmentName: st
     <body>
       <div class="container">
         <div class="header">
-          <h1>⏰ Lembrete de Escala</h1>
+          <h1>${isPendingConfirmation ? '⚠️ Confirme sua Presença' : '⏰ Lembrete de Escala'}</h1>
         </div>
         <div class="content">
           <p>Olá, <strong>${name}</strong>!</p>
-          <p>Este é um lembrete da sua escala <strong>amanhã</strong>:</p>
+          <p>${isPendingConfirmation ? 'Você ainda não confirmou sua presença na escala de <strong>amanhã</strong>:' : 'Este é um lembrete da sua escala <strong>amanhã</strong>:'}</p>
           
           <div class="info-card">
             <p>📆 <strong>Data:</strong> ${formattedDate}</p>
             <p>⏰ <strong>Horário:</strong> ${formattedTimeStart} às ${formattedTimeEnd}</p>
             <p>🏢 <strong>Departamento:</strong> ${departmentName}</p>
           </div>
+
+          ${confirmationButtons}
         </div>
         <div class="footer">
           LEVI - Sistema de Escalas
@@ -128,7 +164,7 @@ const sendEmailReminder = async (email: string, name: string, departmentName: st
       body: JSON.stringify({
         from: "LEVI Escalas <onboarding@resend.dev>",
         to: [email],
-        subject: `⏰ Lembrete: Escala amanhã - ${departmentName}`,
+        subject: subjectText,
         html: htmlContent,
       }),
     });
@@ -155,8 +191,9 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
+      supabaseUrl,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
@@ -177,7 +214,9 @@ const handler = async (req: Request): Promise<Response> => {
         time_end,
         user_id,
         department_id,
-        notes
+        notes,
+        confirmation_status,
+        confirmation_token
       `)
       .eq('date', tomorrowStr);
 
@@ -197,9 +236,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     let sentCount = 0;
     let errorCount = 0;
+    let pendingCount = 0;
 
     for (const schedule of schedules) {
       try {
+        const isPendingConfirmation = schedule.confirmation_status === 'pending';
+        if (isPendingConfirmation) pendingCount++;
+
         // Get user profile
         const { data: profile, error: profileError } = await supabaseAdmin
           .from('profiles')
@@ -230,9 +273,18 @@ const handler = async (req: Request): Promise<Response> => {
         const formattedTimeStart = formatTime(schedule.time_start);
         const formattedTimeEnd = formatTime(schedule.time_end);
 
+        const confirmUrl = `${supabaseUrl}/functions/v1/confirm-schedule?token=${schedule.confirmation_token}&action=confirm`;
+        const declineUrl = `${supabaseUrl}/functions/v1/confirm-schedule?token=${schedule.confirmation_token}&action=decline`;
+
         // Send WhatsApp reminder if user has WhatsApp
         if (profile.whatsapp) {
-          const whatsappMessage = `⏰ *Lembrete de Escala*\n\nOlá, ${profile.name}!\n\nLembrete da sua escala *amanhã*:\n📆 *Data:* ${formattedDate}\n⏰ *Horário:* ${formattedTimeStart} às ${formattedTimeEnd}\n🏢 *Departamento:* ${department.name}\n\n_LEVI - Sistema de Escalas_`;
+          let whatsappMessage = `⏰ *Lembrete de Escala*\n\nOlá, ${profile.name}!\n\nLembrete da sua escala *amanhã*:\n📆 *Data:* ${formattedDate}\n⏰ *Horário:* ${formattedTimeStart} às ${formattedTimeEnd}\n🏢 *Departamento:* ${department.name}`;
+          
+          if (isPendingConfirmation) {
+            whatsappMessage = `⚠️ *CONFIRME SUA PRESENÇA*\n\nOlá, ${profile.name}!\n\nVocê ainda não confirmou sua presença na escala de *amanhã*:\n📆 *Data:* ${formattedDate}\n⏰ *Horário:* ${formattedTimeStart} às ${formattedTimeEnd}\n🏢 *Departamento:* ${department.name}\n\n✅ Confirmar: ${confirmUrl}\n❌ Não poderei: ${declineUrl}`;
+          }
+          
+          whatsappMessage += `\n\n_LEVI - Sistema de Escalas_`;
           
           const whatsappResult = await sendWhatsAppMessage(profile.whatsapp, whatsappMessage);
           if (whatsappResult.success) {
@@ -247,7 +299,10 @@ const handler = async (req: Request): Promise<Response> => {
           department.name,
           schedule.date,
           schedule.time_start,
-          schedule.time_end
+          schedule.time_end,
+          schedule.confirmation_token,
+          supabaseUrl,
+          isPendingConfirmation
         );
 
         if (emailResult.success) {
@@ -255,14 +310,19 @@ const handler = async (req: Request): Promise<Response> => {
         }
 
         // Create notification record
+        const notificationType = isPendingConfirmation ? 'confirmation_reminder' : 'schedule_reminder';
+        const notificationMessage = isPendingConfirmation 
+          ? `⚠️ Confirme sua presença: escala amanhã em ${department.name}`
+          : `Lembrete: você tem escala amanhã em ${department.name}`;
+
         await supabaseAdmin
           .from('notifications')
           .insert({
             user_id: schedule.user_id,
             department_id: schedule.department_id,
             schedule_id: schedule.id,
-            type: 'schedule_reminder',
-            message: `Lembrete: você tem escala amanhã em ${department.name}`,
+            type: notificationType,
+            message: notificationMessage,
             status: 'sent',
             sent_at: new Date().toISOString()
           });
@@ -273,14 +333,15 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    console.log(`Reminders sent: ${sentCount}, Errors: ${errorCount}`);
+    console.log(`Reminders sent: ${sentCount}, Errors: ${errorCount}, Pending confirmations: ${pendingCount}`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         sent: sentCount, 
         errors: errorCount,
-        total: schedules.length 
+        total: schedules.length,
+        pendingConfirmations: pendingCount
       }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
