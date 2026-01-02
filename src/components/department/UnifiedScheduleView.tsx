@@ -82,9 +82,9 @@ const FIXED_SLOTS = [
     timeEnd: '22:00', 
     label: 'Domingo noite', 
     shortLabel: 'DOM-N',
-    bgColor: 'bg-orange-500/80',
-    glow: 'shadow-orange-500/30',
-    borderColor: 'border-orange-400/50'
+    bgColor: 'bg-red-500/80',
+    glow: 'shadow-red-500/30',
+    borderColor: 'border-red-400/50'
   },
 ];
 
@@ -185,15 +185,28 @@ export default function UnifiedScheduleView({
     return FIXED_SLOTS.filter(slot => slot.dayOfWeek === dayOfWeek);
   };
 
-  // Get the primary slot styling for a day (for background)
+  // Get the slot styling for a day (for background)
+  // For Sunday, returns both slots for split view
   const getDaySlotStyle = (day: Date) => {
     const slots = getFixedSlotsForDay(day);
     if (slots.length === 0) return null;
     
-    // For Sunday, use the morning slot's style as primary
-    // For Wednesday, use the evening slot's style
+    // Check if it's Sunday (has 2 slots)
+    const isSunday = slots.length === 2;
+    
+    if (isSunday) {
+      return {
+        isSplit: true,
+        morningBgColor: slots[0].bgColor,
+        nightBgColor: slots[1].bgColor,
+        borderColor: 'border-white/30'
+      };
+    }
+    
+    // For Wednesday, single color
     const primarySlot = slots[0];
     return {
+      isSplit: false,
       bgColor: primarySlot.bgColor,
       glow: primarySlot.glow,
       borderColor: primarySlot.borderColor
@@ -377,7 +390,7 @@ export default function UnifiedScheduleView({
               <span className="text-muted-foreground">Dom. manhã</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-4 h-4 rounded bg-orange-500 shadow-sm" />
+              <div className="w-4 h-4 rounded bg-red-500 shadow-sm" />
               <span className="text-muted-foreground">Dom. noite</span>
             </div>
           </div>
@@ -424,14 +437,21 @@ export default function UnifiedScheduleView({
                       Math.floor(index / 7) === Math.floor((calendarDays.length - 1) / 7) ? 'border-b-0' : ''
                     }`}
                   >
-                    {/* Solid vibrant background with blur for fixed slot days */}
-                    {isFixed && isCurrentMonth && (
+                    {/* Background for fixed slot days */}
+                    {isFixed && isCurrentMonth && slotStyle && (
                       <>
+                        {slotStyle.isSplit ? (
+                          /* Split background for Sunday - half morning, half night */
+                          <div className="absolute inset-0 flex overflow-hidden">
+                            <div className={`w-1/2 ${slotStyle.morningBgColor} backdrop-blur-sm`} />
+                            <div className={`w-1/2 ${slotStyle.nightBgColor} backdrop-blur-sm`} />
+                          </div>
+                        ) : (
+                          /* Solid background for Wednesday */
+                          <div className={`absolute inset-0 ${slotStyle.bgColor} backdrop-blur-sm`} />
+                        )}
                         <div 
-                          className={`absolute inset-0 ${slotStyle?.bgColor} backdrop-blur-sm`}
-                        />
-                        <div 
-                          className={`absolute inset-0 shadow-lg ${slotStyle?.glow} group-hover:opacity-100 opacity-80 transition-opacity`}
+                          className={`absolute inset-0 shadow-lg ${slotStyle.glow || ''} group-hover:opacity-100 opacity-80 transition-opacity`}
                         />
                       </>
                     )}
