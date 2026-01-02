@@ -1,39 +1,21 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Clock, Check, X, ChevronLeft, ChevronRight } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSunday, isWednesday, addMonths } from 'date-fns';
+import { Loader2, Calendar, Check, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, getDay, isBefore, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 interface AvailabilityCalendarProps {
   departmentId: string;
   userId: string;
 }
 
-interface FixedSlot {
+interface DateAvailability {
   id: string;
-  dayOfWeek: number; // 0 = Sunday, 3 = Wednesday
-  timeStart: string;
-  timeEnd: string;
-  label: string;
-  shortLabel: string;
-}
-
-// Horários fixos pré-definidos
-const FIXED_SLOTS: FixedSlot[] = [
-  { id: 'wed-night', dayOfWeek: 3, timeStart: '19:20', timeEnd: '22:00', label: 'Quarta 19:20-22:00', shortLabel: '19:20-22:00' },
-  { id: 'sun-morning', dayOfWeek: 0, timeStart: '08:00', timeEnd: '11:30', label: 'Domingo Manhã 8:00-11:30', shortLabel: 'Manhã' },
-  { id: 'sun-night', dayOfWeek: 0, timeStart: '18:00', timeEnd: '22:00', label: 'Domingo Noite 18:00-22:00', shortLabel: 'Noite' },
-];
-
-interface AvailabilityRecord {
-  id: string;
-  day_of_week: number;
-  time_start: string;
-  time_end: string;
+  date: string;
   is_available: boolean;
 }
 
@@ -42,29 +24,35 @@ export default function AvailabilityCalendar({ departmentId, userId }: Availabil
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
-  const [availability, setAvailability] = useState<AvailabilityRecord[]>([]);
+  const [availability, setAvailability] = useState<DateAvailability[]>([]);
 
-  // Get all valid dates for the month (Wednesdays and Sundays)
+  // Get all days for the month
   const getMonthDates = () => {
     const start = startOfMonth(currentMonth);
     const end = endOfMonth(currentMonth);
-    const allDays = eachDayOfInterval({ start, end });
-    return allDays.filter(day => isSunday(day) || isWednesday(day));
+    return eachDayOfInterval({ start, end });
   };
 
-  const validDates = getMonthDates();
+  const allDates = getMonthDates();
+  const today = startOfDay(new Date());
 
   useEffect(() => {
     fetchAvailability();
-  }, [departmentId, userId]);
+  }, [departmentId, userId, currentMonth]);
 
   const fetchAvailability = async () => {
     try {
+      setLoading(true);
+      const startDate = format(startOfMonth(currentMonth), 'yyyy-MM-dd');
+      const endDate = format(endOfMonth(currentMonth), 'yyyy-MM-dd');
+
       const { data, error } = await supabase
-        .from('member_availability')
-        .select('id, day_of_week, time_start, time_end, is_available')
+        .from('member_date_availability')
+        .select('id, date, is_available')
         .eq('department_id', departmentId)
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .gte('date', startDate)
+        .lte('date', endDate);
 
       if (error) throw error;
       setAvailability(data || []);
@@ -75,54 +63,68 @@ export default function AvailabilityCalendar({ departmentId, userId }: Availabil
     }
   };
 
-  const isSlotAvailable = (slot: FixedSlot) => {
-    const record = availability.find(a => 
-      a.day_of_week === slot.dayOfWeek && 
-      a.time_start.slice(0, 5) === slot.timeStart &&
-      a.time_end.slice(0, 5) === slot.timeEnd &&
-      a.is_available
-    );
-    return !!record;
+  const isDateAvailable = (date: Date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const record = availability.find(a => a.date === dateStr);
+    return record?.is_available ?? false;
   };
 
-  const getSlotRecord = (slot: FixedSlot) => {
-    return availability.find(a => 
-      a.day_of_week === slot.dayOfWeek && 
-      a.time_start.slice(0, 5) === slot.timeStart &&
-      a.time_end.slice(0, 5) === slot.timeEnd
-    );
+  const getDateRecord = (date: Date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    return availability.find(a => a.date === dateStr);
   };
 
-  const toggleSlotAvailability = async (slot: FixedSlot) => {
-    const slotKey = `${slot.dayOfWeek}-${slot.timeStart}`;
-    setSaving(slotKey);
+  const toggleDateAvailability = async (date: Date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    
+    // Don't allow toggling past dates
+    if (isBefore(date, today)) {
+      toast({
+        variant: 'destructive',
+        title: 'Data passada',
+        description: 'Não é possível alterar disponibilidade de datas passadas.',
+      });
+      return;
+    }
+
+    setSaving(dateStr);
     
     try {
-      const existingRecord = getSlotRecord(slot);
-      const newValue = !isSlotAvailable(slot);
+      const existingRecord = getDateRecord(date);
+      const newValue = !isDateAvailable(date);
 
       if (existingRecord) {
-        // Update existing record
-        const { error } = await supabase
-          .from('member_availability')
-          .update({ is_available: newValue, updated_at: new Date().toISOString() })
-          .eq('id', existingRecord.id);
+        if (newValue) {
+          // Update existing record
+          const { error } = await supabase
+            .from('member_date_availability')
+            .update({ is_available: true, updated_at: new Date().toISOString() })
+            .eq('id', existingRecord.id);
 
-        if (error) throw error;
+          if (error) throw error;
 
-        setAvailability(prev => 
-          prev.map(a => a.id === existingRecord.id ? { ...a, is_available: newValue } : a)
-        );
+          setAvailability(prev => 
+            prev.map(a => a.id === existingRecord.id ? { ...a, is_available: true } : a)
+          );
+        } else {
+          // Delete record when marking as unavailable
+          const { error } = await supabase
+            .from('member_date_availability')
+            .delete()
+            .eq('id', existingRecord.id);
+
+          if (error) throw error;
+
+          setAvailability(prev => prev.filter(a => a.id !== existingRecord.id));
+        }
       } else {
-        // Insert new record
+        // Insert new record (only when marking as available)
         const { data, error } = await supabase
-          .from('member_availability')
+          .from('member_date_availability')
           .insert({
             user_id: userId,
             department_id: departmentId,
-            day_of_week: slot.dayOfWeek,
-            time_start: slot.timeStart,
-            time_end: slot.timeEnd,
+            date: dateStr,
             is_available: true
           })
           .select()
@@ -137,7 +139,7 @@ export default function AvailabilityCalendar({ departmentId, userId }: Availabil
 
       toast({
         title: newValue ? 'Disponibilidade marcada!' : 'Disponibilidade removida',
-        description: slot.label,
+        description: format(date, "dd 'de' MMMM", { locale: ptBR }),
       });
     } catch (error) {
       console.error('Error toggling availability:', error);
@@ -155,10 +157,11 @@ export default function AvailabilityCalendar({ departmentId, userId }: Availabil
     setCurrentMonth(prev => addMonths(prev, direction));
   };
 
-  const getSlotsForDate = (date: Date) => {
-    const dayOfWeek = date.getDay();
-    return FIXED_SLOTS.filter(slot => slot.dayOfWeek === dayOfWeek);
-  };
+  // Get the first day of the week for the month (0 = Sunday)
+  const firstDayOfMonth = getDay(startOfMonth(currentMonth));
+
+  // Count available days
+  const availableCount = availability.filter(a => a.is_available).length;
 
   if (loading) {
     return (
@@ -174,11 +177,11 @@ export default function AvailabilityCalendar({ departmentId, userId }: Availabil
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <Clock className="w-5 h-5 text-primary" />
+              <Calendar className="w-5 h-5 text-primary" />
               Minha Disponibilidade
             </CardTitle>
             <CardDescription className="mt-1">
-              Marque os horários fixos em que você pode ser escalado.
+              Clique nos dias em que você pode ser escalado.
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
@@ -195,84 +198,80 @@ export default function AvailabilityCalendar({ departmentId, userId }: Availabil
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Fixed Slots Legend */}
-        <div className="p-4 bg-muted/30 rounded-lg border border-border/50">
-          <h4 className="font-medium mb-3 text-sm">Horários Fixos Disponíveis</h4>
-          <div className="flex flex-wrap gap-2">
-            {FIXED_SLOTS.map(slot => {
-              const available = isSlotAvailable(slot);
-              const slotKey = `${slot.dayOfWeek}-${slot.timeStart}`;
-              const isSavingThis = saving === slotKey;
-              
+        {/* Legend */}
+        <div className="flex items-center gap-4 text-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center">
+              <Check className="w-4 h-4 text-primary-foreground" />
+            </div>
+            <span>Disponível</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-md bg-muted border border-border/50"></div>
+            <span>Indisponível</span>
+          </div>
+          <div className="ml-auto text-muted-foreground">
+            {availableCount} dias marcados
+          </div>
+        </div>
+
+        {/* Calendar Grid */}
+        <div className="bg-muted/30 rounded-lg border border-border/50 p-4">
+          {/* Weekday headers */}
+          <div className="grid grid-cols-7 gap-1 mb-2">
+            {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
+              <div key={day} className="text-center text-xs font-medium text-muted-foreground py-2">
+                {day}
+              </div>
+            ))}
+          </div>
+
+          {/* Calendar days */}
+          <div className="grid grid-cols-7 gap-1">
+            {/* Empty cells for days before the first day of the month */}
+            {Array.from({ length: firstDayOfMonth }).map((_, index) => (
+              <div key={`empty-${index}`} className="aspect-square" />
+            ))}
+
+            {/* Actual days */}
+            {allDates.map(date => {
+              const dateStr = format(date, 'yyyy-MM-dd');
+              const available = isDateAvailable(date);
+              const isPast = isBefore(date, today);
+              const isSavingThis = saving === dateStr;
+
               return (
-                <Button
-                  key={slot.id}
-                  variant={available ? 'default' : 'outline'}
-                  size="sm"
-                  disabled={!!saving}
-                  onClick={() => toggleSlotAvailability(slot)}
-                  className="gap-2"
-                >
-                  {isSavingThis ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : available ? (
-                    <Check className="h-3 w-3" />
-                  ) : (
-                    <X className="h-3 w-3 opacity-50" />
+                <button
+                  key={dateStr}
+                  onClick={() => toggleDateAvailability(date)}
+                  disabled={!!saving || isPast}
+                  className={cn(
+                    "aspect-square rounded-md flex flex-col items-center justify-center text-sm transition-all relative",
+                    "hover:ring-2 hover:ring-primary/50",
+                    available && "bg-primary text-primary-foreground",
+                    !available && !isPast && "bg-card border border-border/50 hover:bg-accent/50",
+                    isPast && "opacity-40 cursor-not-allowed bg-muted/20",
+                    isSavingThis && "animate-pulse"
                   )}
-                  {slot.label}
-                </Button>
+                >
+                  <span className="font-medium">{format(date, 'd')}</span>
+                  {available && !isSavingThis && (
+                    <Check className="w-3 h-3 absolute bottom-0.5" />
+                  )}
+                  {isSavingThis && (
+                    <Loader2 className="w-3 h-3 animate-spin absolute bottom-0.5" />
+                  )}
+                </button>
               );
             })}
           </div>
-          <p className="text-xs text-muted-foreground mt-3">
-            Clique para marcar ou desmarcar sua disponibilidade em cada horário fixo.
-          </p>
         </div>
 
-        {/* Calendar View */}
-        <div className="space-y-2">
-          <h4 className="font-medium text-sm">Dias do mês com horários fixos</h4>
-          {validDates.map(date => {
-            const dateStr = format(date, 'yyyy-MM-dd');
-            const dayName = format(date, 'EEEE', { locale: ptBR });
-            const slotsForDate = getSlotsForDate(date);
-            
-            return (
-              <div 
-                key={dateStr} 
-                className="flex items-center gap-4 p-3 rounded-lg border border-border/50 bg-card hover:bg-accent/30 transition-colors"
-              >
-                <div className="min-w-[100px]">
-                  <div className="font-medium capitalize text-sm">{dayName}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {format(date, 'dd/MM', { locale: ptBR })}
-                  </div>
-                </div>
-                
-                <div className="flex gap-2 flex-wrap">
-                  {slotsForDate.map(slot => {
-                    const available = isSlotAvailable(slot);
-                    return (
-                      <Badge
-                        key={slot.id}
-                        variant={available ? 'default' : 'secondary'}
-                        className={available ? '' : 'opacity-50'}
-                      >
-                        {available ? <Check className="h-3 w-3 mr-1" /> : <X className="h-3 w-3 mr-1" />}
-                        {slot.shortLabel}
-                      </Badge>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
+        {/* Tip */}
         <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
           <p className="text-sm text-muted-foreground">
-            <strong>Dica:</strong> Marque sua disponibilidade nos horários fixos acima. O líder poderá gerar escalas automáticas baseadas na disponibilidade de todos os membros.
+            <strong>Dica:</strong> Marque os dias em que você está disponível para ser escalado. 
+            O líder poderá gerar escalas automáticas baseadas na disponibilidade de todos os membros.
           </p>
         </div>
       </CardContent>
