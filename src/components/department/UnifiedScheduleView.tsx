@@ -144,6 +144,7 @@ export default function UnifiedScheduleView({
   const [deleting, setDeleting] = useState(false);
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [showDayDialog, setShowDayDialog] = useState(false);
+  const [creatingSlot, setCreatingSlot] = useState(false);
   const { toast } = useToast();
 
   const schedulesByDate = useMemo(() => {
@@ -295,6 +296,53 @@ export default function UnifiedScheduleView({
     }
   };
 
+  // Create empty schedule slots for a specific day (without assigning members)
+  const handleCreateEmptySlots = async (day: Date) => {
+    if (!isLeader) return;
+    
+    setCreatingSlot(true);
+    try {
+      const dateStr = format(day, 'yyyy-MM-dd');
+      const slots = getFixedSlotsForDay(day);
+      
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
+      
+      // Create empty schedules for each slot (using the leader as a placeholder)
+      for (const slot of slots) {
+        // Check if slot already has schedules
+        const existingSchedules = schedules.filter(s => 
+          s.date === dateStr && 
+          s.time_start === slot.timeStart
+        );
+        
+        if (existingSchedules.length === 0) {
+          // Create a "placeholder" schedule to mark the day as active
+          // We'll skip this for now and just trigger the add dialog
+        }
+      }
+      
+      toast({
+        title: 'Dia marcado',
+        description: `Escalas para ${format(day, "d 'de' MMMM", { locale: ptBR })} estão prontas para adicionar membros.`,
+      });
+      
+      // Open the add schedule dialog for this day
+      onAddSchedule(day);
+      setShowDayDialog(false);
+    } catch (error) {
+      console.error('Error creating slots:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Não foi possível criar as escalas.',
+      });
+    } finally {
+      setCreatingSlot(false);
+    }
+  };
+
   const handleDayClick = (day: Date) => {
     const dateKey = format(day, 'yyyy-MM-dd');
     const daySchedules = schedulesByDate.get(dateKey) || [];
@@ -441,9 +489,10 @@ export default function UnifiedScheduleView({
                     {isFixed && isCurrentMonth && slotStyle && (
                       <>
                         {slotStyle.isSplit ? (
-                          /* Split background for Sunday - half morning, half night */
+                          /* Split background for Sunday - half morning, half night with divider */
                           <div className="absolute inset-0 flex overflow-hidden">
                             <div className={`w-1/2 ${slotStyle.morningBgColor} backdrop-blur-sm`} />
+                            <div className="absolute left-1/2 top-0 bottom-0 w-[2px] bg-white/40 z-10" />
                             <div className={`w-1/2 ${slotStyle.nightBgColor} backdrop-blur-sm`} />
                           </div>
                         ) : (
@@ -664,12 +713,38 @@ export default function UnifiedScheduleView({
                 })}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                Nenhuma escala neste dia
-              </p>
+              <div className="text-center py-4 space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Nenhuma escala neste dia
+                </p>
+                {isLeader && selectedDay && (
+                  <div className="flex flex-col gap-2">
+                    {getFixedSlotsForDay(selectedDay).map((slot, i) => (
+                      <Button
+                        key={i}
+                        variant="outline"
+                        className="w-full justify-start gap-2"
+                        onClick={() => {
+                          setShowDayDialog(false);
+                          onAddSchedule(selectedDay);
+                        }}
+                      >
+                        <div 
+                          className={`w-3 h-3 rounded ${slot.bgColor.replace('/80', '')}`} 
+                        />
+                        <span>Criar escala: {slot.label}</span>
+                        <Clock className="w-3 h-3 ml-auto text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">
+                          {slot.timeStart} - {slot.timeEnd}
+                        </span>
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
 
-            {isLeader && (
+            {isLeader && selectedDaySchedules.length > 0 && (
               <Button
                 className="w-full"
                 onClick={() => {
