@@ -113,6 +113,24 @@ export default function Dashboard() {
   const checkCanCreateDepartment = async () => {
     if (!user) return;
     
+    // Check if user is a church leader
+    const { data: churches, error: churchError } = await supabase
+      .from('churches')
+      .select('id')
+      .eq('leader_id', user.id)
+      .limit(1);
+    
+    if (churchError) {
+      console.error('Error checking church leader status:', churchError);
+      return;
+    }
+
+    // If user is a church leader, they can create departments
+    if (churches && churches.length > 0) {
+      setCanCreateDepartment(true);
+      return;
+    }
+
     // Check if user is a leader of any department
     const { data: leaderDepts, error: leaderError } = await supabase
       .from('departments')
@@ -125,24 +143,9 @@ export default function Dashboard() {
       return;
     }
 
-    // Check if user has any member entries (joined via invite)
-    const { data: memberEntries, error: memberError } = await supabase
-      .from('members')
-      .select('role')
-      .eq('user_id', user.id);
-    
-    if (memberError) {
-      console.error('Error checking member status:', memberError);
-      return;
-    }
-
-    // User can create department ONLY if:
-    // 1. They are already a leader of at least one department
-    // 2. OR they have no member entries at all (fresh account not joined via invite)
-    const isLeader = leaderDepts && leaderDepts.length > 0;
-    const hasNoMemberEntries = !memberEntries || memberEntries.length === 0;
-    
-    setCanCreateDepartment(isLeader || hasNoMemberEntries);
+    // Only department/church leaders can create new departments
+    // New accounts and members who joined via invite cannot create
+    setCanCreateDepartment(leaderDepts && leaderDepts.length > 0);
   };
 
   const fetchDepartments = async () => {
