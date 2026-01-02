@@ -348,7 +348,8 @@ export default function UnifiedScheduleView({
     const daySchedules = schedulesByDate.get(dateKey) || [];
     const isFixed = isFixedSlotDay(day);
     
-    if (daySchedules.length > 0 || (isLeader && isFixed)) {
+    // Leaders can click any day, members can only click days with schedules or fixed days
+    if (daySchedules.length > 0 || isLeader) {
       setSelectedDay(day);
       setShowDayDialog(true);
     }
@@ -480,7 +481,11 @@ export default function UnifiedScheduleView({
                         ? 'bg-muted/20 text-muted-foreground/40 border-border' 
                         : isFixed 
                           ? `cursor-pointer hover:scale-[1.02] hover:z-10 border-2 ${slotStyle?.borderColor || 'border-border'}` 
-                          : 'bg-card border-border'
+                          : hasSchedules
+                            ? 'bg-primary/10 cursor-pointer hover:bg-primary/20 border-primary/30'
+                            : isLeader 
+                              ? 'bg-card cursor-pointer hover:bg-muted/50 border-border'
+                              : 'bg-card border-border'
                     } ${index % 7 === 6 ? 'border-r-0' : ''} ${
                       Math.floor(index / 7) === Math.floor((calendarDays.length - 1) / 7) ? 'border-b-0' : ''
                     }`}
@@ -719,26 +724,42 @@ export default function UnifiedScheduleView({
                 </p>
                 {isLeader && selectedDay && (
                   <div className="flex flex-col gap-2">
-                    {getFixedSlotsForDay(selectedDay).map((slot, i) => (
+                    {/* Fixed slot buttons for Wednesday/Sunday */}
+                    {getFixedSlotsForDay(selectedDay).length > 0 ? (
+                      getFixedSlotsForDay(selectedDay).map((slot, i) => (
+                        <Button
+                          key={i}
+                          variant="outline"
+                          className="w-full justify-start gap-2"
+                          onClick={() => {
+                            setShowDayDialog(false);
+                            onAddSchedule(selectedDay);
+                          }}
+                        >
+                          <div 
+                            className={`w-3 h-3 rounded ${slot.bgColor.replace('/80', '')}`} 
+                          />
+                          <span>Criar escala: {slot.label}</span>
+                          <Clock className="w-3 h-3 ml-auto text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">
+                            {slot.timeStart} - {slot.timeEnd}
+                          </span>
+                        </Button>
+                      ))
+                    ) : (
+                      /* Manual schedule button for other days */
                       <Button
-                        key={i}
                         variant="outline"
-                        className="w-full justify-start gap-2"
+                        className="w-full gap-2"
                         onClick={() => {
                           setShowDayDialog(false);
                           onAddSchedule(selectedDay);
                         }}
                       >
-                        <div 
-                          className={`w-3 h-3 rounded ${slot.bgColor.replace('/80', '')}`} 
-                        />
-                        <span>Criar escala: {slot.label}</span>
-                        <Clock className="w-3 h-3 ml-auto text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">
-                          {slot.timeStart} - {slot.timeEnd}
-                        </span>
+                        <Plus className="w-4 h-4" />
+                        <span>Criar escala manual</span>
                       </Button>
-                    ))}
+                    )}
                   </div>
                 )}
               </div>
