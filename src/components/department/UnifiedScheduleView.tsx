@@ -186,6 +186,21 @@ export default function UnifiedScheduleView({
     return FIXED_SLOTS.filter(slot => slot.dayOfWeek === dayOfWeek);
   };
 
+  // Get subtle background color for each day of the week
+  const getDayBackgroundColor = (day: Date) => {
+    const dayOfWeek = getDay(day);
+    const colors = [
+      'bg-rose-50/50 dark:bg-rose-950/20',      // Sunday - 0
+      'bg-amber-50/50 dark:bg-amber-950/20',     // Monday - 1
+      'bg-emerald-50/50 dark:bg-emerald-950/20', // Tuesday - 2
+      'bg-cyan-50/50 dark:bg-cyan-950/20',       // Wednesday - 3
+      'bg-violet-50/50 dark:bg-violet-950/20',   // Thursday - 4
+      'bg-pink-50/50 dark:bg-pink-950/20',       // Friday - 5
+      'bg-blue-50/50 dark:bg-blue-950/20',       // Saturday - 6
+    ];
+    return colors[dayOfWeek];
+  };
+
   // Get the slot styling for a day (for background)
   // For Sunday, returns both slots for split view
   const getDaySlotStyle = (day: Date) => {
@@ -484,8 +499,8 @@ export default function UnifiedScheduleView({
                           : hasSchedules
                             ? 'bg-primary/10 cursor-pointer hover:bg-primary/20 border-primary/30'
                             : isLeader 
-                              ? 'bg-card cursor-pointer hover:bg-muted/50 border-border'
-                              : 'bg-card border-border'
+                              ? `cursor-pointer hover:bg-muted/50 border-border ${getDayBackgroundColor(day)}`
+                              : `border-border ${getDayBackgroundColor(day)}`
                     } ${index % 7 === 6 ? 'border-r-0' : ''} ${
                       Math.floor(index / 7) === Math.floor((calendarDays.length - 1) / 7) ? 'border-b-0' : ''
                     }`}
