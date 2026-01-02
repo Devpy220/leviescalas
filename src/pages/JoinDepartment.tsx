@@ -209,7 +209,7 @@ export default function JoinDepartment() {
             Agora você faz parte de <strong>{department?.name}</strong>.
             Você pode ver as escalas e receber notificações.
           </p>
-          <Link to={`/d/${department?.name ? slugify(department.name) : ''}`}>
+          <Link to={`/departamento/${department?.name ? slugify(department.name) : ''}`}>
             <Button className="gradient-primary text-primary-foreground shadow-glow-sm hover:shadow-glow transition-all">
               Ver departamento
               <ArrowRight className="w-5 h-5 ml-2" />
@@ -233,7 +233,7 @@ export default function JoinDepartment() {
           <p className="text-muted-foreground mb-8">
             Você já faz parte de <strong>{department?.name}</strong>.
           </p>
-          <Link to={`/d/${department?.name ? slugify(department.name) : ''}`}>
+          <Link to={`/departamento/${department?.name ? slugify(department.name) : ''}`}>
             <Button className="gradient-primary text-primary-foreground shadow-glow-sm hover:shadow-glow transition-all">
               Ir para o departamento
               <ArrowRight className="w-5 h-5 ml-2" />
