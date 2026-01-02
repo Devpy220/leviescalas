@@ -54,7 +54,7 @@ import { ptBR } from 'date-fns/locale';
 
 type ConfirmationStatus = 'pending' | 'confirmed' | 'declined';
 
-// Fixed slots for scheduling with vibrant colors
+// Fixed slots for scheduling with soft/light colors
 const FIXED_SLOTS = [
   { 
     dayOfWeek: 3, 
@@ -62,9 +62,9 @@ const FIXED_SLOTS = [
     timeEnd: '22:00', 
     label: 'Quarta à noite', 
     shortLabel: 'QUA',
-    bgColor: 'bg-violet-500/80',
-    glow: 'shadow-violet-500/30',
-    borderColor: 'border-violet-400/50'
+    bgColor: 'bg-violet-100/80 dark:bg-violet-900/30',
+    glow: 'shadow-violet-200/30 dark:shadow-violet-800/20',
+    borderColor: 'border-violet-300 dark:border-violet-700/50'
   },
   { 
     dayOfWeek: 0, 
@@ -72,9 +72,9 @@ const FIXED_SLOTS = [
     timeEnd: '12:00', 
     label: 'Domingo manhã', 
     shortLabel: 'DOM-M',
-    bgColor: 'bg-cyan-500/80',
-    glow: 'shadow-cyan-500/30',
-    borderColor: 'border-cyan-400/50'
+    bgColor: 'bg-cyan-100/80 dark:bg-cyan-900/30',
+    glow: 'shadow-cyan-200/30 dark:shadow-cyan-800/20',
+    borderColor: 'border-cyan-300 dark:border-cyan-700/50'
   },
   { 
     dayOfWeek: 0, 
@@ -82,9 +82,9 @@ const FIXED_SLOTS = [
     timeEnd: '22:00', 
     label: 'Domingo noite', 
     shortLabel: 'DOM-N',
-    bgColor: 'bg-red-500/80',
-    glow: 'shadow-red-500/30',
-    borderColor: 'border-red-400/50'
+    bgColor: 'bg-rose-100/80 dark:bg-rose-900/30',
+    glow: 'shadow-rose-200/30 dark:shadow-rose-800/20',
+    borderColor: 'border-rose-300 dark:border-rose-700/50'
   },
 ];
 
@@ -532,9 +532,9 @@ export default function UnifiedScheduleView({
                         <span
                           className={`text-xs font-bold flex items-center justify-center w-5 h-5 rounded-full ${
                             isCurrentDay
-                              ? 'bg-white text-primary shadow-md'
+                              ? 'bg-primary text-primary-foreground shadow-md'
                               : isFixed && isCurrentMonth
-                                ? 'text-white drop-shadow-md'
+                                ? 'text-foreground font-semibold'
                                 : ''
                           }`}
                         >
@@ -546,7 +546,7 @@ export default function UnifiedScheduleView({
                               <Badge 
                                 key={i} 
                                 variant="secondary" 
-                                className="text-[8px] px-1 py-0 h-4 bg-white/30 text-white border-0 backdrop-blur-sm hidden sm:inline-flex"
+                                className="text-[8px] px-1 py-0 h-4 bg-foreground/10 text-foreground/80 border-0 hidden sm:inline-flex"
                               >
                                 {slot.shortLabel}
                               </Badge>
