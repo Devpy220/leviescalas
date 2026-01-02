@@ -113,24 +113,36 @@ export default function Dashboard() {
   const checkCanCreateDepartment = async () => {
     if (!user) return;
     
+    // Check if user is a leader of any department
+    const { data: leaderDepts, error: leaderError } = await supabase
+      .from('departments')
+      .select('id')
+      .eq('leader_id', user.id)
+      .limit(1);
+    
+    if (leaderError) {
+      console.error('Error checking leader status:', leaderError);
+      return;
+    }
+
     // Check if user has any member entries (joined via invite)
-    const { data: memberEntries, error } = await supabase
+    const { data: memberEntries, error: memberError } = await supabase
       .from('members')
       .select('role')
       .eq('user_id', user.id);
     
-    if (error) {
-      console.error('Error checking member status:', error);
+    if (memberError) {
+      console.error('Error checking member status:', memberError);
       return;
     }
 
-    // User can only create department if they have NO member entries
-    // OR if they already have at least one department as leader
-    const hasLeaderRole = memberEntries?.some(m => m.role === 'leader');
-    const hasOnlyMemberRole = memberEntries?.length > 0 && !hasLeaderRole;
+    // User can create department ONLY if:
+    // 1. They are already a leader of at least one department
+    // 2. OR they have no member entries at all (fresh account not joined via invite)
+    const isLeader = leaderDepts && leaderDepts.length > 0;
+    const hasNoMemberEntries = !memberEntries || memberEntries.length === 0;
     
-    // If user joined via invite (only has member role), they can't create departments
-    setCanCreateDepartment(!hasOnlyMemberRole);
+    setCanCreateDepartment(isLeader || hasNoMemberEntries);
   };
 
   const fetchDepartments = async () => {
