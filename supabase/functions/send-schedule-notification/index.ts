@@ -24,9 +24,12 @@ const notificationSchema = z.object({
   notes: z.string().max(500).optional(),
   type: z.enum(['new_schedule', 'schedule_moved']),
   old_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  confirmation_token: z.string().optional(),
 });
 
 type NotificationRequest = z.infer<typeof notificationSchema>;
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 
 const formatDate = (dateStr: string): string => {
   const date = new Date(dateStr + 'T00:00:00');
@@ -169,7 +172,7 @@ const handler = async (req: Request): Promise<Response> => {
     const requestData: NotificationRequest = validationResult.data;
     console.log("Request data validated:", requestData);
 
-    const { user_id, department_id, department_name, date, time_start, time_end, notes, type, old_date } = requestData;
+    const { user_id, department_id, department_name, date, time_start, time_end, notes, type, old_date, confirmation_token } = requestData;
 
     // AUTHORIZATION CHECK: Verify caller is the department leader
     const { data: department, error: deptError } = await supabaseAdmin
@@ -248,9 +251,35 @@ const handler = async (req: Request): Promise<Response> => {
     let htmlContent: string;
     let whatsappMessage: string;
 
+    // Build confirmation URLs if token is available
+    const confirmUrl = confirmation_token 
+      ? `${SUPABASE_URL}/functions/v1/confirm-schedule?token=${confirmation_token}&action=confirm`
+      : null;
+    const declineUrl = confirmation_token 
+      ? `${SUPABASE_URL}/functions/v1/confirm-schedule?token=${confirmation_token}&action=decline`
+      : null;
+
     if (type === 'new_schedule') {
       subject = `📅 Nova Escala - ${department_name}`;
-      whatsappMessage = `📅 *Nova Escala - ${department_name}*\n\nOlá, ${profile.name}!\n\nVocê foi escalado para:\n📆 *Data:* ${formattedDate}\n⏰ *Horário:* ${formattedTimeStart} às ${formattedTimeEnd}${notes ? `\n📝 *Observações:* ${notes}` : ''}\n\n_LEVI - Sistema de Escalas_`;
+      
+      // WhatsApp message with confirmation links
+      let whatsappConfirmation = '';
+      if (confirmUrl && declineUrl) {
+        whatsappConfirmation = `\n\n✅ *Confirmar presença:*\n${confirmUrl}\n\n❌ *Não poderei:*\n${declineUrl}`;
+      }
+      whatsappMessage = `📅 *Nova Escala - ${department_name}*\n\nOlá, ${profile.name}!\n\nVocê foi escalado para:\n📆 *Data:* ${formattedDate}\n⏰ *Horário:* ${formattedTimeStart} às ${formattedTimeEnd}${notes ? `\n📝 *Observações:* ${notes}` : ''}${whatsappConfirmation}\n\n_LEVI - Sistema de Escalas_`;
+      
+      // HTML email with confirmation buttons
+      const confirmationButtons = confirmUrl && declineUrl ? `
+              <div style="margin-top: 24px; text-align: center;">
+                <p style="color: #52525b; margin-bottom: 16px; font-weight: 600;">Confirme sua presença:</p>
+                <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                  <a href="${confirmUrl}" style="display: inline-block; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; text-decoration: none; padding: 14px 28px; border-radius: 12px; font-weight: 600; font-size: 15px;">✅ Confirmar Presença</a>
+                  <a href="${declineUrl}" style="display: inline-block; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white; text-decoration: none; padding: 14px 28px; border-radius: 12px; font-weight: 600; font-size: 15px;">❌ Não Poderei</a>
+                </div>
+              </div>
+      ` : '';
+
       htmlContent = `
         <!DOCTYPE html>
         <html>
@@ -298,6 +327,8 @@ const handler = async (req: Request): Promise<Response> => {
                 <p style="margin: 0; color: #78350f;">${escapeHtml(notes)}</p>
               </div>
               ` : ''}
+
+              ${confirmationButtons}
             </div>
             <div class="footer">
               Enviado pelo LEVI - Sistema de Escalas

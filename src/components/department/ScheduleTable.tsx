@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
-import { Clock, Users, Calendar } from 'lucide-react';
+import { Clock, Users, Calendar, CheckCircle2, XCircle, HelpCircle } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Table,
   TableBody,
@@ -12,6 +14,8 @@ import {
 import { format, parseISO, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+type ConfirmationStatus = 'pending' | 'confirmed' | 'declined';
+
 interface Schedule {
   id: string;
   user_id: string;
@@ -20,6 +24,8 @@ interface Schedule {
   time_end: string;
   notes: string | null;
   sector_id: string | null;
+  confirmation_status?: ConfirmationStatus;
+  decline_reason?: string | null;
   profile?: {
     name: string;
     avatar_url: string | null;
@@ -63,6 +69,40 @@ export default function ScheduleTable({ schedules, members, month, title }: Sche
   }, [members]);
 
   const getMemberColor = (userId: string) => memberColorMap.get(userId) || memberColors[0];
+
+  const getConfirmationBadge = (status?: ConfirmationStatus, declineReason?: string | null) => {
+    switch (status) {
+      case 'confirmed':
+        return (
+          <Tooltip>
+            <TooltipTrigger>
+              <CheckCircle2 className="w-3 h-3 text-green-500" />
+            </TooltipTrigger>
+            <TooltipContent>Presença confirmada</TooltipContent>
+          </Tooltip>
+        );
+      case 'declined':
+        return (
+          <Tooltip>
+            <TooltipTrigger>
+              <XCircle className="w-3 h-3 text-red-500" />
+            </TooltipTrigger>
+            <TooltipContent>
+              Não poderá comparecer{declineReason ? `: ${declineReason}` : ''}
+            </TooltipContent>
+          </Tooltip>
+        );
+      default:
+        return (
+          <Tooltip>
+            <TooltipTrigger>
+              <HelpCircle className="w-3 h-3 text-amber-500" />
+            </TooltipTrigger>
+            <TooltipContent>Aguardando confirmação</TooltipContent>
+          </Tooltip>
+        );
+    }
+  };
 
   const schedulesByDate = useMemo(() => {
     const grouped = new Map<string, Schedule[]>();
@@ -137,7 +177,13 @@ export default function ScheduleTable({ schedules, members, month, title }: Sche
                   {daySchedules.map((schedule) => (
                     <div
                       key={schedule.id}
-                      className="flex items-center gap-1.5 px-1.5 py-0.5 rounded-md bg-muted/50 border border-border"
+                      className={`flex items-center gap-1.5 px-1.5 py-0.5 rounded-md border ${
+                        schedule.confirmation_status === 'confirmed' 
+                          ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800' 
+                          : schedule.confirmation_status === 'declined'
+                          ? 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800'
+                          : 'bg-muted/50 border-border'
+                      }`}
                     >
                       <Avatar className="h-5 w-5">
                         <AvatarFallback 
@@ -148,9 +194,12 @@ export default function ScheduleTable({ schedules, members, month, title }: Sche
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col">
-                        <span className="text-[10px] font-medium leading-tight">
-                          {schedule.profile?.name?.split(' ')[0] || 'Membro'}
-                        </span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px] font-medium leading-tight">
+                            {schedule.profile?.name?.split(' ')[0] || 'Membro'}
+                          </span>
+                          {getConfirmationBadge(schedule.confirmation_status, schedule.decline_reason)}
+                        </div>
                         <div className="flex items-center gap-0.5 text-[8px] text-muted-foreground">
                           <Clock className="w-2 h-2" />
                           <span>{schedule.time_start.slice(0, 5)}-{schedule.time_end.slice(0, 5)}</span>
