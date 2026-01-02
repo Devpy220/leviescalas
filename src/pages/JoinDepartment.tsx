@@ -88,9 +88,9 @@ export default function JoinDepartment() {
     if (authLoading) return;
 
     if (!user) {
-      // Save invite code and redirect to volunteer login
+      // Save invite code and redirect to volunteer login with redirect parameter
       sessionStorage.setItem('pendingInvite', inviteCode || '');
-      navigate('/login');
+      navigate(`/acessar?redirect=/join/${inviteCode}`);
       return;
     }
 

@@ -157,8 +157,10 @@ export default function VolunteerLogin() {
           description: 'Bem-vindo ao LEVI!',
         });
         
-        // Redirect based on context
-        if (churchCodeParam) {
+        // Redirect based on context - prioritize redirectParam (e.g., from department invite)
+        if (redirectParam) {
+          navigate(redirectParam);
+        } else if (churchCodeParam) {
           navigate(`/departments/new?churchCode=${churchCodeParam.toUpperCase()}`);
         } else {
           navigate('/dashboard');
