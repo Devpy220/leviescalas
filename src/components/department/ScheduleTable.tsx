@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Clock, Users, Calendar, CheckCircle2, XCircle, HelpCircle } from 'lucide-react';
+import { createMemberColorMap, getMemberHexColor } from '@/lib/memberColors';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -55,20 +56,9 @@ interface ScheduleTableProps {
 }
 
 export default function ScheduleTable({ schedules, members, month, title }: ScheduleTableProps) {
-  const memberColors = [
-    '#6366F1', '#22C55E', '#F97316', '#EC4899', '#14B8A6',
-    '#A855F7', '#EF4444', '#3B82F6', '#FACC15', '#06B6D4',
-  ];
+  const memberColorMap = useMemo(() => createMemberColorMap(members), [members]);
 
-  const memberColorMap = useMemo(() => {
-    const map = new Map<string, string>();
-    members.forEach((member, index) => {
-      map.set(member.user_id, memberColors[index % memberColors.length]);
-    });
-    return map;
-  }, [members]);
-
-  const getMemberColor = (userId: string) => memberColorMap.get(userId) || memberColors[0];
+  const getMemberHexColorValue = (userId: string) => getMemberHexColor(memberColorMap, userId);
 
   const getConfirmationBadge = (status?: ConfirmationStatus, declineReason?: string | null) => {
     switch (status) {
@@ -188,7 +178,7 @@ export default function ScheduleTable({ schedules, members, month, title }: Sche
                       <Avatar className="h-5 w-5">
                         <AvatarFallback 
                           className="text-[8px] text-white"
-                          style={{ backgroundColor: getMemberColor(schedule.user_id) }}
+                          style={{ backgroundColor: getMemberHexColorValue(schedule.user_id) }}
                         >
                           {schedule.profile?.name?.charAt(0) || 'M'}
                         </AvatarFallback>
