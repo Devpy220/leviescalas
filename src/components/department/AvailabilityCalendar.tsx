@@ -1,47 +1,58 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, Clock } from 'lucide-react';
+import { Loader2, Clock, Check, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSunday, isWednesday, addMonths } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface AvailabilityCalendarProps {
   departmentId: string;
   userId: string;
 }
 
-interface DayAvailability {
-  day_of_week: number;
-  is_available: boolean;
-  time_start: string;
-  time_end: string;
+interface FixedSlot {
+  id: string;
+  dayOfWeek: number; // 0 = Sunday, 3 = Wednesday
+  timeStart: string;
+  timeEnd: string;
+  label: string;
+  shortLabel: string;
 }
 
-const DAYS_OF_WEEK = [
-  { value: 0, label: 'Domingo' },
-  { value: 1, label: 'Segunda' },
-  { value: 2, label: 'Terça' },
-  { value: 3, label: 'Quarta' },
-  { value: 4, label: 'Quinta' },
-  { value: 5, label: 'Sexta' },
-  { value: 6, label: 'Sábado' },
+// Horários fixos pré-definidos
+const FIXED_SLOTS: FixedSlot[] = [
+  { id: 'wed-night', dayOfWeek: 3, timeStart: '19:20', timeEnd: '22:00', label: 'Quarta 19:20-22:00', shortLabel: '19:20-22:00' },
+  { id: 'sun-morning', dayOfWeek: 0, timeStart: '08:00', timeEnd: '11:30', label: 'Domingo Manhã 8:00-11:30', shortLabel: 'Manhã' },
+  { id: 'sun-night', dayOfWeek: 0, timeStart: '18:00', timeEnd: '22:00', label: 'Domingo Noite 18:00-22:00', shortLabel: 'Noite' },
 ];
+
+interface AvailabilityRecord {
+  id: string;
+  day_of_week: number;
+  time_start: string;
+  time_end: string;
+  is_available: boolean;
+}
 
 export default function AvailabilityCalendar({ departmentId, userId }: AvailabilityCalendarProps) {
   const { toast } = useToast();
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [availability, setAvailability] = useState<DayAvailability[]>(
-    DAYS_OF_WEEK.map(d => ({
-      day_of_week: d.value,
-      is_available: false,
-      time_start: '19:00',
-      time_end: '22:00'
-    }))
-  );
+  const [saving, setSaving] = useState<string | null>(null);
+  const [availability, setAvailability] = useState<AvailabilityRecord[]>([]);
+
+  // Get all valid dates for the month (Wednesdays and Sundays)
+  const getMonthDates = () => {
+    const start = startOfMonth(currentMonth);
+    const end = endOfMonth(currentMonth);
+    const allDays = eachDayOfInterval({ start, end });
+    return allDays.filter(day => isSunday(day) || isWednesday(day));
+  };
+
+  const validDates = getMonthDates();
 
   useEffect(() => {
     fetchAvailability();
@@ -51,28 +62,12 @@ export default function AvailabilityCalendar({ departmentId, userId }: Availabil
     try {
       const { data, error } = await supabase
         .from('member_availability')
-        .select('day_of_week, is_available, time_start, time_end')
+        .select('id, day_of_week, time_start, time_end, is_available')
         .eq('department_id', departmentId)
         .eq('user_id', userId);
 
       if (error) throw error;
-
-      if (data && data.length > 0) {
-        setAvailability(prev => {
-          return prev.map(day => {
-            const saved = data.find(d => d.day_of_week === day.day_of_week);
-            if (saved) {
-              return {
-                ...day,
-                is_available: saved.is_available,
-                time_start: saved.time_start?.slice(0, 5) || '19:00',
-                time_end: saved.time_end?.slice(0, 5) || '22:00'
-              };
-            }
-            return day;
-          });
-        });
-      }
+      setAvailability(data || []);
     } catch (error) {
       console.error('Error fetching availability:', error);
     } finally {
@@ -80,70 +75,89 @@ export default function AvailabilityCalendar({ departmentId, userId }: Availabil
     }
   };
 
-  const handleToggleDay = (dayOfWeek: number) => {
-    setAvailability(prev =>
-      prev.map(day =>
-        day.day_of_week === dayOfWeek
-          ? { ...day, is_available: !day.is_available }
-          : day
-      )
+  const isSlotAvailable = (slot: FixedSlot) => {
+    const record = availability.find(a => 
+      a.day_of_week === slot.dayOfWeek && 
+      a.time_start.slice(0, 5) === slot.timeStart &&
+      a.time_end.slice(0, 5) === slot.timeEnd &&
+      a.is_available
+    );
+    return !!record;
+  };
+
+  const getSlotRecord = (slot: FixedSlot) => {
+    return availability.find(a => 
+      a.day_of_week === slot.dayOfWeek && 
+      a.time_start.slice(0, 5) === slot.timeStart &&
+      a.time_end.slice(0, 5) === slot.timeEnd
     );
   };
 
-  const handleTimeChange = (dayOfWeek: number, field: 'time_start' | 'time_end', value: string) => {
-    setAvailability(prev =>
-      prev.map(day =>
-        day.day_of_week === dayOfWeek
-          ? { ...day, [field]: value }
-          : day
-      )
-    );
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
+  const toggleSlotAvailability = async (slot: FixedSlot) => {
+    const slotKey = `${slot.dayOfWeek}-${slot.timeStart}`;
+    setSaving(slotKey);
+    
     try {
-      // Delete existing availability for this user/department
-      await supabase
-        .from('member_availability')
-        .delete()
-        .eq('department_id', departmentId)
-        .eq('user_id', userId);
+      const existingRecord = getSlotRecord(slot);
+      const newValue = !isSlotAvailable(slot);
 
-      // Insert new availability (only for days that are available)
-      const toInsert = availability
-        .filter(a => a.is_available)
-        .map(a => ({
-          user_id: userId,
-          department_id: departmentId,
-          day_of_week: a.day_of_week,
-          time_start: a.time_start,
-          time_end: a.time_end,
-          is_available: true
-        }));
-
-      if (toInsert.length > 0) {
+      if (existingRecord) {
+        // Update existing record
         const { error } = await supabase
           .from('member_availability')
-          .insert(toInsert);
+          .update({ is_available: newValue, updated_at: new Date().toISOString() })
+          .eq('id', existingRecord.id);
 
         if (error) throw error;
+
+        setAvailability(prev => 
+          prev.map(a => a.id === existingRecord.id ? { ...a, is_available: newValue } : a)
+        );
+      } else {
+        // Insert new record
+        const { data, error } = await supabase
+          .from('member_availability')
+          .insert({
+            user_id: userId,
+            department_id: departmentId,
+            day_of_week: slot.dayOfWeek,
+            time_start: slot.timeStart,
+            time_end: slot.timeEnd,
+            is_available: true
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        if (data) {
+          setAvailability(prev => [...prev, data]);
+        }
       }
 
       toast({
-        title: 'Disponibilidade salva!',
-        description: 'Sua disponibilidade foi atualizada com sucesso.',
+        title: newValue ? 'Disponibilidade marcada!' : 'Disponibilidade removida',
+        description: slot.label,
       });
     } catch (error) {
-      console.error('Error saving availability:', error);
+      console.error('Error toggling availability:', error);
       toast({
         variant: 'destructive',
-        title: 'Erro ao salvar',
+        title: 'Erro ao atualizar',
         description: 'Não foi possível salvar sua disponibilidade.',
       });
     } finally {
-      setSaving(false);
+      setSaving(null);
     }
+  };
+
+  const navigateMonth = (direction: number) => {
+    setCurrentMonth(prev => addMonths(prev, direction));
+  };
+
+  const getSlotsForDate = (date: Date) => {
+    const dayOfWeek = date.getDay();
+    return FIXED_SLOTS.filter(slot => slot.dayOfWeek === dayOfWeek);
   };
 
   if (loading) {
@@ -157,77 +171,110 @@ export default function AvailabilityCalendar({ departmentId, userId }: Availabil
   return (
     <Card className="glass border-border/50">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Clock className="w-5 h-5 text-primary" />
-          Minha Disponibilidade
-        </CardTitle>
-        <CardDescription>
-          Marque os dias e horários em que você está disponível para ser escalado.
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="w-5 h-5 text-primary" />
+              Minha Disponibilidade
+            </CardTitle>
+            <CardDescription className="mt-1">
+              Marque os horários fixos em que você pode ser escalado.
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={() => navigateMonth(-1)}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="font-medium min-w-[140px] text-center capitalize">
+              {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
+            </span>
+            <Button variant="outline" size="icon" onClick={() => navigateMonth(1)}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {DAYS_OF_WEEK.map(day => {
-          const dayAvail = availability.find(a => a.day_of_week === day.value);
-          const isAvailable = dayAvail?.is_available || false;
+        {/* Fixed Slots Legend */}
+        <div className="p-4 bg-muted/30 rounded-lg border border-border/50">
+          <h4 className="font-medium mb-3 text-sm">Horários Fixos Disponíveis</h4>
+          <div className="flex flex-wrap gap-2">
+            {FIXED_SLOTS.map(slot => {
+              const available = isSlotAvailable(slot);
+              const slotKey = `${slot.dayOfWeek}-${slot.timeStart}`;
+              const isSavingThis = saving === slotKey;
+              
+              return (
+                <Button
+                  key={slot.id}
+                  variant={available ? 'default' : 'outline'}
+                  size="sm"
+                  disabled={!!saving}
+                  onClick={() => toggleSlotAvailability(slot)}
+                  className="gap-2"
+                >
+                  {isSavingThis ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : available ? (
+                    <Check className="h-3 w-3" />
+                  ) : (
+                    <X className="h-3 w-3 opacity-50" />
+                  )}
+                  {slot.label}
+                </Button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-muted-foreground mt-3">
+            Clique para marcar ou desmarcar sua disponibilidade em cada horário fixo.
+          </p>
+        </div>
 
-          return (
-            <div
-              key={day.value}
-              className={`p-4 rounded-lg border transition-all ${
-                isAvailable
-                  ? 'border-primary/50 bg-primary/5'
-                  : 'border-border/50 bg-muted/20'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Switch
-                    checked={isAvailable}
-                    onCheckedChange={() => handleToggleDay(day.value)}
-                    id={`day-${day.value}`}
-                  />
-                  <Label
-                    htmlFor={`day-${day.value}`}
-                    className={`font-medium ${isAvailable ? 'text-foreground' : 'text-muted-foreground'}`}
-                  >
-                    {day.label}
-                  </Label>
-                </div>
-
-                {isAvailable && (
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="time"
-                      value={dayAvail?.time_start || '19:00'}
-                      onChange={(e) => handleTimeChange(day.value, 'time_start', e.target.value)}
-                      className="w-24 h-8 text-sm"
-                    />
-                    <span className="text-muted-foreground">às</span>
-                    <Input
-                      type="time"
-                      value={dayAvail?.time_end || '22:00'}
-                      onChange={(e) => handleTimeChange(day.value, 'time_end', e.target.value)}
-                      className="w-24 h-8 text-sm"
-                    />
+        {/* Calendar View */}
+        <div className="space-y-2">
+          <h4 className="font-medium text-sm">Dias do mês com horários fixos</h4>
+          {validDates.map(date => {
+            const dateStr = format(date, 'yyyy-MM-dd');
+            const dayName = format(date, 'EEEE', { locale: ptBR });
+            const slotsForDate = getSlotsForDate(date);
+            
+            return (
+              <div 
+                key={dateStr} 
+                className="flex items-center gap-4 p-3 rounded-lg border border-border/50 bg-card hover:bg-accent/30 transition-colors"
+              >
+                <div className="min-w-[100px]">
+                  <div className="font-medium capitalize text-sm">{dayName}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {format(date, 'dd/MM', { locale: ptBR })}
                   </div>
-                )}
+                </div>
+                
+                <div className="flex gap-2 flex-wrap">
+                  {slotsForDate.map(slot => {
+                    const available = isSlotAvailable(slot);
+                    return (
+                      <Badge
+                        key={slot.id}
+                        variant={available ? 'default' : 'secondary'}
+                        className={available ? '' : 'opacity-50'}
+                      >
+                        {available ? <Check className="h-3 w-3 mr-1" /> : <X className="h-3 w-3 mr-1" />}
+                        {slot.shortLabel}
+                      </Badge>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
 
-        <Button
-          onClick={handleSave}
-          disabled={saving}
-          className="w-full gradient-vibrant text-white gap-2"
-        >
-          {saving ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Save className="w-4 h-4" />
-          )}
-          Salvar Disponibilidade
-        </Button>
+        <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+          <p className="text-sm text-muted-foreground">
+            <strong>Dica:</strong> Marque sua disponibilidade nos horários fixos acima. O líder poderá gerar escalas automáticas baseadas na disponibilidade de todos os membros.
+          </p>
+        </div>
       </CardContent>
     </Card>
   );

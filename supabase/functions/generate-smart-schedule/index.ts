@@ -6,14 +6,28 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface FixedSlot {
+  id: string;
+  dayOfWeek: number;
+  timeStart: string;
+  timeEnd: string;
+  label: string;
+}
+
+// Horários fixos padrão
+const DEFAULT_FIXED_SLOTS: FixedSlot[] = [
+  { id: 'wed-night', dayOfWeek: 3, timeStart: '19:20', timeEnd: '22:00', label: 'Quarta 19:20-22:00' },
+  { id: 'sun-morning', dayOfWeek: 0, timeStart: '08:00', timeEnd: '11:30', label: 'Domingo Manhã' },
+  { id: 'sun-night', dayOfWeek: 0, timeStart: '18:00', timeEnd: '22:00', label: 'Domingo Noite' },
+];
+
 interface ScheduleRequest {
   department_id: string;
   start_date: string;
   end_date: string;
-  time_start: string;
-  time_end: string;
   members_per_day: number;
   sector_id?: string;
+  fixed_slots?: FixedSlot[];
 }
 
 interface MemberAvailability {
@@ -31,11 +45,6 @@ interface MemberPreference {
   blackout_dates: string[];
 }
 
-interface HistoricalSchedule {
-  user_id: string;
-  date: string;
-}
-
 interface SuggestedSchedule {
   date: string;
   user_id: string;
@@ -43,6 +52,7 @@ interface SuggestedSchedule {
   time_start: string;
   time_end: string;
   sector_id?: string;
+  slot_label?: string;
 }
 
 serve(async (req) => {
@@ -74,7 +84,9 @@ serve(async (req) => {
     }
 
     const body: ScheduleRequest = await req.json();
-    const { department_id, start_date, end_date, time_start, time_end, members_per_day, sector_id } = body;
+    const { department_id, start_date, end_date, members_per_day, sector_id, fixed_slots } = body;
+
+    const SLOTS = fixed_slots || DEFAULT_FIXED_SLOTS;
 
     // Verify user is leader
     const { data: dept } = await supabase
@@ -124,7 +136,7 @@ serve(async (req) => {
       .eq('department_id', department_id)
       .gte('date', threeMonthsAgo.toISOString().split('T')[0]);
 
-    // Build context for AI
+    // Build context
     const membersList = members.map((m: any) => ({
       user_id: m.id,
       name: m.name
@@ -141,8 +153,8 @@ serve(async (req) => {
           user_id: a.user_id,
           name: member.name,
           day_of_week: a.day_of_week,
-          time_start: a.time_start,
-          time_end: a.time_end
+          time_start: a.time_start.slice(0, 5),
+          time_end: a.time_end.slice(0, 5)
         });
       }
     });
@@ -166,14 +178,35 @@ serve(async (req) => {
       }
     });
 
-    // Generate dates in range
-    const dates: string[] = [];
+    // Generate dates and slots in range (only days that match fixed slots)
+    const slotsToFill: { date: string; slot: FixedSlot }[] = [];
     const current = new Date(start_date);
     const endDateObj = new Date(end_date);
+    
     while (current <= endDateObj) {
-      dates.push(current.toISOString().split('T')[0]);
+      const dayOfWeek = current.getDay();
+      const dateStr = current.toISOString().split('T')[0];
+      
+      // Find matching fixed slots for this day
+      const matchingSlots = SLOTS.filter(s => s.dayOfWeek === dayOfWeek);
+      matchingSlots.forEach(slot => {
+        slotsToFill.push({ date: dateStr, slot });
+      });
+      
       current.setDate(current.getDate() + 1);
     }
+
+    if (slotsToFill.length === 0) {
+      return new Response(JSON.stringify({ error: 'Nenhum dia válido encontrado no período selecionado' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Build slot descriptions
+    const slotDescriptions = slotsToFill.map(s => 
+      `${s.date} (${s.slot.label}) - ${s.slot.timeStart} às ${s.slot.timeEnd}`
+    ).join('\n');
 
     // Build prompt for AI
     const prompt = `Você é um assistente de geração de escalas para ministérios de igreja.
@@ -181,13 +214,16 @@ serve(async (req) => {
 MEMBROS DISPONÍVEIS:
 ${membersList.map((m: any) => `- ${m.name} (ID: ${m.user_id})`).join('\n')}
 
-DISPONIBILIDADE SEMANAL (dia 0=domingo, 6=sábado):
+HORÁRIOS FIXOS A PREENCHER:
+${slotDescriptions}
+
+DISPONIBILIDADE DOS MEMBROS (dia 0=domingo, 3=quarta):
 ${Object.entries(availabilityMap).length > 0 
   ? Object.entries(availabilityMap).map(([userId, avails]) => {
       const member = membersList.find((m: any) => m.user_id === userId);
       return `${member?.name || userId}: ${(avails as MemberAvailability[]).map(a => `dia ${a.day_of_week} (${a.time_start}-${a.time_end})`).join(', ')}`;
     }).join('\n')
-  : 'Nenhuma disponibilidade registrada - considere todos os membros disponíveis.'
+  : 'Nenhuma disponibilidade registrada - considere todos os membros disponíveis para todos os horários.'
 }
 
 PREFERÊNCIAS:
@@ -210,23 +246,25 @@ ${Object.entries(scheduleCountByMember).length > 0
 }
 
 REQUISITOS:
-- Período: ${start_date} a ${end_date}
-- Horário padrão: ${time_start} às ${time_end}
-- Membros por dia: ${members_per_day}
-- Datas a preencher: ${dates.join(', ')}
+- Membros por horário: ${members_per_day}
+- Total de slots a preencher: ${slotsToFill.length}
 
-REGRAS:
-1. Distribua as escalas de forma JUSTA e EQUILIBRADA
-2. Evite escalar a mesma pessoa em dias consecutivos
-3. Respeite as disponibilidades informadas
-4. Respeite os dias de bloqueio (blackout_dates)
-5. Priorize quem tem menos escalas no histórico
-6. Respeite o máximo de escalas por mês de cada pessoa
+REGRAS IMPORTANTES:
+1. Para cada horário, escale ${members_per_day} membros que tenham disponibilidade para aquele dia/horário
+2. Distribua as escalas de forma JUSTA e EQUILIBRADA entre todos os membros
+3. Evite escalar a mesma pessoa no mesmo dia para múltiplos horários (se possível)
+4. Evite escalar a mesma pessoa em dias consecutivos
+5. Respeite as disponibilidades informadas (se membro não tem disponibilidade para domingo, não escale no domingo)
+6. Priorize quem tem menos escalas no histórico
+7. Respeite o máximo de escalas por mês de cada pessoa
+
+IMPORTANTE: Cada entrada no array "schedules" deve representar UMA pessoa para UM horário específico.
+Se um horário precisa de 2 pessoas, crie 2 entradas separadas com o mesmo date/time_start/time_end.
 
 Retorne APENAS um JSON válido no formato:
 {
   "schedules": [
-    {"date": "YYYY-MM-DD", "user_id": "uuid", "name": "Nome"}
+    {"date": "YYYY-MM-DD", "user_id": "uuid", "name": "Nome", "time_start": "HH:MM", "time_end": "HH:MM", "slot_label": "Label do horário"}
   ],
   "reasoning": "Breve explicação da lógica usada"
 }`;
@@ -239,6 +277,8 @@ Retorne APENAS um JSON válido no formato:
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    console.log('Calling Lovable AI with prompt length:', prompt.length);
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -281,10 +321,11 @@ Retorne APENAS um JSON válido no formato:
     const aiData = await aiResponse.json();
     const content = aiData.choices?.[0]?.message?.content || '';
     
+    console.log('AI response received, parsing...');
+
     // Extract JSON from response
     let result;
     try {
-      // Try to find JSON in the response
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         result = JSON.parse(jsonMatch[0]);
@@ -304,10 +345,13 @@ Retorne APENAS um JSON válido no formato:
       date: s.date,
       user_id: s.user_id,
       name: s.name,
-      time_start,
-      time_end,
-      sector_id
+      time_start: s.time_start || '19:00',
+      time_end: s.time_end || '22:00',
+      sector_id,
+      slot_label: s.slot_label
     }));
+
+    console.log('Generated', suggestedSchedules.length, 'schedules');
 
     return new Response(JSON.stringify({
       success: true,

@@ -21,10 +21,11 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, Calendar, Users, Check, X, AlertCircle } from 'lucide-react';
-import { format, addDays, addWeeks, addMonths, startOfDay } from 'date-fns';
+import { Loader2, Sparkles, Calendar, Users, Check, X, AlertCircle, Send, Bell } from 'lucide-react';
+import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSunday, isWednesday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface SmartScheduleDialogProps {
@@ -34,6 +35,21 @@ interface SmartScheduleDialogProps {
   onSchedulesCreated: () => void;
 }
 
+interface FixedSlot {
+  id: string;
+  dayOfWeek: number;
+  timeStart: string;
+  timeEnd: string;
+  label: string;
+}
+
+// Horários fixos pré-definidos
+const FIXED_SLOTS: FixedSlot[] = [
+  { id: 'wed-night', dayOfWeek: 3, timeStart: '19:20', timeEnd: '22:00', label: 'Quarta 19:20-22:00' },
+  { id: 'sun-morning', dayOfWeek: 0, timeStart: '08:00', timeEnd: '11:30', label: 'Domingo Manhã' },
+  { id: 'sun-night', dayOfWeek: 0, timeStart: '18:00', timeEnd: '22:00', label: 'Domingo Noite' },
+];
+
 interface SuggestedSchedule {
   date: string;
   user_id: string;
@@ -42,6 +58,7 @@ interface SuggestedSchedule {
   time_end: string;
   sector_id?: string;
   selected: boolean;
+  slotLabel?: string;
 }
 
 interface Sector {
@@ -61,12 +78,14 @@ export default function SmartScheduleDialog({
   const [step, setStep] = useState<'config' | 'preview'>('config');
   
   // Configuration
-  const [period, setPeriod] = useState<'week' | 'two_weeks' | 'month'>('week');
-  const [timeStart, setTimeStart] = useState('19:00');
-  const [timeEnd, setTimeEnd] = useState('22:00');
-  const [membersPerDay, setMembersPerDay] = useState(2);
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const next = addMonths(new Date(), 1);
+    return format(next, 'yyyy-MM');
+  });
+  const [membersPerSlot, setMembersPerSlot] = useState(2);
   const [sectorId, setSectorId] = useState<string>('');
   const [sectors, setSectors] = useState<Sector[]>([]);
+  const [sendNotificationsOnConfirm, setSendNotificationsOnConfirm] = useState(true);
   
   // Results
   const [suggestions, setSuggestions] = useState<SuggestedSchedule[]>([]);
@@ -91,44 +110,29 @@ export default function SmartScheduleDialog({
     setSectors(data || []);
   };
 
-  const getDateRange = () => {
-    const start = startOfDay(new Date());
-    let end: Date;
-    
-    switch (period) {
-      case 'week':
-        end = addWeeks(start, 1);
-        break;
-      case 'two_weeks':
-        end = addWeeks(start, 2);
-        break;
-      case 'month':
-        end = addMonths(start, 1);
-        break;
-      default:
-        end = addWeeks(start, 1);
-    }
-    
-    return {
-      start_date: format(start, 'yyyy-MM-dd'),
-      end_date: format(end, 'yyyy-MM-dd')
-    };
+  const getMonthDates = () => {
+    const [year, month] = selectedMonth.split('-').map(Number);
+    const start = startOfMonth(new Date(year, month - 1));
+    const end = endOfMonth(new Date(year, month - 1));
+    const allDays = eachDayOfInterval({ start, end });
+    return allDays.filter(day => isSunday(day) || isWednesday(day));
   };
 
   const handleGenerate = async () => {
     setLoading(true);
     try {
-      const { start_date, end_date } = getDateRange();
+      const [year, month] = selectedMonth.split('-').map(Number);
+      const start = startOfMonth(new Date(year, month - 1));
+      const end = endOfMonth(new Date(year, month - 1));
       
       const { data, error } = await supabase.functions.invoke('generate-smart-schedule', {
         body: {
           department_id: departmentId,
-          start_date,
-          end_date,
-          time_start: timeStart,
-          time_end: timeEnd,
-          members_per_day: membersPerDay,
-          sector_id: sectorId || undefined
+          start_date: format(start, 'yyyy-MM-dd'),
+          end_date: format(end, 'yyyy-MM-dd'),
+          members_per_day: membersPerSlot,
+          sector_id: sectorId || undefined,
+          fixed_slots: FIXED_SLOTS
         }
       });
 
@@ -143,10 +147,17 @@ export default function SmartScheduleDialog({
         return;
       }
 
-      const schedulesWithSelection = (data.schedules || []).map((s: SuggestedSchedule) => ({
-        ...s,
-        selected: true
-      }));
+      const schedulesWithSelection = (data.schedules || []).map((s: SuggestedSchedule) => {
+        // Find matching slot label
+        const slot = FIXED_SLOTS.find(fs => 
+          fs.timeStart === s.time_start && fs.timeEnd === s.time_end
+        );
+        return {
+          ...s,
+          selected: true,
+          slotLabel: slot?.label || `${s.time_start}-${s.time_end}`
+        };
+      });
 
       setSuggestions(schedulesWithSelection);
       setReasoning(data.reasoning || '');
@@ -196,15 +207,41 @@ export default function SmartScheduleDialog({
         created_by: user.id
       }));
 
-      const { error } = await supabase
+      const { data: insertedSchedules, error } = await supabase
         .from('schedules')
-        .insert(schedulesToInsert);
+        .insert(schedulesToInsert)
+        .select();
 
       if (error) throw error;
 
+      // Create notifications for each scheduled member (only if checkbox is checked)
+      if (sendNotificationsOnConfirm && insertedSchedules) {
+        const notifications = insertedSchedules.map(schedule => {
+          const scheduleInfo = selectedSchedules.find(
+            s => s.user_id === schedule.user_id && s.date === schedule.date
+          );
+          return {
+            user_id: schedule.user_id,
+            department_id: departmentId,
+            schedule_id: schedule.id,
+            type: 'schedule_assigned',
+            message: `Você foi escalado para ${format(new Date(schedule.date + 'T12:00:00'), "dd/MM (EEEE)", { locale: ptBR })} das ${schedule.time_start.slice(0, 5)} às ${schedule.time_end.slice(0, 5)}`,
+            status: 'pending' as const
+          };
+        });
+
+        const { error: notifError } = await supabase
+          .from('notifications')
+          .insert(notifications);
+
+        if (notifError) {
+          console.error('Error creating notifications:', notifError);
+        }
+      }
+
       toast({
         title: 'Escalas criadas!',
-        description: `${selectedSchedules.length} escalas foram criadas com sucesso.`,
+        description: `${selectedSchedules.length} escalas foram criadas com sucesso.${sendNotificationsOnConfirm ? ' Notificações enviadas.' : ''}`,
       });
 
       onSchedulesCreated();
@@ -225,17 +262,35 @@ export default function SmartScheduleDialog({
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
+  // Generate month options (current + next 3 months)
+  const monthOptions = Array.from({ length: 4 }, (_, i) => {
+    const date = addMonths(new Date(), i);
+    return {
+      value: format(date, 'yyyy-MM'),
+      label: format(date, 'MMMM yyyy', { locale: ptBR })
+    };
+  });
+
+  // Group suggestions by date for preview
+  const groupedByDate = suggestions.reduce((acc, schedule) => {
+    if (!acc[schedule.date]) {
+      acc[schedule.date] = [];
+    }
+    acc[schedule.date].push(schedule);
+    return acc;
+  }, {} as Record<string, SuggestedSchedule[]>);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary" />
-            Escalas Automáticas Inteligentes
+            Escalas Automáticas - Horários Fixos
           </DialogTitle>
           <DialogDescription>
             {step === 'config' 
-              ? 'Configure os parâmetros e deixe a IA gerar as escalas.'
+              ? 'Gere escalas para os horários fixos: Quarta (19:20-22:00), Domingo Manhã (8:00-11:30) e Noite (18:00-22:00).'
               : 'Revise e ajuste as escalas sugeridas antes de confirmar.'
             }
           </DialogDescription>
@@ -244,47 +299,33 @@ export default function SmartScheduleDialog({
         {step === 'config' ? (
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Período</Label>
-              <Select value={period} onValueChange={(v) => setPeriod(v as typeof period)}>
+              <Label>Mês</Label>
+              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="week">Próxima semana</SelectItem>
-                  <SelectItem value="two_weeks">Próximas 2 semanas</SelectItem>
-                  <SelectItem value="month">Próximo mês</SelectItem>
+                  {monthOptions.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value} className="capitalize">
+                      {opt.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Horário início</Label>
-                <Input
-                  type="time"
-                  value={timeStart}
-                  onChange={(e) => setTimeStart(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Horário fim</Label>
-                <Input
-                  type="time"
-                  value={timeEnd}
-                  onChange={(e) => setTimeEnd(e.target.value)}
-                />
-              </div>
-            </div>
-
             <div className="space-y-2">
-              <Label>Membros por dia</Label>
+              <Label>Membros por horário</Label>
               <Input
                 type="number"
                 min={1}
                 max={10}
-                value={membersPerDay}
-                onChange={(e) => setMembersPerDay(parseInt(e.target.value) || 2)}
+                value={membersPerSlot}
+                onChange={(e) => setMembersPerSlot(parseInt(e.target.value) || 2)}
               />
+              <p className="text-xs text-muted-foreground">
+                Quantidade de voluntários por cada horário fixo.
+              </p>
             </div>
 
             {sectors.length > 0 && (
@@ -306,14 +347,30 @@ export default function SmartScheduleDialog({
 
             <Card className="p-4 bg-muted/30 border-border/50">
               <div className="flex items-start gap-3">
+                <Calendar className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium text-foreground mb-2">Horários Fixos</p>
+                  <div className="flex flex-wrap gap-2">
+                    {FIXED_SLOTS.map(slot => (
+                      <Badge key={slot.id} variant="secondary">
+                        {slot.label}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-4 bg-muted/30 border-border/50">
+              <div className="flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
                 <div className="text-sm text-muted-foreground">
                   <p className="font-medium text-foreground mb-1">Como funciona?</p>
                   <ul className="space-y-1 list-disc pl-4">
-                    <li>A IA analisa a disponibilidade dos membros</li>
+                    <li>A IA analisa a disponibilidade dos membros nos horários fixos</li>
                     <li>Considera o histórico de escalas anteriores</li>
-                    <li>Respeita as preferências individuais</li>
                     <li>Distribui de forma justa e equilibrada</li>
+                    <li>Você pode revisar e ajustar antes de confirmar</li>
                   </ul>
                 </div>
               </div>
@@ -332,51 +389,75 @@ export default function SmartScheduleDialog({
             </div>
 
             <ScrollArea className="flex-1 -mx-6 px-6">
-              <div className="space-y-2">
-                {suggestions.map((schedule, index) => (
-                  <Card
-                    key={`${schedule.date}-${schedule.user_id}`}
-                    className={`p-3 cursor-pointer transition-all ${
-                      schedule.selected
-                        ? 'border-primary/50 bg-primary/5'
-                        : 'border-border/50 opacity-60'
-                    }`}
-                    onClick={() => toggleScheduleSelection(index)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                          schedule.selected ? 'bg-primary text-white' : 'bg-muted'
-                        }`}>
-                          {schedule.selected ? (
-                            <Check className="w-4 h-4" />
-                          ) : (
-                            <X className="w-4 h-4" />
-                          )}
-                        </div>
-                        
-                        <Avatar className="w-8 h-8">
-                          <AvatarFallback className="text-xs bg-primary/20 text-primary">
-                            {getInitials(schedule.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        
-                        <div>
-                          <p className="font-medium text-sm">{schedule.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {schedule.time_start} - {schedule.time_end}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <Badge variant="secondary">
-                        {format(new Date(schedule.date + 'T12:00:00'), "dd/MM (EEE)", { locale: ptBR })}
-                      </Badge>
+              <div className="space-y-4">
+                {Object.entries(groupedByDate).map(([date, schedules]) => (
+                  <div key={date} className="space-y-2">
+                    <div className="font-medium text-sm capitalize sticky top-0 bg-background py-1">
+                      {format(new Date(date + 'T12:00:00'), "EEEE, dd 'de' MMMM", { locale: ptBR })}
                     </div>
-                  </Card>
+                    {schedules.map((schedule, idx) => {
+                      const globalIndex = suggestions.findIndex(
+                        s => s.date === schedule.date && s.user_id === schedule.user_id && s.time_start === schedule.time_start
+                      );
+                      return (
+                        <Card
+                          key={`${schedule.date}-${schedule.user_id}-${schedule.time_start}`}
+                          className={`p-3 cursor-pointer transition-all ${
+                            schedule.selected
+                              ? 'border-primary/50 bg-primary/5'
+                              : 'border-border/50 opacity-60'
+                          }`}
+                          onClick={() => toggleScheduleSelection(globalIndex)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                                schedule.selected ? 'bg-primary text-white' : 'bg-muted'
+                              }`}>
+                                {schedule.selected ? (
+                                  <Check className="w-4 h-4" />
+                                ) : (
+                                  <X className="w-4 h-4" />
+                                )}
+                              </div>
+                              
+                              <Avatar className="w-8 h-8">
+                                <AvatarFallback className="text-xs bg-primary/20 text-primary">
+                                  {getInitials(schedule.name)}
+                                </AvatarFallback>
+                              </Avatar>
+                              
+                              <div>
+                                <p className="font-medium text-sm">{schedule.name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {schedule.slotLabel}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </Card>
+                      );
+                    })}
+                  </div>
                 ))}
               </div>
             </ScrollArea>
+
+            <Card className="p-3 mt-4 border-primary/20 bg-primary/5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Bell className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium">Enviar notificações ao confirmar</span>
+                </div>
+                <Switch
+                  checked={sendNotificationsOnConfirm}
+                  onCheckedChange={setSendNotificationsOnConfirm}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1 ml-6">
+                Os membros escalados receberão uma notificação.
+              </p>
+            </Card>
           </div>
         )}
 
@@ -413,6 +494,8 @@ export default function SmartScheduleDialog({
             >
               {saving ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
+              ) : sendNotificationsOnConfirm ? (
+                <Send className="w-4 h-4" />
               ) : (
                 <Check className="w-4 h-4" />
               )}
