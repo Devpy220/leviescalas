@@ -286,6 +286,17 @@ export default function LeaderAvailabilityView({ departmentId, onOpenSmartSchedu
               <p>Nenhum membro encontrado.</p>
             </div>
           )}
+
+          {members.length > 0 && members.every(m => m.availableDates.length === 0) && (
+            <div className="text-center py-6 px-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+              <p className="text-amber-600 dark:text-amber-400 font-medium">
+                Nenhum membro marcou disponibilidade ainda.
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Peça para os membros acessarem a aba "Disponibilidade" e marcarem os dias em que podem servir.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Instructions */}

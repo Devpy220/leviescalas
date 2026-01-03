@@ -484,18 +484,22 @@ export default function Department() {
 
           <TabsContent value="availability" className="mt-6 animate-fade-in">
             <div className="space-y-6">
-              <div className="grid gap-6 md:grid-cols-2 max-w-4xl">
-                <AvailabilityCalendar departmentId={id!} userId={user?.id || ''} />
-                <MemberPreferences departmentId={id!} userId={user?.id || ''} />
-              </div>
+              {/* Leader sees all members availability FIRST */}
               {isLeader && (
-                <div className="border-t border-border/50 pt-6">
-                  <LeaderAvailabilityView 
-                    departmentId={id!} 
-                    onOpenSmartSchedule={() => setShowSmartSchedule(true)} 
-                  />
-                </div>
+                <LeaderAvailabilityView 
+                  departmentId={id!} 
+                  onOpenSmartSchedule={() => setShowSmartSchedule(true)} 
+                />
               )}
+              
+              {/* Personal availability calendar below */}
+              <div className="border-t border-border/50 pt-6">
+                <h3 className="text-lg font-semibold mb-4">Minha Disponibilidade</h3>
+                <div className="grid gap-6 md:grid-cols-2 max-w-4xl">
+                  <AvailabilityCalendar departmentId={id!} userId={user?.id || ''} />
+                  <MemberPreferences departmentId={id!} userId={user?.id || ''} />
+                </div>
+              </div>
             </div>
           </TabsContent>
 
