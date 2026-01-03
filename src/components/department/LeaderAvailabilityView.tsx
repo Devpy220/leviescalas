@@ -28,7 +28,7 @@ interface MemberWithAvailability {
 }
 
 export default function LeaderAvailabilityView({ departmentId, onOpenSmartSchedule }: LeaderAvailabilityViewProps) {
-  const [currentMonth, setCurrentMonth] = useState(addMonths(new Date(), 1));
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [members, setMembers] = useState<MemberWithAvailability[]>([]);
   const [allAvailability, setAllAvailability] = useState<MemberDateAvailability[]>([]);
@@ -138,25 +138,45 @@ export default function LeaderAvailabilityView({ departmentId, onOpenSmartSchedu
   return (
     <Card className="glass border-border/50">
       <CardHeader>
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-primary" />
-              Disponibilidade dos Membros
-            </CardTitle>
-            <CardDescription className="mt-1">
-              Veja quem está disponível em cada dia do mês.
-            </CardDescription>
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-primary" />
+                Disponibilidade dos Membros
+              </CardTitle>
+              <CardDescription className="mt-1">
+                Veja quem está disponível em cada dia do mês.
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="icon" onClick={() => navigateMonth(-1)}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="font-medium min-w-[140px] text-center capitalize">
+                {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
+              </span>
+              <Button variant="outline" size="icon" onClick={() => navigateMonth(1)}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={() => navigateMonth(-1)}>
-              <ChevronLeft className="h-4 w-4" />
+          
+          {/* Quick month navigation */}
+          <div className="flex gap-2 flex-wrap">
+            <Button 
+              variant={format(currentMonth, 'yyyy-MM') === format(new Date(), 'yyyy-MM') ? "default" : "outline"}
+              size="sm"
+              onClick={() => setCurrentMonth(new Date())}
+            >
+              Mês Atual
             </Button>
-            <span className="font-medium min-w-[140px] text-center capitalize">
-              {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
-            </span>
-            <Button variant="outline" size="icon" onClick={() => navigateMonth(1)}>
-              <ChevronRight className="h-4 w-4" />
+            <Button 
+              variant={format(currentMonth, 'yyyy-MM') === format(addMonths(new Date(), 1), 'yyyy-MM') ? "default" : "outline"}
+              size="sm"
+              onClick={() => setCurrentMonth(addMonths(new Date(), 1))}
+            >
+              Próximo Mês
             </Button>
           </div>
         </div>
@@ -290,11 +310,27 @@ export default function LeaderAvailabilityView({ departmentId, onOpenSmartSchedu
           {members.length > 0 && members.every(m => m.availableDates.length === 0) && (
             <div className="text-center py-6 px-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
               <p className="text-amber-600 dark:text-amber-400 font-medium">
-                Nenhum membro marcou disponibilidade ainda.
+                Nenhum membro marcou disponibilidade para {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}.
               </p>
               <p className="text-sm text-muted-foreground mt-1">
-                Peça para os membros acessarem a aba "Disponibilidade" e marcarem os dias em que podem servir.
+                Tente verificar outro mês ou peça para os membros marcarem os dias em que podem servir.
               </p>
+              <div className="flex gap-2 justify-center mt-3">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setCurrentMonth(new Date())}
+                >
+                  Ver Mês Atual
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setCurrentMonth(addMonths(new Date(), 1))}
+                >
+                  Ver Próximo Mês
+                </Button>
+              </div>
             </div>
           )}
         </div>
