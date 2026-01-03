@@ -24,7 +24,7 @@ import ChurchSetup from "./pages/ChurchSetup";
 import ChurchPublic from "./pages/ChurchPublic";
 import JoinChurch from "./pages/JoinChurch";
 import NotFound from "./pages/NotFound";
-import AdminLogin from "./pages/AdminLogin";
+
 import ConfirmSchedule from "./pages/ConfirmSchedule";
 
 const queryClient = new QueryClient();
@@ -43,7 +43,7 @@ const App = () => (
                 <Route path="/" element={<Landing />} />
                 
                 {/* Admin area - restricted to leviescalas@gmail.com */}
-                <Route path="/admin-login" element={<AdminLogin />} />
+                <Route path="/admin-login" element={<Navigate to="/auth" replace />} />
                 <Route path="/admin" element={<Admin />} />
                 
                 {/* Redirects from old login routes */}

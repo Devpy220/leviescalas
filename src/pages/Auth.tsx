@@ -300,6 +300,24 @@ export default function Auth() {
       return;
     }
 
+    // Check if user is admin and redirect accordingly
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (sessionData?.session?.user) {
+      const { data: hasRole } = await supabase.rpc('has_role', { 
+        _user_id: sessionData.session.user.id, 
+        _role: 'admin' 
+      });
+      
+      if (hasRole) {
+        toast({
+          title: 'Bem-vindo, Admin!',
+          description: 'Redirecionando para o painel administrativo.',
+        });
+        navigate('/admin');
+        return;
+      }
+    }
+
     toast({
       title: 'Bem-vindo de volta!',
       description: 'Login realizado com sucesso.',

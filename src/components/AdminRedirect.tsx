@@ -23,8 +23,7 @@ export function AdminRedirect({ children }: AdminRedirectProps) {
 
     // If user is admin and not already in admin pages, redirect to /admin
     if (user && isAdmin) {
-      const adminPaths = ['/admin', '/admin-login'];
-      const isInAdminArea = adminPaths.some(path => location.pathname.startsWith(path));
+      const isInAdminArea = location.pathname.startsWith('/admin');
       
       if (!isInAdminArea) {
         navigate('/admin', { replace: true });
@@ -39,8 +38,7 @@ export function AdminRedirect({ children }: AdminRedirectProps) {
 
   // If user is admin and not in admin area, don't render anything (redirect happening)
   if (user && isAdmin) {
-    const adminPaths = ['/admin', '/admin-login'];
-    const isInAdminArea = adminPaths.some(path => location.pathname.startsWith(path));
+    const isInAdminArea = location.pathname.startsWith('/admin');
     
     if (!isInAdminArea) {
       return null;
