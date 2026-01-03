@@ -7,8 +7,8 @@ import { supabase } from '@/integrations/supabase/client';
 const SUPPORT_PRICE_ID = 'price_1SfMwvK0EKnRdptQbNDmg4CU';
 const STORAGE_KEY = 'levi_support_notification_last_shown';
 
-// Show notification only on Wednesdays (day 3)
-const NOTIFICATION_DAY = 3;
+// Show notification on Wednesdays (3) and Sundays (0)
+const NOTIFICATION_DAYS = [0, 3];
 
 export function SupportNotification() {
   const [visible, setVisible] = useState(false);
@@ -18,8 +18,8 @@ export function SupportNotification() {
     const today = new Date();
     const dayOfWeek = today.getDay();
     
-    // Only show on the designated day
-    if (dayOfWeek !== NOTIFICATION_DAY) {
+    // Only show on designated days
+    if (!NOTIFICATION_DAYS.includes(dayOfWeek)) {
       return;
     }
 
