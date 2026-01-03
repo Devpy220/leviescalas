@@ -6,14 +6,21 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface FixedSlot {
+  id: string;
+  dayOfWeek: number;
+  timeStart: string;
+  timeEnd: string;
+  label: string;
+  membersCount: number;
+}
+
 interface ScheduleRequest {
   department_id: string;
   start_date: string;
   end_date: string;
-  members_per_day: number;
   sector_id?: string;
-  time_start?: string;
-  time_end?: string;
+  fixed_slots?: FixedSlot[];
 }
 
 interface MemberDateAvailability {
@@ -70,13 +77,12 @@ serve(async (req) => {
       department_id, 
       start_date, 
       end_date, 
-      members_per_day, 
       sector_id,
-      time_start = '19:00',
-      time_end = '22:00'
+      fixed_slots = []
     } = body;
 
     console.log('Generating schedule for period:', start_date, 'to', end_date);
+    console.log('Fixed slots config:', JSON.stringify(fixed_slots));
 
     // Verify user is leader
     const { data: dept } = await supabase
@@ -183,7 +189,13 @@ serve(async (req) => {
     
     while (current <= endDateObj) {
       const dateStr = current.toISOString().split('T')[0];
-      datesToFill.push(dateStr);
+      const dayOfWeek = current.getDay();
+      
+      // Only include dates that match fixed slots
+      const matchingSlot = fixed_slots.find(s => s.dayOfWeek === dayOfWeek);
+      if (matchingSlot) {
+        datesToFill.push(dateStr);
+      }
       current.setDate(current.getDate() + 1);
     }
 
@@ -201,10 +213,21 @@ serve(async (req) => {
       });
     }
 
+    // Build slot configuration description
+    const slotConfigDescription = fixed_slots.map(slot => 
+      `${slot.label}: ${slot.membersCount} pessoa(s) - horário ${slot.timeStart}-${slot.timeEnd}`
+    ).join('\n');
+
     // Build availability description for AI
     const availabilityDescription = Object.entries(availabilityByDate)
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, names]) => `${date}: ${names.join(', ')}`)
+      .map(([date, names]) => {
+        const dateObj = new Date(date + 'T12:00:00');
+        const dayOfWeek = dateObj.getDay();
+        const matchingSlots = fixed_slots.filter(s => s.dayOfWeek === dayOfWeek);
+        const slotsInfo = matchingSlots.map(s => `${s.label} (${s.membersCount}p)`).join(', ');
+        return `${date} [${slotsInfo}]: ${names.join(', ')}`;
+      })
       .join('\n');
 
     const memberAvailabilityDescription = membersList.map((m: any) => {
@@ -219,7 +242,9 @@ MEMBROS DISPONÍVEIS:
 ${membersList.map((m: any) => `- ${m.name} (ID: ${m.user_id})`).join('\n')}
 
 PERÍODO: ${start_date} a ${end_date}
-HORÁRIO PADRÃO: ${time_start} às ${time_end}
+
+CONFIGURAÇÃO DOS HORÁRIOS FIXOS (IMPORTANTE - respeitar quantidade por slot):
+${slotConfigDescription}
 
 DISPONIBILIDADE POR DATA (apenas datas em que há membros disponíveis):
 ${availabilityDescription || 'Nenhuma disponibilidade registrada'}
@@ -246,26 +271,25 @@ ${Object.entries(scheduleCountByMember).length > 0
   : 'Nenhum histórico - distribuição livre.'
 }
 
-REQUISITOS:
-- Membros por data: ${members_per_day}
-- Datas com disponibilidade: ${datesWithAvailability.length}
-
 REGRAS IMPORTANTES:
 1. APENAS escale membros em datas onde eles marcaram disponibilidade
-2. Para cada data, escale até ${members_per_day} membros que tenham marcado disponibilidade naquela data
-3. Distribua as escalas de forma JUSTA e EQUILIBRADA entre todos os membros
-4. Evite escalar a mesma pessoa em dias consecutivos
-5. Priorize quem tem menos escalas no histórico
-6. Respeite o máximo de escalas por mês de cada pessoa
-7. NÃO escale ninguém em datas onde não marcaram disponibilidade
+2. RESPEITE A QUANTIDADE DE MEMBROS POR SLOT conforme a configuração acima:
+   - Domingo Manhã e Quarta-feira: 3 pessoas cada
+   - Domingo Noite: 5 pessoas
+3. Para cada data/horário, gere exatamente o número de entradas especificado
+4. Distribua as escalas de forma JUSTA e EQUILIBRADA entre todos os membros
+5. Evite escalar a mesma pessoa em dias consecutivos
+6. Priorize quem tem menos escalas no histórico
+7. Respeite o máximo de escalas por mês de cada pessoa
+8. NÃO escale ninguém em datas onde não marcaram disponibilidade
 
-IMPORTANTE: Cada entrada no array "schedules" deve representar UMA pessoa para UMA data específica.
-Se uma data precisa de 2 pessoas, crie 2 entradas separadas com a mesma data.
+IMPORTANTE: Cada entrada no array "schedules" deve representar UMA pessoa para UMA data/horário específico.
+Por exemplo, se Domingo Manhã precisa de 3 pessoas, crie 3 entradas separadas com a mesma data e horário.
 
 Retorne APENAS um JSON válido no formato:
 {
   "schedules": [
-    {"date": "YYYY-MM-DD", "user_id": "uuid", "name": "Nome", "time_start": "${time_start}", "time_end": "${time_end}"}
+    {"date": "YYYY-MM-DD", "user_id": "uuid", "name": "Nome", "time_start": "HH:MM", "time_end": "HH:MM"}
   ],
   "reasoning": "Breve explicação da lógica usada"
 }`;
@@ -346,8 +370,8 @@ Retorne APENAS um JSON válido no formato:
       date: s.date,
       user_id: s.user_id,
       name: s.name,
-      time_start: s.time_start || time_start,
-      time_end: s.time_end || time_end,
+      time_start: s.time_start,
+      time_end: s.time_end,
       sector_id
     }));
 

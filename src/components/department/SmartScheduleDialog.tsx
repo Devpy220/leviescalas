@@ -41,14 +41,23 @@ interface FixedSlot {
   timeStart: string;
   timeEnd: string;
   label: string;
+  defaultMembers: number;
 }
 
-// Horários fixos pré-definidos
+// Horários fixos pré-definidos com quantidade padrão de membros
 const FIXED_SLOTS: FixedSlot[] = [
-  { id: 'wed-night', dayOfWeek: 3, timeStart: '19:20', timeEnd: '22:00', label: 'Quarta 19:20-22:00' },
-  { id: 'sun-morning', dayOfWeek: 0, timeStart: '08:00', timeEnd: '11:30', label: 'Domingo Manhã' },
-  { id: 'sun-night', dayOfWeek: 0, timeStart: '18:00', timeEnd: '22:00', label: 'Domingo Noite' },
+  { id: 'wed-night', dayOfWeek: 3, timeStart: '19:20', timeEnd: '22:00', label: 'Quarta 19:20-22:00', defaultMembers: 3 },
+  { id: 'sun-morning', dayOfWeek: 0, timeStart: '08:00', timeEnd: '11:30', label: 'Domingo Manhã', defaultMembers: 3 },
+  { id: 'sun-night', dayOfWeek: 0, timeStart: '18:00', timeEnd: '22:00', label: 'Domingo Noite', defaultMembers: 5 },
 ];
+
+// Período especial pré-definido
+const SPECIAL_PERIOD = {
+  id: 'jan-5-15',
+  label: 'Semana Especial (5-15 Jan)',
+  startDate: '2026-01-05',
+  endDate: '2026-01-15'
+};
 
 interface SuggestedSchedule {
   date: string;
@@ -78,11 +87,14 @@ export default function SmartScheduleDialog({
   const [step, setStep] = useState<'config' | 'preview'>('config');
   
   // Configuration
+  const [periodType, setPeriodType] = useState<'month' | 'special'>('special');
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const next = addMonths(new Date(), 1);
     return format(next, 'yyyy-MM');
   });
-  const [membersPerSlot, setMembersPerSlot] = useState(2);
+  const [slotMembers, setSlotMembers] = useState<Record<string, number>>(() => 
+    FIXED_SLOTS.reduce((acc, slot) => ({ ...acc, [slot.id]: slot.defaultMembers }), {})
+  );
   const [sectorId, setSectorId] = useState<string>('all');
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [sendNotificationsOnConfirm, setSendNotificationsOnConfirm] = useState(true);
@@ -121,18 +133,33 @@ export default function SmartScheduleDialog({
   const handleGenerate = async () => {
     setLoading(true);
     try {
-      const [year, month] = selectedMonth.split('-').map(Number);
-      const start = startOfMonth(new Date(year, month - 1));
-      const end = endOfMonth(new Date(year, month - 1));
+      let startDate: string;
+      let endDate: string;
+      
+      if (periodType === 'special') {
+        startDate = SPECIAL_PERIOD.startDate;
+        endDate = SPECIAL_PERIOD.endDate;
+      } else {
+        const [year, month] = selectedMonth.split('-').map(Number);
+        const start = startOfMonth(new Date(year, month - 1));
+        const end = endOfMonth(new Date(year, month - 1));
+        startDate = format(start, 'yyyy-MM-dd');
+        endDate = format(end, 'yyyy-MM-dd');
+      }
+      
+      // Build fixed slots with configured member counts
+      const configuredSlots = FIXED_SLOTS.map(slot => ({
+        ...slot,
+        membersCount: slotMembers[slot.id] || slot.defaultMembers
+      }));
       
       const { data, error } = await supabase.functions.invoke('generate-smart-schedule', {
         body: {
           department_id: departmentId,
-          start_date: format(start, 'yyyy-MM-dd'),
-          end_date: format(end, 'yyyy-MM-dd'),
-          members_per_day: membersPerSlot,
+          start_date: startDate,
+          end_date: endDate,
           sector_id: sectorId === 'all' ? undefined : sectorId,
-          fixed_slots: FIXED_SLOTS
+          fixed_slots: configuredSlots
         }
       });
 
@@ -298,33 +325,85 @@ export default function SmartScheduleDialog({
 
         {step === 'config' ? (
           <div className="space-y-4 py-4">
+            {/* Period Type Selection */}
             <div className="space-y-2">
-              <Label>Mês</Label>
-              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <Label>Período</Label>
+              <Select value={periodType} onValueChange={(v) => setPeriodType(v as 'month' | 'special')}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {monthOptions.map(opt => (
-                    <SelectItem key={opt.value} value={opt.value} className="capitalize">
-                      {opt.label}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="special">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-amber-500" />
+                      {SPECIAL_PERIOD.label}
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="month">Escolher mês completo</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="space-y-2">
+            {periodType === 'month' && (
+              <div className="space-y-2">
+                <Label>Mês</Label>
+                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {monthOptions.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value} className="capitalize">
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {periodType === 'special' && (
+              <Card className="p-3 bg-amber-500/10 border-amber-500/30">
+                <div className="flex items-center gap-2 text-sm">
+                  <Calendar className="w-4 h-4 text-amber-600" />
+                  <span className="font-medium text-amber-700 dark:text-amber-400">
+                    5 a 15 de Janeiro de 2026
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Período especial com horários fixos 19:20-22:00
+                </p>
+              </Card>
+            )}
+
+            {/* Members per slot configuration */}
+            <div className="space-y-3">
               <Label>Membros por horário</Label>
-              <Input
-                type="number"
-                min={1}
-                max={10}
-                value={membersPerSlot}
-                onChange={(e) => setMembersPerSlot(parseInt(e.target.value) || 2)}
-              />
+              <div className="space-y-2">
+                {FIXED_SLOTS.map(slot => (
+                  <div key={slot.id} className="flex items-center justify-between gap-3 p-2 rounded-lg bg-muted/30">
+                    <div className="flex-1">
+                      <span className="text-sm font-medium">{slot.label}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min={1}
+                        max={10}
+                        value={slotMembers[slot.id] || slot.defaultMembers}
+                        onChange={(e) => setSlotMembers(prev => ({
+                          ...prev,
+                          [slot.id]: parseInt(e.target.value) || slot.defaultMembers
+                        }))}
+                        className="w-16 text-center"
+                      />
+                      <Users className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                  </div>
+                ))}
+              </div>
               <p className="text-xs text-muted-foreground">
-                Quantidade de voluntários por cada horário fixo.
+                Domingo Manhã e Quarta: 3 pessoas | Domingo Noite: 5 pessoas (padrão)
               </p>
             </div>
 
@@ -344,22 +423,6 @@ export default function SmartScheduleDialog({
                 </Select>
               </div>
             )}
-
-            <Card className="p-4 bg-muted/30 border-border/50">
-              <div className="flex items-start gap-3">
-                <Calendar className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                <div className="text-sm">
-                  <p className="font-medium text-foreground mb-2">Horários Fixos</p>
-                  <div className="flex flex-wrap gap-2">
-                    {FIXED_SLOTS.map(slot => (
-                      <Badge key={slot.id} variant="secondary">
-                        {slot.label}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </Card>
 
             <Card className="p-4 bg-muted/30 border-border/50">
               <div className="flex items-start gap-3">
