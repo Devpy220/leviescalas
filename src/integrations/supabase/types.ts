@@ -757,6 +757,7 @@ export type Database = {
         Args: { dept_id: string }
         Returns: {
           avatar_url: string
+          church_id: string
           created_at: string
           description: string
           id: string

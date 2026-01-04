@@ -43,6 +43,9 @@ interface Department {
   created_at: string;
   member_count?: number;
   avatar_url?: string | null;
+  church_id?: string | null;
+  church_name?: string | null;
+  church_logo_url?: string | null;
 }
 
 interface DepartmentWithRole extends Department {
@@ -153,7 +156,6 @@ export default function Dashboard() {
     
     try {
       // Fetch departments where user is leader (leaders have direct SELECT access)
-      // Using 'as any' because avatar_url column was just added and types aren't regenerated yet
       const { data: leaderDepts, error: leaderError } = await supabase
         .from('departments')
         .select('*')
@@ -175,7 +177,7 @@ export default function Dashboard() {
         ...(memberRelations || []).map(r => r.department_id)
       ];
 
-      // Fetch member counts for all departments (count all members including leader)
+      // Fetch member counts for all departments
       const memberCounts: Record<string, number> = {};
       for (const deptId of allDeptIds) {
         const { count, error: countError } = await supabase
@@ -185,6 +187,23 @@ export default function Dashboard() {
         
         if (!countError) {
           memberCounts[deptId] = count || 0;
+        }
+      }
+
+      // Fetch church info for all departments
+      const churchIds = [...new Set((leaderDepts || []).map((d: any) => d.church_id).filter(Boolean))] as string[];
+      const churchMap: Record<string, { name: string; logo_url: string | null }> = {};
+      
+      if (churchIds.length > 0) {
+        const { data: churches } = await supabase
+          .from('churches')
+          .select('id, name, logo_url')
+          .in('id', churchIds);
+        
+        if (churches) {
+          churches.forEach(c => {
+            churchMap[c.id] = { name: c.name, logo_url: c.logo_url };
+          });
         }
       }
 
@@ -201,6 +220,24 @@ export default function Dashboard() {
           
           if (!deptError && deptData && deptData.length > 0) {
             const dept = deptData[0] as any;
+            
+            // Fetch church info for member department if it has a church_id
+            let churchInfo = null;
+            if (dept.church_id) {
+              if (!churchMap[dept.church_id]) {
+                const { data: churchData } = await supabase
+                  .from('churches')
+                  .select('id, name, logo_url')
+                  .eq('id', dept.church_id)
+                  .maybeSingle();
+                
+                if (churchData) {
+                  churchMap[churchData.id] = { name: churchData.name, logo_url: churchData.logo_url };
+                }
+              }
+              churchInfo = churchMap[dept.church_id];
+            }
+            
             memberDepartments.push({
               id: dept.id,
               name: dept.name,
@@ -209,6 +246,9 @@ export default function Dashboard() {
               created_at: dept.created_at,
               avatar_url: dept.avatar_url || null,
               member_count: memberCounts[dept.id] || 0,
+              church_id: dept.church_id || null,
+              church_name: churchInfo?.name || null,
+              church_logo_url: churchInfo?.logo_url || null,
               role: 'member' as const
             });
           }
@@ -227,6 +267,9 @@ export default function Dashboard() {
         created_at: d.created_at,
         avatar_url: d.avatar_url || null,
         member_count: memberCounts[d.id] || 0,
+        church_id: d.church_id || null,
+        church_name: d.church_id ? churchMap[d.church_id]?.name : null,
+        church_logo_url: d.church_id ? churchMap[d.church_id]?.logo_url : null,
         role: 'leader' as const
       }));
 
@@ -497,6 +540,17 @@ function DepartmentCard({ department }: { department: DepartmentWithRole }) {
       <div className="relative group h-full">
         <div className="absolute inset-0 gradient-vibrant rounded-2xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity" />
         <div className="relative glass rounded-2xl p-6 border-2 border-dashed border-primary/30 hover:border-primary/50 transition-all hover-lift h-full">
+          {/* Church logo badge */}
+          {department.church_logo_url && (
+            <div className="absolute -top-3 -right-3 w-10 h-10 rounded-full bg-background border-2 border-primary/20 overflow-hidden shadow-lg z-10">
+              <img 
+                src={department.church_logo_url} 
+                alt={department.church_name || 'Igreja'} 
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+          
           <div className="flex items-start justify-between mb-4">
             <div className={`w-12 h-12 rounded-xl overflow-hidden ${department.avatar_url ? '' : 'gradient-vibrant'} flex items-center justify-center shadow-glow-sm group-hover:shadow-glow transition-all`}>
               {department.avatar_url ? (
@@ -522,6 +576,14 @@ function DepartmentCard({ department }: { department: DepartmentWithRole }) {
           <h3 className="font-display text-lg font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
             {department.name}
           </h3>
+          
+          {/* Church name */}
+          {department.church_name && (
+            <div className="flex items-center gap-1.5 text-xs text-primary/80 mb-2">
+              <Church className="w-3 h-3" />
+              <span>{department.church_name}</span>
+            </div>
+          )}
           
           {department.description && (
             <p className="text-sm text-muted-foreground line-clamp-2 mb-4">

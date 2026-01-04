@@ -7,7 +7,8 @@ import {
   MapPin,
   Loader2,
   CalendarDays,
-  Heart
+  Heart,
+  Church
 } from 'lucide-react';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,8 @@ interface Schedule {
   department_id: string;
   department_name: string;
   sector_name: string | null;
+  church_name: string | null;
+  church_logo_url: string | null;
 }
 
 interface SupportPlan {
@@ -97,10 +100,36 @@ export default function MySchedules() {
 
       if (schedulesError) throw schedulesError;
 
-      const { data: deptNames } = await supabase
+      // Fetch departments with church info
+      const { data: departments } = await supabase
         .from('departments')
-        .select('id, name')
+        .select('id, name, church_id')
         .in('id', deptIds);
+
+      // Get unique church IDs
+      const churchIds = [...new Set((departments || []).map(d => d.church_id).filter(Boolean))] as string[];
+      
+      // Fetch church info
+      const churchMap: Record<string, { name: string; logo_url: string | null }> = {};
+      if (churchIds.length > 0) {
+        const { data: churches } = await supabase
+          .from('churches')
+          .select('id, name, logo_url')
+          .in('id', churchIds);
+        
+        if (churches) {
+          churches.forEach(c => {
+            churchMap[c.id] = { name: c.name, logo_url: c.logo_url };
+          });
+        }
+      }
+
+      // Create department map with church info
+      const deptMap = Object.fromEntries((departments || []).map(d => [d.id, {
+        name: d.name,
+        church_name: d.church_id ? churchMap[d.church_id]?.name : null,
+        church_logo_url: d.church_id ? churchMap[d.church_id]?.logo_url : null,
+      }]));
 
       const sectorIds = (schedulesData || []).filter(s => s.sector_id).map(s => s.sector_id);
       let sectorNames: Record<string, string> = {};
@@ -115,8 +144,6 @@ export default function MySchedules() {
         }
       }
 
-      const deptNameMap = Object.fromEntries((deptNames || []).map(d => [d.id, d.name]));
-
       const enrichedSchedules: Schedule[] = (schedulesData || []).map(s => ({
         id: s.id,
         date: s.date,
@@ -124,8 +151,10 @@ export default function MySchedules() {
         time_end: s.time_end,
         notes: s.notes,
         department_id: s.department_id,
-        department_name: deptNameMap[s.department_id] || 'Departamento',
+        department_name: deptMap[s.department_id]?.name || 'Departamento',
         sector_name: s.sector_id ? sectorNames[s.sector_id] : null,
+        church_name: deptMap[s.department_id]?.church_name || null,
+        church_logo_url: deptMap[s.department_id]?.church_logo_url || null,
       }));
 
       setSchedules(enrichedSchedules);
@@ -211,8 +240,19 @@ export default function MySchedules() {
         ) : (
           <div className="grid gap-3">
             {schedules.map((schedule) => (
-              <Card key={schedule.id} className="p-4">
-                <div className="flex items-center justify-between">
+              <Card key={schedule.id} className="p-4 relative overflow-hidden">
+                {/* Church logo badge */}
+                {schedule.church_logo_url && (
+                  <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-background border-2 border-primary/20 overflow-hidden shadow-md">
+                    <img 
+                      src={schedule.church_logo_url} 
+                      alt={schedule.church_name || 'Igreja'} 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                
+                <div className="flex items-center justify-between pr-10">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
                       <Calendar className="w-6 h-6 text-primary" />
@@ -229,6 +269,12 @@ export default function MySchedules() {
                   </div>
                   <div className="text-right">
                     <Badge variant="secondary">{schedule.department_name}</Badge>
+                    {schedule.church_name && (
+                      <div className="flex items-center gap-1 text-xs text-primary/80 mt-1 justify-end">
+                        <Church className="w-3 h-3" />
+                        {schedule.church_name}
+                      </div>
+                    )}
                     {schedule.sector_name && (
                       <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1 justify-end">
                         <MapPin className="w-3 h-3" />
