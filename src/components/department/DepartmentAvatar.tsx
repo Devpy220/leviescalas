@@ -70,23 +70,33 @@ export default function DepartmentAvatar({
     setSelectedFile(null);
     setUploading(true);
 
+    console.log('Starting avatar upload for department:', departmentId);
+
     try {
       const fileName = `${departmentId}/avatar.jpg`;
+      console.log('Uploading to path:', fileName);
 
       // Upload cropped image to storage
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError, data: uploadData } = await supabase.storage
         .from('department-avatars')
         .upload(fileName, croppedBlob, { 
           upsert: true,
           contentType: 'image/jpeg'
         });
 
-      if (uploadError) throw uploadError;
+      console.log('Upload result:', { error: uploadError, data: uploadData });
+
+      if (uploadError) {
+        console.error('Upload error details:', uploadError);
+        throw uploadError;
+      }
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('department-avatars')
         .getPublicUrl(fileName);
+
+      console.log('Public URL:', publicUrl);
 
       // Add timestamp to bust cache
       const urlWithTimestamp = `${publicUrl}?t=${Date.now()}`;
@@ -97,7 +107,12 @@ export default function DepartmentAvatar({
         .update({ avatar_url: urlWithTimestamp } as any)
         .eq('id', departmentId);
 
-      if (updateError) throw updateError;
+      console.log('Department update result:', { error: updateError });
+
+      if (updateError) {
+        console.error('Update error details:', updateError);
+        throw updateError;
+      }
 
       onAvatarChange?.(urlWithTimestamp);
 
@@ -110,7 +125,7 @@ export default function DepartmentAvatar({
       toast({
         variant: 'destructive',
         title: 'Erro ao enviar imagem',
-        description: 'Tente novamente mais tarde.',
+        description: error instanceof Error ? error.message : 'Tente novamente mais tarde.',
       });
     } finally {
       setUploading(false);
