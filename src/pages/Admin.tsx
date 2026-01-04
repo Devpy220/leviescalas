@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Trash2, Users, Building2, ChevronDown, ChevronUp, Shield, LogOut, Church, Plus, Copy, Link as LinkIcon, Mail, ExternalLink, ChevronRight } from 'lucide-react';
+import { Loader2, Trash2, Users, Building2, ChevronDown, ChevronUp, Shield, LogOut, Church, Plus, Copy, Link as LinkIcon, Mail, ExternalLink, ChevronRight, Pencil, Upload, X } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -52,6 +52,11 @@ interface ChurchData {
   code: string;
   city: string | null;
   state: string | null;
+  address: string | null;
+  logo_url: string | null;
+  description: string | null;
+  phone: string | null;
+  email: string | null;
   created_at: string;
 }
 
@@ -83,6 +88,12 @@ export default function Admin() {
   const [newChurchCity, setNewChurchCity] = useState('');
   const [newChurchState, setNewChurchState] = useState('');
   const [newChurchEmail, setNewChurchEmail] = useState('');
+  
+  // Edit church state
+  const [editingChurch, setEditingChurch] = useState<ChurchData | null>(null);
+  const [showEditChurch, setShowEditChurch] = useState(false);
+  const [savingChurch, setSavingChurch] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   useEffect(() => {
     if (authLoading || adminLoading) return;
@@ -113,7 +124,7 @@ export default function Admin() {
     try {
       const { data, error } = await supabase
         .from('churches')
-        .select('id, name, slug, code, city, state, created_at')
+        .select('id, name, slug, code, city, state, address, logo_url, description, phone, email, created_at')
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -122,6 +133,107 @@ export default function Admin() {
       console.error('Error fetching churches:', error);
     } finally {
       setLoadingChurches(false);
+    }
+  };
+
+  const handleOpenEditChurch = (church: ChurchData) => {
+    setEditingChurch({ ...church });
+    setShowEditChurch(true);
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !e.target.files[0] || !editingChurch) return;
+    
+    const file = e.target.files[0];
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Erro',
+        description: 'Por favor, selecione uma imagem.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setUploadingLogo(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${editingChurch.id}.${fileExt}`;
+      const filePath = `logos/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('church-logos')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('church-logos')
+        .getPublicUrl(filePath);
+
+      setEditingChurch(prev => prev ? { ...prev, logo_url: publicUrl } : null);
+      
+      toast({
+        title: 'Logo carregado!',
+        description: 'A imagem será salva ao confirmar a edição.',
+      });
+    } catch (error) {
+      console.error('Error uploading logo:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível fazer upload do logo.',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
+  const handleUpdateChurch = async () => {
+    if (!editingChurch || !editingChurch.name.trim()) {
+      toast({
+        title: 'Erro',
+        description: 'Nome da igreja é obrigatório.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setSavingChurch(true);
+    try {
+      const { error } = await supabase
+        .from('churches')
+        .update({
+          name: editingChurch.name.trim(),
+          slug: editingChurch.slug?.trim() || null,
+          description: editingChurch.description?.trim() || null,
+          address: editingChurch.address?.trim() || null,
+          city: editingChurch.city?.trim() || null,
+          state: editingChurch.state?.trim() || null,
+          phone: editingChurch.phone?.trim() || null,
+          email: editingChurch.email?.trim() || null,
+          logo_url: editingChurch.logo_url || null,
+        })
+        .eq('id', editingChurch.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Sucesso',
+        description: 'Igreja atualizada com sucesso.',
+      });
+      
+      setShowEditChurch(false);
+      setEditingChurch(null);
+      fetchChurches();
+    } catch (error: any) {
+      console.error('Error updating church:', error);
+      toast({
+        title: 'Erro',
+        description: error?.message || 'Não foi possível atualizar a igreja.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSavingChurch(false);
     }
   };
 
@@ -637,6 +749,14 @@ export default function Admin() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            onClick={() => handleOpenEditChurch(church)}
+                            title="Editar igreja"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() => copyInviteLink(church.code)}
                             title="Copiar link de convite"
                           >
@@ -694,6 +814,183 @@ export default function Admin() {
             )}
           </CardContent>
         </Card>
+
+        {/* Edit Church Dialog */}
+        <Dialog open={showEditChurch} onOpenChange={(open) => {
+          setShowEditChurch(open);
+          if (!open) setEditingChurch(null);
+        }}>
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Editar Igreja</DialogTitle>
+              <DialogDescription>
+                Atualize as informações da igreja
+              </DialogDescription>
+            </DialogHeader>
+            {editingChurch && (
+              <div className="space-y-4 py-4">
+                {/* Logo Upload */}
+                <div className="space-y-2">
+                  <Label>Logo da Igreja</Label>
+                  <div className="flex items-center gap-4">
+                    <div className="relative">
+                      {editingChurch.logo_url ? (
+                        <div className="relative w-20 h-20 rounded-lg overflow-hidden border border-border">
+                          <img 
+                            src={editingChurch.logo_url} 
+                            alt="Logo" 
+                            className="w-full h-full object-cover"
+                          />
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            className="absolute -top-2 -right-2 w-6 h-6"
+                            onClick={() => setEditingChurch(prev => prev ? { ...prev, logo_url: null } : null)}
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <label className="w-20 h-20 rounded-lg border-2 border-dashed border-border flex items-center justify-center cursor-pointer hover:border-primary/50 transition-colors">
+                          {uploadingLogo ? (
+                            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                          ) : (
+                            <Upload className="w-6 h-6 text-muted-foreground" />
+                          )}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleLogoUpload}
+                            disabled={uploadingLogo}
+                          />
+                        </label>
+                      )}
+                    </div>
+                    {!editingChurch.logo_url && (
+                      <p className="text-sm text-muted-foreground">
+                        Clique para fazer upload do logo
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="editChurchName">Nome da Igreja *</Label>
+                  <Input
+                    id="editChurchName"
+                    value={editingChurch.name}
+                    onChange={(e) => setEditingChurch(prev => prev ? { ...prev, name: e.target.value } : null)}
+                    placeholder="Ex: Igreja Batista Central"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="editChurchDescription">Descrição</Label>
+                  <Input
+                    id="editChurchDescription"
+                    value={editingChurch.description || ''}
+                    onChange={(e) => setEditingChurch(prev => prev ? { ...prev, description: e.target.value } : null)}
+                    placeholder="Uma breve descrição da igreja"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="editChurchSlug">URL (slug)</Label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">/igreja/</span>
+                    <Input
+                      id="editChurchSlug"
+                      value={editingChurch.slug || ''}
+                      onChange={(e) => setEditingChurch(prev => prev ? { ...prev, slug: slugify(e.target.value) } : null)}
+                      placeholder="igreja-batista-central"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="editChurchAddress">Endereço</Label>
+                  <Input
+                    id="editChurchAddress"
+                    value={editingChurch.address || ''}
+                    onChange={(e) => setEditingChurch(prev => prev ? { ...prev, address: e.target.value } : null)}
+                    placeholder="Rua das Flores, 123"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="editChurchCity">Cidade</Label>
+                    <Input
+                      id="editChurchCity"
+                      value={editingChurch.city || ''}
+                      onChange={(e) => setEditingChurch(prev => prev ? { ...prev, city: e.target.value } : null)}
+                      placeholder="São Paulo"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="editChurchState">Estado</Label>
+                    <Input
+                      id="editChurchState"
+                      value={editingChurch.state || ''}
+                      onChange={(e) => setEditingChurch(prev => prev ? { ...prev, state: e.target.value } : null)}
+                      placeholder="SP"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="editChurchPhone">Telefone</Label>
+                    <Input
+                      id="editChurchPhone"
+                      value={editingChurch.phone || ''}
+                      onChange={(e) => setEditingChurch(prev => prev ? { ...prev, phone: e.target.value } : null)}
+                      placeholder="(11) 99999-9999"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="editChurchEmail">Email</Label>
+                    <Input
+                      id="editChurchEmail"
+                      type="email"
+                      value={editingChurch.email || ''}
+                      onChange={(e) => setEditingChurch(prev => prev ? { ...prev, email: e.target.value } : null)}
+                      placeholder="contato@igreja.com.br"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setShowEditChurch(false);
+                      setEditingChurch(null);
+                    }}
+                    className="flex-1"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button 
+                    onClick={handleUpdateChurch} 
+                    className="flex-1"
+                    disabled={savingChurch || !editingChurch.name.trim()}
+                  >
+                    {savingChurch ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Salvando...
+                      </>
+                    ) : (
+                      'Salvar Alterações'
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* All Volunteers List */}
         <Collapsible>
