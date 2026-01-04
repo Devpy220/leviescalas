@@ -391,7 +391,7 @@ export default function CreateDepartment() {
                   </div>
                   
                   <p className="text-sm text-muted-foreground mb-4">
-                    Gostou do EscalaMaker? Ajude a manter o projeto ativo com uma contribuição a partir de <strong className="text-foreground">R$ 10,00</strong>.
+                    Gostou do LEVI? Ajude a manter o projeto ativo com uma contribuição a partir de <strong className="text-foreground">R$ 10,00</strong>.
                   </p>
 
                   <div className="space-y-3">

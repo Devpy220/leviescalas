@@ -3,9 +3,9 @@ import { Heart, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
+import { SUPPORT_PRICE_ID, STORAGE_KEYS } from '@/lib/constants';
 
-const SUPPORT_PRICE_ID = 'price_1SfMwvK0EKnRdptQbNDmg4CU';
-const STORAGE_KEY = 'levi_support_notification_last_shown';
+const STORAGE_KEY = STORAGE_KEYS.SUPPORT_NOTIFICATION_LAST_SHOWN;
 
 // Show notification on Wednesdays (3) and Sundays (0)
 const NOTIFICATION_DAYS = [0, 3];
