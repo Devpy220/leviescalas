@@ -23,6 +23,7 @@ import ChurchDetail from "./pages/ChurchDetail";
 import ChurchSetup from "./pages/ChurchSetup";
 import ChurchPublic from "./pages/ChurchPublic";
 import JoinChurch from "./pages/JoinChurch";
+import Tutorial from "./pages/Tutorial";
 import NotFound from "./pages/NotFound";
 
 import ConfirmSchedule from "./pages/ConfirmSchedule";
@@ -57,7 +58,8 @@ const App = () => (
                 <Route path="/join/:inviteCode" element={<JoinDepartment />} />
                 <Route path="/igreja/:slug" element={<ChurchPublic />} />
                 <Route path="/confirm/:token" element={<ConfirmSchedule />} />
-                
+                <Route path="/tutorial" element={<Tutorial />} />
+
                 {/* User dashboard */}
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/departamento/:slug" element={<DepartmentBySlug />} />
