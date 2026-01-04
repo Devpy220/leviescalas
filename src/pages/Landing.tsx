@@ -14,7 +14,6 @@ import {
   Zap, 
   CheckCircle2,
   ArrowRight,
-  ChevronRight,
   Sparkles,
   Heart,
   Download

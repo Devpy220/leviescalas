@@ -21,6 +21,7 @@ import { NotificationBell } from '@/components/NotificationBell';
 import { SupportNotification } from '@/components/SupportNotification';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { SUPPORT_PRICE_ID } from '@/lib/constants';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -41,8 +42,6 @@ interface SupportPlan {
   isActive: boolean;
   loading: boolean;
 }
-
-const SUPPORT_PRICE_ID = 'price_1SfMwvK0EKnRdptQbNDmg4CU';
 
 export default function MySchedules() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
