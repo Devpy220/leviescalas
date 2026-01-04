@@ -131,7 +131,15 @@ const sendWhatsAppMessage = async (to: string, message: string): Promise<{ succe
 };
 
 const handler = async (req: Request): Promise<Response> => {
-  console.log("auto-notify-schedule function called");
+  console.log("=== AUTO-NOTIFY-SCHEDULE STARTED ===");
+  console.log("Timestamp:", new Date().toISOString());
+  
+  // Log environment configuration
+  console.log("=== ENV CONFIG ===");
+  console.log("TWILIO configured:", !!TWILIO_ACCOUNT_SID && !!TWILIO_AUTH_TOKEN && !!TWILIO_WHATSAPP_FROM);
+  console.log("RESEND configured:", !!RESEND_API_KEY);
+  console.log("N8N_WEBHOOK_URL configured:", !!Deno.env.get("N8N_WEBHOOK_URL"));
+  console.log("FIQON_WEBHOOK_URL configured:", !!Deno.env.get("FIQON_WEBHOOK_URL"));
 
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -146,7 +154,11 @@ const handler = async (req: Request): Promise<Response> => {
     const body = await req.json();
     const { record, type: eventType } = body;
 
-    console.log("Event type:", eventType, "Record:", record);
+    console.log("=== EVENT INFO ===");
+    console.log("Event type:", eventType);
+    console.log("Schedule ID:", record?.id);
+    console.log("User ID:", record?.user_id);
+    console.log("Department ID:", record?.department_id);
 
     if (!record || eventType !== 'INSERT') {
       return new Response(
@@ -287,8 +299,12 @@ const handler = async (req: Request): Promise<Response> => {
       console.log("N8N_WEBHOOK_URL not configured - skipping n8n integration");
     }
 
-    // WhatsApp notification via Twilio (fallback if n8n not configured)
-    if (profile.whatsapp && !n8nWebhookUrl) {
+    // WhatsApp notification via Twilio (always send if user has WhatsApp number)
+    console.log("=== WHATSAPP DECISION ===");
+    console.log("User WhatsApp number:", profile.whatsapp || "(not configured)");
+    console.log("Will attempt WhatsApp:", !!profile.whatsapp);
+    
+    if (profile.whatsapp) {
       const whatsappMessage = `📅 *Nova Escala - ${department.name}*\n\nOlá, ${profile.name}!\n\nVocê foi escalado para:\n📆 *Data:* ${formattedDate}\n⏰ *Horário:* ${formattedTimeStart} às ${formattedTimeEnd}${notes ? `\n📝 *Observações:* ${notes}` : ''}\n\n_LEVI - Sistema de Escalas_`;
       
       notificationPromises.push(
@@ -297,6 +313,8 @@ const handler = async (req: Request): Promise<Response> => {
           ...result
         }))
       );
+    } else {
+      console.log("Skipping WhatsApp: user has no WhatsApp number configured");
     }
 
     // Email notification
