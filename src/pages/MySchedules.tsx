@@ -10,6 +10,7 @@ import {
   Heart,
   Church
 } from 'lucide-react';
+import { LeviLogo } from '@/components/LeviLogo';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -204,9 +205,7 @@ export default function MySchedules() {
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-xl gradient-vibrant flex items-center justify-center shadow-glow-sm">
-                <CalendarDays className="w-5 h-5 text-white" />
-              </div>
+              <LeviLogo />
               <span className="font-display text-xl font-bold text-foreground">Minhas Escalas</span>
             </div>
           </div>

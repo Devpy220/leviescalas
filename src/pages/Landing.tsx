@@ -19,6 +19,7 @@ import {
   Heart,
   Download
 } from 'lucide-react';
+import { LeviLogo } from '@/components/LeviLogo';
 
 const features = [
   {
@@ -94,9 +95,7 @@ export default function Landing() {
       <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 rounded-xl gradient-vibrant flex items-center justify-center shadow-glow-sm transition-all duration-300 group-hover:scale-110 group-hover:shadow-glow">
-              <Calendar className="w-5 h-5 text-white" />
-            </div>
+            <LeviLogo className="transition-all duration-300 group-hover:scale-110 group-hover:shadow-glow" />
             <div className="flex items-center gap-2">
               <span className="font-display text-xl font-bold text-foreground">LEVI</span>
               <span className="hidden md:inline text-sm text-muted-foreground border-l border-border pl-2">Logística de Escalas para Voluntários da Igreja</span>
@@ -341,9 +340,7 @@ export default function Landing() {
         <div className="container mx-auto px-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <Link to="/" className="flex items-center gap-2 group">
-              <div className="w-8 h-8 rounded-lg gradient-vibrant flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:shadow-glow">
-                <Calendar className="w-4 h-4 text-white" />
-              </div>
+              <LeviLogo size="sm" className="transition-all duration-300 group-hover:scale-110 group-hover:shadow-glow" />
               <span className="font-display font-semibold text-foreground">LEVI</span>
             </Link>
             <p className="text-sm text-muted-foreground">

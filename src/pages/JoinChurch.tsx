@@ -6,9 +6,9 @@ import {
   Loader2, 
   ArrowRight, 
   CheckCircle2,
-  Key,
-  Calendar
+  Key
 } from 'lucide-react';
+import { LeviLogo } from '@/components/LeviLogo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -126,9 +126,7 @@ export default function JoinChurch() {
       <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 rounded-xl gradient-vibrant flex items-center justify-center shadow-glow-sm transition-all duration-300 group-hover:scale-110 group-hover:shadow-glow">
-              <Calendar className="w-5 h-5 text-white" />
-            </div>
+            <LeviLogo className="transition-all duration-300 group-hover:scale-110 group-hover:shadow-glow" />
             <span className="font-display text-xl font-bold text-foreground">LEVI</span>
           </Link>
           
