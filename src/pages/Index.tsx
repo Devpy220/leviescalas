@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, ArrowRight, Loader2, Church, Sparkles } from 'lucide-react';
+import { ArrowRight, Loader2, Church, Sparkles } from 'lucide-react';
+import { LeviLogo } from '@/components/LeviLogo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -65,9 +66,7 @@ export default function Index() {
       <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl gradient-vibrant flex items-center justify-center shadow-glow-sm">
-              <Calendar className="w-5 h-5 text-white" />
-            </div>
+            <LeviLogo />
             <div className="flex items-center gap-2">
               <span className="font-display text-xl font-bold text-foreground">LEVI</span>
               <span className="hidden md:inline text-sm text-muted-foreground border-l border-border pl-2">

@@ -18,6 +18,7 @@ import {
   Church,
   Heart
 } from 'lucide-react';
+import { LeviLogo } from '@/components/LeviLogo';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -307,9 +308,7 @@ export default function Dashboard() {
       <header className="sticky top-0 z-50 glass border-b border-border/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl gradient-vibrant flex items-center justify-center shadow-glow-sm">
-              <Calendar className="w-5 h-5 text-white" />
-            </div>
+            <LeviLogo />
             <span className="font-display text-xl font-bold text-foreground">LEVI</span>
           </Link>
 
