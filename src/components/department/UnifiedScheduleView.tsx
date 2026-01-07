@@ -58,16 +58,6 @@ type ConfirmationStatus = 'pending' | 'confirmed' | 'declined';
 // Fixed slots for scheduling with soft/light colors
 const FIXED_SLOTS = [
   { 
-    dayOfWeek: 3, 
-    timeStart: '19:20', 
-    timeEnd: '22:00', 
-    label: 'Quarta à noite', 
-    shortLabel: 'QUA',
-    bgColor: 'bg-violet-100/80 dark:bg-violet-900/30',
-    glow: 'shadow-violet-200/30 dark:shadow-violet-800/20',
-    borderColor: 'border-violet-300 dark:border-violet-700/50'
-  },
-  { 
     dayOfWeek: 0, 
     timeStart: '09:00', 
     timeEnd: '12:00', 
@@ -86,6 +76,36 @@ const FIXED_SLOTS = [
     bgColor: 'bg-rose-100/80 dark:bg-rose-900/30',
     glow: 'shadow-rose-200/30 dark:shadow-rose-800/20',
     borderColor: 'border-rose-300 dark:border-rose-700/50'
+  },
+  { 
+    dayOfWeek: 1, 
+    timeStart: '19:20', 
+    timeEnd: '22:00', 
+    label: 'Segunda à noite', 
+    shortLabel: 'SEG',
+    bgColor: 'bg-amber-100/80 dark:bg-amber-900/30',
+    glow: 'shadow-amber-200/30 dark:shadow-amber-800/20',
+    borderColor: 'border-amber-300 dark:border-amber-700/50'
+  },
+  { 
+    dayOfWeek: 3, 
+    timeStart: '19:20', 
+    timeEnd: '22:00', 
+    label: 'Quarta à noite', 
+    shortLabel: 'QUA',
+    bgColor: 'bg-violet-100/80 dark:bg-violet-900/30',
+    glow: 'shadow-violet-200/30 dark:shadow-violet-800/20',
+    borderColor: 'border-violet-300 dark:border-violet-700/50'
+  },
+  { 
+    dayOfWeek: 5, 
+    timeStart: '19:20', 
+    timeEnd: '22:00', 
+    label: 'Sexta à noite', 
+    shortLabel: 'SEX',
+    bgColor: 'bg-pink-100/80 dark:bg-pink-900/30',
+    glow: 'shadow-pink-200/30 dark:shadow-pink-800/20',
+    borderColor: 'border-pink-300 dark:border-pink-700/50'
   },
 ];
 
@@ -445,16 +465,24 @@ export default function UnifiedScheduleView({
           {/* Fixed slots legend */}
           <div className="flex flex-wrap items-center gap-3 mb-4 text-xs">
             <div className="flex items-center gap-1.5">
-              <div className="w-4 h-4 rounded bg-violet-500 shadow-sm" />
-              <span className="text-muted-foreground">Quarta</span>
-            </div>
-            <div className="flex items-center gap-1.5">
               <div className="w-4 h-4 rounded bg-cyan-500 shadow-sm" />
               <span className="text-muted-foreground">Dom. manhã</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-4 h-4 rounded bg-red-500 shadow-sm" />
+              <div className="w-4 h-4 rounded bg-rose-500 shadow-sm" />
               <span className="text-muted-foreground">Dom. noite</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-4 rounded bg-amber-500 shadow-sm" />
+              <span className="text-muted-foreground">Segunda</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-4 rounded bg-violet-500 shadow-sm" />
+              <span className="text-muted-foreground">Quarta</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-4 rounded bg-pink-500 shadow-sm" />
+              <span className="text-muted-foreground">Sexta</span>
             </div>
           </div>
 

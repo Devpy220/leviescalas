@@ -38,6 +38,7 @@ import DepartmentSettingsDialog from '@/components/department/DepartmentSettings
 import SmartScheduleDialog from '@/components/department/SmartScheduleDialog';
 import AvailabilityCalendar from '@/components/department/AvailabilityCalendar';
 import MemberPreferences from '@/components/department/MemberPreferences';
+import SlotAvailability from '@/components/department/SlotAvailability';
 import LeaderAvailabilityView from '@/components/department/LeaderAvailabilityView';
 import UnifiedScheduleView from '@/components/department/UnifiedScheduleView';
 import { exportToPDF, exportToExcel } from '@/lib/exportSchedules';
@@ -492,10 +493,11 @@ export default function Department() {
                 />
               )}
               
-              {/* Personal availability calendar below */}
+              {/* Personal availability below */}
               <div className="border-t border-border/50 pt-6">
                 <h3 className="text-lg font-semibold mb-4">Minha Disponibilidade</h3>
-                <div className="grid gap-6 md:grid-cols-2 max-w-4xl">
+                <div className="grid gap-6 lg:grid-cols-3 max-w-6xl">
+                  <SlotAvailability departmentId={id!} userId={user?.id || ''} />
                   <AvailabilityCalendar departmentId={id!} userId={user?.id || ''} />
                   <MemberPreferences departmentId={id!} userId={user?.id || ''} />
                 </div>
