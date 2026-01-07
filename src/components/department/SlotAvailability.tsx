@@ -128,7 +128,22 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
     );
   };
 
+  // Format time to HH:mm:ss for database
+  const formatTimeForDb = (time: string) => {
+    const normalized = normalizeTime(time);
+    return normalized ? `${normalized}:00` : time;
+  };
+
   const toggleSlotAvailability = async (slot: typeof FIXED_SLOTS[0]) => {
+    if (!userId || !departmentId) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Usuário ou departamento não identificado.',
+      });
+      return;
+    }
+
     const slotKey = getSlotKey(slot);
     setSaving(slotKey);
 
@@ -161,35 +176,37 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
           setAvailability(prev => prev.filter(a => a.id !== existingRecord.id));
         }
       } else {
-        // Upsert record to handle duplicate key constraint
+        // No existing record - use simple INSERT (no upsert/onConflict)
         const { data, error } = await supabase
           .from('member_availability')
-          .upsert({
+          .insert({
             user_id: userId,
             department_id: departmentId,
             day_of_week: slot.dayOfWeek,
-            time_start: slot.timeStart,
-            time_end: slot.timeEnd,
-            is_available: true,
-            updated_at: new Date().toISOString()
-          }, {
-            onConflict: 'user_id,department_id,day_of_week,time_start,time_end'
+            time_start: formatTimeForDb(slot.timeStart),
+            time_end: formatTimeForDb(slot.timeEnd),
+            is_available: true
           })
           .select()
           .maybeSingle();
 
-        if (error) throw error;
+        if (error) {
+          // If duplicate key error, refetch and retry as update
+          if (error.code === '23505') {
+            console.warn('Duplicate key detected, refetching...', error);
+            await fetchAvailability();
+            toast({
+              title: 'Tente novamente',
+              description: 'O registro foi atualizado. Clique novamente para salvar.',
+            });
+            return;
+          }
+          throw error;
+        }
 
         if (data) {
-          setAvailability(prev => {
-            const existing = prev.find(a => a.id === data.id);
-            if (existing) {
-              return prev.map(a => a.id === data.id ? data : a);
-            }
-            return [...prev, data];
-          });
+          setAvailability(prev => [...prev, data]);
         } else {
-          // Fallback: refetch all availability
           await fetchAvailability();
         }
       }
@@ -198,12 +215,18 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
         title: newValue ? 'Disponibilidade marcada!' : 'Disponibilidade removida',
         description: slot.label,
       });
-    } catch (error) {
-      console.error('Error toggling slot availability:', error);
+    } catch (error: any) {
+      console.error('Error toggling slot availability:', {
+        message: error?.message,
+        details: error?.details,
+        code: error?.code,
+        hint: error?.hint,
+        fullError: error
+      });
       toast({
         variant: 'destructive',
         title: 'Erro ao atualizar',
-        description: 'Não foi possível salvar sua disponibilidade.',
+        description: error?.message || 'Não foi possível salvar sua disponibilidade.',
       });
     } finally {
       setSaving(null);
