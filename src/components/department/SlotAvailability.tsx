@@ -153,16 +153,19 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
           setAvailability(prev => prev.filter(a => a.id !== existingRecord.id));
         }
       } else {
-        // Insert new record (only when marking as available)
+        // Upsert record to handle duplicate key constraint
         const { data, error } = await supabase
           .from('member_availability')
-          .insert({
+          .upsert({
             user_id: userId,
             department_id: departmentId,
             day_of_week: slot.dayOfWeek,
             time_start: slot.timeStart,
             time_end: slot.timeEnd,
-            is_available: true
+            is_available: true,
+            updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'user_id,department_id,day_of_week,time_start'
           })
           .select()
           .single();
@@ -170,7 +173,13 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
         if (error) throw error;
 
         if (data) {
-          setAvailability(prev => [...prev, data]);
+          setAvailability(prev => {
+            const existing = prev.find(a => a.id === data.id);
+            if (existing) {
+              return prev.map(a => a.id === data.id ? data : a);
+            }
+            return [...prev, data];
+          });
         }
       }
 
