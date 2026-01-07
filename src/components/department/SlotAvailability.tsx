@@ -80,11 +80,17 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
   const [saving, setSaving] = useState<string | null>(null);
   const [availability, setAvailability] = useState<SlotAvailabilityRecord[]>([]);
 
+  // Normalize time to HH:mm format (database returns HH:mm:ss)
+  const normalizeTime = (time: string) => time?.slice(0, 5);
+
   useEffect(() => {
+    if (!userId || !departmentId) return;
     fetchAvailability();
   }, [departmentId, userId]);
 
   const fetchAvailability = async () => {
+    if (!userId || !departmentId) return;
+    
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -103,12 +109,13 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
   };
 
   const getSlotKey = (slot: typeof FIXED_SLOTS[0]) => 
-    `${slot.dayOfWeek}-${slot.timeStart}`;
+    `${slot.dayOfWeek}-${slot.timeStart}-${slot.timeEnd}`;
 
   const isSlotAvailable = (slot: typeof FIXED_SLOTS[0]) => {
     const record = availability.find(a => 
       a.day_of_week === slot.dayOfWeek && 
-      a.time_start === slot.timeStart
+      normalizeTime(a.time_start) === normalizeTime(slot.timeStart) &&
+      normalizeTime(a.time_end) === normalizeTime(slot.timeEnd)
     );
     return record?.is_available ?? false;
   };
@@ -116,7 +123,8 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
   const getSlotRecord = (slot: typeof FIXED_SLOTS[0]) => {
     return availability.find(a => 
       a.day_of_week === slot.dayOfWeek && 
-      a.time_start === slot.timeStart
+      normalizeTime(a.time_start) === normalizeTime(slot.timeStart) &&
+      normalizeTime(a.time_end) === normalizeTime(slot.timeEnd)
     );
   };
 
@@ -165,10 +173,10 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
             is_available: true,
             updated_at: new Date().toISOString()
           }, {
-            onConflict: 'user_id,department_id,day_of_week,time_start'
+            onConflict: 'user_id,department_id,day_of_week,time_start,time_end'
           })
           .select()
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
 
@@ -180,6 +188,9 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
             }
             return [...prev, data];
           });
+        } else {
+          // Fallback: refetch all availability
+          await fetchAvailability();
         }
       }
 
