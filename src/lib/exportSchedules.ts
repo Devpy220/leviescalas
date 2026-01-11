@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -95,45 +95,62 @@ export const exportToPDF = ({ schedules, departmentName, monthYear }: ExportOpti
   doc.save(fileName);
 };
 
-export const exportToExcel = ({ schedules, departmentName, monthYear }: ExportOptions) => {
+export const exportToExcel = async ({ schedules, departmentName, monthYear }: ExportOptions) => {
   // Sort schedules by date
   const sortedSchedules = [...schedules].sort((a, b) => 
     new Date(a.date).getTime() - new Date(b.date).getTime()
   );
 
-  // Prepare data for Excel
-  const data = sortedSchedules.map((schedule) => {
-    // Get first name only for cleaner display
+  // Create workbook and worksheet
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'LEVI';
+  workbook.created = new Date();
+  
+  const worksheet = workbook.addWorksheet('Escalas');
+
+  // Define columns
+  worksheet.columns = [
+    { header: 'Data', key: 'date', width: 12 },
+    { header: 'Dia da Semana', key: 'dayOfWeek', width: 15 },
+    { header: 'Membro', key: 'member', width: 25 },
+    { header: 'Início', key: 'start', width: 8 },
+    { header: 'Fim', key: 'end', width: 8 },
+    { header: 'Observações', key: 'notes', width: 30 },
+  ];
+
+  // Style header row
+  worksheet.getRow(1).font = { bold: true };
+  worksheet.getRow(1).fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FFE0E0E0' }
+  };
+
+  // Add data rows
+  sortedSchedules.forEach((schedule) => {
     const fullName = schedule.profile?.name || 'Membro';
     const firstName = fullName.split(' ')[0];
     
-    return {
-      'Data': format(parseISO(schedule.date), "dd/MM/yyyy", { locale: ptBR }),
-      'Dia da Semana': format(parseISO(schedule.date), "EEEE", { locale: ptBR }),
-      'Membro': firstName,
-      'Início': schedule.time_start.slice(0, 5),
-      'Fim': schedule.time_end.slice(0, 5),
-      'Observações': schedule.notes || '',
-    };
+    worksheet.addRow({
+      date: format(parseISO(schedule.date), "dd/MM/yyyy", { locale: ptBR }),
+      dayOfWeek: format(parseISO(schedule.date), "EEEE", { locale: ptBR }),
+      member: firstName,
+      start: schedule.time_start.slice(0, 5),
+      end: schedule.time_end.slice(0, 5),
+      notes: schedule.notes || '',
+    });
   });
 
-  // Create workbook and worksheet
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(data);
-
-  // Set column widths
-  ws['!cols'] = [
-    { wch: 12 }, // Data
-    { wch: 15 }, // Dia da Semana
-    { wch: 25 }, // Membro
-    { wch: 8 },  // Início
-    { wch: 8 },  // Fim
-    { wch: 30 }, // Observações
-  ];
-
-  XLSX.utils.book_append_sheet(wb, ws, 'Escalas');
-
-  // Download
+  // Generate and download file
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  
   const fileName = `escalas-${departmentName.toLowerCase().replace(/\s+/g, '-')}-${monthYear.toLowerCase().replace(/\s+/g, '-')}.xlsx`;
-  XLSX.writeFile(wb, fileName);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  
+  URL.revokeObjectURL(url);
 };
