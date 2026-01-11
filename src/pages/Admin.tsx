@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Trash2, Users, Building2, ChevronDown, ChevronUp, Shield, LogOut, Church, Plus, Copy, Link as LinkIcon, Mail, ExternalLink, ChevronRight, Pencil, Upload, X } from 'lucide-react';
+import { Loader2, Trash2, Users, Building2, ChevronDown, ChevronUp, Shield, LogOut, Church, Plus, Copy, Link as LinkIcon, Mail, ExternalLink, ChevronRight, Pencil, Upload, X, TrendingUp, Eye } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,9 +15,10 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { format } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { slugify } from '@/lib/slugify';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 interface Department {
   id: string;
   name: string;
@@ -62,6 +63,12 @@ interface ChurchData {
   created_at: string;
 }
 
+interface AnalyticsData {
+  date: string;
+  visitors: number;
+  pageviews: number;
+}
+
 // Admin access is controlled by server-side has_role() function via useAdmin hook
 
 export default function Admin() {
@@ -96,6 +103,12 @@ export default function Admin() {
   const [showEditChurch, setShowEditChurch] = useState(false);
   const [savingChurch, setSavingChurch] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  
+  // Analytics state
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData[]>([]);
+  const [totalVisitors, setTotalVisitors] = useState(0);
+  const [totalPageviews, setTotalPageviews] = useState(0);
+  const [loadingAnalytics, setLoadingAnalytics] = useState(true);
 
   useEffect(() => {
     if (authLoading || adminLoading) return;
@@ -119,7 +132,28 @@ export default function Admin() {
     fetchDepartments();
     fetchAllProfiles();
     fetchChurches();
+    fetchAnalytics();
   }, [user, isAdmin, authLoading, adminLoading]);
+
+  const fetchAnalytics = async () => {
+    setLoadingAnalytics(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('get-analytics');
+      
+      if (error) throw error;
+      
+      if (data) {
+        setAnalyticsData(data.dailyData || []);
+        setTotalVisitors(data.totalVisitors || 0);
+        setTotalPageviews(data.totalPageviews || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching analytics:', error);
+      // Don't show error toast, just log it
+    } finally {
+      setLoadingAnalytics(false);
+    }
+  };
 
   const fetchChurches = async () => {
     setLoadingChurches(true);
@@ -624,6 +658,102 @@ export default function Admin() {
             </CardHeader>
           </Card>
         </div>
+
+        {/* Analytics Chart */}
+        <Card className="mb-6">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5" />
+                  Acessos ao Site
+                </CardTitle>
+                <CardDescription>
+                  Visitantes e visualizações nos últimos 30 dias
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-primary" />
+                  <span className="text-muted-foreground">Visitantes</span>
+                  <span className="font-bold">{totalVisitors}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-blue-500" />
+                  <span className="text-muted-foreground">Pageviews</span>
+                  <span className="font-bold">{totalPageviews}</span>
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loadingAnalytics ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            ) : analyticsData.length === 0 ? (
+              <p className="text-center text-muted-foreground py-12">
+                Nenhum dado de analytics disponível.
+              </p>
+            ) : (
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={analyticsData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorVisitors" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorPageviews" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis 
+                      dataKey="date" 
+                      tickFormatter={(value) => format(new Date(value), 'dd/MM', { locale: ptBR })}
+                      className="text-xs fill-muted-foreground"
+                      tick={{ fontSize: 11 }}
+                    />
+                    <YAxis 
+                      className="text-xs fill-muted-foreground"
+                      tick={{ fontSize: 11 }}
+                    />
+                    <Tooltip 
+                      labelFormatter={(value) => format(new Date(value), "dd 'de' MMMM", { locale: ptBR })}
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--card))', 
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                      }}
+                      formatter={(value: number, name: string) => [
+                        value,
+                        name === 'visitors' ? 'Visitantes' : 'Pageviews'
+                      ]}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="visitors" 
+                      stroke="hsl(var(--primary))" 
+                      fillOpacity={1} 
+                      fill="url(#colorVisitors)" 
+                      strokeWidth={2}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="pageviews" 
+                      stroke="#3b82f6" 
+                      fillOpacity={1} 
+                      fill="url(#colorPageviews)" 
+                      strokeWidth={2}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Churches Section */}
         <Card className="mb-6">
