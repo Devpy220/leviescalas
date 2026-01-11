@@ -43,6 +43,8 @@ interface Profile {
   email: string;
   whatsapp: string;
   created_at: string;
+  invited_by_department_id: string | null;
+  invited_by_department_name?: string | null;
 }
 
 interface ChurchData {
@@ -330,9 +332,29 @@ export default function Admin() {
   const fetchAllProfiles = async () => {
     setLoadingProfiles(true);
     try {
-      const { data, error } = await supabase.rpc('get_all_profiles_admin');
+      // Fetch profiles with invited_by department name using a join
+      const { data, error } = await supabase
+        .from('profiles')
+        .select(`
+          id,
+          name,
+          email,
+          whatsapp,
+          created_at,
+          invited_by_department_id,
+          invited_by_department:departments!invited_by_department_id(name)
+        `)
+        .order('created_at', { ascending: false });
+      
       if (error) throw error;
-      setAllProfiles(data || []);
+      
+      // Transform the data to flatten the department name
+      const transformedData = (data || []).map((profile: any) => ({
+        ...profile,
+        invited_by_department_name: profile.invited_by_department?.name || null,
+      }));
+      
+      setAllProfiles(transformedData);
     } catch (error) {
       console.error('Error fetching profiles:', error);
       toast({
@@ -1025,6 +1047,7 @@ export default function Admin() {
                         <TableHead>Nome</TableHead>
                         <TableHead>Email</TableHead>
                         <TableHead>WhatsApp</TableHead>
+                        <TableHead>Origem</TableHead>
                         <TableHead>Cadastrado em</TableHead>
                         <TableHead className="w-[80px]"></TableHead>
                       </TableRow>
@@ -1035,6 +1058,15 @@ export default function Admin() {
                           <TableCell className="font-medium">{profile.name || 'Sem nome'}</TableCell>
                           <TableCell>{profile.email}</TableCell>
                           <TableCell>{profile.whatsapp || '-'}</TableCell>
+                          <TableCell>
+                            {profile.invited_by_department_name ? (
+                              <Badge variant="outline" className="text-xs">
+                                {profile.invited_by_department_name}
+                              </Badge>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
                           <TableCell>
                             {format(new Date(profile.created_at), "dd/MM/yyyy", { locale: ptBR })}
                           </TableCell>
