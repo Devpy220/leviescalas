@@ -431,6 +431,7 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          invited_by_department_id: string | null
           name: string
           share_contact: boolean | null
           updated_at: string
@@ -441,6 +442,7 @@ export type Database = {
           created_at?: string
           email: string
           id: string
+          invited_by_department_id?: string | null
           name: string
           share_contact?: boolean | null
           updated_at?: string
@@ -451,12 +453,21 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
+          invited_by_department_id?: string | null
           name?: string
           share_contact?: boolean | null
           updated_at?: string
           whatsapp?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_invited_by_department_id_fkey"
+            columns: ["invited_by_department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rate_limits: {
         Row: {

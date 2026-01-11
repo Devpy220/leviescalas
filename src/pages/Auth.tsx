@@ -383,18 +383,38 @@ export default function Auth() {
       return;
     }
 
-    // Se é o email do admin principal, torná-lo admin automaticamente
-    const ADMIN_EMAIL = 'leviescalas@gmail.com';
+    // Track which department invite led to this registration
+    const invitedByParam = searchParams.get('invitedBy');
+    const invitedByStorage = sessionStorage.getItem('invitedByDepartment');
+    const invitedByDepartmentId = invitedByParam || invitedByStorage;
+
+    // Wait a bit to ensure session is ready
+    await new Promise(resolve => setTimeout(resolve, 500));
     
-    if (data.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-      try {
-        // Aguardar um pouco para garantir que a sessão está pronta
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Buscar sessão atual
-        const { data: sessionData } = await supabase.auth.getSession();
-        
-        if (sessionData?.session?.user) {
+    // Get current session
+    const { data: sessionData } = await supabase.auth.getSession();
+    
+    if (sessionData?.session?.user) {
+      // Save invited_by_department_id if coming from department invite
+      if (invitedByDepartmentId && invitedByDepartmentId !== '') {
+        try {
+          await supabase
+            .from('profiles')
+            .update({ invited_by_department_id: invitedByDepartmentId })
+            .eq('id', sessionData.session.user.id);
+          
+          // Clear storage after saving
+          sessionStorage.removeItem('invitedByDepartment');
+        } catch (err) {
+          console.log('Não foi possível salvar origem do cadastro:', err);
+        }
+      }
+
+      // Se é o email do admin principal, torná-lo admin automaticamente
+      const ADMIN_EMAIL = 'leviescalas@gmail.com';
+      
+      if (data.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+        try {
           // Inserir como admin
           const { error: roleError } = await supabase
             .from('user_roles')
@@ -406,9 +426,9 @@ export default function Auth() {
               description: 'Você tem acesso total ao sistema.',
             });
           }
+        } catch (err) {
+          console.log('Não foi possível definir role de admin:', err);
         }
-      } catch (err) {
-        console.log('Não foi possível definir role de admin:', err);
       }
     }
 
