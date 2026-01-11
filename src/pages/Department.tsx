@@ -445,11 +445,13 @@ export default function Department() {
                     </DropdownMenuItem>
                     <DropdownMenuItem 
                       className="click-scale cursor-pointer"
-                      onClick={() => exportToExcel({
-                        schedules,
-                        departmentName: department?.name || 'Departamento',
-                        monthYear: format(new Date(), 'MMMM yyyy', { locale: ptBR })
-                      })}
+                      onClick={async () => {
+                        await exportToExcel({
+                          schedules,
+                          departmentName: department?.name || 'Departamento',
+                          monthYear: format(new Date(), 'MMMM yyyy', { locale: ptBR })
+                        });
+                      }}
                     >
                       <FileSpreadsheet className="w-4 h-4 mr-2" />
                       Exportar Excel
