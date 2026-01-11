@@ -12,7 +12,6 @@ serve(async (req) => {
   }
 
   try {
-    // Verify admin role
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -35,7 +34,6 @@ serve(async (req) => {
       });
     }
 
-    // Check if user is admin
     const { data: isAdmin } = await supabase.rpc("has_role", {
       _user_id: user.id,
       _role: "admin",
@@ -48,40 +46,54 @@ serve(async (req) => {
       });
     }
 
-    // Return mock analytics data (real data comes from Lovable analytics)
-    // This is a simplified version - in production, this would integrate with actual analytics
-    const today = new Date();
-    const last30Days: { date: string; visitors: number; pageviews: number }[] = [];
-    
-    // Generate sample data based on typical patterns
-    for (let i = 29; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0];
-      
-      // Use realistic data patterns
-      const dayOfWeek = date.getDay();
-      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-      const baseVisitors = isWeekend ? 3 : 8;
-      const variance = Math.floor(Math.random() * 10);
-      
-      last30Days.push({
-        date: dateStr,
-        visitors: baseVisitors + variance,
-        pageviews: (baseVisitors + variance) * (2 + Math.floor(Math.random() * 4)),
-      });
+    // Get real analytics from page_views table - last 30 days
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const { data: pageViews, error: pvError } = await supabase
+      .from("page_views")
+      .select("created_at, session_id, page_path")
+      .gte("created_at", thirtyDaysAgo.toISOString())
+      .order("created_at", { ascending: true });
+
+    if (pvError) {
+      console.error("Error fetching page views:", pvError);
+      throw pvError;
     }
 
-    // Calculate totals
-    const totalVisitors = last30Days.reduce((sum, d) => sum + d.visitors, 0);
-    const totalPageviews = last30Days.reduce((sum, d) => sum + d.pageviews, 0);
+    // Group by date
+    const dailyData: Record<string, { visitors: Set<string>; pageviews: number }> = {};
+    
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      dailyData[dateStr] = { visitors: new Set(), pageviews: 0 };
+    }
+
+    (pageViews || []).forEach((pv: any) => {
+      const dateStr = pv.created_at.split('T')[0];
+      if (dailyData[dateStr]) {
+        dailyData[dateStr].visitors.add(pv.session_id || 'unknown');
+        dailyData[dateStr].pageviews++;
+      }
+    });
+
+    const formattedData = Object.entries(dailyData).map(([date, data]) => ({
+      date,
+      visitors: data.visitors.size,
+      pageviews: data.pageviews,
+    }));
+
+    const totalVisitors = new Set((pageViews || []).map((pv: any) => pv.session_id)).size;
+    const totalPageviews = (pageViews || []).length;
 
     return new Response(
       JSON.stringify({
         totalVisitors,
         totalPageviews,
-        avgPageviewsPerVisit: totalPageviews / totalVisitors,
-        dailyData: last30Days,
+        avgPageviewsPerVisit: totalVisitors > 0 ? totalPageviews / totalVisitors : 0,
+        dailyData: formattedData,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
