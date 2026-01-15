@@ -173,8 +173,8 @@ export default function AvailabilityCalendar({ departmentId, userId }: Availabil
 
   return (
     <Card className="glass border-border/50">
-      <CardHeader>
-        <div className="flex items-center justify-between">
+      <CardHeader className="pb-2">
+        <div className="flex flex-col gap-4">
           <div>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="w-5 h-5 text-primary" />
@@ -184,14 +184,14 @@ export default function AvailabilityCalendar({ departmentId, userId }: Availabil
               Clique nos dias em que você pode ser escalado.
             </CardDescription>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={() => navigateMonth(-1)}>
+          <div className="flex items-center justify-center gap-2">
+            <Button variant="outline" size="icon" onClick={() => navigateMonth(-1)} className="shrink-0">
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <span className="font-medium min-w-[140px] text-center capitalize">
               {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
             </span>
-            <Button variant="outline" size="icon" onClick={() => navigateMonth(1)}>
+            <Button variant="outline" size="icon" onClick={() => navigateMonth(1)} className="shrink-0">
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
