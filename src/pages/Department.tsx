@@ -40,6 +40,7 @@ import AvailabilityCalendar from '@/components/department/AvailabilityCalendar';
 import MemberPreferences from '@/components/department/MemberPreferences';
 import SlotAvailability from '@/components/department/SlotAvailability';
 import LeaderAvailabilityView from '@/components/department/LeaderAvailabilityView';
+import LeaderSlotAvailabilityView from '@/components/department/LeaderSlotAvailabilityView';
 import UnifiedScheduleView from '@/components/department/UnifiedScheduleView';
 import { exportToPDF, exportToExcel } from '@/lib/exportSchedules';
 import { SupportNotification } from '@/components/SupportNotification';
@@ -487,7 +488,12 @@ export default function Department() {
 
           <TabsContent value="availability" className="mt-6 animate-fade-in">
             <div className="space-y-6">
-              {/* Leader sees all members availability FIRST */}
+              {/* Leader sees slot availability by day of week FIRST */}
+              {isLeader && (
+                <LeaderSlotAvailabilityView departmentId={id!} />
+              )}
+              
+              {/* Leader sees date-specific availability */}
               {isLeader && (
                 <LeaderAvailabilityView 
                   departmentId={id!} 
