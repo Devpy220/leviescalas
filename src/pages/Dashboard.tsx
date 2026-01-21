@@ -83,21 +83,28 @@ export default function Dashboard() {
     // Wait for auth to finish loading
     if (authLoading) return;
 
-    if (!user) {
-      navigate('/auth');
+    // If we have a user, fetch data
+    if (user) {
+      const fetchData = async () => {
+        await Promise.all([
+          fetchDepartments(),
+          checkCanCreateDepartment(),
+          fetchUserName(),
+        ]);
+      };
+      fetchData();
       return;
     }
 
-    // Only fetch once per user session
-    const fetchData = async () => {
-      await Promise.all([
-        fetchDepartments(),
-        checkCanCreateDepartment(),
-        fetchUserName(),
-      ]);
-    };
+    // If no user after auth loaded, give a bit more time for session to sync
+    const timeoutId = setTimeout(async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session?.user) {
+        navigate('/auth');
+      }
+    }, 500);
 
-    fetchData();
+    return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, authLoading]);
 
