@@ -104,10 +104,58 @@ export function usePWAInstall() {
     return true;
   };
 
+  // Auto-install function - triggers native prompt directly without custom UI
+  const autoInstall = async (): Promise<boolean> => {
+    // Don't install if already installed
+    if (isInstalled || localStorage.getItem('pwa-installed') === 'true') {
+      return false;
+    }
+
+    // Don't install if user dismissed in the last 30 days
+    const dismissed = localStorage.getItem('pwa-install-dismissed');
+    if (dismissed) {
+      const dismissedTime = parseInt(dismissed);
+      const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+      if (Date.now() - dismissedTime < thirtyDays) {
+        return false;
+      }
+    }
+
+    // For iOS, we can't auto-install, return false
+    if (deviceType === 'ios') {
+      return false;
+    }
+
+    // Trigger native prompt directly
+    if (deferredPrompt) {
+      try {
+        await deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        
+        if (outcome === 'accepted') {
+          setIsInstalled(true);
+          setIsInstallable(false);
+          localStorage.setItem('pwa-installed', 'true');
+          setDeferredPrompt(null);
+          return true;
+        } else {
+          // User dismissed, save timestamp
+          localStorage.setItem('pwa-install-dismissed', Date.now().toString());
+          setDeferredPrompt(null);
+        }
+      } catch (error) {
+        console.error('[PWA] Auto-install error:', error);
+      }
+    }
+    
+    return false;
+  };
+
   return {
     isInstallable,
     isInstalled,
     install,
+    autoInstall,
     dismissInstallPrompt,
     shouldShowInstallPrompt,
     deviceType,
