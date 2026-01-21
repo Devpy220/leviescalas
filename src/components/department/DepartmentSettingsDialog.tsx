@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 interface DepartmentSettingsDialogProps {
   open: boolean;
@@ -47,6 +48,7 @@ export default function DepartmentSettingsDialog({
 }: DepartmentSettingsDialogProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { session } = useAuth();
   
   const [name, setName] = useState(department.name);
   const [description, setDescription] = useState(department.description || '');
@@ -110,9 +112,6 @@ export default function DepartmentSettingsDialog({
 
     setLoadingPortal(true);
     try {
-      // Get current session to pass token explicitly
-      const { data: { session } } = await supabase.auth.getSession();
-      
       if (!session?.access_token) {
         toast({
           variant: 'destructive',

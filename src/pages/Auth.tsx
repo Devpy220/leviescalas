@@ -93,7 +93,7 @@ export default function Auth() {
   
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { signIn, signUp, user, session, loading, authEvent } = useAuth();
+  const { signIn, signUp, user, session, loading, authEvent, ensureSession } = useAuth();
 
   const redirectParam = searchParams.get('redirect');
   const churchSlugParam = searchParams.get('church');
@@ -293,11 +293,11 @@ export default function Auth() {
       return;
     }
 
-    // Wait a moment for the auth state to propagate, then get session once
+    // Wait a moment for the auth state to propagate, then read session via guard
     await new Promise(r => setTimeout(r, 300));
-    
-    const { data: sessionData } = await supabase.auth.getSession();
-    if (!sessionData?.session?.user) {
+
+    const currentSession = await ensureSession();
+    if (!currentSession?.user) {
       setIsLoading(false);
       toast({
         variant: 'destructive',
@@ -317,9 +317,9 @@ export default function Auth() {
     }
 
     // Check if user is admin and redirect accordingly
-    if (sessionData?.session?.user) {
+    if (currentSession?.user) {
       const { data: hasRole } = await supabase.rpc('has_role', { 
-        _user_id: sessionData.session.user.id, 
+        _user_id: currentSession.user.id, 
         _role: 'admin' 
       });
       
@@ -409,18 +409,17 @@ export default function Auth() {
 
     // Wait a bit to ensure session is ready
     await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Get current session
-    const { data: sessionData } = await supabase.auth.getSession();
-    
-    if (sessionData?.session?.user) {
+
+    const currentSession = await ensureSession();
+
+    if (currentSession?.user) {
       // Save invited_by_department_id if coming from department invite
       if (invitedByDepartmentId && invitedByDepartmentId !== '') {
         try {
           await supabase
             .from('profiles')
             .update({ invited_by_department_id: invitedByDepartmentId })
-            .eq('id', sessionData.session.user.id);
+            .eq('id', currentSession.user.id);
           
           // Clear storage after saving
           sessionStorage.removeItem('invitedByDepartment');
@@ -437,7 +436,7 @@ export default function Auth() {
           // Inserir como admin
           const { error: roleError } = await supabase
             .from('user_roles')
-            .insert({ user_id: sessionData.session.user.id, role: 'admin' });
+            .insert({ user_id: currentSession.user.id, role: 'admin' });
           
           if (!roleError) {
             toast({
