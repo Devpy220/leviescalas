@@ -41,11 +41,21 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
       });
     }, 8000);
     
-    (async () => {
+    // Add 300ms delay before attempting recovery to let React state synchronize
+    const recoveryDelay = window.setTimeout(async () => {
+      if (cancelled) return;
+      
+      // Check again if user/session appeared during the delay
+      if (user || session) {
+        window.clearTimeout(hardTimeout);
+        setVerified(true);
+        return;
+      }
+      
       const recovered = await ensureSession();
       if (cancelled) return;
 
-       window.clearTimeout(hardTimeout);
+      window.clearTimeout(hardTimeout);
       
       if (recovered?.user) {
         setVerified(true);
@@ -58,11 +68,12 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
         replace: true,
         state: { returnUrl },
       });
-    })();
+    }, 300);
 
     return () => {
       cancelled = true;
       window.clearTimeout(hardTimeout);
+      window.clearTimeout(recoveryDelay);
     };
   }, [user, session, authLoading, ensureSession, navigate, location.pathname, location.search]);
 
