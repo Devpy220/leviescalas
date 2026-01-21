@@ -107,12 +107,10 @@ export default function ChurchDetail() {
   });
 
   useEffect(() => {
+    // Wait for auth to finish loading (ProtectedRoute ensures user exists)
     if (authLoading) return;
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-    if (id) {
+    
+    if (user && id) {
       fetchChurch();
     }
   }, [user, authLoading, id]);

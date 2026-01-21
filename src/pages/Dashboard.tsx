@@ -83,7 +83,7 @@ export default function Dashboard() {
     // Wait for auth to finish loading
     if (authLoading) return;
 
-    // If we have a user, fetch data
+    // If we have a user, fetch data (ProtectedRoute ensures user exists)
     if (user) {
       const fetchData = async () => {
         await Promise.all([
@@ -93,18 +93,7 @@ export default function Dashboard() {
         ]);
       };
       fetchData();
-      return;
     }
-
-    // If no user after auth loaded, give a bit more time for session to sync
-    const timeoutId = setTimeout(async () => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData?.session?.user) {
-        navigate('/auth');
-      }
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, authLoading]);
 

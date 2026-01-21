@@ -13,14 +13,12 @@ export default function DepartmentBySlug() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Wait for auth to finish loading (ProtectedRoute ensures user exists)
     if (authLoading) return;
     
-    if (!user) {
-      navigate('/auth');
-      return;
+    if (user) {
+      findDepartmentBySlug();
     }
-    
-    findDepartmentBySlug();
   }, [slug, user, authLoading]);
 
   const findDepartmentBySlug = async () => {

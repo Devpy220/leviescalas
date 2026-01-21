@@ -77,11 +77,9 @@ export default function Churches() {
   });
 
   useEffect(() => {
+    // Wait for auth and admin check to finish (ProtectedRoute ensures user exists)
     if (authLoading || adminLoading) return;
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
+    
     // Only admins can access this page
     if (!isAdmin) {
       toast({

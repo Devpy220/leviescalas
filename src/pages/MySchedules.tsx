@@ -51,18 +51,13 @@ export default function MySchedules() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Wait for auth to finish loading (ProtectedRoute ensures user exists)
     if (authLoading) return;
-
-    // Redirect only if there is truly no session
-    if (!session) {
-      navigate('/auth');
-      return;
-    }
 
     if (user) {
       fetchSchedules();
     }
-  }, [user?.id, authLoading, session, navigate]);
+  }, [user?.id, authLoading]);
 
   const fetchSchedules = async () => {
     if (!user) return;
