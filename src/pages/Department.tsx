@@ -128,18 +128,23 @@ export default function Department() {
     // Wait for auth to finish loading
     if (authLoading) return;
     
-    // Give a small delay to ensure session is fully established
-    const timeoutId = setTimeout(() => {
-      if (!user) {
+    // If we have a user, fetch data
+    if (user && id) {
+      fetchDepartment();
+      fetchMembers();
+      fetchSchedules();
+      return;
+    }
+    
+    // If no user after auth loaded, give a bit more time for session to sync
+    // This handles the case where user just logged in and navigated here
+    const timeoutId = setTimeout(async () => {
+      // Double check session directly from supabase
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session?.user) {
         navigate('/auth');
-        return;
       }
-      if (id) {
-        fetchDepartment();
-        fetchMembers();
-        fetchSchedules();
-      }
-    }, 100);
+    }, 500);
 
     return () => clearTimeout(timeoutId);
   }, [user, id, navigate, authLoading]);
