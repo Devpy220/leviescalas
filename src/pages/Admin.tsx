@@ -46,6 +46,7 @@ interface Profile {
   created_at: string;
   invited_by_department_id: string | null;
   invited_by_department_name?: string | null;
+  church_name?: string | null;
 }
 
 interface ChurchData {
@@ -366,7 +367,7 @@ export default function Admin() {
   const fetchAllProfiles = async () => {
     setLoadingProfiles(true);
     try {
-      // Fetch profiles with invited_by department name using a join
+      // Fetch profiles with invited_by department name and church using nested joins
       const { data, error } = await supabase
         .from('profiles')
         .select(`
@@ -376,16 +377,20 @@ export default function Admin() {
           whatsapp,
           created_at,
           invited_by_department_id,
-          invited_by_department:departments!invited_by_department_id(name)
+          invited_by_department:departments!invited_by_department_id(
+            name,
+            church:churches!church_id(name)
+          )
         `)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
       
-      // Transform the data to flatten the department name
+      // Transform the data to flatten the department and church names
       const transformedData = (data || []).map((profile: any) => ({
         ...profile,
         invited_by_department_name: profile.invited_by_department?.name || null,
+        church_name: profile.invited_by_department?.church?.name || null,
       }));
       
       setAllProfiles(transformedData);
@@ -1177,7 +1182,8 @@ export default function Admin() {
                         <TableHead>Nome</TableHead>
                         <TableHead>Email</TableHead>
                         <TableHead>WhatsApp</TableHead>
-                        <TableHead>Origem</TableHead>
+                        <TableHead>Departamento</TableHead>
+                        <TableHead>Igreja</TableHead>
                         <TableHead>Cadastrado em</TableHead>
                         <TableHead className="w-[80px]"></TableHead>
                       </TableRow>
@@ -1192,6 +1198,15 @@ export default function Admin() {
                             {profile.invited_by_department_name ? (
                               <Badge variant="outline" className="text-xs">
                                 {profile.invited_by_department_name}
+                              </Badge>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {profile.church_name ? (
+                              <Badge variant="secondary" className="text-xs">
+                                {profile.church_name}
                               </Badge>
                             ) : (
                               <span className="text-muted-foreground">—</span>
