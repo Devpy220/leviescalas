@@ -147,7 +147,13 @@ export default function Admin() {
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke('get-analytics');
+      // IMPORTANT: Some clients may have a default Authorization header (anon key).
+      // Force the request to use the logged-in user's access token.
+      const { data, error } = await supabase.functions.invoke('get-analytics', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
       
       if (error) throw error;
       
