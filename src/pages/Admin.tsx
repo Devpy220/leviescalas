@@ -367,30 +367,21 @@ export default function Admin() {
   const fetchAllProfiles = async () => {
     setLoadingProfiles(true);
     try {
-      // Fetch profiles with invited_by department name and church using nested joins
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          name,
-          email,
-          whatsapp,
-          created_at,
-          invited_by_department_id,
-          invited_by_department:departments!invited_by_department_id(
-            name,
-            church:churches!church_id(name)
-          )
-        `)
-        .order('created_at', { ascending: false });
+      // Fetch profiles with department and church info using RPC that checks members table
+      const { data, error } = await supabase.rpc('get_all_profiles_with_departments');
       
       if (error) throw error;
       
-      // Transform the data to flatten the department and church names
+      // Transform the data to match the Profile interface
       const transformedData = (data || []).map((profile: any) => ({
-        ...profile,
-        invited_by_department_name: profile.invited_by_department?.name || null,
-        church_name: profile.invited_by_department?.church?.name || null,
+        id: profile.id,
+        name: profile.name,
+        email: profile.email,
+        whatsapp: profile.whatsapp,
+        created_at: profile.created_at,
+        invited_by_department_id: null,
+        invited_by_department_name: profile.department_name,
+        church_name: profile.church_name,
       }));
       
       setAllProfiles(transformedData);
