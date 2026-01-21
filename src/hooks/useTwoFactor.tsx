@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 interface TwoFactorState {
   isEnabled: boolean;
@@ -8,6 +9,7 @@ interface TwoFactorState {
 }
 
 export function useTwoFactor() {
+  const { session } = useAuth();
   const [state, setState] = useState<TwoFactorState>({
     isEnabled: false,
     isLoading: true,
@@ -16,7 +18,6 @@ export function useTwoFactor() {
 
   const checkFactors = useCallback(async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         setState({ isEnabled: false, isLoading: false, factors: [] });
         return;
@@ -41,7 +42,7 @@ export function useTwoFactor() {
       console.error('Error checking 2FA status:', error);
       setState({ isEnabled: false, isLoading: false, factors: [] });
     }
-  }, []);
+  }, [session]);
 
   useEffect(() => {
     checkFactors();
@@ -64,7 +65,6 @@ export function useTwoFactor() {
 
   const requiresMFA = async (): Promise<boolean> => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
       if (!session) return false;
 
       // Check the assurance level

@@ -55,8 +55,6 @@ const getAuthGuard = (): AuthGuard => {
 
 // Cache TTL: 10 seconds - prevents multiple getSession calls
 const SESSION_CACHE_TTL = 10000;
-// TOKEN_REFRESHED debounce: 2 minutes
-const TOKEN_REFRESH_DEBOUNCE = 120000;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -158,9 +156,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       (event, currentSession) => {
         const now = Date.now();
 
-        // Strictly debounce TOKEN_REFRESHED events - 2 minutes
+        // Always record refresh events (do NOT debounce or we'll miss state updates)
         if (event === 'TOKEN_REFRESHED') {
-          if (now - guard.lastTokenRefresh < TOKEN_REFRESH_DEBOUNCE) return;
           guard.lastTokenRefresh = now;
         }
 
@@ -184,26 +181,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    // THEN check for existing session only once
-    supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
-      // Only update if not already set by onAuthStateChange
-      setSession(prev => prev ?? existingSession);
-      setUser(prev => prev ?? existingSession?.user ?? null);
-      setLoading(false);
-
-      if (existingSession?.user) {
-        setTimeout(() => {
-          bootstrapUser(existingSession.user);
-        }, 0);
-      }
-    });
+    // THEN check for existing session (single-flight guarded)
+    void ensureSession().finally(() => setLoading(false));
 
     return () => {
       subscription.unsubscribe();
       guard.refCount = Math.max(0, guard.refCount - 1);
       // Don't stop auto-refresh on cleanup to prevent rate limiting issues
     };
-  }, [bootstrapUser]);
+  }, [bootstrapUser, ensureSession]);
 
   // Keep-alive: when the user returns to the tab, check cached session.
   // IMPORTANT: Do NOT call ensureSession on every focus - only if we're in loading state
