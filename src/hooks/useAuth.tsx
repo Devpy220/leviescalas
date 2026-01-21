@@ -193,6 +193,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           guard.lastTokenRefresh = now;
         }
 
+        // CRITICAL: Detect token refresh failure (e.g., after Supabase unpause)
+        // If TOKEN_REFRESHED fires but session is null, the token was invalidated
+        if (event === 'TOKEN_REFRESHED' && !currentSession) {
+          console.warn('[Auth] Token refresh failed - forcing logout');
+          // Clear all cached data
+          guard.cachedSession = null;
+          guard.cacheTime = 0;
+          guard.lastBootstrapUserId = null;
+          // Force clean logout and redirect
+          supabase.auth.signOut().then(() => {
+            window.location.href = '/auth?expired=true';
+          });
+          return;
+        }
+
         // Update cache when we get a valid session
         if (currentSession) {
           guard.cachedSession = currentSession;
