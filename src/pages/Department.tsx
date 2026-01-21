@@ -109,13 +109,17 @@ interface Schedule {
 export default function Department() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user, loading: authLoading, ensureSession } = useAuth();
+  const { user, session, loading: authLoading, ensureSession } = useAuth();
   const { toast } = useToast();
+  
+  // Use session.user as fallback when user state hasn't updated yet
+  const currentUser = user ?? session?.user;
   
   const [department, setDepartment] = useState<Department | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isLeader, setIsLeader] = useState(false);
   const [copiedInvite, setCopiedInvite] = useState(false);
   const [showAddSchedule, setShowAddSchedule] = useState(false);
@@ -128,18 +132,47 @@ export default function Department() {
     // Wait for auth to finish loading
     if (authLoading) return;
     
-    // If we have a user, fetch data (ProtectedRoute ensures user exists)
-    if (user && id) {
-      // Ensure session is valid before fetching data
-      const loadData = async () => {
-        await ensureSession();
-        fetchDepartment();
-        fetchMembers();
-        fetchSchedules();
-      };
-      loadData();
+    // No department ID - nothing to load
+    if (!id) {
+      setLoading(false);
+      return;
     }
-  }, [user, id, authLoading, ensureSession]);
+    
+    // No user available - wait for ProtectedRoute to handle redirect
+    if (!currentUser) {
+      setLoading(false);
+      return;
+    }
+    
+    // Load data with proper error handling
+    const loadData = async () => {
+      setLoading(true);
+      setLoadError(null);
+      
+      try {
+        // Ensure session is valid before fetching data
+        const validSession = await ensureSession();
+        if (!validSession) {
+          setLoadError('Sessão inválida. Faça login novamente.');
+          setLoading(false);
+          return;
+        }
+        
+        // Fetch department first - if this fails, no point continuing
+        await fetchDepartment();
+        
+        // Fetch members and schedules in parallel
+        await Promise.all([fetchMembers(), fetchSchedules()]);
+      } catch (error) {
+        console.error('Error loading department data:', error);
+        setLoadError('Erro ao carregar departamento.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadData();
+  }, [currentUser?.id, id, authLoading]);
 
   const fetchDepartment = async () => {
     if (!id) return;
@@ -178,15 +211,22 @@ export default function Department() {
         avatar_url: (data as any).avatar_url || null,
         stripe_customer_id: data.stripe_customer_id || null
       });
-      setIsLeader(data.leader_id === user?.id);
-    } catch (error) {
+      setIsLeader(data.leader_id === currentUser?.id);
+    } catch (error: any) {
       console.error('Error fetching department:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Departamento não encontrado',
-        description: 'Verifique se você tem acesso a este departamento.',
-      });
-      navigate('/dashboard');
+      
+      // Check if it's an auth error
+      if (error?.code === '401' || error?.message?.includes('JWT')) {
+        setLoadError('Sessão expirada. Faça login novamente.');
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Departamento não encontrado',
+          description: 'Verifique se você tem acesso a este departamento.',
+        });
+        navigate('/dashboard');
+      }
+      throw error; // Re-throw to be caught by loadData
     }
   };
 
@@ -292,8 +332,6 @@ export default function Department() {
       setSchedules(formattedSchedules);
     } catch (error) {
       console.error('Error fetching schedules:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -336,10 +374,38 @@ export default function Department() {
     }
   };
 
-  if (authLoading || loading || !department) {
+  // Show spinner only while actively loading
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Show error state instead of infinite spinner
+  if (loadError || !department) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4 p-6">
+          <h2 className="text-xl font-semibold text-foreground">
+            {loadError || 'Departamento não encontrado'}
+          </h2>
+          <p className="text-muted-foreground">
+            {loadError 
+              ? 'Tente recarregar a página ou fazer login novamente.'
+              : 'Verifique se você tem acesso a este departamento.'}
+          </p>
+          <div className="flex gap-3 justify-center">
+            <Button variant="outline" onClick={() => navigate('/dashboard')}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Voltar
+            </Button>
+            <Button onClick={() => window.location.reload()}>
+              Tentar novamente
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
