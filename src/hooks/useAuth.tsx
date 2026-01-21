@@ -2,6 +2,18 @@ import { useState, useEffect, createContext, useContext, ReactNode, useRef, useC
 import { User, Session, AuthChangeEvent } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
+const withTimeout = <T,>(promise: Promise<T>, ms: number, fallback: T): Promise<T> => {
+  let t: number | undefined;
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => {
+      t = window.setTimeout(() => resolve(fallback), ms);
+    }),
+  ]).finally(() => {
+    if (t) window.clearTimeout(t);
+  });
+};
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -114,7 +126,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     guard.refreshPromise = (async () => {
       try {
         // Only call getSession ONCE
-        const { data } = await supabase.auth.getSession();
+        // In some environments (e.g., sandboxed iframes / strict privacy settings),
+        // getSession() can hang. We hard-timeout to avoid infinite loading states.
+        const { data } = await withTimeout(
+          supabase.auth.getSession(),
+          6000,
+          { data: { session: null } } as any
+        );
         
         if (data.session?.user) {
           guard.cachedSession = data.session;
@@ -180,7 +198,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     // THEN check for existing session (single-flight guarded)
-    void ensureSession().finally(() => setLoading(false));
+    // Use a timeout so we never remain stuck in loading=true.
+    void withTimeout(ensureSession(), 7000, null).finally(() => setLoading(false));
 
     return () => {
       subscription.unsubscribe();
