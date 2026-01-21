@@ -20,29 +20,43 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Global guard to prevent multiple auth provider instances from running auto-refresh
+// ============================================================================
+// GLOBAL SINGLETON - Prevents multiple auth operations across all components
+// ============================================================================
 const AUTH_GUARD_KEY = '__levi_auth_guard__';
 
-const getAuthGuard = () => {
-  const w = window as unknown as Record<string, any>;
+interface AuthGuard {
+  refCount: number;
+  lastTokenRefresh: number;
+  isRefreshing: boolean;
+  initialized: boolean;
+  // Cached session to avoid redundant getSession calls
+  cachedSession: Session | null;
+  cacheTime: number;
+  // Promise for in-flight refresh to allow waiting
+  refreshPromise: Promise<Session | null> | null;
+}
+
+const getAuthGuard = (): AuthGuard => {
+  const w = window as unknown as Record<string, AuthGuard>;
   if (!w[AUTH_GUARD_KEY]) {
     w[AUTH_GUARD_KEY] = { 
       refCount: 0, 
       lastTokenRefresh: 0,
       isRefreshing: false,
-      initialized: false
+      initialized: false,
+      cachedSession: null,
+      cacheTime: 0,
+      refreshPromise: null
     };
   }
-  return w[AUTH_GUARD_KEY] as { 
-    refCount: number; 
-    lastTokenRefresh: number;
-    isRefreshing: boolean;
-    initialized: boolean;
-  };
+  return w[AUTH_GUARD_KEY];
 };
 
-// TOKEN_REFRESHED debounce increased to 60 seconds to prevent cascade refreshes
-const TOKEN_REFRESH_DEBOUNCE = 60000;
+// Cache TTL: 10 seconds - prevents multiple getSession calls
+const SESSION_CACHE_TTL = 10000;
+// TOKEN_REFRESHED debounce: 2 minutes
+const TOKEN_REFRESH_DEBOUNCE = 120000;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -74,51 +88,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         );
 
       // Admin role is granted server-side via ensure_admin_role RPC
-      // which checks the email in the database function itself
       await supabase.rpc('ensure_admin_role');
     } catch {
       // Silent: bootstrap should never block auth flow.
     }
   }, []);
 
+  /**
+   * Recovers the session safely without causing token refresh storms.
+   * Uses singleton guard and caching to ensure only ONE refresh happens at a time.
+   */
   const ensureSession = useCallback(async (): Promise<Session | null> => {
     const guard = getAuthGuard();
+    const now = Date.now();
 
-    // Fast path
-    if (session?.user) return session;
-
-    // Single-flight refresh guard
-    if (guard.isRefreshing) {
-      // Wait briefly for the in-flight refresh to settle
-      await new Promise((r) => setTimeout(r, 250));
-      const { data } = await supabase.auth.getSession();
-      return data.session ?? null;
+    // 1) Return cached session if still valid
+    if (guard.cachedSession && now - guard.cacheTime < SESSION_CACHE_TTL) {
+      return guard.cachedSession;
     }
 
-    guard.isRefreshing = true;
-    try {
-      // 1) Re-check session from storage
-      const { data: existing } = await supabase.auth.getSession();
-      if (existing.session?.user) {
-        setSession(existing.session);
-        setUser(existing.session.user);
-        return existing.session;
+    // 2) If a refresh is already in-flight, wait for it
+    if (guard.refreshPromise) {
+      return guard.refreshPromise;
+    }
+
+    // 3) Start new refresh operation
+    guard.refreshPromise = (async () => {
+      try {
+        // Only call getSession ONCE
+        const { data } = await supabase.auth.getSession();
+        
+        if (data.session?.user) {
+          guard.cachedSession = data.session;
+          guard.cacheTime = Date.now();
+          setSession(data.session);
+          setUser(data.session.user);
+          return data.session;
+        }
+
+        // No session found - user is truly logged out
+        return null;
+      } catch {
+        return null;
+      } finally {
+        guard.refreshPromise = null;
       }
+    })();
 
-      // 2) Attempt refresh (may fail if refresh token expired)
-      await supabase.auth.refreshSession();
-
-      // 3) Read again
-      const { data: refreshed } = await supabase.auth.getSession();
-      setSession(refreshed.session ?? null);
-      setUser(refreshed.session?.user ?? null);
-      return refreshed.session ?? null;
-    } catch {
-      return null;
-    } finally {
-      guard.isRefreshing = false;
-    }
-  }, [session]);
+    return guard.refreshPromise;
+  }, []);
 
   useEffect(() => {
     // Prevent duplicate initialization
@@ -140,15 +158,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       (event, currentSession) => {
         const now = Date.now();
 
-        // Debounce TOKEN_REFRESHED events - ignore if less than 60 seconds since last one
+        // Strictly debounce TOKEN_REFRESHED events - 2 minutes
         if (event === 'TOKEN_REFRESHED') {
           if (now - guard.lastTokenRefresh < TOKEN_REFRESH_DEBOUNCE) return;
           guard.lastTokenRefresh = now;
         }
 
-        // Debounce SIGNED_IN events during MFA flow to prevent multiple triggers
-        if (event === 'SIGNED_IN' && guard.isRefreshing) {
-          return;
+        // Update cache when we get a valid session
+        if (currentSession) {
+          guard.cachedSession = currentSession;
+          guard.cacheTime = now;
         }
 
         setAuthEvent(event);
@@ -186,29 +205,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [bootstrapUser]);
 
-  // Keep-alive: when the user returns to the tab / goes online, attempt a safe session recovery.
+  // Keep-alive: when the user returns to the tab, check cached session.
+  // IMPORTANT: Do NOT call ensureSession on every focus - only if we're in loading state
   useEffect(() => {
     let t: number | undefined;
-    const schedule = () => {
+    const guard = getAuthGuard();
+    
+    const attemptRecovery = () => {
       if (t) window.clearTimeout(t);
+      // Debounce to 2 seconds to avoid rapid calls
       t = window.setTimeout(() => {
-        // Only attempt recovery if we appear logged-out
-        if (!session?.user) void ensureSession();
-      }, 500);
+        // Only attempt if we have NO session and NO cached session
+        if (!session?.user && !guard.cachedSession) {
+          void ensureSession();
+        }
+      }, 2000);
     };
 
     const onVisibility = () => {
-      if (document.visibilityState === 'visible') schedule();
+      if (document.visibilityState === 'visible') attemptRecovery();
     };
 
-    window.addEventListener('focus', schedule);
-    window.addEventListener('online', schedule);
+    // Only add listeners, don't call immediately
+    window.addEventListener('online', attemptRecovery);
     document.addEventListener('visibilitychange', onVisibility);
 
     return () => {
       if (t) window.clearTimeout(t);
-      window.removeEventListener('focus', schedule);
-      window.removeEventListener('online', schedule);
+      window.removeEventListener('online', attemptRecovery);
       document.removeEventListener('visibilitychange', onVisibility);
     };
   }, [ensureSession, session?.user]);
