@@ -275,9 +275,9 @@ export default function Auth() {
   const handleLogin = async (data: LoginForm) => {
     setIsLoading(true);
     const { error } = await signIn(data.email, data.password);
-    setIsLoading(false);
 
     if (error) {
+      setIsLoading(false);
       const errorMessage = error.message.includes('Invalid login credentials')
         ? 'Email ou senha incorretos'
         : error.message.includes('Email not confirmed')
@@ -296,6 +296,7 @@ export default function Auth() {
     const { data: mfaData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     
     if (mfaData?.currentLevel === 'aal1' && mfaData?.nextLevel === 'aal2') {
+      setIsLoading(false);
       setActiveTab('2fa-verify');
       return;
     }
@@ -303,26 +304,33 @@ export default function Auth() {
     // Check if user is admin and redirect accordingly
     const { data: sessionData } = await supabase.auth.getSession();
     if (sessionData?.session?.user) {
+      // Ensure admin role is set for the admin email
+      await supabase.rpc('ensure_admin_role');
+      
       const { data: hasRole } = await supabase.rpc('has_role', { 
         _user_id: sessionData.session.user.id, 
         _role: 'admin' 
       });
+      
+      setIsLoading(false);
       
       if (hasRole) {
         toast({
           title: 'Bem-vindo, Admin!',
           description: 'Redirecionando para o painel administrativo.',
         });
-        navigate('/admin');
+        navigate('/admin', { replace: true });
         return;
       }
+    } else {
+      setIsLoading(false);
     }
 
     toast({
       title: 'Bem-vindo de volta!',
       description: 'Login realizado com sucesso.',
     });
-    navigate(postAuthRedirect);
+    navigate(postAuthRedirect, { replace: true });
   };
 
   const handle2FASuccess = () => {
