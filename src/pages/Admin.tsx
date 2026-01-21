@@ -139,10 +139,10 @@ export default function Admin() {
   const fetchAnalytics = async () => {
     setLoadingAnalytics(true);
     try {
-      // Verify we have a valid session before calling the edge function
+      // Verify we have a valid USER session (not just anon key) before calling edge function
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        console.warn('[Admin] No valid session for analytics');
+      if (!session?.user?.id || !session?.access_token) {
+        console.warn('[Admin] No valid user session for analytics');
         setLoadingAnalytics(false);
         return;
       }
