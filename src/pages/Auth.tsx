@@ -273,6 +273,16 @@ export default function Auth() {
     defaultValues: { password: '', confirmPassword: '' },
   });
 
+  const waitForSession = async (timeoutMs = 2500) => {
+    const startedAt = Date.now();
+    while (Date.now() - startedAt < timeoutMs) {
+      const { data } = await supabase.auth.getSession();
+      if (data?.session?.user) return data;
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    return null;
+  };
+
   const handleLogin = async (data: LoginForm) => {
     setIsLoading(true);
     const { error } = await signIn(data.email, data.password);
@@ -293,6 +303,18 @@ export default function Auth() {
       return;
     }
 
+    // Ensure session is actually available before navigating to protected pages
+    const sessionData = await waitForSession();
+    if (!sessionData?.session?.user) {
+      setIsLoading(false);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao entrar',
+        description: 'Não foi possível iniciar a sessão. Tente novamente.',
+      });
+      return;
+    }
+
     // Check if MFA verification is required
     const { data: mfaData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     
@@ -303,7 +325,6 @@ export default function Auth() {
     }
 
     // Check if user is admin and redirect accordingly
-    const { data: sessionData } = await supabase.auth.getSession();
     if (sessionData?.session?.user) {
       // Ensure admin role is set for the admin email
       await supabase.rpc('ensure_admin_role');
@@ -323,9 +344,9 @@ export default function Auth() {
         navigate('/admin', { replace: true });
         return;
       }
-    } else {
-      setIsLoading(false);
     }
+
+    setIsLoading(false);
 
     toast({
       title: 'Bem-vindo de volta!',
