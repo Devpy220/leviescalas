@@ -11,6 +11,11 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
+  /**
+   * Attempts to recover the session without forcing a logout.
+   * Uses a single-flight guard to avoid refresh storms.
+   */
+  ensureSession: () => Promise<Session | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -75,6 +80,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Silent: bootstrap should never block auth flow.
     }
   }, []);
+
+  const ensureSession = useCallback(async (): Promise<Session | null> => {
+    const guard = getAuthGuard();
+
+    // Fast path
+    if (session?.user) return session;
+
+    // Single-flight refresh guard
+    if (guard.isRefreshing) {
+      // Wait briefly for the in-flight refresh to settle
+      await new Promise((r) => setTimeout(r, 250));
+      const { data } = await supabase.auth.getSession();
+      return data.session ?? null;
+    }
+
+    guard.isRefreshing = true;
+    try {
+      // 1) Re-check session from storage
+      const { data: existing } = await supabase.auth.getSession();
+      if (existing.session?.user) {
+        setSession(existing.session);
+        setUser(existing.session.user);
+        return existing.session;
+      }
+
+      // 2) Attempt refresh (may fail if refresh token expired)
+      await supabase.auth.refreshSession();
+
+      // 3) Read again
+      const { data: refreshed } = await supabase.auth.getSession();
+      setSession(refreshed.session ?? null);
+      setUser(refreshed.session?.user ?? null);
+      return refreshed.session ?? null;
+    } catch {
+      return null;
+    } finally {
+      guard.isRefreshing = false;
+    }
+  }, [session]);
 
   useEffect(() => {
     // Prevent duplicate initialization
@@ -142,6 +186,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [bootstrapUser]);
 
+  // Keep-alive: when the user returns to the tab / goes online, attempt a safe session recovery.
+  useEffect(() => {
+    let t: number | undefined;
+    const schedule = () => {
+      if (t) window.clearTimeout(t);
+      t = window.setTimeout(() => {
+        // Only attempt recovery if we appear logged-out
+        if (!session?.user) void ensureSession();
+      }, 500);
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') schedule();
+    };
+
+    window.addEventListener('focus', schedule);
+    window.addEventListener('online', schedule);
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      if (t) window.clearTimeout(t);
+      window.removeEventListener('focus', schedule);
+      window.removeEventListener('online', schedule);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [ensureSession, session?.user]);
+
   const signUp = useCallback(async (email: string, password: string, name: string, whatsapp: string) => {
     try {
       const redirectUrl = `${window.location.origin}/`;
@@ -199,7 +270,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, authEvent, signUp, signIn, signOut, resetPassword }}>
+    <AuthContext.Provider value={{ user, session, loading, authEvent, signUp, signIn, signOut, resetPassword, ensureSession }}>
       {children}
     </AuthContext.Provider>
   );

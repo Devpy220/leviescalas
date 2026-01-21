@@ -13,7 +13,7 @@ interface ProtectedRouteProps {
  * and race conditions that cause rate limiting (429 errors).
  */
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, session, loading: authLoading } = useAuth();
+  const { user, session, loading: authLoading, ensureSession } = useAuth();
   const [verified, setVerified] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -28,14 +28,23 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
       return;
     }
 
-    // No user and no session after auth loaded = redirect to auth
-    // Store the intended destination so we can redirect back after login
-    const returnUrl = location.pathname + location.search;
-    navigate('/auth', { 
-      replace: true, 
-      state: { returnUrl } 
-    });
-  }, [user, session, authLoading, navigate, location]);
+    // No user and no session after auth loaded.
+    // Try a safe recovery first (common after the tab sleeps / laptop resumes).
+    (async () => {
+      const recovered = await ensureSession();
+      if (recovered?.user) {
+        setVerified(true);
+        return;
+      }
+
+      // Store the intended destination so we can redirect back after login
+      const returnUrl = location.pathname + location.search;
+      navigate('/auth', {
+        replace: true,
+        state: { returnUrl },
+      });
+    })();
+  }, [user, session, authLoading, ensureSession, navigate, location]);
 
   // Show loading spinner while auth is loading or not yet verified
   if (authLoading || (!verified && !user && !session)) {
