@@ -273,16 +273,6 @@ export default function Auth() {
     defaultValues: { password: '', confirmPassword: '' },
   });
 
-  const waitForSession = async (timeoutMs = 2500) => {
-    const startedAt = Date.now();
-    while (Date.now() - startedAt < timeoutMs) {
-      const { data } = await supabase.auth.getSession();
-      if (data?.session?.user) return data;
-      await new Promise((r) => setTimeout(r, 100));
-    }
-    return null;
-  };
-
   const handleLogin = async (data: LoginForm) => {
     setIsLoading(true);
     const { error } = await signIn(data.email, data.password);
@@ -303,8 +293,10 @@ export default function Auth() {
       return;
     }
 
-    // Ensure session is actually available before navigating to protected pages
-    const sessionData = await waitForSession();
+    // Wait a moment for the auth state to propagate, then get session once
+    await new Promise(r => setTimeout(r, 300));
+    
+    const { data: sessionData } = await supabase.auth.getSession();
     if (!sessionData?.session?.user) {
       setIsLoading(false);
       toast({
@@ -326,9 +318,6 @@ export default function Auth() {
 
     // Check if user is admin and redirect accordingly
     if (sessionData?.session?.user) {
-      // Ensure admin role is set for the admin email
-      await supabase.rpc('ensure_admin_role');
-      
       const { data: hasRole } = await supabase.rpc('has_role', { 
         _user_id: sessionData.session.user.id, 
         _role: 'admin' 
