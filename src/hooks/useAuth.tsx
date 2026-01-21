@@ -143,12 +143,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const guard = getAuthGuard();
 
-    // Only the first instance manages auto-refresh
-    if (guard.refCount === 0 && !guard.initialized) {
-      guard.initialized = true;
-      // Don't restart auto-refresh if already running
-      supabase.auth.startAutoRefresh();
-    }
+    // IMPORTANT:
+    // We do NOT call supabase.auth.startAutoRefresh() here.
+    // The client is already configured with auth.autoRefreshToken=true (in the generated client).
+    // Calling startAutoRefresh manually can cause duplicated refresh loops in some browsers.
     guard.refCount += 1;
 
     // Set up auth state listener FIRST
