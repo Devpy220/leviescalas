@@ -125,6 +125,7 @@ interface Schedule {
   };
   sector?: {
     name: string;
+    color: string;
   } | null;
 }
 
@@ -833,7 +834,7 @@ export default function UnifiedScheduleView({
 
       {/* Day Detail Dialog */}
       <Dialog open={showDayDialog} onOpenChange={setShowDayDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Users className="w-5 h-5" />
@@ -846,67 +847,206 @@ export default function UnifiedScheduleView({
           
           <div className="space-y-4">
             {selectedDaySchedules.length > 0 ? (
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Escalados neste dia:</p>
-                {selectedDaySchedules.map((schedule) => {
-                  const color = getMemberColorValue(schedule.user_id);
-                  const statusBg = schedule.confirmation_status === 'confirmed' 
-                    ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800'
-                    : schedule.confirmation_status === 'declined'
-                    ? 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800'
-                    : 'bg-muted/50';
-                  return (
-                    <div
-                      key={schedule.id}
-                      className={`flex items-center justify-between p-3 rounded-lg border-l-4 ${color.border} border ${statusBg}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarFallback 
-                            className="text-xs text-white"
-                            style={{ backgroundColor: color.bg }}
-                          >
-                            {schedule.profile?.name?.charAt(0) || 'M'}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium">{schedule.profile?.name || 'Membro'}</p>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                {getConfirmationIcon(schedule.confirmation_status)}
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                {getConfirmationText(schedule.confirmation_status, schedule.decline_reason)}
-                              </TooltipContent>
-                            </Tooltip>
-                          </div>
-                          {schedule.sector && (
-                            <p className="text-xs text-primary font-medium">{schedule.sector.name}</p>
-                          )}
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Clock className="w-3 h-3" />
-                            <span>{schedule.time_start?.slice(0, 5)} - {schedule.time_end?.slice(0, 5)}</span>
+              (() => {
+                // Check if this is a Sunday (has 2 slots - morning and night)
+                const isSunday = selectedDay && getDay(selectedDay) === 0;
+                
+                if (isSunday) {
+                  // Separate schedules into morning (before 14:00) and night (14:00+)
+                  const morningSchedules = selectedDaySchedules.filter(s => s.time_start < '14:00');
+                  const nightSchedules = selectedDaySchedules.filter(s => s.time_start >= '14:00');
+                  
+                  const renderScheduleCard = (schedule: Schedule) => {
+                    const color = getMemberColorValue(schedule.user_id);
+                    const statusBg = schedule.confirmation_status === 'confirmed' 
+                      ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800'
+                      : schedule.confirmation_status === 'declined'
+                      ? 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800'
+                      : 'bg-muted/50';
+                    return (
+                      <div
+                        key={schedule.id}
+                        className={`flex items-center justify-between p-3 rounded-lg border-l-4 border ${statusBg}`}
+                        style={{ borderLeftColor: schedule.sector?.color || color.bg }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback 
+                              className="text-xs text-white"
+                              style={{ backgroundColor: color.bg }}
+                            >
+                              {schedule.profile?.name?.charAt(0) || 'M'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-medium">{schedule.profile?.name || 'Membro'}</p>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  {getConfirmationIcon(schedule.confirmation_status)}
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {getConfirmationText(schedule.confirmation_status, schedule.decline_reason)}
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
+                            {schedule.sector && (
+                              <div className="flex items-center gap-1.5">
+                                <div 
+                                  className="w-2 h-2 rounded-full" 
+                                  style={{ backgroundColor: schedule.sector.color }}
+                                />
+                                <p className="text-xs font-medium" style={{ color: schedule.sector.color }}>
+                                  {schedule.sector.name}
+                                </p>
+                              </div>
+                            )}
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Clock className="w-3 h-3" />
+                              <span>{schedule.time_start?.slice(0, 5)} - {schedule.time_end?.slice(0, 5)}</span>
+                            </div>
                           </div>
                         </div>
+                        {isLeader && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => {
+                              setSelectedSchedule(schedule);
+                              setShowDeleteDialog(true);
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
                       </div>
-                      {isLeader && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => {
-                            setSelectedSchedule(schedule);
-                            setShowDeleteDialog(true);
-                          }}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )}
+                    );
+                  };
+                  
+                  return (
+                    <div className="space-y-4">
+                      {/* Morning Section */}
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-cyan-100 dark:bg-cyan-900/30">
+                          <div className="w-3 h-3 rounded-full bg-cyan-500" />
+                          <span className="text-sm font-semibold text-cyan-700 dark:text-cyan-300">
+                            ☀️ MANHÃ (09:00 - 12:00)
+                          </span>
+                          <Badge variant="secondary" className="ml-auto text-xs">
+                            {morningSchedules.length} escalado{morningSchedules.length !== 1 ? 's' : ''}
+                          </Badge>
+                        </div>
+                        {morningSchedules.length > 0 ? (
+                          <div className="space-y-2 pl-2">
+                            {morningSchedules.map(renderScheduleCard)}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground text-center py-2">
+                            Nenhuma escala na manhã
+                          </p>
+                        )}
+                      </div>
+                      
+                      {/* Night Section */}
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-rose-100 dark:bg-rose-900/30">
+                          <div className="w-3 h-3 rounded-full bg-rose-500" />
+                          <span className="text-sm font-semibold text-rose-700 dark:text-rose-300">
+                            🌙 NOITE (18:00 - 22:00)
+                          </span>
+                          <Badge variant="secondary" className="ml-auto text-xs">
+                            {nightSchedules.length} escalado{nightSchedules.length !== 1 ? 's' : ''}
+                          </Badge>
+                        </div>
+                        {nightSchedules.length > 0 ? (
+                          <div className="space-y-2 pl-2">
+                            {nightSchedules.map(renderScheduleCard)}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground text-center py-2">
+                            Nenhuma escala na noite
+                          </p>
+                        )}
+                      </div>
                     </div>
                   );
-                })}
-              </div>
+                }
+                
+                // Non-Sunday: render schedules normally
+                return (
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">Escalados neste dia:</p>
+                    {selectedDaySchedules.map((schedule) => {
+                      const color = getMemberColorValue(schedule.user_id);
+                      const statusBg = schedule.confirmation_status === 'confirmed' 
+                        ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800'
+                        : schedule.confirmation_status === 'declined'
+                        ? 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800'
+                        : 'bg-muted/50';
+                      return (
+                        <div
+                          key={schedule.id}
+                          className={`flex items-center justify-between p-3 rounded-lg border-l-4 border ${statusBg}`}
+                          style={{ borderLeftColor: schedule.sector?.color || color.bg }}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback 
+                                className="text-xs text-white"
+                                style={{ backgroundColor: color.bg }}
+                              >
+                                {schedule.profile?.name?.charAt(0) || 'M'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-medium">{schedule.profile?.name || 'Membro'}</p>
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    {getConfirmationIcon(schedule.confirmation_status)}
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    {getConfirmationText(schedule.confirmation_status, schedule.decline_reason)}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </div>
+                              {schedule.sector && (
+                                <div className="flex items-center gap-1.5">
+                                  <div 
+                                    className="w-2 h-2 rounded-full" 
+                                    style={{ backgroundColor: schedule.sector.color }}
+                                  />
+                                  <p className="text-xs font-medium" style={{ color: schedule.sector.color }}>
+                                    {schedule.sector.name}
+                                  </p>
+                                </div>
+                              )}
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Clock className="w-3 h-3" />
+                                <span>{schedule.time_start?.slice(0, 5)} - {schedule.time_end?.slice(0, 5)}</span>
+                              </div>
+                            </div>
+                          </div>
+                          {isLeader && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => {
+                                setSelectedSchedule(schedule);
+                                setShowDeleteDialog(true);
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()
             ) : (
               <div className="text-center py-4 space-y-3">
                 <p className="text-sm text-muted-foreground">

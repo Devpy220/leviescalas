@@ -8,7 +8,10 @@ import {
   Loader2,
   CalendarDays,
   Heart,
-  Church
+  Church,
+  CheckCircle2,
+  XCircle,
+  HelpCircle
 } from 'lucide-react';
 import { LeviLogo } from '@/components/LeviLogo';
 import Footer from '@/components/Footer';
@@ -16,14 +19,28 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Textarea } from '@/components/ui/textarea';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { NotificationBell } from '@/components/NotificationBell';
 import { SupportNotification } from '@/components/SupportNotification';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import { SUPPORT_PRICE_ID } from '@/lib/constants';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+
+type ConfirmationStatus = 'pending' | 'confirmed' | 'declined';
 
 interface Schedule {
   id: string;
@@ -34,8 +51,11 @@ interface Schedule {
   department_id: string;
   department_name: string;
   sector_name: string | null;
+  sector_color: string | null;
   church_name: string | null;
   church_logo_url: string | null;
+  confirmation_status: ConfirmationStatus;
+  confirmation_token: string | null;
 }
 
 interface SupportPlan {
@@ -47,7 +67,13 @@ export default function MySchedules() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
   const [supportPlan, setSupportPlan] = useState<SupportPlan>({ isActive: false, loading: false });
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [decliningId, setDecliningId] = useState<string | null>(null);
+  const [showDeclineDialog, setShowDeclineDialog] = useState(false);
+  const [declineReason, setDeclineReason] = useState('');
+  const [selectedScheduleForDecline, setSelectedScheduleForDecline] = useState<Schedule | null>(null);
   const { user, session, loading: authLoading } = useAuth();
+  const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -87,7 +113,10 @@ export default function MySchedules() {
           time_end,
           notes,
           department_id,
-          sector_id
+          sector_id,
+          confirmation_status,
+          confirmation_token,
+          sectors(name, color)
         `)
         .eq('user_id', user.id)
         .in('department_id', deptIds)
@@ -126,20 +155,7 @@ export default function MySchedules() {
         church_logo_url: d.church_id ? churchMap[d.church_id]?.logo_url : null,
       }]));
 
-      const sectorIds = (schedulesData || []).filter(s => s.sector_id).map(s => s.sector_id);
-      let sectorNames: Record<string, string> = {};
-      if (sectorIds.length > 0) {
-        const { data: sectors } = await supabase
-          .from('sectors')
-          .select('id, name')
-          .in('id', sectorIds);
-        
-        if (sectors) {
-          sectorNames = Object.fromEntries(sectors.map(s => [s.id, s.name]));
-        }
-      }
-
-      const enrichedSchedules: Schedule[] = (schedulesData || []).map(s => ({
+      const enrichedSchedules: Schedule[] = (schedulesData || []).map((s: any) => ({
         id: s.id,
         date: s.date,
         time_start: s.time_start,
@@ -147,9 +163,12 @@ export default function MySchedules() {
         notes: s.notes,
         department_id: s.department_id,
         department_name: deptMap[s.department_id]?.name || 'Departamento',
-        sector_name: s.sector_id ? sectorNames[s.sector_id] : null,
+        sector_name: s.sectors?.name || null,
+        sector_color: s.sectors?.color || null,
         church_name: deptMap[s.department_id]?.church_name || null,
         church_logo_url: deptMap[s.department_id]?.church_logo_url || null,
+        confirmation_status: s.confirmation_status || 'pending',
+        confirmation_token: s.confirmation_token,
       }));
 
       setSchedules(enrichedSchedules);
@@ -157,6 +176,111 @@ export default function MySchedules() {
       console.error('Error fetching schedules:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleConfirm = async (schedule: Schedule) => {
+    if (!schedule.confirmation_token) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Token de confirmação não encontrado.',
+      });
+      return;
+    }
+    
+    setConfirmingId(schedule.id);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/confirm-schedule?token=${schedule.confirmation_token}&action=confirm`,
+        { method: 'GET' }
+      );
+      
+      if (response.ok) {
+        toast({
+          title: 'Presença confirmada!',
+          description: 'Sua presença foi registrada com sucesso.',
+        });
+        fetchSchedules();
+      } else {
+        throw new Error('Erro ao confirmar');
+      }
+    } catch (error) {
+      console.error('Error confirming:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao confirmar',
+        description: 'Tente novamente mais tarde.',
+      });
+    } finally {
+      setConfirmingId(null);
+    }
+  };
+
+  const handleDecline = async () => {
+    if (!selectedScheduleForDecline?.confirmation_token) return;
+    
+    setDecliningId(selectedScheduleForDecline.id);
+    try {
+      const reasonParam = declineReason ? `&reason=${encodeURIComponent(declineReason)}` : '';
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/confirm-schedule?token=${selectedScheduleForDecline.confirmation_token}&action=decline${reasonParam}`,
+        { method: 'GET' }
+      );
+      
+      if (response.ok) {
+        toast({
+          title: 'Ausência registrada',
+          description: 'O líder será notificado.',
+        });
+        setShowDeclineDialog(false);
+        setDeclineReason('');
+        setSelectedScheduleForDecline(null);
+        fetchSchedules();
+      } else {
+        throw new Error('Erro ao registrar ausência');
+      }
+    } catch (error) {
+      console.error('Error declining:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao registrar',
+        description: 'Tente novamente mais tarde.',
+      });
+    } finally {
+      setDecliningId(null);
+    }
+  };
+
+  const openDeclineDialog = (schedule: Schedule) => {
+    setSelectedScheduleForDecline(schedule);
+    setDeclineReason('');
+    setShowDeclineDialog(true);
+  };
+
+  const getStatusBadge = (status: ConfirmationStatus) => {
+    switch (status) {
+      case 'confirmed':
+        return (
+          <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 gap-1">
+            <CheckCircle2 className="w-3 h-3" />
+            Confirmado
+          </Badge>
+        );
+      case 'declined':
+        return (
+          <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 gap-1">
+            <XCircle className="w-3 h-3" />
+            Ausência registrada
+          </Badge>
+        );
+      default:
+        return (
+          <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 gap-1">
+            <HelpCircle className="w-3 h-3" />
+            Aguardando confirmação
+          </Badge>
+        );
     }
   };
 
@@ -245,33 +369,83 @@ export default function MySchedules() {
                   </div>
                 )}
                 
-                <div className="flex items-center justify-between pr-10">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <Calendar className="w-6 h-6 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground">
-                        {format(parseISO(schedule.date), "EEEE, d 'de' MMMM", { locale: ptBR })}
-                      </p>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Clock className="w-4 h-4" />
-                        {schedule.time_start.slice(0, 5)} - {schedule.time_end.slice(0, 5)}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between pr-10">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                        <Calendar className="w-6 h-6 text-primary" />
                       </div>
+                      <div>
+                        <p className="font-medium text-foreground">
+                          {format(parseISO(schedule.date), "EEEE, d 'de' MMMM", { locale: ptBR })}
+                        </p>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Clock className="w-4 h-4" />
+                          {schedule.time_start.slice(0, 5)} - {schedule.time_end.slice(0, 5)}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <Badge variant="secondary">{schedule.department_name}</Badge>
+                      {schedule.church_name && (
+                        <div className="flex items-center gap-1 text-xs text-primary/80 mt-1 justify-end">
+                          <Church className="w-3 h-3" />
+                          {schedule.church_name}
+                        </div>
+                      )}
+                      {schedule.sector_name && (
+                        <div className="flex items-center gap-1.5 text-xs mt-1 justify-end">
+                          {schedule.sector_color && (
+                            <div 
+                              className="w-2.5 h-2.5 rounded-full" 
+                              style={{ backgroundColor: schedule.sector_color }}
+                            />
+                          )}
+                          <span style={{ color: schedule.sector_color || undefined }} className="font-medium">
+                            {schedule.sector_name}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <Badge variant="secondary">{schedule.department_name}</Badge>
-                    {schedule.church_name && (
-                      <div className="flex items-center gap-1 text-xs text-primary/80 mt-1 justify-end">
-                        <Church className="w-3 h-3" />
-                        {schedule.church_name}
-                      </div>
-                    )}
-                    {schedule.sector_name && (
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1 justify-end">
-                        <MapPin className="w-3 h-3" />
-                        {schedule.sector_name}
+                  
+                  {/* Status and Actions */}
+                  <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                    {getStatusBadge(schedule.confirmation_status)}
+                    
+                    {schedule.confirmation_status === 'pending' && schedule.confirmation_token && (
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
+                          onClick={() => openDeclineDialog(schedule)}
+                          disabled={decliningId === schedule.id}
+                        >
+                          {decliningId === schedule.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <>
+                              <XCircle className="w-4 h-4 mr-1" />
+                              Não poderei
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700"
+                          onClick={() => handleConfirm(schedule)}
+                          disabled={confirmingId === schedule.id}
+                        >
+                          {confirmingId === schedule.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <>
+                              <CheckCircle2 className="w-4 h-4 mr-1" />
+                              Confirmar
+                            </>
+                          )}
+                        </Button>
                       </div>
                     )}
                   </div>
@@ -315,6 +489,49 @@ export default function MySchedules() {
       </main>
       
       <Footer />
+
+      {/* Decline Dialog */}
+      <AlertDialog open={showDeclineDialog} onOpenChange={setShowDeclineDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Registrar Ausência</AlertDialogTitle>
+            <AlertDialogDescription>
+              {selectedScheduleForDecline && (
+                <>
+                  Confirmar que você não poderá comparecer no dia{' '}
+                  <strong>
+                    {format(parseISO(selectedScheduleForDecline.date), "d 'de' MMMM", { locale: ptBR })}
+                  </strong>
+                  ?
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className="space-y-2">
+            <label className="text-sm text-muted-foreground">
+              Motivo (opcional):
+            </label>
+            <Textarea
+              placeholder="Ex: Compromisso familiar, viagem..."
+              value={declineReason}
+              onChange={(e) => setDeclineReason(e.target.value)}
+              rows={2}
+            />
+          </div>
+          
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDecline}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={decliningId !== null}
+            >
+              {decliningId ? 'Registrando...' : 'Confirmar Ausência'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

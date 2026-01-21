@@ -33,6 +33,7 @@ interface Schedule {
   };
   sector?: {
     name: string;
+    color: string;
   } | null;
 }
 
@@ -164,39 +165,54 @@ export default function ScheduleTable({ schedules, members, month, title }: Sche
               </TableCell>
               <TableCell className="py-2">
                 <div className="flex flex-wrap gap-1.5">
-                  {daySchedules.map((schedule) => (
-                    <div
-                      key={schedule.id}
-                      className={`flex items-center gap-1.5 px-1.5 py-0.5 rounded-md border ${
-                        schedule.confirmation_status === 'confirmed' 
-                          ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800' 
-                          : schedule.confirmation_status === 'declined'
-                          ? 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800'
-                          : 'bg-muted/50 border-border'
-                      }`}
-                    >
-                      <Avatar className="h-5 w-5">
-                        <AvatarFallback 
-                          className="text-[8px] text-white"
-                          style={{ backgroundColor: getMemberHexColorValue(schedule.user_id) }}
-                        >
-                          {schedule.profile?.name?.charAt(0) || 'M'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-1">
-                          <span className="text-[10px] font-medium leading-tight">
-                            {schedule.profile?.name?.split(' ')[0] || 'Membro'}
-                          </span>
-                          {getConfirmationBadge(schedule.confirmation_status, schedule.decline_reason)}
-                        </div>
-                        <div className="flex items-center gap-0.5 text-[8px] text-muted-foreground">
-                          <Clock className="w-2 h-2" />
-                          <span>{schedule.time_start.slice(0, 5)}-{schedule.time_end.slice(0, 5)}</span>
+                    {daySchedules.map((schedule) => (
+                      <div
+                        key={schedule.id}
+                        className={`flex items-center gap-1.5 px-1.5 py-0.5 rounded-md border ${
+                          schedule.confirmation_status === 'confirmed' 
+                            ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800' 
+                            : schedule.confirmation_status === 'declined'
+                            ? 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800'
+                            : 'bg-muted/50 border-border'
+                        }`}
+                        style={{ borderLeftWidth: '3px', borderLeftColor: schedule.sector?.color || undefined }}
+                      >
+                        <Avatar className="h-5 w-5">
+                          <AvatarFallback 
+                            className="text-[8px] text-white"
+                            style={{ backgroundColor: getMemberHexColorValue(schedule.user_id) }}
+                          >
+                            {schedule.profile?.name?.charAt(0) || 'M'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-1">
+                            <span className="text-[10px] font-medium leading-tight">
+                              {schedule.profile?.name?.split(' ')[0] || 'Membro'}
+                            </span>
+                            {getConfirmationBadge(schedule.confirmation_status, schedule.decline_reason)}
+                          </div>
+                          {schedule.sector && (
+                            <div className="flex items-center gap-0.5">
+                              <div 
+                                className="w-1.5 h-1.5 rounded-full" 
+                                style={{ backgroundColor: schedule.sector.color }}
+                              />
+                              <span 
+                                className="text-[8px] font-medium"
+                                style={{ color: schedule.sector.color }}
+                              >
+                                {schedule.sector.name}
+                              </span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-0.5 text-[8px] text-muted-foreground">
+                            <Clock className="w-2 h-2" />
+                            <span>{schedule.time_start.slice(0, 5)}-{schedule.time_end.slice(0, 5)}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </TableCell>
             </TableRow>
