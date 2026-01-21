@@ -129,6 +129,9 @@ export default function Department() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   useEffect(() => {
+    // Debug: track loading state
+    console.log('[Department] State:', { authLoading, loading, hasUser: !!currentUser, hasId: !!id });
+    
     // Wait for auth to finish loading
     if (authLoading) return;
     
@@ -144,11 +147,12 @@ export default function Department() {
       return;
     }
     
-    // Safety timeout to prevent infinite loading
+    // Safety timeout to prevent infinite loading (reduced to 8s for faster feedback)
     const safetyTimeout = setTimeout(() => {
+      console.warn('[Department] Safety timeout triggered');
       setLoadError('Tempo limite excedido. Recarregue a página.');
       setLoading(false);
-    }, 10000);
+    }, 8000);
     
     // Load data with proper error handling
     // NOTE: ProtectedRoute already ensures valid session, no need to call ensureSession() again

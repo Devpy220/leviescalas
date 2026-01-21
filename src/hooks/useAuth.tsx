@@ -197,9 +197,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    // THEN check for existing session (single-flight guarded)
-    // Use a timeout so we never remain stuck in loading=true.
-    void withTimeout(ensureSession(), 7000, null).finally(() => setLoading(false));
+    // Let onAuthStateChange handle session updates - it already calls setLoading(false).
+    // We only set a fallback timeout to guarantee loading=false if no event fires.
+    const bootTimeout = window.setTimeout(() => setLoading(false), 5000);
+    
+    return () => {
+      subscription.unsubscribe();
+      window.clearTimeout(bootTimeout);
+      guard.refCount = Math.max(0, guard.refCount - 1);
+    };
 
     return () => {
       subscription.unsubscribe();
@@ -216,13 +222,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     const attemptRecovery = () => {
       if (t) window.clearTimeout(t);
-      // Debounce to 2 seconds to avoid rapid calls
+      // Debounce to 5 seconds to avoid rapid calls and token storms
       t = window.setTimeout(() => {
         // Only attempt if we have NO session and NO cached session
         if (!session?.user && !guard.cachedSession) {
           void ensureSession();
         }
-      }, 2000);
+      }, 5000);
     };
 
     const onVisibility = () => {
