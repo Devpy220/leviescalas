@@ -36,6 +36,9 @@ const getAuthGuard = () => {
   };
 };
 
+// TOKEN_REFRESHED debounce increased to 60 seconds to prevent cascade refreshes
+const TOKEN_REFRESH_DEBOUNCE = 60000;
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -93,9 +96,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       (event, currentSession) => {
         const now = Date.now();
 
-        // Debounce TOKEN_REFRESHED events - ignore if less than 30 seconds since last one
+        // Debounce TOKEN_REFRESHED events - ignore if less than 60 seconds since last one
         if (event === 'TOKEN_REFRESHED') {
-          if (now - guard.lastTokenRefresh < 30000) return;
+          if (now - guard.lastTokenRefresh < TOKEN_REFRESH_DEBOUNCE) return;
           guard.lastTokenRefresh = now;
         }
 

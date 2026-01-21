@@ -9,7 +9,7 @@ const adminCache = {
   checkedAt: 0,
 };
 
-const CACHE_TTL = 60000; // 1 minute cache
+const CACHE_TTL = 300000; // 5 minute cache to reduce API calls
 
 export function useAdmin() {
   const { user, loading: authLoading } = useAuth();

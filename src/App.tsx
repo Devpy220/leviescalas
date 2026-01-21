@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AdminRedirect } from "@/components/AdminRedirect";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import Landing from "./pages/Landing";
 import Index from "./pages/Index";
@@ -67,19 +68,51 @@ const App = () => (
                   <Route path="/confirm/:token" element={<ConfirmSchedule />} />
                   <Route path="/tutorial" element={<Tutorial />} />
 
-                  {/* User dashboard */}
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/departamento/:slug" element={<DepartmentBySlug />} />
-                  <Route path="/departments/:id" element={<Department />} />
-                  <Route path="/departments/new" element={<CreateDepartment />} />
-                  <Route path="/my-schedules" element={<MySchedules />} />
-                  <Route path="/security" element={<Security />} />
+                  {/* Protected routes - wrapped with ProtectedRoute to centralize auth checks */}
+                  <Route path="/dashboard" element={
+                    <ProtectedRoute>
+                      <Dashboard />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/departamento/:slug" element={
+                    <ProtectedRoute>
+                      <DepartmentBySlug />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/departments/:id" element={
+                    <ProtectedRoute>
+                      <Department />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/departments/new" element={
+                    <ProtectedRoute>
+                      <CreateDepartment />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/my-schedules" element={
+                    <ProtectedRoute>
+                      <MySchedules />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/security" element={
+                    <ProtectedRoute>
+                      <Security />
+                    </ProtectedRoute>
+                  } />
                   <Route path="/payment" element={<Payment />} />
                   <Route path="/apoio" element={<Payment />} />
                   
-                  {/* Church management */}
-                  <Route path="/churches" element={<Churches />} />
-                  <Route path="/churches/:id" element={<ChurchDetail />} />
+                  {/* Church management - protected routes */}
+                  <Route path="/churches" element={
+                    <ProtectedRoute>
+                      <Churches />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/churches/:id" element={
+                    <ProtectedRoute>
+                      <ChurchDetail />
+                    </ProtectedRoute>
+                  } />
                   <Route path="/church-setup" element={<ChurchSetup />} />
                   
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
