@@ -611,6 +611,7 @@ export type Database = {
       }
       sectors: {
         Row: {
+          color: string
           created_at: string
           department_id: string
           description: string | null
@@ -619,6 +620,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          color?: string
           created_at?: string
           department_id: string
           description?: string | null
@@ -627,6 +629,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          color?: string
           created_at?: string
           department_id?: string
           description?: string | null
