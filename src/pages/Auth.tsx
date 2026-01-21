@@ -165,14 +165,15 @@ export default function Auth() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // If user is already authenticated, redirect away from /auth (except password recovery flow)
+  // If user is already authenticated, redirect away from /auth (except password recovery flow or during active login)
   useEffect(() => {
     const { isRecovery } = getRecoveryContextFromUrl();
 
-    if (!loading && session && !isRecovery) {
-      navigate(postAuthRedirect);
+    // Don't redirect if we're in the middle of a login operation
+    if (!loading && session && !isRecovery && !isLoading) {
+      navigate(postAuthRedirect, { replace: true });
     }
-  }, [loading, session, navigate, postAuthRedirect]);
+  }, [loading, session, navigate, postAuthRedirect, isLoading]);
 
   // Validate church from slug when accessing register tab
   // Validate church from URL params when accessing register tab
