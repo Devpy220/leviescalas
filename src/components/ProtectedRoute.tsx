@@ -30,11 +30,22 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
     // No user and no session after auth loaded.
     // Try ONE safe recovery (common after the tab sleeps / laptop resumes).
+    // Also set a hard timeout so we never show an infinite spinner if recovery hangs.
     let cancelled = false;
+    const hardTimeout = window.setTimeout(() => {
+      if (cancelled) return;
+      const returnUrl = location.pathname + location.search;
+      navigate('/auth', {
+        replace: true,
+        state: { returnUrl },
+      });
+    }, 8000);
     
     (async () => {
       const recovered = await ensureSession();
       if (cancelled) return;
+
+       window.clearTimeout(hardTimeout);
       
       if (recovered?.user) {
         setVerified(true);
@@ -49,7 +60,10 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
       });
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      window.clearTimeout(hardTimeout);
+    };
   }, [user, session, authLoading, ensureSession, navigate, location.pathname, location.search]);
 
   // Show loading spinner while auth is loading or not yet verified
