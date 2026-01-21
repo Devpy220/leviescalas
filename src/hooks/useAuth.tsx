@@ -47,6 +47,9 @@ interface AuthGuard {
   cacheTime: number;
   // Promise for in-flight refresh to allow waiting
   refreshPromise: Promise<Session | null> | null;
+  // Debounce bootstrap to avoid multiple calls
+  bootstrapTimeout: number | null;
+  lastBootstrapUserId: string | null;
 }
 
 const getAuthGuard = (): AuthGuard => {
@@ -59,7 +62,9 @@ const getAuthGuard = (): AuthGuard => {
       initialized: false,
       cachedSession: null,
       cacheTime: 0,
-      refreshPromise: null
+      refreshPromise: null,
+      bootstrapTimeout: null,
+      lastBootstrapUserId: null
     };
   }
   return w[AUTH_GUARD_KEY];
@@ -78,7 +83,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const hasInitialized = useRef(false);
 
   const bootstrapUser = useCallback(async (u: User) => {
+    const guard = getAuthGuard();
+    
+    // Skip if we already bootstrapped this user recently
+    if (guard.lastBootstrapUserId === u.id) {
+      return;
+    }
+    
     try {
+      guard.lastBootstrapUserId = u.id;
+      
       // Ensure profile exists (some flows like password recovery won't recreate it).
       const email = u.email ?? '';
       const name = (u.user_metadata?.name as string | undefined) ?? '';
@@ -101,6 +115,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await supabase.rpc('ensure_admin_role');
     } catch {
       // Silent: bootstrap should never block auth flow.
+      // Reset so we can retry on next login
+      guard.lastBootstrapUserId = null;
     }
   }, []);
 
@@ -188,11 +204,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(currentSession?.user ?? null);
         setLoading(false);
 
-        // Never call supabase inside the callback; defer.
-        if (currentSession?.user) {
-          setTimeout(() => {
+        // Debounced bootstrap - only run ONCE per user, not on every auth event
+        if (currentSession?.user && event === 'SIGNED_IN') {
+          // Clear any pending bootstrap
+          if (guard.bootstrapTimeout) {
+            window.clearTimeout(guard.bootstrapTimeout);
+          }
+          // Debounce to 500ms to let auth settle
+          guard.bootstrapTimeout = window.setTimeout(() => {
             bootstrapUser(currentSession.user);
-          }, 0);
+            guard.bootstrapTimeout = null;
+          }, 500);
         }
       }
     );
@@ -204,13 +226,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       subscription.unsubscribe();
       window.clearTimeout(bootTimeout);
+      if (guard.bootstrapTimeout) {
+        window.clearTimeout(guard.bootstrapTimeout);
+      }
       guard.refCount = Math.max(0, guard.refCount - 1);
-    };
-
-    return () => {
-      subscription.unsubscribe();
-      guard.refCount = Math.max(0, guard.refCount - 1);
-      // Don't stop auto-refresh on cleanup to prevent rate limiting issues
     };
   }, [bootstrapUser, ensureSession]);
 
