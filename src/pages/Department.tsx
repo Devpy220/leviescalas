@@ -109,7 +109,7 @@ interface Schedule {
 export default function Department() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, ensureSession } = useAuth();
   const { toast } = useToast();
   
   const [department, setDepartment] = useState<Department | null>(null);
@@ -130,11 +130,16 @@ export default function Department() {
     
     // If we have a user, fetch data (ProtectedRoute ensures user exists)
     if (user && id) {
-      fetchDepartment();
-      fetchMembers();
-      fetchSchedules();
+      // Ensure session is valid before fetching data
+      const loadData = async () => {
+        await ensureSession();
+        fetchDepartment();
+        fetchMembers();
+        fetchSchedules();
+      };
+      loadData();
     }
-  }, [user, id, authLoading]);
+  }, [user, id, authLoading, ensureSession]);
 
   const fetchDepartment = async () => {
     if (!id) return;
@@ -189,11 +194,21 @@ export default function Department() {
     if (!id) return;
     
     try {
+      // Ensure session is valid before fetching
+      const currentSession = await ensureSession();
+      if (!currentSession) {
+        console.warn('No session available for fetching members');
+        return;
+      }
+
       // Use secure function that only returns non-sensitive profile data
       const { data: basicProfiles, error: profilesError } = await supabase
         .rpc('get_department_member_profiles', { dept_id: id });
 
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.error('Error fetching member profiles:', profilesError);
+        // Don't throw - try to continue with member records
+      }
 
       // Get member records for IDs and joined_at
       const { data: memberRecords, error: membersError } = await supabase
@@ -201,7 +216,10 @@ export default function Department() {
         .select('id, user_id, role, joined_at')
         .eq('department_id', id);
 
-      if (membersError) throw membersError;
+      if (membersError) {
+        console.error('Error fetching member records:', membersError);
+        throw membersError;
+      }
 
       // Combine the data
       const formattedMembers = (memberRecords || []).map(m => {
@@ -223,6 +241,11 @@ export default function Department() {
       setMembers(formattedMembers);
     } catch (error) {
       console.error('Error fetching members:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao carregar membros',
+        description: 'Recarregue a página para tentar novamente.',
+      });
     }
   };
 
