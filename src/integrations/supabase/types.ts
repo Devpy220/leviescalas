@@ -728,6 +728,18 @@ export type Database = {
           whatsapp: string
         }[]
       }
+      get_all_profiles_with_departments: {
+        Args: never
+        Returns: {
+          church_name: string
+          created_at: string
+          department_name: string
+          email: string
+          id: string
+          name: string
+          whatsapp: string
+        }[]
+      }
       get_billing_audit_logs: {
         Args: { dept_id: string; limit_count?: number }
         Returns: {
