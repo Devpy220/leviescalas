@@ -50,7 +50,7 @@ export default function CreateDepartment() {
   
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, ensureSession } = useAuth();
 
   // Check if coming from church page with pre-filled church code
   const prefilledChurchCode = searchParams.get('churchCode');
@@ -102,11 +102,14 @@ export default function CreateDepartment() {
   const handleSubmit = async (data: DepartmentForm) => {
     if (authLoading) return;
 
-    if (!user) {
+    // Try to recover session instead of redirecting immediately (prevents unwanted logouts after inactivity)
+    const activeSession = user ? null : await ensureSession();
+    const effectiveUser = user ?? activeSession?.user ?? null;
+    if (!effectiveUser) {
       toast({
         variant: 'destructive',
-        title: 'Erro',
-        description: 'Você precisa estar logado para criar um departamento.',
+        title: 'Sessão expirada',
+        description: 'Faça login novamente para continuar.',
       });
       navigate('/auth');
       return;
