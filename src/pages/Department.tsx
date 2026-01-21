@@ -144,20 +144,19 @@ export default function Department() {
       return;
     }
     
+    // Safety timeout to prevent infinite loading
+    const safetyTimeout = setTimeout(() => {
+      setLoadError('Tempo limite excedido. Recarregue a página.');
+      setLoading(false);
+    }, 10000);
+    
     // Load data with proper error handling
+    // NOTE: ProtectedRoute already ensures valid session, no need to call ensureSession() again
     const loadData = async () => {
       setLoading(true);
       setLoadError(null);
       
       try {
-        // Ensure session is valid before fetching data
-        const validSession = await ensureSession();
-        if (!validSession) {
-          setLoadError('Sessão inválida. Faça login novamente.');
-          setLoading(false);
-          return;
-        }
-        
         // Fetch department first - if this fails, no point continuing
         await fetchDepartment();
         
@@ -168,10 +167,13 @@ export default function Department() {
         setLoadError('Erro ao carregar departamento.');
       } finally {
         setLoading(false);
+        clearTimeout(safetyTimeout);
       }
     };
     
     loadData();
+    
+    return () => clearTimeout(safetyTimeout);
   }, [currentUser?.id, id, authLoading]);
 
   const fetchDepartment = async () => {
@@ -234,12 +236,7 @@ export default function Department() {
     if (!id) return;
     
     try {
-      // Ensure session is valid before fetching
-      const currentSession = await ensureSession();
-      if (!currentSession) {
-        console.warn('No session available for fetching members');
-        return;
-      }
+      // NOTE: ProtectedRoute already ensures valid session, no redundant ensureSession() call
 
       // Use secure function that only returns non-sensitive profile data
       const { data: basicProfiles, error: profilesError } = await supabase
