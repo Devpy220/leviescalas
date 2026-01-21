@@ -98,6 +98,7 @@ export default function Auth() {
   const redirectParam = searchParams.get('redirect');
   const churchSlugParam = searchParams.get('church');
   const churchCodeParam = searchParams.get('churchCode');
+  const sessionExpired = searchParams.get('expired') === 'true';
   const postAuthRedirect = redirectParam && redirectParam.startsWith('/') ? redirectParam : '/dashboard';
   
   // Check if coming from a department invite link
@@ -105,6 +106,21 @@ export default function Auth() {
   
   // Church slug or code from URL - this is the only way to register now (except department invites)
   const hasChurchContext = !!churchSlugParam || !!churchCodeParam;
+  
+  // Show toast when session expired (after Supabase unpause or token invalidation)
+  useEffect(() => {
+    if (sessionExpired) {
+      toast({
+        variant: 'destructive',
+        title: 'Sessão expirada',
+        description: 'Sua sessão expirou. Por favor, faça login novamente.',
+      });
+      // Clean up URL param to avoid showing toast again on refresh
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('expired');
+      window.history.replaceState({}, '', newUrl.toString());
+    }
+  }, [sessionExpired, toast]);
 
   // Detect password recovery flow from auth event
   useEffect(() => {
