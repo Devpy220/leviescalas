@@ -8,6 +8,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { AdminRedirect } from "@/components/AdminRedirect";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { usePageTracking } from "@/hooks/usePageTracking";
+import { PWAAutoInstaller } from "@/components/PWAAutoInstaller";
 import Landing from "./pages/Landing";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -44,6 +45,7 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
+          <PWAAutoInstaller />
           <BrowserRouter>
             <PageTracker>
               <AdminRedirect>
