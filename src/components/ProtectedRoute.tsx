@@ -29,9 +29,13 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     }
 
     // No user and no session after auth loaded.
-    // Try a safe recovery first (common after the tab sleeps / laptop resumes).
+    // Try ONE safe recovery (common after the tab sleeps / laptop resumes).
+    let cancelled = false;
+    
     (async () => {
       const recovered = await ensureSession();
+      if (cancelled) return;
+      
       if (recovered?.user) {
         setVerified(true);
         return;
@@ -44,7 +48,9 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
         state: { returnUrl },
       });
     })();
-  }, [user, session, authLoading, ensureSession, navigate, location]);
+
+    return () => { cancelled = true; };
+  }, [user, session, authLoading, ensureSession, navigate, location.pathname, location.search]);
 
   // Show loading spinner while auth is loading or not yet verified
   if (authLoading || (!verified && !user && !session)) {
