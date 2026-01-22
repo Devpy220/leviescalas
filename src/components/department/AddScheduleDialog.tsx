@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { format } from 'date-fns';
+import { format, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Calendar as CalendarIcon, Clock, User, FileText, Layers } from 'lucide-react';
 import {
@@ -30,6 +30,16 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { Badge } from '@/components/ui/badge';
+
+// Fixed slots configuration - matches SlotAvailability.tsx
+const FIXED_SLOTS = [
+  { dayOfWeek: 0, timeStart: '09:00', timeEnd: '12:00', label: 'Domingo Manhã' },
+  { dayOfWeek: 0, timeStart: '18:00', timeEnd: '22:00', label: 'Domingo Noite' },
+  { dayOfWeek: 1, timeStart: '19:20', timeEnd: '22:00', label: 'Segunda' },
+  { dayOfWeek: 3, timeStart: '19:20', timeEnd: '22:00', label: 'Quarta' },
+  { dayOfWeek: 5, timeStart: '19:20', timeEnd: '22:00', label: 'Sexta' },
+];
 
 interface Member {
   id: string;
@@ -70,18 +80,53 @@ export default function AddScheduleDialog({
   const [selectedMember, setSelectedMember] = useState<string>('');
   const [selectedSector, setSelectedSector] = useState<string>('');
   const [sectors, setSectors] = useState<Sector[]>([]);
+  const [selectedSlot, setSelectedSlot] = useState<string>('');
   const [timeStart, setTimeStart] = useState('09:00');
-  const [timeEnd, setTimeEnd] = useState('17:00');
+  const [timeEnd, setTimeEnd] = useState('12:00');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+
+  // Get available slots for selected date
+  const getAvailableSlots = (selectedDate: Date | undefined) => {
+    if (!selectedDate) return [];
+    const dayOfWeek = getDay(selectedDate);
+    return FIXED_SLOTS.filter(slot => slot.dayOfWeek === dayOfWeek);
+  };
+
+  const availableSlots = getAvailableSlots(date);
 
   useEffect(() => {
     if (selectedDate) {
       setDate(selectedDate);
     }
   }, [selectedDate]);
+
+  // Update times when slot is selected
+  useEffect(() => {
+    if (selectedSlot && selectedSlot !== 'custom') {
+      const slot = FIXED_SLOTS.find(s => `${s.dayOfWeek}-${s.timeStart}` === selectedSlot);
+      if (slot) {
+        setTimeStart(slot.timeStart);
+        setTimeEnd(slot.timeEnd);
+      }
+    }
+  }, [selectedSlot]);
+
+  // Auto-select first slot when date changes and slots are available
+  useEffect(() => {
+    if (availableSlots.length > 0) {
+      const firstSlot = availableSlots[0];
+      setSelectedSlot(`${firstSlot.dayOfWeek}-${firstSlot.timeStart}`);
+      setTimeStart(firstSlot.timeStart);
+      setTimeEnd(firstSlot.timeEnd);
+    } else {
+      setSelectedSlot('custom');
+      setTimeStart('19:00');
+      setTimeEnd('22:00');
+    }
+  }, [date]);
 
   useEffect(() => {
     if (open) {
@@ -91,8 +136,9 @@ export default function AddScheduleDialog({
       // Reset form when dialog closes
       setSelectedMember('');
       setSelectedSector('');
+      setSelectedSlot('');
       setTimeStart('09:00');
-      setTimeEnd('17:00');
+      setTimeEnd('12:00');
       setNotes('');
     }
   }, [open]);
@@ -258,30 +304,96 @@ export default function AddScheduleDialog({
             </div>
           )}
 
-          {/* Time Inputs */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-muted-foreground" />
-                Início
-              </Label>
-              <Input
-                type="time"
-                value={timeStart}
-                onChange={(e) => setTimeStart(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-muted-foreground" />
-                Término
-              </Label>
-              <Input
-                type="time"
-                value={timeEnd}
-                onChange={(e) => setTimeEnd(e.target.value)}
-              />
-            </div>
+          {/* Time Slot Selection */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-muted-foreground" />
+              Horário
+            </Label>
+            
+            {availableSlots.length > 0 ? (
+              <div className="space-y-3">
+                {/* Predefined slots */}
+                <div className="flex flex-wrap gap-2">
+                  {availableSlots.map((slot) => {
+                    const slotKey = `${slot.dayOfWeek}-${slot.timeStart}`;
+                    const isSelected = selectedSlot === slotKey;
+                    return (
+                      <Badge
+                        key={slotKey}
+                        variant={isSelected ? "default" : "outline"}
+                        className={`cursor-pointer px-3 py-2 text-sm transition-all ${
+                          isSelected 
+                            ? 'bg-primary text-primary-foreground' 
+                            : 'hover:bg-primary/10'
+                        }`}
+                        onClick={() => setSelectedSlot(slotKey)}
+                      >
+                        {slot.label} ({slot.timeStart} - {slot.timeEnd})
+                      </Badge>
+                    );
+                  })}
+                  <Badge
+                    variant={selectedSlot === 'custom' ? "default" : "outline"}
+                    className={`cursor-pointer px-3 py-2 text-sm transition-all ${
+                      selectedSlot === 'custom' 
+                        ? 'bg-primary text-primary-foreground' 
+                        : 'hover:bg-primary/10'
+                    }`}
+                    onClick={() => setSelectedSlot('custom')}
+                  >
+                    Horário personalizado
+                  </Badge>
+                </div>
+
+                {/* Custom time inputs - only show when custom is selected */}
+                {selectedSlot === 'custom' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm">Início</Label>
+                      <Input
+                        type="time"
+                        value={timeStart}
+                        onChange={(e) => setTimeStart(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm">Término</Label>
+                      <Input
+                        type="time"
+                        value={timeEnd}
+                        onChange={(e) => setTimeEnd(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* No predefined slots - show time inputs directly */
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Nenhum horário pré-definido para este dia
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm">Início</Label>
+                    <Input
+                      type="time"
+                      value={timeStart}
+                      onChange={(e) => setTimeStart(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm">Término</Label>
+                    <Input
+                      type="time"
+                      value={timeEnd}
+                      onChange={(e) => setTimeEnd(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Notes */}
