@@ -168,6 +168,7 @@ export type Database = {
           department_id: string
           id: string
           is_available: boolean
+          period_start: string
           time_end: string
           time_start: string
           updated_at: string
@@ -179,6 +180,7 @@ export type Database = {
           department_id: string
           id?: string
           is_available?: boolean
+          period_start?: string
           time_end: string
           time_start: string
           updated_at?: string
@@ -190,6 +192,7 @@ export type Database = {
           department_id?: string
           id?: string
           is_available?: boolean
+          period_start?: string
           time_end?: string
           time_start?: string
           updated_at?: string

@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Calendar, Sun, Moon } from 'lucide-react';
+import { Loader2, Calendar, Sun, Moon, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { format, endOfMonth, setDate } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 // Fixed slots configuration - matches UnifiedScheduleView
 const FIXED_SLOTS = [
@@ -72,6 +74,33 @@ interface SlotAvailabilityRecord {
   time_start: string;
   time_end: string;
   is_available: boolean;
+  period_start?: string;
+}
+
+// Calculate period start and end dates
+function getPeriodInfo() {
+  const now = new Date();
+  const day = now.getDate();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  
+  // Period starts on 1st or 16th
+  const periodStartDay = day >= 16 ? 16 : 1;
+  const periodStart = new Date(year, month, periodStartDay);
+  
+  // Period ends on 15th or end of month
+  let periodEnd: Date;
+  if (periodStartDay === 1) {
+    periodEnd = setDate(now, 15);
+  } else {
+    periodEnd = endOfMonth(now);
+  }
+  
+  return {
+    periodStart,
+    periodEnd,
+    periodStartStr: periodStart.toISOString().split('T')[0],
+  };
 }
 
 export default function SlotAvailability({ departmentId, userId }: SlotAvailabilityProps) {
@@ -79,6 +108,8 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [availability, setAvailability] = useState<SlotAvailabilityRecord[]>([]);
+
+  const periodInfo = useMemo(() => getPeriodInfo(), []);
 
   // Normalize time to HH:mm format (database returns HH:mm:ss)
   const normalizeTime = (time: string) => time?.slice(0, 5);
@@ -95,9 +126,10 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
       setLoading(true);
       const { data, error } = await supabase
         .from('member_availability')
-        .select('id, day_of_week, time_start, time_end, is_available')
+        .select('id, day_of_week, time_start, time_end, is_available, period_start')
         .eq('department_id', departmentId)
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .gte('period_start', periodInfo.periodStartStr);
 
       if (error) throw error;
       setAvailability(data || []);
@@ -176,7 +208,7 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
           setAvailability(prev => prev.filter(a => a.id !== existingRecord.id));
         }
       } else {
-        // No existing record - use simple INSERT (no upsert/onConflict)
+        // No existing record - insert with period_start
         const { data, error } = await supabase
           .from('member_availability')
           .insert({
@@ -185,7 +217,8 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
             day_of_week: slot.dayOfWeek,
             time_start: formatTimeForDb(slot.timeStart),
             time_end: formatTimeForDb(slot.timeEnd),
-            is_available: true
+            is_available: true,
+            period_start: periodInfo.periodStartStr
           })
           .select()
           .maybeSingle();
@@ -215,18 +248,19 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
         title: newValue ? 'Disponibilidade marcada!' : 'Disponibilidade removida',
         description: slot.label,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { message?: string; details?: string; code?: string; hint?: string };
       console.error('Error toggling slot availability:', {
-        message: error?.message,
-        details: error?.details,
-        code: error?.code,
-        hint: error?.hint,
+        message: err?.message,
+        details: err?.details,
+        code: err?.code,
+        hint: err?.hint,
         fullError: error
       });
       toast({
         variant: 'destructive',
         title: 'Erro ao atualizar',
-        description: error?.message || 'Não foi possível salvar sua disponibilidade.',
+        description: err?.message || 'Não foi possível salvar sua disponibilidade.',
       });
     } finally {
       setSaving(null);
@@ -234,6 +268,9 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
   };
 
   const availableCount = FIXED_SLOTS.filter(slot => isSlotAvailable(slot)).length;
+
+  // Format period end date for display
+  const periodEndFormatted = format(periodInfo.periodEnd, "d 'de' MMMM", { locale: ptBR });
 
   if (loading) {
     return (
@@ -255,6 +292,19 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Period validity notice */}
+        <div className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-lg">
+          <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+          <div className="text-sm">
+            <p className="font-medium text-amber-800 dark:text-amber-200">
+              Válida até {periodEndFormatted}
+            </p>
+            <p className="text-amber-700 dark:text-amber-300/80">
+              Após essa data, você precisará marcar novamente sua disponibilidade.
+            </p>
+          </div>
+        </div>
+
         {/* Legend */}
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>{availableCount} de {FIXED_SLOTS.length} slots disponíveis</span>
