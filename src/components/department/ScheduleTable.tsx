@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Clock, Users, Calendar, CheckCircle2, XCircle, HelpCircle } from 'lucide-react';
-import { createMemberColorMap, getMemberHexColor } from '@/lib/memberColors';
+import { createExtendedMemberColorMap, getMemberBackgroundStyle } from '@/lib/memberColors';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -57,9 +57,13 @@ interface ScheduleTableProps {
 }
 
 export default function ScheduleTable({ schedules, members, month, title }: ScheduleTableProps) {
-  const memberColorMap = useMemo(() => createMemberColorMap(members), [members]);
+  // Create extended color map that supports bicolor combinations for 13+ members
+  const memberColorMap = useMemo(() => createExtendedMemberColorMap(members), [members]);
 
-  const getMemberHexColorValue = (userId: string) => getMemberHexColor(memberColorMap, userId);
+  // Get background style (supports both solid and gradient)
+  const getMemberBgStyle = (userId: string): React.CSSProperties => {
+    return getMemberBackgroundStyle(memberColorMap, userId);
+  };
 
   const getConfirmationBadge = (status?: ConfirmationStatus, declineReason?: string | null) => {
     switch (status) {
@@ -180,7 +184,7 @@ export default function ScheduleTable({ schedules, members, month, title }: Sche
                         <Avatar className="h-5 w-5">
                           <AvatarFallback 
                             className="text-[8px] text-white"
-                            style={{ backgroundColor: getMemberHexColorValue(schedule.user_id) }}
+                            style={getMemberBgStyle(schedule.user_id)}
                           >
                             {schedule.profile?.name?.charAt(0) || 'M'}
                           </AvatarFallback>

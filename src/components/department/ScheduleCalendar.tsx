@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { createMemberColorMap, getMemberColor } from '@/lib/memberColors';
+import { createExtendedMemberColorMap, getMemberColor, getMemberBackgroundStyle } from '@/lib/memberColors';
 import {
   format,
   startOfMonth,
@@ -141,11 +141,16 @@ export default function ScheduleCalendar({
     return days;
   }, [currentMonth]);
 
-  // Create a map of member user_id to unique color index
-  const memberColorMap = useMemo(() => createMemberColorMap(members), [members]);
+  // Create extended color map that supports bicolor combinations for 13+ members
+  const memberColorMap = useMemo(() => createExtendedMemberColorMap(members), [members]);
 
   // Get color for a specific member by user_id
   const getMemberColorValue = (userId: string) => getMemberColor(memberColorMap, userId);
+
+  // Get background style (supports both solid and gradient)
+  const getMemberBgStyle = (userId: string): React.CSSProperties => {
+    return getMemberBackgroundStyle(memberColorMap, userId);
+  };
 
   const getConfirmationIcon = (status?: ConfirmationStatus) => {
     switch (status) {
@@ -299,16 +304,19 @@ export default function ScheduleCalendar({
                 {/* Background color strips for schedules based on member color */}
                 {hasSchedules && (
                   <div className="absolute inset-0 flex">
-                    {daySchedules.map((schedule, i) => (
-                      <div 
-                        key={i} 
-                        className="h-full opacity-50"
-                        style={{ 
-                          backgroundColor: getMemberColorValue(schedule.user_id).bg,
-                          width: `${100 / daySchedules.length}%`
-                        }}
-                      />
-                    ))}
+                    {daySchedules.map((schedule, i) => {
+                      const colorResult = getMemberColorValue(schedule.user_id);
+                      return (
+                        <div 
+                          key={i} 
+                          className="h-full opacity-50"
+                          style={colorResult.isGradient 
+                            ? { background: colorResult.bg, width: `${100 / daySchedules.length}%` }
+                            : { backgroundColor: colorResult.bg, width: `${100 / daySchedules.length}%` }
+                          }
+                        />
+                      );
+                    })}
                   </div>
                 )}
                 {/* Day number */}
@@ -338,7 +346,10 @@ export default function ScheduleCalendar({
               <div key={member.user_id} className="flex items-center gap-1">
                 <div 
                   className="w-2 h-2 rounded-full" 
-                  style={{ backgroundColor: color.dot }}
+                  style={color.isGradient 
+                    ? { background: color.bg }
+                    : { backgroundColor: color.dot }
+                  }
                 />
                 <span className="truncate max-w-[50px]">{member.profile.name.split(' ')[0]}</span>
               </div>
@@ -383,7 +394,7 @@ export default function ScheduleCalendar({
                         <Avatar className="h-8 w-8">
                           <AvatarFallback 
                             className="text-xs text-white"
-                            style={{ backgroundColor: color.bg }}
+                            style={getMemberBgStyle(schedule.user_id)}
                           >
                             {schedule.profile?.name?.charAt(0) || 'M'}
                           </AvatarFallback>

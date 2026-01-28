@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { createMemberColorMap, getMemberHexColor } from '@/lib/memberColors';
+import { createExtendedMemberColorMap, getMemberColor, getMemberBackgroundStyle } from '@/lib/memberColors';
 
 interface Member {
   id: string;
@@ -75,12 +75,17 @@ export default function MemberList({
   const [contactInfo, setContactInfo] = useState<MemberContactInfo>({});
   const { toast } = useToast();
 
-  // Create color map once when members change
-  const colorMap = useMemo(() => createMemberColorMap(members), [members]);
+  // Create extended color map that supports bicolor combinations for 13+ members
+  const colorMap = useMemo(() => createExtendedMemberColorMap(members), [members]);
 
-  // Get member color using centralized palette
-  const getMemberColor = (userId: string): string => {
-    return getMemberHexColor(colorMap, userId);
+  // Get member background style (supports both solid and gradient colors)
+  const getMemberBgStyle = (userId: string): React.CSSProperties => {
+    return getMemberBackgroundStyle(colorMap, userId);
+  };
+
+  // Get member color object for border styling
+  const getMemberColorObj = (userId: string) => {
+    return getMemberColor(colorMap, userId);
   };
 
   // Leaders can fetch contact info for members
@@ -220,10 +225,10 @@ export default function MemberList({
               className="group relative bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-colors animate-fade-in"
             >
               <div className="flex items-start gap-3">
-                <Avatar className="w-12 h-12 border-2" style={{ borderColor: `${getMemberColor(member.user_id)}40` }}>
+                <Avatar className="w-12 h-12 border-2" style={{ borderColor: `${getMemberColorObj(member.user_id).primary}40` }}>
                   <AvatarFallback 
                     className="text-white font-medium"
-                    style={{ backgroundColor: getMemberColor(member.user_id) }}
+                    style={getMemberBgStyle(member.user_id)}
                   >
                     {initials}
                   </AvatarFallback>
