@@ -42,6 +42,7 @@ import SlotAvailability from '@/components/department/SlotAvailability';
 import LeaderAvailabilityView from '@/components/department/LeaderAvailabilityView';
 import LeaderSlotAvailabilityView from '@/components/department/LeaderSlotAvailabilityView';
 import UnifiedScheduleView from '@/components/department/UnifiedScheduleView';
+import MyAvailabilitySheet from '@/components/department/MyAvailabilitySheet';
 import { exportToPDF, exportToExcel } from '@/lib/exportSchedules';
 import { SupportNotification } from '@/components/SupportNotification';
 import { format, addMonths, startOfMonth } from 'date-fns';
@@ -483,13 +484,15 @@ export default function Department() {
                 <Calendar className="w-4 h-4" />
                 <span className="hidden xs:inline">Escalas</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="availability" 
-                className="gap-2 click-scale selection-glow data-[state=active]:gradient-vibrant data-[state=active]:text-white data-[state=active]:shadow-glow-sm transition-all"
-              >
-                <Clock className="w-4 h-4" />
-                <span className="hidden xs:inline">Disponibilidade</span>
-              </TabsTrigger>
+              {!isLeader && (
+                <TabsTrigger 
+                  value="availability" 
+                  className="gap-2 click-scale selection-glow data-[state=active]:gradient-vibrant data-[state=active]:text-white data-[state=active]:shadow-glow-sm transition-all"
+                >
+                  <Clock className="w-4 h-4" />
+                  <span className="hidden xs:inline">Disponibilidade</span>
+                </TabsTrigger>
+              )}
               {isLeader && (
                 <TabsTrigger 
                   value="sectors" 
@@ -549,6 +552,10 @@ export default function Department() {
               )}
 
               {isLeader && (
+                <MyAvailabilitySheet departmentId={id!} userId={user?.id || ''} />
+              )}
+
+              {isLeader && (
                 <Button 
                   onClick={() => setShowInviteMember(true)}
                   variant="outline"
@@ -562,34 +569,38 @@ export default function Department() {
           </div>
 
           <TabsContent value="schedules" className="mt-4 sm:mt-6 animate-fade-in">
-            <UnifiedScheduleView 
-              schedules={schedules}
-              members={members}
-              isLeader={isLeader}
-              onAddSchedule={handleAddSchedule}
-              onDeleteSchedule={handleScheduleDeleted}
-              departmentId={id!}
-              onOpenSmartSchedule={() => setShowSmartSchedule(true)}
-            />
-          </TabsContent>
-
-          <TabsContent value="availability" className="mt-6 animate-fade-in">
             <div className="space-y-6">
-              {/* Leader sees slot availability by day of week FIRST */}
+              {/* Schedule Calendar */}
+              <UnifiedScheduleView 
+                schedules={schedules}
+                members={members}
+                isLeader={isLeader}
+                onAddSchedule={handleAddSchedule}
+                onDeleteSchedule={handleScheduleDeleted}
+                departmentId={id!}
+                onOpenSmartSchedule={() => setShowSmartSchedule(true)}
+              />
+              
+              {/* Leader sees member availability below the calendar */}
               {isLeader && (
-                <LeaderSlotAvailabilityView departmentId={id!} />
+                <div className="border-t border-border/50 pt-6">
+                  <LeaderSlotAvailabilityView departmentId={id!} />
+                </div>
               )}
               
-              {/* Leader sees date-specific availability */}
               {isLeader && (
                 <LeaderAvailabilityView 
                   departmentId={id!} 
                   onOpenSmartSchedule={() => setShowSmartSchedule(true)} 
                 />
               )}
-              
-              {/* Personal availability below */}
-              <div className="border-t border-border/50 pt-6">
+            </div>
+          </TabsContent>
+
+          {/* Availability tab - only for non-leaders (members) */}
+          {!isLeader && (
+            <TabsContent value="availability" className="mt-6 animate-fade-in">
+              <div className="space-y-6">
                 <h3 className="text-lg font-semibold mb-4">Minha Disponibilidade</h3>
                 <div className="grid gap-6 lg:grid-cols-3 max-w-6xl">
                   <SlotAvailability departmentId={id!} userId={user?.id || ''} />
@@ -597,8 +608,8 @@ export default function Department() {
                   <MemberPreferences departmentId={id!} userId={user?.id || ''} />
                 </div>
               </div>
-            </div>
-          </TabsContent>
+            </TabsContent>
+          )}
 
           <TabsContent value="sectors" className="mt-6">
             <div className="max-w-2xl">
