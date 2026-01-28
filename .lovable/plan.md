@@ -1,41 +1,45 @@
 
 
-## Plano: Excluir Usuário Órfão
+## Plano: Adicionar Cicero Pereira ao Departamento Estacionamento
 
-### Situação Atual
+### Dados Identificados
 
-O email **elinosilva220@gmail.com** tem:
-- Conta no sistema de autenticação (auth.users)
-- Nenhum dado em tabelas do aplicativo (profiles, members, etc.)
+| Item | Valor |
+|------|-------|
+| **Usuário** | Cicero Pereira |
+| **Email** | elinosilva220@gmail.com |
+| **User ID** | `1994e487-8537-488d-81a7-d873c34500b5` |
+| **Departamento** | Estacionamento |
+| **Department ID** | `9eda4d80-a0f1-4a1f-9620-c511d9abf0ac` |
 
 ### Ação Necessária
 
-Para excluir completamente este usuário, é necessário removê-lo diretamente do sistema de autenticação através do backend:
+Inserir um registro na tabela `members` para associar o usuário ao departamento com o papel de "member" (membro comum).
 
-### Passo a Passo
+### SQL a Executar
 
-1. Acessar o gerenciamento de backend
-2. Navegar até **Authentication > Users**
-3. Localizar o usuário **elinosilva220@gmail.com**
-4. Clicar no menu de opções (três pontos) e selecionar **Delete user**
+```text
+INSERT INTO members (department_id, user_id, role)
+VALUES (
+  '9eda4d80-a0f1-4a1f-9620-c511d9abf0ac',
+  '1994e487-8537-488d-81a7-d873c34500b5',
+  'member'
+);
+```
 
-### Acesso ao Backend
+### Resultado Esperado
 
-Clique no botão abaixo para acessar o gerenciamento de usuários:
+Após a inserção:
+- Cicero Pereira terá acesso ao departamento Estacionamento
+- Poderá visualizar as escalas do departamento
+- Poderá marcar sua disponibilidade
+- Aparecerá na lista de membros do departamento (atualmente com 13 membros, passará a ter 14)
 
-### Após a Exclusão
+### Detalhes Técnicos
 
-O usuário poderá se cadastrar novamente normalmente usando o mesmo email.
-
-### Alternativa: Corrigir em vez de Excluir
-
-Se preferir manter a conta e apenas corrigir o perfil faltante, posso criar um plano para:
-1. Inserir o registro de perfil manualmente via SQL
-2. O usuário manteria a mesma conta e poderia fazer login normalmente
-
----
-
-### Ação Recomendada
-
-Como não há dados importantes associados, a exclusão é a opção mais limpa. O usuário poderá se recadastrar.
+A tabela `members` possui as seguintes colunas relevantes:
+- `department_id`: UUID do departamento
+- `user_id`: UUID do usuário
+- `role`: Papel do membro (`member` ou `leader`)
+- `joined_at`: Data de entrada (preenchida automaticamente)
 
