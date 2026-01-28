@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Crown, 
   MoreVertical, 
@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { createMemberColorMap, getMemberHexColor } from '@/lib/memberColors';
 
 interface Member {
   id: string;
@@ -60,20 +61,6 @@ interface MemberListProps {
   onInviteMember: () => void;
 }
 
-// Color palette for members - same as calendar
-const memberColors = [
-  '#6366F1', // Indigo
-  '#22C55E', // Green
-  '#F97316', // Orange
-  '#EC4899', // Pink
-  '#14B8A6', // Teal
-  '#A855F7', // Purple
-  '#EF4444', // Red
-  '#3B82F6', // Blue
-  '#FACC15', // Yellow
-  '#06B6D4', // Cyan
-];
-
 export default function MemberList({
   members,
   isLeader,
@@ -88,10 +75,12 @@ export default function MemberList({
   const [contactInfo, setContactInfo] = useState<MemberContactInfo>({});
   const { toast } = useToast();
 
-  // Create a map of member user_id to color index
+  // Create color map once when members change
+  const colorMap = useMemo(() => createMemberColorMap(members), [members]);
+
+  // Get member color using centralized palette
   const getMemberColor = (userId: string): string => {
-    const memberIndex = members.findIndex(m => m.user_id === userId);
-    return memberColors[memberIndex % memberColors.length];
+    return getMemberHexColor(colorMap, userId);
   };
 
   // Leaders can fetch contact info for members
