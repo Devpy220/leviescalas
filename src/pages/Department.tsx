@@ -8,8 +8,7 @@ import {
   Crown,
   Loader2,
   Clock,
-  Layers,
-  Menu
+  Layers
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -34,7 +33,7 @@ import LeaderAvailabilityView from '@/components/department/LeaderAvailabilityVi
 import LeaderSlotAvailabilityView from '@/components/department/LeaderSlotAvailabilityView';
 import UnifiedScheduleView from '@/components/department/UnifiedScheduleView';
 import MyAvailabilitySheet from '@/components/department/MyAvailabilitySheet';
-import ActionSidebar from '@/components/department/ActionSidebar';
+import ActionMenuPopover from '@/components/department/ActionMenuPopover';
 import { exportToPDF, exportToExcel } from '@/lib/exportSchedules';
 import { SupportNotification } from '@/components/SupportNotification';
 import { format } from 'date-fns';
@@ -124,10 +123,7 @@ export default function Department() {
   const [showSettings, setShowSettings] = useState(false);
   const [showSmartSchedule, setShowSmartSchedule] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(() => {
-    const saved = localStorage.getItem('dept-sidebar-open');
-    return saved !== null ? saved === 'true' : true;
-  });
+  // Removed sidebar state - now using popover
   const [activeTab, setActiveTab] = useState('schedules');
   const isMobile = useIsMobile();
 
@@ -416,12 +412,7 @@ export default function Department() {
     );
   }
 
-  // Toggle sidebar and persist to localStorage
-  const toggleSidebar = () => {
-    const newValue = !sidebarOpen;
-    setSidebarOpen(newValue);
-    localStorage.setItem('dept-sidebar-open', String(newValue));
-  };
+  // Export handlers for popover menu
 
   // Export handlers for sidebar
   const handleExportPDF = () => {
@@ -448,16 +439,17 @@ export default function Department() {
         <header className="sticky top-0 z-50 glass border-b border-border/50">
           <div className="container mx-auto px-2 sm:px-4 h-14 sm:h-16 flex items-center justify-between max-w-7xl">
             <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
-              {/* Hamburger menu for leaders */}
+              {/* Action menu popover for leaders */}
               {isLeader && (
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="text-muted-foreground hover:text-foreground click-scale shrink-0"
-                  onClick={toggleSidebar}
-                >
-                  <Menu className="w-5 h-5" />
-                </Button>
+                <ActionMenuPopover
+                  departmentName={department.name}
+                  currentTab={activeTab}
+                  onTabChange={setActiveTab}
+                  onExportPDF={handleExportPDF}
+                  onExportExcel={handleExportExcel}
+                  onOpenAvailability={() => setShowAvailabilitySheet(true)}
+                  onOpenInvite={() => setShowInviteMember(true)}
+                />
               )}
               
               <Link to="/dashboard">
@@ -507,28 +499,7 @@ export default function Department() {
           </div>
         </header>
 
-        {/* Action Sidebar for leaders */}
-        {isLeader && (
-          <ActionSidebar
-            isOpen={sidebarOpen}
-            onClose={() => {
-              setSidebarOpen(false);
-              localStorage.setItem('dept-sidebar-open', 'false');
-            }}
-            departmentName={department.name}
-            currentTab={activeTab}
-            onTabChange={setActiveTab}
-            onExportPDF={handleExportPDF}
-            onExportExcel={handleExportExcel}
-            onOpenAvailability={() => setShowAvailabilitySheet(true)}
-            onOpenInvite={() => setShowInviteMember(true)}
-          />
-        )}
-
-        <main className={cn(
-          "container mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 max-w-7xl transition-all duration-200",
-          isLeader && sidebarOpen && !isMobile && "ml-14"
-        )}>
+        <main className="container mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 max-w-7xl transition-all duration-200">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
           {/* TabsList only for non-leaders (members) - leaders use sidebar navigation */}
           {!isLeader && (
