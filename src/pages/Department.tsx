@@ -128,6 +128,7 @@ export default function Department() {
     const saved = localStorage.getItem('dept-sidebar-open');
     return saved !== null ? saved === 'true' : true;
   });
+  const [activeTab, setActiveTab] = useState('schedules');
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -514,6 +515,9 @@ export default function Department() {
               setSidebarOpen(false);
               localStorage.setItem('dept-sidebar-open', 'false');
             }}
+            departmentName={department.name}
+            currentTab={activeTab}
+            onTabChange={setActiveTab}
             onExportPDF={handleExportPDF}
             onExportExcel={handleExportExcel}
             onOpenAvailability={() => setShowAvailabilitySheet(true)}
@@ -525,17 +529,18 @@ export default function Department() {
           "container mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 max-w-7xl transition-all duration-200",
           isLeader && sidebarOpen && !isMobile && "ml-14"
         )}>
-        <Tabs defaultValue="schedules" className="space-y-4 sm:space-y-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <TabsList className="bg-muted/50 self-start w-full sm:w-auto overflow-x-auto">
-              <TabsTrigger 
-                value="schedules" 
-                className="gap-2 click-scale selection-glow data-[state=active]:gradient-vibrant data-[state=active]:text-white data-[state=active]:shadow-glow-sm transition-all"
-              >
-                <Calendar className="w-4 h-4" />
-                <span className="hidden xs:inline">Escalas</span>
-              </TabsTrigger>
-              {!isLeader && (
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
+          {/* TabsList only for non-leaders (members) - leaders use sidebar navigation */}
+          {!isLeader && (
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <TabsList className="bg-muted/50 self-start w-full sm:w-auto overflow-x-auto">
+                <TabsTrigger 
+                  value="schedules" 
+                  className="gap-2 click-scale selection-glow data-[state=active]:gradient-vibrant data-[state=active]:text-white data-[state=active]:shadow-glow-sm transition-all"
+                >
+                  <Calendar className="w-4 h-4" />
+                  <span className="hidden xs:inline">Escalas</span>
+                </TabsTrigger>
                 <TabsTrigger 
                   value="availability" 
                   className="gap-2 click-scale selection-glow data-[state=active]:gradient-vibrant data-[state=active]:text-white data-[state=active]:shadow-glow-sm transition-all"
@@ -543,29 +548,9 @@ export default function Department() {
                   <Clock className="w-4 h-4" />
                   <span className="hidden xs:inline">Disponibilidade</span>
                 </TabsTrigger>
-              )}
-              {isLeader && (
-                <TabsTrigger 
-                  value="sectors" 
-                  className="gap-2 click-scale selection-glow data-[state=active]:gradient-vibrant data-[state=active]:text-white data-[state=active]:shadow-glow-sm transition-all"
-                >
-                  <Layers className="w-4 h-4" />
-                  <span className="hidden xs:inline">Setores</span>
-                </TabsTrigger>
-              )}
-              {isLeader && (
-                <TabsTrigger 
-                  value="members" 
-                  className="gap-2 click-scale selection-glow data-[state=active]:gradient-vibrant data-[state=active]:text-white data-[state=active]:shadow-glow-sm transition-all"
-                >
-                  <Users className="w-4 h-4" />
-                  <span className="hidden xs:inline">Membros</span>
-                </TabsTrigger>
-              )}
-            </TabsList>
-
-            {/* Removed - moved to sidebar */}
-          </div>
+              </TabsList>
+            </div>
+          )}
 
           <TabsContent value="schedules" className="mt-4 sm:mt-6 animate-fade-in">
             <div className="space-y-6">
