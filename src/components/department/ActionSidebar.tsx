@@ -1,4 +1,4 @@
-import { Download, Clock, UserPlus, FileText, FileSpreadsheet, X } from 'lucide-react';
+import { Download, Clock, UserPlus, FileText, FileSpreadsheet, X, Calendar, Layers, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -23,13 +23,37 @@ import { cn } from '@/lib/utils';
 interface ActionSidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  departmentName: string;
+  currentTab: string;
+  onTabChange: (tab: string) => void;
   onExportPDF: () => void;
   onExportExcel: () => void;
   onOpenAvailability: () => void;
   onOpenInvite: () => void;
 }
 
-const menuItems = [
+const navigationItems = [
+  { 
+    id: 'schedules',
+    icon: Calendar, 
+    labelSuffix: 'Escalas', 
+    color: 'text-purple-500 hover:text-purple-400 hover:bg-purple-500/10',
+  },
+  { 
+    id: 'sectors',
+    icon: Layers, 
+    labelSuffix: 'Setores', 
+    color: 'text-yellow-500 hover:text-yellow-400 hover:bg-yellow-500/10',
+  },
+  { 
+    id: 'members',
+    icon: Users, 
+    labelSuffix: 'Membros', 
+    color: 'text-cyan-500 hover:text-cyan-400 hover:bg-cyan-500/10',
+  },
+];
+
+const actionItems = [
   { 
     id: 'export',
     icon: Download, 
@@ -53,12 +77,20 @@ const menuItems = [
 export default function ActionSidebar({
   isOpen,
   onClose,
+  departmentName,
+  currentTab,
+  onTabChange,
   onExportPDF,
   onExportExcel,
   onOpenAvailability,
   onOpenInvite,
 }: ActionSidebarProps) {
   const isMobile = useIsMobile();
+
+  const handleNavigation = (tabId: string) => {
+    onTabChange(tabId);
+    if (isMobile) onClose();
+  };
 
   const handleAction = (actionId: string) => {
     switch (actionId) {
@@ -82,7 +114,7 @@ export default function ActionSidebar({
               variant="ghost"
               size={inDrawer ? "default" : "icon"}
               className={cn(
-                menuItems[0].color,
+                actionItems[0].color,
                 "transition-all duration-200",
                 inDrawer && "w-full justify-start gap-3"
               )}
@@ -127,9 +159,40 @@ export default function ActionSidebar({
     </DropdownMenu>
   );
 
-  const renderMenuItem = (item: typeof menuItems[0], inDrawer = false) => {
+  const renderNavigationItem = (item: typeof navigationItems[0], inDrawer = false) => {
+    const label = `${departmentName} - ${item.labelSuffix}`;
+    const isActive = currentTab === item.id;
+
+    return (
+      <Tooltip key={item.id}>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size={inDrawer ? "default" : "icon"}
+            className={cn(
+              item.color,
+              "transition-all duration-200",
+              inDrawer && "w-full justify-start gap-3",
+              isActive && "bg-accent ring-1 ring-primary/30"
+            )}
+            onClick={() => handleNavigation(item.id)}
+          >
+            <item.icon className={cn("w-5 h-5", inDrawer && "shrink-0")} />
+            {inDrawer && <span>{label}</span>}
+          </Button>
+        </TooltipTrigger>
+        {!inDrawer && (
+          <TooltipContent side="right" className="font-medium">
+            {label}
+          </TooltipContent>
+        )}
+      </Tooltip>
+    );
+  };
+
+  const renderActionItem = (item: typeof actionItems[0], inDrawer = false) => {
     if (item.id === 'export') {
-      return renderExportDropdown(inDrawer);
+      return <div key={item.id}>{renderExportDropdown(inDrawer)}</div>;
     }
 
     return (
@@ -164,14 +227,20 @@ export default function ActionSidebar({
       <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <DrawerContent className="pb-6">
           <DrawerHeader className="pb-2">
-            <DrawerTitle className="text-lg font-display">Ações Rápidas</DrawerTitle>
+            <DrawerTitle className="text-lg font-display">Menu</DrawerTitle>
           </DrawerHeader>
-          <div className="px-4 space-y-2">
-            {menuItems.map((item) => (
-              <div key={item.id}>
-                {renderMenuItem(item, true)}
-              </div>
-            ))}
+          <div className="px-4 space-y-1">
+            {/* Navigation items */}
+            <div className="pb-2 border-b border-border/50 mb-2">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2 px-2">Navegação</p>
+              {navigationItems.map((item) => renderNavigationItem(item, true))}
+            </div>
+            
+            {/* Action items */}
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2 px-2">Ações</p>
+              {actionItems.map((item) => renderActionItem(item, true))}
+            </div>
           </div>
         </DrawerContent>
       </Drawer>
@@ -210,10 +279,20 @@ export default function ActionSidebar({
       {/* Divider */}
       <div className="w-8 h-px bg-border/50 mb-2" />
 
-      {/* Menu items */}
-      {menuItems.map((item) => (
+      {/* Navigation items */}
+      {navigationItems.map((item) => (
         <div key={item.id}>
-          {renderMenuItem(item)}
+          {renderNavigationItem(item)}
+        </div>
+      ))}
+
+      {/* Divider */}
+      <div className="w-8 h-px bg-border/50 my-2" />
+
+      {/* Action items */}
+      {actionItems.map((item) => (
+        <div key={item.id}>
+          {renderActionItem(item)}
         </div>
       ))}
     </aside>
