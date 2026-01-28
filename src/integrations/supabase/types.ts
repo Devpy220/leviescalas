@@ -358,6 +358,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "notifications_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedules_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "notifications_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -673,7 +680,95 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      schedules_public: {
+        Row: {
+          confirmation_status:
+            | Database["public"]["Enums"]["confirmation_status"]
+            | null
+          confirmation_token: string | null
+          confirmed_at: string | null
+          created_at: string | null
+          created_by: string | null
+          date: string | null
+          decline_reason: string | null
+          department_id: string | null
+          id: string | null
+          notes: string | null
+          sector_id: string | null
+          time_end: string | null
+          time_start: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          confirmation_status?:
+            | Database["public"]["Enums"]["confirmation_status"]
+            | null
+          confirmation_token?: never
+          confirmed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          date?: string | null
+          decline_reason?: never
+          department_id?: string | null
+          id?: string | null
+          notes?: never
+          sector_id?: string | null
+          time_end?: string | null
+          time_start?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          confirmation_status?:
+            | Database["public"]["Enums"]["confirmation_status"]
+            | null
+          confirmation_token?: never
+          confirmed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          date?: string | null
+          decline_reason?: never
+          department_id?: string | null
+          id?: string | null
+          notes?: never
+          sector_id?: string | null
+          time_end?: string | null
+          time_start?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedules_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedules_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedules_sector_id_fkey"
+            columns: ["sector_id"]
+            isOneToOne: false
+            referencedRelation: "sectors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedules_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       admin_create_church: {
@@ -889,6 +984,26 @@ export type Database = {
           joined_at: string
           name: string
           role: string
+          user_id: string
+        }[]
+      }
+      get_department_schedules_secure: {
+        Args: { dept_id: string }
+        Returns: {
+          confirmation_status: string
+          confirmation_token: string
+          confirmed_at: string
+          created_at: string
+          created_by: string
+          date: string
+          decline_reason: string
+          department_id: string
+          id: string
+          notes: string
+          sector_id: string
+          time_end: string
+          time_start: string
+          updated_at: string
           user_id: string
         }[]
       }
