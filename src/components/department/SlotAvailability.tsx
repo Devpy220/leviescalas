@@ -2,12 +2,12 @@ import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Calendar, Sun, Moon, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format, endOfMonth, setDate } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { getCurrentPeriodInfo, getNextPeriodInfo, formatPeriodEnd, type PeriodInfo } from '@/lib/periodUtils';
 
 // Fixed slots configuration - matches UnifiedScheduleView
 const FIXED_SLOTS = [
@@ -77,39 +77,20 @@ interface SlotAvailabilityRecord {
   period_start?: string;
 }
 
-// Calculate period start and end dates
-function getPeriodInfo() {
-  const now = new Date();
-  const day = now.getDate();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  
-  // Period starts on 1st or 16th
-  const periodStartDay = day >= 16 ? 16 : 1;
-  const periodStart = new Date(year, month, periodStartDay);
-  
-  // Period ends on 15th or end of month
-  let periodEnd: Date;
-  if (periodStartDay === 1) {
-    periodEnd = setDate(now, 15);
-  } else {
-    periodEnd = endOfMonth(now);
-  }
-  
-  return {
-    periodStart,
-    periodEnd,
-    periodStartStr: periodStart.toISOString().split('T')[0],
-  };
-}
-
 export default function SlotAvailability({ departmentId, userId }: SlotAvailabilityProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
-  const [availability, setAvailability] = useState<SlotAvailabilityRecord[]>([]);
+  const [selectedPeriod, setSelectedPeriod] = useState<'current' | 'next'>('current');
+  const [currentAvailability, setCurrentAvailability] = useState<SlotAvailabilityRecord[]>([]);
+  const [nextAvailability, setNextAvailability] = useState<SlotAvailabilityRecord[]>([]);
 
-  const periodInfo = useMemo(() => getPeriodInfo(), []);
+  const currentPeriod = useMemo(() => getCurrentPeriodInfo(), []);
+  const nextPeriod = useMemo(() => getNextPeriodInfo(), []);
+
+  const activePeriod = selectedPeriod === 'current' ? currentPeriod : nextPeriod;
+  const availability = selectedPeriod === 'current' ? currentAvailability : nextAvailability;
+  const setAvailability = selectedPeriod === 'current' ? setCurrentAvailability : setNextAvailability;
 
   // Normalize time to HH:mm format (database returns HH:mm:ss)
   const normalizeTime = (time: string) => time?.slice(0, 5);
@@ -124,15 +105,31 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
     
     try {
       setLoading(true);
+      
+      // Fetch availability for both periods
       const { data, error } = await supabase
         .from('member_availability')
         .select('id, day_of_week, time_start, time_end, is_available, period_start')
         .eq('department_id', departmentId)
         .eq('user_id', userId)
-        .gte('period_start', periodInfo.periodStartStr);
+        .gte('period_start', currentPeriod.periodStartStr);
 
       if (error) throw error;
-      setAvailability(data || []);
+
+      // Separate into current and next period
+      const current: SlotAvailabilityRecord[] = [];
+      const next: SlotAvailabilityRecord[] = [];
+      
+      (data || []).forEach(record => {
+        if (record.period_start === currentPeriod.periodStartStr) {
+          current.push(record);
+        } else if (record.period_start === nextPeriod.periodStartStr) {
+          next.push(record);
+        }
+      });
+
+      setCurrentAvailability(current);
+      setNextAvailability(next);
     } catch (error) {
       console.error('Error fetching slot availability:', error);
     } finally {
@@ -218,7 +215,7 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
             time_start: formatTimeForDb(slot.timeStart),
             time_end: formatTimeForDb(slot.timeEnd),
             is_available: true,
-            period_start: periodInfo.periodStartStr
+            period_start: activePeriod.periodStartStr
           })
           .select()
           .maybeSingle();
@@ -268,9 +265,7 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
   };
 
   const availableCount = FIXED_SLOTS.filter(slot => isSlotAvailable(slot)).length;
-
-  // Format period end date for display
-  const periodEndFormatted = format(periodInfo.periodEnd, "d 'de' MMMM", { locale: ptBR });
+  const periodEndFormatted = formatPeriodEnd(activePeriod.periodEnd);
 
   if (loading) {
     return (
@@ -292,85 +287,103 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Period validity notice */}
-        <div className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-lg">
-          <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-          <div className="text-sm">
-            <p className="font-medium text-amber-800 dark:text-amber-200">
-              Válida até {periodEndFormatted}
-            </p>
-            <p className="text-amber-700 dark:text-amber-300/80">
-              Após essa data, você precisará marcar novamente sua disponibilidade.
-            </p>
-          </div>
-        </div>
+        {/* Period Tabs */}
+        <Tabs value={selectedPeriod} onValueChange={(v) => setSelectedPeriod(v as 'current' | 'next')}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="current" className="text-xs sm:text-sm">
+              {currentPeriod.label}
+              <span className="hidden sm:inline ml-1 text-muted-foreground">(atual)</span>
+            </TabsTrigger>
+            <TabsTrigger value="next" className="text-xs sm:text-sm">
+              {nextPeriod.label}
+              <span className="hidden sm:inline ml-1 text-muted-foreground">(próximo)</span>
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Legend */}
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>{availableCount} de {FIXED_SLOTS.length} slots disponíveis</span>
-        </div>
-
-        {/* Slots Grid */}
-        <div className="space-y-3">
-          {FIXED_SLOTS.map(slot => {
-            const slotKey = getSlotKey(slot);
-            const isAvailable = isSlotAvailable(slot);
-            const isSaving = saving === slotKey;
-            const Icon = slot.icon;
-
-            return (
-              <div 
-                key={slotKey}
-                className={cn(
-                  "flex items-center justify-between p-4 rounded-lg border-2 transition-all",
-                  slot.bgColor,
-                  isAvailable ? slot.borderColor : "border-transparent",
-                  isSaving && "opacity-70"
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={cn(
-                    "w-10 h-10 rounded-full flex items-center justify-center",
-                    isAvailable ? slot.activeColor : "bg-muted"
-                  )}>
-                    <Icon className={cn(
-                      "w-5 h-5",
-                      isAvailable ? "text-white" : "text-muted-foreground"
-                    )} />
-                  </div>
-                  <div>
-                    <Label className="font-medium text-foreground">
-                      {slot.label}
-                    </Label>
-                    <p className="text-sm text-muted-foreground">
-                      {slot.timeStart} - {slot.timeEnd}
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  {isSaving ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Switch
-                      checked={isAvailable}
-                      onCheckedChange={() => toggleSlotAvailability(slot)}
-                      disabled={!!saving}
-                    />
-                  )}
-                </div>
+          <TabsContent value={selectedPeriod} className="mt-4 space-y-4">
+            {/* Period validity notice */}
+            <div className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-lg">
+              <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium text-amber-800 dark:text-amber-200">
+                  Válida até {periodEndFormatted}
+                </p>
+                <p className="text-amber-700 dark:text-amber-300/80">
+                  {selectedPeriod === 'next' 
+                    ? 'Marque sua disponibilidade antecipadamente para o próximo período.'
+                    : 'Após essa data, você precisará marcar novamente sua disponibilidade.'}
+                </p>
               </div>
-            );
-          })}
-        </div>
+            </div>
 
-        {/* Tip */}
-        <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-          <p className="text-sm text-muted-foreground">
-            <strong>Dica:</strong> O líder usará esta informação para gerar escalas automáticas. 
-            Marque apenas os horários em que você realmente pode participar.
-          </p>
-        </div>
+            {/* Legend */}
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <span>{availableCount} de {FIXED_SLOTS.length} slots disponíveis</span>
+            </div>
+
+            {/* Slots Grid */}
+            <div className="space-y-3">
+              {FIXED_SLOTS.map(slot => {
+                const slotKey = getSlotKey(slot);
+                const isAvailable = isSlotAvailable(slot);
+                const isSaving = saving === slotKey;
+                const Icon = slot.icon;
+
+                return (
+                  <div 
+                    key={slotKey}
+                    className={cn(
+                      "flex items-center justify-between p-4 rounded-lg border-2 transition-all",
+                      slot.bgColor,
+                      isAvailable ? slot.borderColor : "border-transparent",
+                      isSaving && "opacity-70"
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "w-10 h-10 rounded-full flex items-center justify-center",
+                        isAvailable ? slot.activeColor : "bg-muted"
+                      )}>
+                        <Icon className={cn(
+                          "w-5 h-5",
+                          isAvailable ? "text-white" : "text-muted-foreground"
+                        )} />
+                      </div>
+                      <div>
+                        <Label className="font-medium text-foreground">
+                          {slot.label}
+                        </Label>
+                        <p className="text-sm text-muted-foreground">
+                          {slot.timeStart} - {slot.timeEnd}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      {isSaving ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Switch
+                          checked={isAvailable}
+                          onCheckedChange={() => toggleSlotAvailability(slot)}
+                          disabled={!!saving}
+                        />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Tip */}
+            <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+              <p className="text-sm text-muted-foreground">
+                <strong>Dica:</strong> O líder usará esta informação para gerar escalas automáticas. 
+                Marque apenas os horários em que você realmente pode participar.
+              </p>
+            </div>
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );

@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Calendar, Sun, Moon, Users, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format, endOfMonth, setDate } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { getCurrentPeriodInfo, getNextPeriodInfo, formatPeriodEnd, type PeriodInfo } from '@/lib/periodUtils';
+
 // Fixed slots configuration - matches SlotAvailability
 const FIXED_SLOTS = [
   { 
@@ -76,38 +77,21 @@ interface SlotAvailabilityRecord {
   time_start: string;
   time_end: string;
   is_available: boolean;
-}
-
-// Calculate period start and end dates
-function getPeriodInfo() {
-  const now = new Date();
-  const day = now.getDate();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  
-  const periodStartDay = day >= 16 ? 16 : 1;
-  const periodStart = new Date(year, month, periodStartDay);
-  
-  let periodEnd: Date;
-  if (periodStartDay === 1) {
-    periodEnd = setDate(now, 15);
-  } else {
-    periodEnd = endOfMonth(now);
-  }
-  
-  return {
-    periodStart,
-    periodEnd,
-    periodStartStr: periodStart.toISOString().split('T')[0],
-  };
+  period_start: string;
 }
 
 export default function LeaderSlotAvailabilityView({ departmentId }: LeaderSlotAvailabilityViewProps) {
   const [loading, setLoading] = useState(true);
+  const [selectedPeriod, setSelectedPeriod] = useState<'current' | 'next'>('current');
   const [members, setMembers] = useState<MemberProfile[]>([]);
-  const [availability, setAvailability] = useState<SlotAvailabilityRecord[]>([]);
+  const [currentAvailability, setCurrentAvailability] = useState<SlotAvailabilityRecord[]>([]);
+  const [nextAvailability, setNextAvailability] = useState<SlotAvailabilityRecord[]>([]);
   
-  const periodInfo = useMemo(() => getPeriodInfo(), []);
+  const currentPeriod = useMemo(() => getCurrentPeriodInfo(), []);
+  const nextPeriod = useMemo(() => getNextPeriodInfo(), []);
+  
+  const activePeriod = selectedPeriod === 'current' ? currentPeriod : nextPeriod;
+  const availability = selectedPeriod === 'current' ? currentAvailability : nextAvailability;
 
   // Normalize time to HH:mm format (database returns HH:mm:ss)
   const normalizeTime = (time: string) => time?.slice(0, 5);
@@ -127,18 +111,31 @@ export default function LeaderSlotAvailabilityView({ departmentId }: LeaderSlotA
 
       if (profilesError) throw profilesError;
 
-      // Fetch all member availability for this department (current period only)
+      // Fetch all member availability for this department (both periods)
       const { data: availabilityData, error: availabilityError } = await supabase
         .from('member_availability')
-        .select('user_id, day_of_week, time_start, time_end, is_available')
+        .select('user_id, day_of_week, time_start, time_end, is_available, period_start')
         .eq('department_id', departmentId)
         .eq('is_available', true)
-        .gte('period_start', periodInfo.periodStartStr);
+        .gte('period_start', currentPeriod.periodStartStr);
 
       if (availabilityError) throw availabilityError;
 
+      // Separate into current and next period
+      const current: SlotAvailabilityRecord[] = [];
+      const next: SlotAvailabilityRecord[] = [];
+      
+      (availabilityData || []).forEach(record => {
+        if (record.period_start === currentPeriod.periodStartStr) {
+          current.push(record);
+        } else if (record.period_start === nextPeriod.periodStartStr) {
+          next.push(record);
+        }
+      });
+
       setMembers(profilesData || []);
-      setAvailability(availabilityData || []);
+      setCurrentAvailability(current);
+      setNextAvailability(next);
     } catch (error) {
       console.error('Error fetching slot availability data:', error);
     } finally {
@@ -176,8 +173,7 @@ export default function LeaderSlotAvailabilityView({ departmentId }: LeaderSlotA
     );
   }
 
-  // Format period end date for display
-  const periodEndFormatted = format(periodInfo.periodEnd, "d 'de' MMMM", { locale: ptBR });
+  const periodEndFormatted = formatPeriodEnd(activePeriod.periodEnd);
 
   return (
     <Card className="glass border-border/50">
@@ -191,111 +187,130 @@ export default function LeaderSlotAvailabilityView({ departmentId }: LeaderSlotA
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Period validity notice */}
-        <div className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-lg">
-          <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-          <div className="text-sm">
-            <p className="font-medium text-amber-800 dark:text-amber-200">
-              Período válido até {periodEndFormatted}
-            </p>
-            <p className="text-amber-700 dark:text-amber-300/80">
-              Após essa data, membros precisarão remarcar sua disponibilidade.
-            </p>
-          </div>
-        </div>
-        {/* Slots Grid */}
-        <div className="space-y-3">
-          {FIXED_SLOTS.map(slot => {
-            const slotMembers = getMembersForSlot(slot);
-            const Icon = slot.icon;
-            const hasMembers = slotMembers.length > 0;
+        {/* Period Tabs */}
+        <Tabs value={selectedPeriod} onValueChange={(v) => setSelectedPeriod(v as 'current' | 'next')}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="current" className="text-xs sm:text-sm">
+              {currentPeriod.label}
+              <span className="hidden sm:inline ml-1 text-muted-foreground">(atual)</span>
+            </TabsTrigger>
+            <TabsTrigger value="next" className="text-xs sm:text-sm">
+              {nextPeriod.label}
+              <span className="hidden sm:inline ml-1 text-muted-foreground">(próximo)</span>
+            </TabsTrigger>
+          </TabsList>
 
-            return (
-              <div 
-                key={`${slot.dayOfWeek}-${slot.timeStart}`}
-                className={cn(
-                  "p-4 rounded-lg border-2 transition-all",
-                  slot.bgColor,
-                  hasMembers ? slot.borderColor : "border-transparent opacity-60"
-                )}
-              >
-                <div className="flex items-center justify-between gap-4 flex-wrap">
-                  <div className="flex items-center gap-3">
-                    <div className={cn(
-                      "w-10 h-10 rounded-full flex items-center justify-center",
-                      hasMembers ? slot.activeColor : "bg-muted"
-                    )}>
-                      <Icon className={cn(
-                        "w-5 h-5",
-                        hasMembers ? "text-white" : "text-muted-foreground"
-                      )} />
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground">
-                        {slot.label}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {slot.timeStart} - {slot.timeEnd}
-                      </p>
-                    </div>
-                  </div>
+          <TabsContent value={selectedPeriod} className="mt-4 space-y-4">
+            {/* Period validity notice */}
+            <div className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-lg">
+              <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium text-amber-800 dark:text-amber-200">
+                  Período válido até {periodEndFormatted}
+                </p>
+                <p className="text-amber-700 dark:text-amber-300/80">
+                  {selectedPeriod === 'next' 
+                    ? 'Veja quem já marcou disponibilidade para o próximo período.'
+                    : 'Após essa data, membros precisarão remarcar sua disponibilidade.'}
+                </p>
+              </div>
+            </div>
 
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground mr-2">
-                      <Users className="w-4 h-4" />
-                      <span>{slotMembers.length}</span>
-                    </div>
-                    
-                    {hasMembers ? (
-                      <div className="flex -space-x-2">
-                        {slotMembers.slice(0, 6).map(member => (
-                          <Avatar 
-                            key={member.id} 
-                            className="w-8 h-8 border-2 border-background"
-                            title={member.name}
-                          >
-                            <AvatarImage src={member.avatar_url || undefined} alt={member.name} />
-                            <AvatarFallback className="text-xs bg-primary/10">
-                              {getInitials(member.name)}
-                            </AvatarFallback>
-                          </Avatar>
-                        ))}
-                        {slotMembers.length > 6 && (
-                          <div className="w-8 h-8 rounded-full bg-muted border-2 border-background flex items-center justify-center">
-                            <span className="text-xs font-medium text-muted-foreground">
-                              +{slotMembers.length - 6}
-                            </span>
+            {/* Slots Grid */}
+            <div className="space-y-3">
+              {FIXED_SLOTS.map(slot => {
+                const slotMembers = getMembersForSlot(slot);
+                const Icon = slot.icon;
+                const hasMembers = slotMembers.length > 0;
+
+                return (
+                  <div 
+                    key={`${slot.dayOfWeek}-${slot.timeStart}`}
+                    className={cn(
+                      "p-4 rounded-lg border-2 transition-all",
+                      slot.bgColor,
+                      hasMembers ? slot.borderColor : "border-transparent opacity-60"
+                    )}
+                  >
+                    <div className="flex items-center justify-between gap-4 flex-wrap">
+                      <div className="flex items-center gap-3">
+                        <div className={cn(
+                          "w-10 h-10 rounded-full flex items-center justify-center",
+                          hasMembers ? slot.activeColor : "bg-muted"
+                        )}>
+                          <Icon className={cn(
+                            "w-5 h-5",
+                            hasMembers ? "text-white" : "text-muted-foreground"
+                          )} />
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground">
+                            {slot.label}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {slot.timeStart} - {slot.timeEnd}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground mr-2">
+                          <Users className="w-4 h-4" />
+                          <span>{slotMembers.length}</span>
+                        </div>
+                        
+                        {hasMembers ? (
+                          <div className="flex -space-x-2">
+                            {slotMembers.slice(0, 6).map(member => (
+                              <Avatar 
+                                key={member.id} 
+                                className="w-8 h-8 border-2 border-background"
+                                title={member.name}
+                              >
+                                <AvatarImage src={member.avatar_url || undefined} alt={member.name} />
+                                <AvatarFallback className="text-xs bg-primary/10">
+                                  {getInitials(member.name)}
+                                </AvatarFallback>
+                              </Avatar>
+                            ))}
+                            {slotMembers.length > 6 && (
+                              <div className="w-8 h-8 rounded-full bg-muted border-2 border-background flex items-center justify-center">
+                                <span className="text-xs font-medium text-muted-foreground">
+                                  +{slotMembers.length - 6}
+                                </span>
+                              </div>
+                            )}
                           </div>
+                        ) : (
+                          <span className="text-sm text-muted-foreground italic">
+                            Nenhum membro disponível
+                          </span>
                         )}
                       </div>
-                    ) : (
-                      <span className="text-sm text-muted-foreground italic">
-                        Nenhum membro disponível
-                      </span>
+                    </div>
+
+                    {/* Member names expanded view */}
+                    {hasMembers && (
+                      <div className="mt-3 pt-3 border-t border-border/30">
+                        <p className="text-sm text-muted-foreground">
+                          {slotMembers.map(m => m.name).join(', ')}
+                        </p>
+                      </div>
                     )}
                   </div>
-                </div>
+                );
+              })}
+            </div>
 
-                {/* Member names expanded view */}
-                {hasMembers && (
-                  <div className="mt-3 pt-3 border-t border-border/30">
-                    <p className="text-sm text-muted-foreground">
-                      {slotMembers.map(m => m.name).join(', ')}
-                    </p>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Info */}
-        <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-          <p className="text-sm text-muted-foreground">
-            <strong>Dica:</strong> Estes são os horários fixos que os membros marcaram como disponíveis. 
-            Use esta informação para planejar escalas ou gerar automaticamente com a IA.
-          </p>
-        </div>
+            {/* Info */}
+            <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+              <p className="text-sm text-muted-foreground">
+                <strong>Dica:</strong> Estes são os horários fixos que os membros marcaram como disponíveis. 
+                Use esta informação para planejar escalas ou gerar automaticamente com a IA.
+              </p>
+            </div>
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
