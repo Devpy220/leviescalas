@@ -1,239 +1,96 @@
 
 
-## Plano: Menu Hamburger Estilo WhatsApp (Bandeja de Anexos)
+## Plano: Corrigir Cores e Iniciais dos Avatares de Membros
 
-### O que você quer
+### Problema Identificado
 
-1. **Abrir o menu** ao passar o mouse OU clicar no ícone de 3 traços (hamburger)
-2. **Fechar automaticamente** ao clicar fora (sem botão X)
-3. **Visual similar** à bandeja de anexos do WhatsApp
+Há 3 componentes que exibem avatares de membros com:
+- **Cor fixa** (`bg-primary/10` ou `bg-primary/20`) em vez da cor única atribuída a cada membro
+- As iniciais já estão corretas (usando nome), mas as cores não seguem o sistema de cores
 
-### Referência Visual: WhatsApp Attachment Tray
+### Componentes Afetados
 
-```text
-┌─────────────────────────────────────────────────────────┐
-│  [Header do departamento]                      ☰ [≡]   │
-└─────────────────────────────────────────────────────────┘
-                                                   │
-                                    ┌──────────────┴──────────────┐
-                                    │   📅   📁   👥             │
-                                    │                             │
-                                    │   📥   ⏰   ➕             │
-                                    └─────────────────────────────┘
-                                           ↑
-                                    Ícones em grid flutuante
-                                    Fecha ao clicar fora
-```
+| Componente | Problema | Linha |
+|------------|----------|-------|
+| `LeaderSlotAvailabilityView.tsx` | Usa `bg-primary/10` | 271 |
+| `LeaderAvailabilityView.tsx` | Usa `bg-primary/20` | 278 |
+| `SmartScheduleDialog.tsx` | Usa `bg-primary/20` | 488 |
 
-### Comparação: Antes vs Depois
+### Solução
 
-| Aspecto | Antes (Sidebar) | Depois (Popover) |
-|---------|-----------------|------------------|
-| **Abertura** | Clique no hamburger | Hover OU clique no hamburger |
-| **Fechamento** | Clique no X | Clique fora automaticamente |
-| **Layout** | Sidebar fixa à esquerda | Popover flutuante |
-| **Visual** | Lista vertical | Grid de ícones (2 colunas) |
-| **Animação** | Slide da esquerda | Fade + scale (como WhatsApp) |
+Atualizar cada componente para:
+1. Importar o sistema de cores: `createExtendedMemberColorMap`, `getMemberBackgroundStyle`
+2. Criar um mapa de cores baseado nos membros
+3. Aplicar a cor correta via `style={getMemberBgStyle(userId)}`
+4. Ajustar a cor do texto para branco (`text-white`)
 
-### Alterações Necessárias
+### Alterações por Arquivo
 
-#### 1. Transformar `ActionSidebar.tsx` em Popover
+#### 1. `src/components/department/LeaderSlotAvailabilityView.tsx`
 
-Trocar a sidebar fixa por um `Popover` que:
-- Abre via hover (com delay) OU clique
-- Fecha automaticamente ao clicar fora
-- Mostra ícones em grid 2x3 ou 3x2
-- Sem botão X
-
+**Adicionar imports:**
 ```typescript
-// Nova estrutura usando Popover
-<Popover open={isOpen} onOpenChange={onOpenChange}>
-  <PopoverTrigger asChild>
-    <Button 
-      variant="ghost" 
-      size="icon"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      <Menu className="w-5 h-5" />
-    </Button>
-  </PopoverTrigger>
-  <PopoverContent 
-    side="bottom" 
-    align="start"
-    className="w-auto p-3"
-  >
-    <div className="grid grid-cols-3 gap-2">
-      {/* Ícones de navegação e ações */}
-    </div>
-  </PopoverContent>
-</Popover>
+import { createExtendedMemberColorMap, getMemberBackgroundStyle } from '@/lib/memberColors';
 ```
 
-#### 2. Comportamento de Hover + Click
-
+**Criar mapa de cores:**
 ```typescript
-// Abrir no hover após pequeno delay (300ms)
-const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout>();
+const memberColorMap = useMemo(() => {
+  // Converter membros para o formato esperado
+  const membersForColor = members.map(m => ({
+    id: m.id,
+    user_id: m.id, // profile.id é o user_id
+    profile: { name: m.name }
+  }));
+  return createExtendedMemberColorMap(membersForColor);
+}, [members]);
 
-const handleMouseEnter = () => {
-  const timeout = setTimeout(() => setIsOpen(true), 300);
-  setHoverTimeout(timeout);
+const getMemberBgStyle = (userId: string): React.CSSProperties => {
+  return getMemberBackgroundStyle(memberColorMap, userId);
 };
-
-const handleMouseLeave = () => {
-  clearTimeout(hoverTimeout);
-  // Não fecha imediatamente - permite mover para o popover
-};
-
-// Também abre/fecha no click (toggle)
-const handleClick = () => setIsOpen(!isOpen);
 ```
 
-#### 3. Layout em Grid (Estilo WhatsApp)
+**Modificar AvatarFallback (linha 271):**
+```typescript
+// De:
+<AvatarFallback className="text-xs bg-primary/10">
 
-```text
-┌───────────────────────────┐
-│  📅 Escalas  │  📁 Setores  │  👥 Membros  │  ← navegação
-├───────────────────────────┤
-│  📥 Exportar │  ⏰ Disp.    │  ➕ Convidar │  ← ações
-└───────────────────────────┘
+// Para:
+<AvatarFallback 
+  className="text-xs font-bold text-white"
+  style={getMemberBgStyle(member.id)}
+>
 ```
 
-Ou em formato mais compacto (ícones maiores, sem texto):
+#### 2. `src/components/department/LeaderAvailabilityView.tsx`
 
-```text
-┌─────────────────┐
-│  📅   📁   👥  │
-│  📥   ⏰   ➕  │
-└─────────────────┘
-  ↑ apenas ícones
-  Tooltip no hover
-```
+Mesma lógica - adicionar sistema de cores e aplicar `style` no AvatarFallback.
+
+#### 3. `src/components/department/SmartScheduleDialog.tsx`
+
+Mesma lógica - o componente já recebe dados de membros, então apenas precisa integrar o sistema de cores.
+
+### Resultado Visual
+
+| Antes | Depois |
+|-------|--------|
+| Todos avatares com mesma cor laranja suave | Cada membro com sua cor única (vermelho, azul, verde, etc.) |
+| Difícil distinguir membros | Fácil identificação visual |
 
 ### Arquivos a Modificar
 
-| Arquivo | Alteração |
-|---------|-----------|
-| `src/components/department/ActionSidebar.tsx` | Converter sidebar para Popover com grid |
-| `src/pages/Department.tsx` | Integrar o Popover no hamburger do header |
+| Arquivo | Mudanças |
+|---------|----------|
+| `src/components/department/LeaderSlotAvailabilityView.tsx` | Adicionar import + useMemo + style no Avatar |
+| `src/components/department/LeaderAvailabilityView.tsx` | Adicionar import + useMemo + style no Avatar |
+| `src/components/department/SmartScheduleDialog.tsx` | Adicionar import + useMemo + style no Avatar |
 
 ### Detalhes Técnicos
 
-#### ActionSidebar.tsx - Nova Estrutura
+O sistema de cores em `memberColors.ts`:
+- Membros 1-12: cores sólidas únicas (vermelho, azul, verde, etc.)
+- Membros 13+: gradientes bicolores únicos
+- Cores são atribuídas baseadas na ordem dos membros no array
 
-```typescript
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-
-// O componente agora retorna apenas o conteúdo do menu
-// O trigger (hamburger) fica no Department.tsx
-
-export default function ActionMenuContent({
-  departmentName,
-  currentTab,
-  onTabChange,
-  onExportPDF,
-  onExportExcel,
-  onOpenAvailability,
-  onOpenInvite,
-  onClose,
-}: ActionMenuProps) {
-  return (
-    <div className="p-2 space-y-2">
-      {/* Navegação */}
-      <div className="grid grid-cols-3 gap-2">
-        {navigationItems.map((item) => (
-          <Tooltip key={item.id}>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn(
-                  "h-12 w-12 rounded-xl", // ícones maiores
-                  item.color,
-                  currentTab === item.id && "bg-accent ring-1 ring-primary/30"
-                )}
-                onClick={() => {
-                  onTabChange(item.id);
-                  onClose();
-                }}
-              >
-                <item.icon className="w-6 h-6" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{`${departmentName} - ${item.labelSuffix}`}</TooltipContent>
-          </Tooltip>
-        ))}
-      </div>
-      
-      {/* Divisor */}
-      <div className="border-t border-border/50" />
-      
-      {/* Ações */}
-      <div className="grid grid-cols-3 gap-2">
-        {/* Export, Availability, Invite */}
-      </div>
-    </div>
-  );
-}
-```
-
-#### Department.tsx - Hamburger com Popover
-
-```typescript
-const [menuOpen, setMenuOpen] = useState(false);
-const hoverTimeoutRef = useRef<NodeJS.Timeout>();
-
-const handleMenuHoverEnter = () => {
-  hoverTimeoutRef.current = setTimeout(() => setMenuOpen(true), 300);
-};
-
-const handleMenuHoverLeave = () => {
-  if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-};
-
-// No header:
-<Popover open={menuOpen} onOpenChange={setMenuOpen}>
-  <PopoverTrigger asChild>
-    <Button 
-      variant="ghost" 
-      size="icon"
-      onMouseEnter={handleMenuHoverEnter}
-      onMouseLeave={handleMenuHoverLeave}
-    >
-      <Menu className="w-5 h-5" />
-    </Button>
-  </PopoverTrigger>
-  <PopoverContent 
-    side="bottom" 
-    align="start"
-    sideOffset={8}
-    className="w-auto p-0 bg-background/95 backdrop-blur-xl border-border/50"
-    onMouseEnter={() => clearTimeout(hoverTimeoutRef.current)}
-    onMouseLeave={() => setMenuOpen(false)}
-  >
-    <ActionMenuContent 
-      departmentName={department.name}
-      currentTab={activeTab}
-      onTabChange={setActiveTab}
-      onClose={() => setMenuOpen(false)}
-      // ... demais props
-    />
-  </PopoverContent>
-</Popover>
-```
-
-### Comportamento Mobile
-
-No mobile, manter o Drawer atual (já funciona bem):
-- Toque no hamburger abre drawer de baixo
-- Arraste para baixo ou toque fora fecha
-
-### Resumo das Mudanças
-
-1. **Remover X** de fechar do menu
-2. **Trocar sidebar** por Popover flutuante
-3. **Adicionar hover** para abrir (com delay de 300ms)
-4. **Layout em grid** 3 colunas com ícones grandes
-5. **Fechar automático** ao clicar fora ou selecionar item
+Para garantir consistência, todos os componentes devem usar o mesmo array de membros na mesma ordem ao criar o mapa de cores.
 
