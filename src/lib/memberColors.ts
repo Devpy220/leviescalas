@@ -61,30 +61,34 @@ function generateColorPairs(): Array<[number, number]> {
 const colorPairs = generateColorPairs();
 
 /**
+ * Generates a deterministic color index from a user_id string.
+ * This ensures the same user always gets the same color regardless of
+ * which component is rendering or in what order members are loaded.
+ */
+function hashUserIdToColorIndex(userId: string): number {
+  // Simple hash function to convert user_id to a number
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    const char = userId.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  // Use absolute value and modulo to get index in our color range
+  // Total combinations: 12 solid + 66 pairs = 78
+  const totalColors = memberColors.length + colorPairs.length;
+  return Math.abs(hash) % totalColors;
+}
+
+/**
  * Creates a map of member user_id to a unique color index.
- * Colors are assigned based on member order but guaranteed unique within the department
- * (as long as there are fewer members than colors available).
+ * Colors are assigned based on a hash of the user_id for consistency
+ * across all components, regardless of member order.
  */
 export function createMemberColorMap(members: Member[]): Map<string, number> {
   const map = new Map<string, number>();
-  const usedColors = new Set<number>();
   
   members.forEach((member) => {
-    // Find the next available color that hasn't been used
-    let colorIndex = 0;
-    while (usedColors.has(colorIndex) && colorIndex < memberColors.length) {
-      colorIndex++;
-    }
-    
-    // If all colors are used, start reusing (for very large departments)
-    if (colorIndex >= memberColors.length) {
-      // Use modulo to cycle through colors for members beyond color count
-      const memberIndex = members.indexOf(member);
-      colorIndex = memberIndex % memberColors.length;
-    } else {
-      usedColors.add(colorIndex);
-    }
-    
+    const colorIndex = hashUserIdToColorIndex(member.user_id);
     map.set(member.user_id, colorIndex);
   });
   
@@ -93,16 +97,15 @@ export function createMemberColorMap(members: Member[]): Map<string, number> {
 
 /**
  * Creates an extended color map that supports bicolor combinations for members 13+
- * Returns a map with indices where:
- * - 0-11: solid colors
- * - 12+: combination indices (need special handling)
+ * Uses deterministic hashing based on user_id for consistent colors across all views.
  */
 export function createExtendedMemberColorMap(members: Member[]): Map<string, number> {
   const map = new Map<string, number>();
   
-  members.forEach((member, index) => {
-    // Assign index directly - we'll handle the color logic in getMemberColorExtended
-    map.set(member.user_id, index);
+  members.forEach((member) => {
+    // Use hash-based color assignment for consistency
+    const colorIndex = hashUserIdToColorIndex(member.user_id);
+    map.set(member.user_id, colorIndex);
   });
   
   return map;
