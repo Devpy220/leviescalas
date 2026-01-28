@@ -1,5 +1,4 @@
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Clock } from 'lucide-react';
 import SlotAvailability from './SlotAvailability';
 import AvailabilityCalendar from './AvailabilityCalendar';
@@ -8,21 +7,18 @@ import MemberPreferences from './MemberPreferences';
 interface MyAvailabilitySheetProps {
   departmentId: string;
   userId: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export default function MyAvailabilitySheet({ departmentId, userId }: MyAvailabilitySheetProps) {
+export default function MyAvailabilitySheet({ 
+  departmentId, 
+  userId,
+  open,
+  onOpenChange 
+}: MyAvailabilitySheetProps) {
   return (
-    <Sheet>
-      <SheetTrigger asChild>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="gap-2 press-effect"
-        >
-          <Clock className="w-4 h-4" />
-          <span className="hidden sm:inline">Minha Disponibilidade</span>
-        </Button>
-      </SheetTrigger>
+    <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
