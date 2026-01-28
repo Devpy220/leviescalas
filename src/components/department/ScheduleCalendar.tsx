@@ -391,12 +391,12 @@ export default function ScheduleCalendar({
                       className={`flex items-center justify-between p-3 rounded-lg border-l-4 ${color.border} border ${statusBg}`}
                     >
                       <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
+                        <Avatar className="h-10 w-10">
                           <AvatarFallback 
-                            className="text-xs text-white"
+                            className="text-sm font-bold text-white"
                             style={getMemberBgStyle(schedule.user_id)}
                           >
-                            {schedule.profile?.name?.charAt(0) || 'M'}
+                            {schedule.profile?.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'M'}
                           </AvatarFallback>
                         </Avatar>
                         <div>
