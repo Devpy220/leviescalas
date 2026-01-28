@@ -5,30 +5,21 @@ import {
   Calendar,
   Users,
   Settings,
-  Share2,
   Crown,
-  Plus,
-  Copy,
-  Check,
   Loader2,
-  Download,
-  FileText,
-  FileSpreadsheet,
   Clock,
-  Layers
+  Layers,
+  Menu
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 import MemberList from '@/components/department/MemberList';
 import SectorManagement from '@/components/department/SectorManagement';
 import AddScheduleDialog from '@/components/department/AddScheduleDialog';
@@ -43,9 +34,10 @@ import LeaderAvailabilityView from '@/components/department/LeaderAvailabilityVi
 import LeaderSlotAvailabilityView from '@/components/department/LeaderSlotAvailabilityView';
 import UnifiedScheduleView from '@/components/department/UnifiedScheduleView';
 import MyAvailabilitySheet from '@/components/department/MyAvailabilitySheet';
+import ActionSidebar from '@/components/department/ActionSidebar';
 import { exportToPDF, exportToExcel } from '@/lib/exportSchedules';
 import { SupportNotification } from '@/components/SupportNotification';
-import { format, addMonths, startOfMonth } from 'date-fns';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface Department {
@@ -111,6 +103,7 @@ interface Schedule {
 }
 
 export default function Department() {
+  const [showAvailabilitySheet, setShowAvailabilitySheet] = useState(false);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, session, loading: authLoading, ensureSession } = useAuth();
@@ -131,6 +124,11 @@ export default function Department() {
   const [showSettings, setShowSettings] = useState(false);
   const [showSmartSchedule, setShowSmartSchedule] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    const saved = localStorage.getItem('dept-sidebar-open');
+    return saved !== null ? saved === 'true' : true;
+  });
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     // Debug: track loading state
@@ -417,48 +415,84 @@ export default function Department() {
     );
   }
 
+  // Toggle sidebar and persist to localStorage
+  const toggleSidebar = () => {
+    const newValue = !sidebarOpen;
+    setSidebarOpen(newValue);
+    localStorage.setItem('dept-sidebar-open', String(newValue));
+  };
+
+  // Export handlers for sidebar
+  const handleExportPDF = () => {
+    exportToPDF({
+      schedules,
+      departmentName: department?.name || 'Departamento',
+      monthYear: format(new Date(), 'MMMM yyyy', { locale: ptBR })
+    });
+  };
+
+  const handleExportExcel = async () => {
+    await exportToExcel({
+      schedules,
+      departmentName: department?.name || 'Departamento',
+      monthYear: format(new Date(), 'MMMM yyyy', { locale: ptBR })
+    });
+  };
+
   return (
-    <div className="min-h-screen bg-background">
-      <SupportNotification />
-      {/* Header */}
-      <header className="sticky top-0 z-50 glass border-b border-border/50">
-        <div className="container mx-auto px-2 sm:px-4 h-14 sm:h-16 flex items-center justify-between max-w-7xl">
-          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
-            <Link to="/dashboard">
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground click-scale shrink-0">
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-            </Link>
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              <DepartmentAvatar
-                departmentId={department.id}
-                avatarUrl={department.avatar_url}
-                departmentName={department.name}
-                isLeader={isLeader}
-                onAvatarChange={handleAvatarChange}
-              />
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <h1 className="font-display text-base sm:text-lg font-bold text-foreground truncate max-w-[120px] sm:max-w-[200px] md:max-w-none">
-                    {department.name}
-                  </h1>
-                  {isLeader && (
-                    <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full gradient-vibrant flex items-center justify-center shrink-0">
-                      <Crown className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
-                    </div>
-                  )}
+    <TooltipProvider>
+      <div className="min-h-screen bg-background">
+        <SupportNotification />
+        {/* Header */}
+        <header className="sticky top-0 z-50 glass border-b border-border/50">
+          <div className="container mx-auto px-2 sm:px-4 h-14 sm:h-16 flex items-center justify-between max-w-7xl">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+              {/* Hamburger menu for leaders */}
+              {isLeader && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="text-muted-foreground hover:text-foreground click-scale shrink-0"
+                  onClick={toggleSidebar}
+                >
+                  <Menu className="w-5 h-5" />
+                </Button>
+              )}
+              
+              <Link to="/dashboard">
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground click-scale shrink-0">
+                  <ArrowLeft className="w-5 h-5" />
+                </Button>
+              </Link>
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                <DepartmentAvatar
+                  departmentId={department.id}
+                  avatarUrl={department.avatar_url}
+                  departmentName={department.name}
+                  isLeader={isLeader}
+                  onAvatarChange={handleAvatarChange}
+                />
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h1 className="font-display text-base sm:text-lg font-bold text-foreground truncate max-w-[120px] sm:max-w-[200px] md:max-w-none">
+                      {department.name}
+                    </h1>
+                    {isLeader && (
+                      <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full gradient-vibrant flex items-center justify-center shrink-0">
+                        <Crown className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {members.length} membros
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {members.length} membros
-                </p>
               </div>
             </div>
-          </div>
 
-          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-            <ThemeToggle />
-            {isLeader && (
-              <>
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+              <ThemeToggle />
+              {isLeader && (
                 <Button 
                   variant="ghost" 
                   size="icon" 
@@ -467,13 +501,30 @@ export default function Department() {
                 >
                   <Settings className="w-5 h-5" />
                 </Button>
-              </>
-            )}
+              )}
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="container mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 max-w-7xl">
+        {/* Action Sidebar for leaders */}
+        {isLeader && (
+          <ActionSidebar
+            isOpen={sidebarOpen}
+            onClose={() => {
+              setSidebarOpen(false);
+              localStorage.setItem('dept-sidebar-open', 'false');
+            }}
+            onExportPDF={handleExportPDF}
+            onExportExcel={handleExportExcel}
+            onOpenAvailability={() => setShowAvailabilitySheet(true)}
+            onOpenInvite={() => setShowInviteMember(true)}
+          />
+        )}
+
+        <main className={cn(
+          "container mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 max-w-7xl transition-all duration-200",
+          isLeader && sidebarOpen && !isMobile && "ml-14"
+        )}>
         <Tabs defaultValue="schedules" className="space-y-4 sm:space-y-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <TabsList className="bg-muted/50 self-start w-full sm:w-auto overflow-x-auto">
@@ -513,59 +564,7 @@ export default function Department() {
               )}
             </TabsList>
 
-            <div className="flex items-center gap-2 flex-wrap">
-              {isLeader && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-2 press-effect">
-                      <Download className="w-4 h-4" />
-                      <span className="hidden sm:inline">Exportar</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="bg-popover border-border">
-                    <DropdownMenuItem 
-                      className="click-scale cursor-pointer"
-                      onClick={() => exportToPDF({
-                        schedules,
-                        departmentName: department?.name || 'Departamento',
-                        monthYear: format(new Date(), 'MMMM yyyy', { locale: ptBR })
-                      })}
-                    >
-                      <FileText className="w-4 h-4 mr-2" />
-                      Exportar PDF
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      className="click-scale cursor-pointer"
-                      onClick={async () => {
-                        await exportToExcel({
-                          schedules,
-                          departmentName: department?.name || 'Departamento',
-                          monthYear: format(new Date(), 'MMMM yyyy', { locale: ptBR })
-                        });
-                      }}
-                    >
-                      <FileSpreadsheet className="w-4 h-4 mr-2" />
-                      Exportar Excel
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-
-              {isLeader && (
-                <MyAvailabilitySheet departmentId={id!} userId={user?.id || ''} />
-              )}
-
-              {isLeader && (
-                <Button 
-                  onClick={() => setShowInviteMember(true)}
-                  variant="outline"
-                  className="gap-2 press-effect"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span className="hidden sm:inline">Convidar Membro</span>
-                </Button>
-              )}
-            </div>
+            {/* Removed - moved to sidebar */}
           </div>
 
           <TabsContent value="schedules" className="mt-4 sm:mt-6 animate-fade-in">
@@ -662,6 +661,15 @@ export default function Department() {
         departmentId={id!}
         onSchedulesCreated={fetchSchedules}
       />
+
+      {/* My Availability Sheet for leaders */}
+      <MyAvailabilitySheet 
+        departmentId={id!} 
+        userId={user?.id || ''} 
+        open={showAvailabilitySheet}
+        onOpenChange={setShowAvailabilitySheet}
+      />
     </div>
+    </TooltipProvider>
   );
 }
