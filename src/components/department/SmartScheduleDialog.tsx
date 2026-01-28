@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -27,6 +27,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, Calendar, Users, Check, X, AlertCircle, Send, Bell } from 'lucide-react';
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSunday, isWednesday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { createExtendedMemberColorMap, getMemberBackgroundStyle } from '@/lib/memberColors';
 
 interface SmartScheduleDialogProps {
   open: boolean;
@@ -289,6 +290,21 @@ export default function SmartScheduleDialog({
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
+  // Create color map for members in suggestions
+  const memberColorMap = useMemo(() => {
+    const uniqueMembers = suggestions.reduce((acc, s) => {
+      if (!acc.find(m => m.user_id === s.user_id)) {
+        acc.push({ id: s.user_id, user_id: s.user_id, profile: { name: s.name } });
+      }
+      return acc;
+    }, [] as Array<{ id: string; user_id: string; profile: { name: string } }>);
+    return createExtendedMemberColorMap(uniqueMembers);
+  }, [suggestions]);
+
+  const getMemberBgStyle = (userId: string): React.CSSProperties => {
+    return getMemberBackgroundStyle(memberColorMap, userId);
+  };
+
   // Generate month options (current + next 3 months)
   const monthOptions = Array.from({ length: 4 }, (_, i) => {
     const date = addMonths(new Date(), i);
@@ -485,7 +501,10 @@ export default function SmartScheduleDialog({
                               </div>
                               
                               <Avatar className="w-8 h-8">
-                                <AvatarFallback className="text-xs bg-primary/20 text-primary">
+                                <AvatarFallback 
+                                  className="text-xs font-bold text-white"
+                                  style={getMemberBgStyle(schedule.user_id)}
+                                >
                                   {getInitials(schedule.name)}
                                 </AvatarFallback>
                               </Avatar>
