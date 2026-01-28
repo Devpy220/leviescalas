@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -8,6 +8,7 @@ import { Loader2, Users, Check, X, ChevronLeft, ChevronRight, Sparkles, Calendar
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, getDay, isBefore, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { createExtendedMemberColorMap, getMemberBackgroundStyle } from '@/lib/memberColors';
 
 interface LeaderAvailabilityViewProps {
   departmentId: string;
@@ -103,6 +104,20 @@ export default function LeaderAvailabilityView({ departmentId, onOpenSmartSchedu
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  };
+
+  // Create color map for members
+  const memberColorMap = useMemo(() => {
+    const membersForColor = members.map(m => ({
+      id: m.id,
+      user_id: m.id,
+      profile: { name: m.name }
+    }));
+    return createExtendedMemberColorMap(membersForColor);
+  }, [members]);
+
+  const getMemberBgStyle = (userId: string): React.CSSProperties => {
+    return getMemberBackgroundStyle(memberColorMap, userId);
   };
 
   const getAvailableCountForDate = (date: Date) => {
@@ -275,7 +290,10 @@ export default function LeaderAvailabilityView({ departmentId, onOpenSmartSchedu
                 className="flex items-center gap-3 p-3 rounded-lg border border-border/50 bg-card"
               >
                 <Avatar className="w-8 h-8">
-                  <AvatarFallback className="text-xs bg-primary/20 text-primary">
+                  <AvatarFallback 
+                    className="text-xs font-bold text-white"
+                    style={getMemberBgStyle(member.id)}
+                  >
                     {getInitials(member.name)}
                   </AvatarFallback>
                 </Avatar>

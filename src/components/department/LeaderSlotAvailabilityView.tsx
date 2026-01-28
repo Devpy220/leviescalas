@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Calendar, Sun, Moon, Users, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getCurrentPeriodInfo, getNextPeriodInfo, formatPeriodEnd, type PeriodInfo } from '@/lib/periodUtils';
+import { createExtendedMemberColorMap, getMemberBackgroundStyle } from '@/lib/memberColors';
 
 // Fixed slots configuration - matches SlotAvailability
 const FIXED_SLOTS = [
@@ -165,6 +166,20 @@ export default function LeaderSlotAvailabilityView({ departmentId }: LeaderSlotA
       .toUpperCase();
   };
 
+  // Create color map for members
+  const memberColorMap = useMemo(() => {
+    const membersForColor = members.map(m => ({
+      id: m.id,
+      user_id: m.id,
+      profile: { name: m.name }
+    }));
+    return createExtendedMemberColorMap(membersForColor);
+  }, [members]);
+
+  const getMemberBgStyle = (userId: string): React.CSSProperties => {
+    return getMemberBackgroundStyle(memberColorMap, userId);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -267,8 +282,11 @@ export default function LeaderSlotAvailabilityView({ departmentId }: LeaderSlotA
                                 className="w-8 h-8 border-2 border-background"
                                 title={member.name}
                               >
-                                <AvatarImage src={member.avatar_url || undefined} alt={member.name} />
-                                <AvatarFallback className="text-xs bg-primary/10">
+                              <AvatarImage src={member.avatar_url || undefined} alt={member.name} />
+                                <AvatarFallback 
+                                  className="text-xs font-bold text-white"
+                                  style={getMemberBgStyle(member.id)}
+                                >
                                   {getInitials(member.name)}
                                 </AvatarFallback>
                               </Avatar>
