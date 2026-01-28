@@ -1,190 +1,189 @@
 
 
-## Plano: Reorganizar Menus com Barra Lateral de Ícones
+## Plano: Mover Navegação Principal para o Menu Hamburger
 
 ### Situação Atual
 
-Os botões de ação do líder estão espalhados no header:
-- **Exportar** (dropdown com PDF/Excel)
-- **Minha Disponibilidade** (abre sheet lateral)
-- **Convidar Membro** (abre dialog)
-- **Configurações** (ícone no header)
+As abas principais estão no topo da página:
+- **Escalas** (calendário)
+- **Setores** (só líderes)
+- **Membros** (só líderes)
+
+Já existe um menu hamburger com ações (Exportar, Disponibilidade, Convidar) no `ActionSidebar.tsx`.
 
 ### O que você quer
 
-1. **Menu hamburger** no header
-2. **Barra lateral esquerda** com apenas ícones coloridos
-3. **Tooltips** mostrando o nome ao hover/touch
-4. Agrupar: Exportar + Minha Disponibilidade + Convidar Membros
+1. **Mover Escalas, Setores e Membros** para dentro do menu hamburger
+2. **Renomear "Membros do Departamento"** para simplesmente **"Membros"**
+3. **Incluir o nome do departamento** no label (ex: "Louvor - Membros")
 
-### Nova Estrutura Visual
+### Nova Estrutura da Sidebar
 
 ```text
-┌─────────────────────────────────────────────────────────────────┐
-│  ☰  │ [Avatar] Departamento XYZ 👑 │      [🌙] [⚙️]            │
-│     │        5 membros              │                           │
-└─────────────────────────────────────────────────────────────────┘
-  ↑ hamburger abre/fecha sidebar
-
-┌──────┐ ┌───────────────────────────────────────────────────────┐
-│      │ │                                                       │
-│  📥  │ │                                                       │
-│      │ │                    CONTEÚDO                           │
-│  ⏰  │ │                    (tabs, calendário, etc)            │
-│      │ │                                                       │
-│  👥  │ │                                                       │
-│      │ │                                                       │
-└──────┘ └───────────────────────────────────────────────────────┘
-   ↑ 
- Sidebar apenas ícones com cores
- Tooltip aparece no hover/touch
+┌──────────────────────────────────────────────────┐
+│  [X] Fechar                                      │
+├──────────────────────────────────────────────────┤
+│  📅 Louvor - Escalas          ← navegação        │
+│  📁 Louvor - Setores          ← navegação        │
+│  👥 Louvor - Membros          ← navegação        │
+├──────────────────────────────────────────────────┤
+│  📥 Exportar Escalas          ← ação             │
+│  ⏰ Minha Disponibilidade     ← ação             │
+│  ➕ Convidar Membro           ← ação             │
+└──────────────────────────────────────────────────┘
 ```
-
-### Componentes da Sidebar
-
-| Ícone | Cor | Ação | Tooltip |
-|-------|-----|------|---------|
-| `Download` | Verde | Dropdown exportar PDF/Excel | "Exportar Escalas" |
-| `Clock` | Laranja/Primária | Abre sheet de disponibilidade | "Minha Disponibilidade" |
-| `UserPlus` | Azul | Abre dialog de convidar | "Convidar Membro" |
 
 ### Alterações Necessárias
 
-#### 1. Criar novo componente `ActionSidebar.tsx`
+#### 1. Modificar `ActionSidebar.tsx`
 
-Sidebar minimalista à esquerda com:
-- Fundo semi-transparente (glass effect)
-- Apenas ícones coloridos
-- Tooltips nativos do Radix
-- Responsivo: em mobile, pode ser um bottom bar ou sheet
+Adicionar os itens de navegação (Escalas, Setores, Membros) com ícones coloridos:
 
-```typescript
-// Estrutura básica
-<aside className="fixed left-0 top-[64px] h-[calc(100vh-64px)] w-14 
-  flex flex-col items-center py-4 gap-3 bg-background/80 backdrop-blur 
-  border-r border-border/50 z-40">
-  
-  <Tooltip>
-    <TooltipTrigger asChild>
-      <Button variant="ghost" size="icon" className="text-green-500">
-        <Download />
-      </Button>
-    </TooltipTrigger>
-    <TooltipContent side="right">Exportar Escalas</TooltipContent>
-  </Tooltip>
-  
-  {/* ... outros itens */}
-</aside>
-```
+| Ícone | Cor | Label | Ação |
+|-------|-----|-------|------|
+| `Calendar` | Roxo | "[Dept] - Escalas" | Navega para tab escalas |
+| `Layers` | Amarelo | "[Dept] - Setores" | Navega para tab setores |
+| `Users` | Cyan | "[Dept] - Membros" | Navega para tab membros |
 
-#### 2. Adicionar botão hamburger no header
+Nova estrutura de props:
 
 ```typescript
-// No header de Department.tsx
-<Button 
-  variant="ghost" 
-  size="icon" 
-  onClick={() => setSidebarOpen(!sidebarOpen)}
->
-  {sidebarOpen ? <X /> : <Menu />}
-</Button>
-```
-
-#### 3. Remover botões do header atual
-
-Mover os botões de exportar, disponibilidade e convidar para a sidebar.
-
-#### 4. Ajustar layout principal
-
-```typescript
-<div className="flex">
-  {sidebarOpen && <ActionSidebar />}
-  <main className={cn(
-    "flex-1 transition-all",
-    sidebarOpen && "ml-14" // espaço para sidebar
-  )}>
-    {/* conteúdo atual */}
-  </main>
-</div>
-```
-
-### Comportamento Mobile
-
-Em telas pequenas:
-- Sidebar vira um **sheet/drawer** deslizante
-- Ou uma **barra inferior** fixa com os ícones
-- Touch nos ícones mostra tooltip brevemente antes de executar ação
-
-### Arquivos a Modificar/Criar
-
-| Arquivo | Ação |
-|---------|------|
-| `src/components/department/ActionSidebar.tsx` | **Criar** - Nova sidebar com ícones |
-| `src/pages/Department.tsx` | **Modificar** - Adicionar hamburger, integrar sidebar, remover botões antigos |
-
-### Detalhes Técnicos
-
-#### ActionSidebar.tsx - Estrutura Completa
-
-```typescript
-// Props
 interface ActionSidebarProps {
-  departmentId: string;
-  userId: string;
-  inviteCode: string;
-  schedules: Schedule[];
-  departmentName: string;
+  isOpen: boolean;
+  onClose: () => void;
+  departmentName: string;       // ← NOVO
+  currentTab: string;           // ← NOVO
+  onTabChange: (tab: string) => void; // ← NOVO
   onExportPDF: () => void;
   onExportExcel: () => void;
   onOpenAvailability: () => void;
   onOpenInvite: () => void;
 }
+```
 
-// Itens com cores
-const menuItems = [
+Itens de navegação:
+
+```typescript
+const navigationItems = [
   { 
-    icon: Download, 
-    label: 'Exportar Escalas', 
-    color: 'text-green-500 hover:text-green-400',
-    action: 'export' // dropdown
+    id: 'schedules',
+    icon: Calendar, 
+    labelSuffix: 'Escalas', 
+    color: 'text-purple-500 hover:text-purple-400 hover:bg-purple-500/10',
   },
   { 
-    icon: Clock, 
-    label: 'Minha Disponibilidade', 
-    color: 'text-orange-500 hover:text-orange-400',
-    action: 'availability'
+    id: 'sectors',
+    icon: Layers, 
+    labelSuffix: 'Setores', 
+    color: 'text-yellow-500 hover:text-yellow-400 hover:bg-yellow-500/10',
   },
   { 
-    icon: UserPlus, 
-    label: 'Convidar Membro', 
-    color: 'text-blue-500 hover:text-blue-400',
-    action: 'invite'
+    id: 'members',
+    icon: Users, 
+    labelSuffix: 'Membros', 
+    color: 'text-cyan-500 hover:text-cyan-400 hover:bg-cyan-500/10',
   },
 ];
 ```
 
-#### Estado da Sidebar em Department.tsx
+#### 2. Modificar `Department.tsx`
+
+- Controlar a tab ativa via estado (`activeTab`)
+- Passar `onTabChange` para a sidebar
+- Remover as abas visuais do topo para líderes (ou deixar apenas para membros)
+- Passar `departmentName` e `currentTab` para a sidebar
 
 ```typescript
-const [sidebarOpen, setSidebarOpen] = useState(true); // ou false por default
+// Estado controlado da tab ativa
+const [activeTab, setActiveTab] = useState('schedules');
 
-// Persistir preferência no localStorage
-useEffect(() => {
-  const saved = localStorage.getItem('dept-sidebar-open');
-  if (saved !== null) setSidebarOpen(saved === 'true');
-}, []);
+// Passar para sidebar
+<ActionSidebar
+  departmentName={department.name}
+  currentTab={activeTab}
+  onTabChange={(tab) => setActiveTab(tab)}
+  // ... demais props
+/>
+
+// Tabs sem a lista visual para líderes (conteúdo apenas)
+<Tabs value={activeTab} onValueChange={setActiveTab}>
+  {/* TabsList removida para líderes - navegação via sidebar */}
+  {!isLeader && (
+    <TabsList>
+      {/* Mantém tabs visuais para membros */}
+    </TabsList>
+  )}
+  
+  <TabsContent value="schedules">...</TabsContent>
+  <TabsContent value="sectors">...</TabsContent>
+  <TabsContent value="members">...</TabsContent>
+</Tabs>
+```
+
+#### 3. Layout Visual da Sidebar
+
+**Desktop:** Sidebar fixa à esquerda com dois grupos visuais:
+- **Navegação** (Escalas, Setores, Membros)
+- **Ações** (Exportar, Disponibilidade, Convidar)
+
+**Mobile:** Drawer com itens empilhados verticalmente
+
+```text
+Desktop:
+┌────┐
+│ X  │ ← fechar
+├────┤
+│ 📅 │ ← Escalas (ativo = fundo colorido)
+│ 📁 │ ← Setores
+│ 👥 │ ← Membros
+├────┤ ← divisor visual
+│ 📥 │ ← Exportar
+│ ⏰ │ ← Disponibilidade
+│ ➕ │ ← Convidar
+└────┘
+```
+
+### Arquivos a Modificar
+
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/components/department/ActionSidebar.tsx` | Adicionar navegação + receber props novos |
+| `src/pages/Department.tsx` | Controlar tab ativa + passar para sidebar + ocultar TabsList para líderes |
+
+### Detalhes Técnicos
+
+#### Indicador de Tab Ativa
+
+Destacar o item ativo na navegação:
+
+```typescript
+<Button
+  className={cn(
+    item.color,
+    currentTab === item.id && "bg-accent ring-1 ring-primary/30"
+  )}
+  onClick={() => onTabChange(item.id)}
+>
+```
+
+#### Tooltip com Nome Completo
+
+No hover (desktop), mostrar o label completo:
+
+```text
+Hover no ícone 📅 → "Louvor - Escalas"
+Hover no ícone 👥 → "Louvor - Membros"
 ```
 
 ### Resultado Final
 
-**Desktop:**
-- Hamburger no header para toggle
-- Sidebar fina à esquerda com ícones coloridos
-- Hover mostra tooltip com nome da ação
-- Click executa a ação
+**Para Líderes:**
+- Menu hamburger abre sidebar com navegação + ações
+- Navegação inclui o nome do departamento
+- Clique em item muda a view principal
+- Tab bar tradicional é removida do topo
 
-**Mobile:**
-- Hamburger abre drawer/sheet com os itens
-- Touch longo ou hover mostra nome
-- Tap executa ação
+**Para Membros:**
+- Mantém as tabs tradicionais (Escalas e Disponibilidade)
+- Sem acesso ao menu hamburger
 
