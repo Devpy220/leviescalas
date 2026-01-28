@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { createMemberColorMap, getMemberColor } from '@/lib/memberColors';
+import { createExtendedMemberColorMap, getMemberColor, getMemberBackgroundStyle } from '@/lib/memberColors';
 import {
   format,
   startOfMonth,
@@ -269,10 +269,15 @@ export default function UnifiedScheduleView({
     };
   };
 
-  // Create a map of member user_id to unique color index
-  const memberColorMap = useMemo(() => createMemberColorMap(members), [members]);
+  // Create extended color map that supports bicolor combinations for 13+ members
+  const memberColorMap = useMemo(() => createExtendedMemberColorMap(members), [members]);
 
   const getMemberColorValue = (userId: string) => getMemberColor(memberColorMap, userId);
+
+  // Get background style (supports both solid and gradient)
+  const getMemberBgStyle = (userId: string): React.CSSProperties => {
+    return getMemberBackgroundStyle(memberColorMap, userId);
+  };
 
   const getConfirmationIcon = (status?: ConfirmationStatus) => {
     switch (status) {
@@ -587,15 +592,15 @@ export default function UnifiedScheduleView({
                       {hasSchedules && isCurrentMonthDay && (
                         <div className="flex flex-wrap gap-0.5">
                           {daySchedules.slice(0, 4).map((schedule, i) => {
-                            const color = getMemberColorValue(schedule.user_id);
+                            const initials = schedule.profile?.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'M';
                             return (
                               <Tooltip key={i}>
                                 <TooltipTrigger asChild>
                                   <div
-                                    className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] text-white font-bold shadow-md border-2 border-white/50"
-                                    style={{ backgroundColor: color.bg }}
+                                    className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] text-white font-bold shadow-md border-2 border-white/50"
+                                    style={getMemberBgStyle(schedule.user_id)}
                                   >
-                                    {schedule.profile?.name?.charAt(0) || 'M'}
+                                    {initials}
                                   </div>
                                 </TooltipTrigger>
                                 <TooltipContent>
@@ -734,15 +739,15 @@ export default function UnifiedScheduleView({
                         {hasSchedules && isNextMonthDay && (
                           <div className="flex flex-wrap gap-0.5">
                             {daySchedules.slice(0, 4).map((schedule, i) => {
-                              const color = getMemberColorValue(schedule.user_id);
+                              const initials = schedule.profile?.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'M';
                               return (
                                 <Tooltip key={i}>
                                   <TooltipTrigger asChild>
                                     <div
-                                      className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] text-white font-bold shadow-md border-2 border-white/50"
-                                      style={{ backgroundColor: color.bg }}
+                                      className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] text-white font-bold shadow-md border-2 border-white/50"
+                                      style={getMemberBgStyle(schedule.user_id)}
                                     >
-                                      {schedule.profile?.name?.charAt(0) || 'M'}
+                                      {initials}
                                     </div>
                                   </TooltipTrigger>
                                   <TooltipContent>

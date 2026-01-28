@@ -181,12 +181,12 @@ export default function ScheduleTable({ schedules, members, month, title }: Sche
                         }`}
                         style={{ borderLeftWidth: '3px', borderLeftColor: schedule.sector?.color || undefined }}
                       >
-                        <Avatar className="h-5 w-5">
+                        <Avatar className="h-6 w-6">
                           <AvatarFallback 
-                            className="text-[8px] text-white"
+                            className="text-[10px] font-bold text-white"
                             style={getMemberBgStyle(schedule.user_id)}
                           >
-                            {schedule.profile?.name?.charAt(0) || 'M'}
+                            {schedule.profile?.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'M'}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex flex-col">

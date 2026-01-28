@@ -227,7 +227,7 @@ export default function MemberList({
               <div className="flex items-start gap-3">
                 <Avatar className="w-12 h-12 border-2" style={{ borderColor: `${getMemberColorObj(member.user_id).primary}40` }}>
                   <AvatarFallback 
-                    className="text-white font-medium"
+                    className="text-white font-bold text-base"
                     style={getMemberBgStyle(member.user_id)}
                   >
                     {initials}
