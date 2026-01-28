@@ -1,189 +1,239 @@
 
 
-## Plano: Mover Navegação Principal para o Menu Hamburger
-
-### Situação Atual
-
-As abas principais estão no topo da página:
-- **Escalas** (calendário)
-- **Setores** (só líderes)
-- **Membros** (só líderes)
-
-Já existe um menu hamburger com ações (Exportar, Disponibilidade, Convidar) no `ActionSidebar.tsx`.
+## Plano: Menu Hamburger Estilo WhatsApp (Bandeja de Anexos)
 
 ### O que você quer
 
-1. **Mover Escalas, Setores e Membros** para dentro do menu hamburger
-2. **Renomear "Membros do Departamento"** para simplesmente **"Membros"**
-3. **Incluir o nome do departamento** no label (ex: "Louvor - Membros")
+1. **Abrir o menu** ao passar o mouse OU clicar no ícone de 3 traços (hamburger)
+2. **Fechar automaticamente** ao clicar fora (sem botão X)
+3. **Visual similar** à bandeja de anexos do WhatsApp
 
-### Nova Estrutura da Sidebar
+### Referência Visual: WhatsApp Attachment Tray
 
 ```text
-┌──────────────────────────────────────────────────┐
-│  [X] Fechar                                      │
-├──────────────────────────────────────────────────┤
-│  📅 Louvor - Escalas          ← navegação        │
-│  📁 Louvor - Setores          ← navegação        │
-│  👥 Louvor - Membros          ← navegação        │
-├──────────────────────────────────────────────────┤
-│  📥 Exportar Escalas          ← ação             │
-│  ⏰ Minha Disponibilidade     ← ação             │
-│  ➕ Convidar Membro           ← ação             │
-└──────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│  [Header do departamento]                      ☰ [≡]   │
+└─────────────────────────────────────────────────────────┘
+                                                   │
+                                    ┌──────────────┴──────────────┐
+                                    │   📅   📁   👥             │
+                                    │                             │
+                                    │   📥   ⏰   ➕             │
+                                    └─────────────────────────────┘
+                                           ↑
+                                    Ícones em grid flutuante
+                                    Fecha ao clicar fora
 ```
+
+### Comparação: Antes vs Depois
+
+| Aspecto | Antes (Sidebar) | Depois (Popover) |
+|---------|-----------------|------------------|
+| **Abertura** | Clique no hamburger | Hover OU clique no hamburger |
+| **Fechamento** | Clique no X | Clique fora automaticamente |
+| **Layout** | Sidebar fixa à esquerda | Popover flutuante |
+| **Visual** | Lista vertical | Grid de ícones (2 colunas) |
+| **Animação** | Slide da esquerda | Fade + scale (como WhatsApp) |
 
 ### Alterações Necessárias
 
-#### 1. Modificar `ActionSidebar.tsx`
+#### 1. Transformar `ActionSidebar.tsx` em Popover
 
-Adicionar os itens de navegação (Escalas, Setores, Membros) com ícones coloridos:
-
-| Ícone | Cor | Label | Ação |
-|-------|-----|-------|------|
-| `Calendar` | Roxo | "[Dept] - Escalas" | Navega para tab escalas |
-| `Layers` | Amarelo | "[Dept] - Setores" | Navega para tab setores |
-| `Users` | Cyan | "[Dept] - Membros" | Navega para tab membros |
-
-Nova estrutura de props:
+Trocar a sidebar fixa por um `Popover` que:
+- Abre via hover (com delay) OU clique
+- Fecha automaticamente ao clicar fora
+- Mostra ícones em grid 2x3 ou 3x2
+- Sem botão X
 
 ```typescript
-interface ActionSidebarProps {
-  isOpen: boolean;
-  onClose: () => void;
-  departmentName: string;       // ← NOVO
-  currentTab: string;           // ← NOVO
-  onTabChange: (tab: string) => void; // ← NOVO
-  onExportPDF: () => void;
-  onExportExcel: () => void;
-  onOpenAvailability: () => void;
-  onOpenInvite: () => void;
-}
+// Nova estrutura usando Popover
+<Popover open={isOpen} onOpenChange={onOpenChange}>
+  <PopoverTrigger asChild>
+    <Button 
+      variant="ghost" 
+      size="icon"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <Menu className="w-5 h-5" />
+    </Button>
+  </PopoverTrigger>
+  <PopoverContent 
+    side="bottom" 
+    align="start"
+    className="w-auto p-3"
+  >
+    <div className="grid grid-cols-3 gap-2">
+      {/* Ícones de navegação e ações */}
+    </div>
+  </PopoverContent>
+</Popover>
 ```
 
-Itens de navegação:
+#### 2. Comportamento de Hover + Click
 
 ```typescript
-const navigationItems = [
-  { 
-    id: 'schedules',
-    icon: Calendar, 
-    labelSuffix: 'Escalas', 
-    color: 'text-purple-500 hover:text-purple-400 hover:bg-purple-500/10',
-  },
-  { 
-    id: 'sectors',
-    icon: Layers, 
-    labelSuffix: 'Setores', 
-    color: 'text-yellow-500 hover:text-yellow-400 hover:bg-yellow-500/10',
-  },
-  { 
-    id: 'members',
-    icon: Users, 
-    labelSuffix: 'Membros', 
-    color: 'text-cyan-500 hover:text-cyan-400 hover:bg-cyan-500/10',
-  },
-];
+// Abrir no hover após pequeno delay (300ms)
+const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout>();
+
+const handleMouseEnter = () => {
+  const timeout = setTimeout(() => setIsOpen(true), 300);
+  setHoverTimeout(timeout);
+};
+
+const handleMouseLeave = () => {
+  clearTimeout(hoverTimeout);
+  // Não fecha imediatamente - permite mover para o popover
+};
+
+// Também abre/fecha no click (toggle)
+const handleClick = () => setIsOpen(!isOpen);
 ```
 
-#### 2. Modificar `Department.tsx`
-
-- Controlar a tab ativa via estado (`activeTab`)
-- Passar `onTabChange` para a sidebar
-- Remover as abas visuais do topo para líderes (ou deixar apenas para membros)
-- Passar `departmentName` e `currentTab` para a sidebar
-
-```typescript
-// Estado controlado da tab ativa
-const [activeTab, setActiveTab] = useState('schedules');
-
-// Passar para sidebar
-<ActionSidebar
-  departmentName={department.name}
-  currentTab={activeTab}
-  onTabChange={(tab) => setActiveTab(tab)}
-  // ... demais props
-/>
-
-// Tabs sem a lista visual para líderes (conteúdo apenas)
-<Tabs value={activeTab} onValueChange={setActiveTab}>
-  {/* TabsList removida para líderes - navegação via sidebar */}
-  {!isLeader && (
-    <TabsList>
-      {/* Mantém tabs visuais para membros */}
-    </TabsList>
-  )}
-  
-  <TabsContent value="schedules">...</TabsContent>
-  <TabsContent value="sectors">...</TabsContent>
-  <TabsContent value="members">...</TabsContent>
-</Tabs>
-```
-
-#### 3. Layout Visual da Sidebar
-
-**Desktop:** Sidebar fixa à esquerda com dois grupos visuais:
-- **Navegação** (Escalas, Setores, Membros)
-- **Ações** (Exportar, Disponibilidade, Convidar)
-
-**Mobile:** Drawer com itens empilhados verticalmente
+#### 3. Layout em Grid (Estilo WhatsApp)
 
 ```text
-Desktop:
-┌────┐
-│ X  │ ← fechar
-├────┤
-│ 📅 │ ← Escalas (ativo = fundo colorido)
-│ 📁 │ ← Setores
-│ 👥 │ ← Membros
-├────┤ ← divisor visual
-│ 📥 │ ← Exportar
-│ ⏰ │ ← Disponibilidade
-│ ➕ │ ← Convidar
-└────┘
+┌───────────────────────────┐
+│  📅 Escalas  │  📁 Setores  │  👥 Membros  │  ← navegação
+├───────────────────────────┤
+│  📥 Exportar │  ⏰ Disp.    │  ➕ Convidar │  ← ações
+└───────────────────────────┘
+```
+
+Ou em formato mais compacto (ícones maiores, sem texto):
+
+```text
+┌─────────────────┐
+│  📅   📁   👥  │
+│  📥   ⏰   ➕  │
+└─────────────────┘
+  ↑ apenas ícones
+  Tooltip no hover
 ```
 
 ### Arquivos a Modificar
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `src/components/department/ActionSidebar.tsx` | Adicionar navegação + receber props novos |
-| `src/pages/Department.tsx` | Controlar tab ativa + passar para sidebar + ocultar TabsList para líderes |
+| `src/components/department/ActionSidebar.tsx` | Converter sidebar para Popover com grid |
+| `src/pages/Department.tsx` | Integrar o Popover no hamburger do header |
 
 ### Detalhes Técnicos
 
-#### Indicador de Tab Ativa
-
-Destacar o item ativo na navegação:
+#### ActionSidebar.tsx - Nova Estrutura
 
 ```typescript
-<Button
-  className={cn(
-    item.color,
-    currentTab === item.id && "bg-accent ring-1 ring-primary/30"
-  )}
-  onClick={() => onTabChange(item.id)}
->
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
+// O componente agora retorna apenas o conteúdo do menu
+// O trigger (hamburger) fica no Department.tsx
+
+export default function ActionMenuContent({
+  departmentName,
+  currentTab,
+  onTabChange,
+  onExportPDF,
+  onExportExcel,
+  onOpenAvailability,
+  onOpenInvite,
+  onClose,
+}: ActionMenuProps) {
+  return (
+    <div className="p-2 space-y-2">
+      {/* Navegação */}
+      <div className="grid grid-cols-3 gap-2">
+        {navigationItems.map((item) => (
+          <Tooltip key={item.id}>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  "h-12 w-12 rounded-xl", // ícones maiores
+                  item.color,
+                  currentTab === item.id && "bg-accent ring-1 ring-primary/30"
+                )}
+                onClick={() => {
+                  onTabChange(item.id);
+                  onClose();
+                }}
+              >
+                <item.icon className="w-6 h-6" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{`${departmentName} - ${item.labelSuffix}`}</TooltipContent>
+          </Tooltip>
+        ))}
+      </div>
+      
+      {/* Divisor */}
+      <div className="border-t border-border/50" />
+      
+      {/* Ações */}
+      <div className="grid grid-cols-3 gap-2">
+        {/* Export, Availability, Invite */}
+      </div>
+    </div>
+  );
+}
 ```
 
-#### Tooltip com Nome Completo
+#### Department.tsx - Hamburger com Popover
 
-No hover (desktop), mostrar o label completo:
+```typescript
+const [menuOpen, setMenuOpen] = useState(false);
+const hoverTimeoutRef = useRef<NodeJS.Timeout>();
 
-```text
-Hover no ícone 📅 → "Louvor - Escalas"
-Hover no ícone 👥 → "Louvor - Membros"
+const handleMenuHoverEnter = () => {
+  hoverTimeoutRef.current = setTimeout(() => setMenuOpen(true), 300);
+};
+
+const handleMenuHoverLeave = () => {
+  if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+};
+
+// No header:
+<Popover open={menuOpen} onOpenChange={setMenuOpen}>
+  <PopoverTrigger asChild>
+    <Button 
+      variant="ghost" 
+      size="icon"
+      onMouseEnter={handleMenuHoverEnter}
+      onMouseLeave={handleMenuHoverLeave}
+    >
+      <Menu className="w-5 h-5" />
+    </Button>
+  </PopoverTrigger>
+  <PopoverContent 
+    side="bottom" 
+    align="start"
+    sideOffset={8}
+    className="w-auto p-0 bg-background/95 backdrop-blur-xl border-border/50"
+    onMouseEnter={() => clearTimeout(hoverTimeoutRef.current)}
+    onMouseLeave={() => setMenuOpen(false)}
+  >
+    <ActionMenuContent 
+      departmentName={department.name}
+      currentTab={activeTab}
+      onTabChange={setActiveTab}
+      onClose={() => setMenuOpen(false)}
+      // ... demais props
+    />
+  </PopoverContent>
+</Popover>
 ```
 
-### Resultado Final
+### Comportamento Mobile
 
-**Para Líderes:**
-- Menu hamburger abre sidebar com navegação + ações
-- Navegação inclui o nome do departamento
-- Clique em item muda a view principal
-- Tab bar tradicional é removida do topo
+No mobile, manter o Drawer atual (já funciona bem):
+- Toque no hamburger abre drawer de baixo
+- Arraste para baixo ou toque fora fecha
 
-**Para Membros:**
-- Mantém as tabs tradicionais (Escalas e Disponibilidade)
-- Sem acesso ao menu hamburger
+### Resumo das Mudanças
+
+1. **Remover X** de fechar do menu
+2. **Trocar sidebar** por Popover flutuante
+3. **Adicionar hover** para abrir (com delay de 300ms)
+4. **Layout em grid** 3 colunas com ícones grandes
+5. **Fechar automático** ao clicar fora ou selecionar item
 
