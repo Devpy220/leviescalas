@@ -1,45 +1,81 @@
 
 
-## Plano: Adicionar Cicero Pereira ao Departamento Estacionamento
+## Plano: Disponibilidade Semanal para o Mês Seguinte
 
-### Dados Identificados
+### Problema Atual
 
-| Item | Valor |
-|------|-------|
-| **Usuário** | Cicero Pereira |
-| **Email** | elinosilva220@gmail.com |
-| **User ID** | `1994e487-8537-488d-81a7-d873c34500b5` |
-| **Departamento** | Estacionamento |
-| **Department ID** | `9eda4d80-a0f1-4a1f-9620-c511d9abf0ac` |
+A disponibilidade semanal (`SlotAvailability`) só permite marcar para o período atual do mês:
+- Período 1: Dias 1-15
+- Período 2: Dias 16-31
 
-### Ação Necessária
+Os usuários não conseguem se adiantar e marcar disponibilidade para o próximo mês.
 
-Inserir um registro na tabela `members` para associar o usuário ao departamento com o papel de "member" (membro comum).
+### Solução Proposta
 
-### SQL a Executar
+Adicionar **abas de período** no componente `SlotAvailability` para que os usuários possam alternar entre:
+
+1. **Período Atual** - Comportamento existente
+2. **Próximo Período** - Pode ser a próxima quinzena ou o início do próximo mês
 
 ```text
-INSERT INTO members (department_id, user_id, role)
-VALUES (
-  '9eda4d80-a0f1-4a1f-9620-c511d9abf0ac',
-  '1994e487-8537-488d-81a7-d873c34500b5',
-  'member'
-);
+┌─────────────────────────────────────────────────────────┐
+│  Disponibilidade Semanal                                │
+├─────────────────────────────────────────────────────────┤
+│  ┌────────────────┐  ┌────────────────┐                 │
+│  │ Janeiro 16-31  │  │ Fevereiro 1-15 │  ← Abas        │
+│  │   (atual)      │  │  (próximo)     │                 │
+│  └────────────────┘  └────────────────┘                 │
+│                                                         │
+│  ⚠️ Válida até 31 de Janeiro                           │
+│                                                         │
+│  [Domingo Manhã]     ────────────────────  [ ON/OFF ]   │
+│  [Domingo Noite]     ────────────────────  [ ON/OFF ]   │
+│  ...                                                    │
+└─────────────────────────────────────────────────────────┘
 ```
 
-### Resultado Esperado
+### Alterações Necessárias
 
-Após a inserção:
-- Cicero Pereira terá acesso ao departamento Estacionamento
-- Poderá visualizar as escalas do departamento
-- Poderá marcar sua disponibilidade
-- Aparecerá na lista de membros do departamento (atualmente com 13 membros, passará a ter 14)
+#### 1. Atualizar `SlotAvailability.tsx`
+
+- Adicionar estado para controlar qual período está selecionado (atual ou próximo)
+- Criar função para calcular o próximo período
+- Adicionar tabs/botões para alternar entre períodos
+- Ajustar as queries para filtrar pelo período selecionado
+
+#### 2. Atualizar `LeaderSlotAvailabilityView.tsx`
+
+- Adicionar mesma lógica de abas para o líder ver disponibilidade do período atual e próximo
+- Permitir que o líder planeje escalas antecipadamente
 
 ### Detalhes Técnicos
 
-A tabela `members` possui as seguintes colunas relevantes:
-- `department_id`: UUID do departamento
-- `user_id`: UUID do usuário
-- `role`: Papel do membro (`member` ou `leader`)
-- `joined_at`: Data de entrada (preenchida automaticamente)
+**Cálculo do Próximo Período:**
+```text
+Se hoje = 20 de Janeiro (período 16-31):
+  - Próximo período = 1-15 de Fevereiro
+  
+Se hoje = 10 de Janeiro (período 1-15):
+  - Próximo período = 16-31 de Janeiro
+```
+
+**Estrutura do `period_start` no banco:**
+- O campo `period_start` já existe na tabela `member_availability`
+- Apenas precisamos permitir inserir registros com `period_start` futuro
+
+**Não há alterações no banco de dados** - a estrutura atual já suporta múltiplos períodos.
+
+### Arquivos a Modificar
+
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/components/department/SlotAvailability.tsx` | Adicionar tabs de período e lógica de período futuro |
+| `src/components/department/LeaderSlotAvailabilityView.tsx` | Adicionar tabs para líder visualizar períodos |
+
+### Benefícios
+
+- Membros podem se adiantar e marcar disponibilidade
+- Líderes podem planejar escalas com antecedência
+- Mantém o sistema de reset quinzenal funcionando normalmente
+- Não requer mudanças no banco de dados
 
