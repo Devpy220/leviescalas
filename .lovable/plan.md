@@ -1,116 +1,81 @@
 
 
-## Plano: Cores Bicolores para Membros Extras (13+)
+## Plano: Corrigir Constraint para Suportar Múltiplos Períodos
 
-### Problema Atual
+### Problema Identificado
 
-Quando um departamento tem mais de 12 membros, as cores começam a se repetir:
-- Membro 1: Vermelho
-- Membro 13: Vermelho ← **Conflito!**
-
-### Solução Proposta
-
-Criar **combinações de duas cores** para membros além do 12º, gerando identificações visuais únicas:
+A tabela `member_availability` tem uma constraint única que **não inclui `period_start`**:
 
 ```text
-Membros 1-12:  Cor sólida (paleta atual)
-┌──────────────────────────────────┐
-│  1. Vermelho    ████████████     │
-│  2. Azul Royal  ████████████     │
-│  ...                             │
-│ 12. Índigo      ████████████     │
-└──────────────────────────────────┘
+Constraint atual:
+UNIQUE (user_id, department_id, day_of_week, time_start, time_end)
 
-Membros 13+: Combinação de duas cores (gradiente diagonal)
-┌──────────────────────────────────┐
-│ 13. Vermelho + Azul     ████████ │ (gradiente)
-│ 14. Vermelho + Verde    ████████ │
-│ 15. Vermelho + Laranja  ████████ │
-│ ...                              │
-│ 24. Azul + Verde        ████████ │
-│ ...                              │
-└──────────────────────────────────┘
+O que acontece:
+┌─────────────────────────────────────────────────────────────┐
+│ Usuário tenta salvar para Janeiro 16-31:  ✅ Funciona      │
+│ Usuário tenta salvar para Fevereiro 1-15: ❌ Erro!         │
+│                                                             │
+│ Erro: "duplicate key value violates unique constraint"     │
+│                                                             │
+│ O banco não diferencia períodos porque period_start        │
+│ não faz parte da constraint única.                         │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-### Implementação Técnica
+### Solução
 
-#### 1. Atualizar `src/lib/memberColors.ts`
-
-Adicionar função para gerar combinações bicolores:
+Atualizar a constraint única para incluir `period_start`, permitindo que o mesmo slot exista em períodos diferentes:
 
 ```text
-Lógica de combinação:
-- 12 cores primárias = 12 membros sólidos
-- Combinações de 2: C(12,2) = 66 combinações possíveis
-- Total: 12 + 66 = 78 membros com cores únicas!
+Nova constraint:
+UNIQUE (user_id, department_id, day_of_week, time_start, time_end, period_start)
+
+Resultado esperado:
+┌─────────────────────────────────────────────────────────────┐
+│ Slot: Domingo Manhã (09:00-12:00), Usuário João             │
+│                                                             │
+│ period_start = 2026-01-16 → Registro 1 ✅                   │
+│ period_start = 2026-02-01 → Registro 2 ✅ (agora permitido) │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-Nova interface para suportar cores duplas:
-```typescript
-interface MemberColorResult {
-  primary: string;       // Cor principal
-  secondary?: string;    // Segunda cor (se aplicável)
-  isGradient: boolean;   // Se deve renderizar como gradiente
-}
+### Alterações Necessárias
+
+#### 1. Migração de Banco de Dados
+
+Executar SQL para:
+1. Remover a constraint antiga
+2. Criar nova constraint incluindo `period_start`
+
+```sql
+-- Remover constraint antiga
+ALTER TABLE member_availability 
+DROP CONSTRAINT IF EXISTS member_availability_user_id_department_id_day_of_week_time__key;
+
+-- Criar nova constraint com period_start
+ALTER TABLE member_availability 
+ADD CONSTRAINT member_availability_unique_slot_per_period 
+UNIQUE (user_id, department_id, day_of_week, time_start, time_end, period_start);
 ```
 
-#### 2. Atualizar componentes visuais
+#### 2. Nenhuma alteração no código frontend
 
-Os avatares e indicadores precisarão suportar gradientes CSS:
-
-```css
-/* Cor sólida (membros 1-12) */
-background: #EF4444;
-
-/* Gradiente diagonal (membros 13+) */
-background: linear-gradient(135deg, #EF4444 50%, #2563EB 50%);
-```
+O componente `SlotAvailability.tsx` já envia `period_start` corretamente no insert (linha 218). O problema é apenas a constraint do banco.
 
 ### Arquivos a Modificar
 
-| Arquivo | Alteração |
-|---------|-----------|
-| `src/lib/memberColors.ts` | Adicionar lógica de combinações bicolores |
-| `src/components/department/MemberList.tsx` | Renderizar gradientes para membros 13+ |
-| `src/components/department/ScheduleCalendar.tsx` | Suportar gradientes nos indicadores de escala |
-| `src/components/department/ScheduleTable.tsx` | Suportar gradientes na tabela de escalas |
-
-### Exemplos Visuais
-
-**Avatar com cor sólida (membros 1-12):**
-```text
-┌─────────┐
-│   JP    │  ← Fundo vermelho sólido
-└─────────┘
-```
-
-**Avatar com gradiente (membros 13+):**
-```text
-┌─────────┐
-│   CS    │  ← Metade vermelho, metade azul (diagonal)
-└─────────┘
-```
-
-### Detalhes da Lógica
-
-Para membro com índice >= 12:
-1. Calcular qual par de cores usar
-2. Par 0 = cores 0+1 (Vermelho + Azul)
-3. Par 1 = cores 0+2 (Vermelho + Verde)
-4. E assim por diante...
-
-```text
-Membro 13 → Par 0 → Vermelho + Azul Royal
-Membro 14 → Par 1 → Vermelho + Verde
-Membro 15 → Par 2 → Vermelho + Laranja
-...
-Membro 24 → Par 11 → Azul Royal + Verde
-```
+| Tipo | Alteração |
+|------|-----------|
+| **Migração SQL** | Atualizar constraint única para incluir `period_start` |
+| **Frontend** | Nenhuma alteração necessária |
 
 ### Benefícios
 
-- Suporte para até 78 membros com cores únicas
-- Identificação visual clara mesmo em departamentos grandes
-- Gradientes são visualmente atraentes e distintos
-- Mantém compatibilidade com o sistema atual (primeiros 12 membros não mudam)
+- Membros podem salvar disponibilidade para o período atual E próximo período simultaneamente
+- Cada período tem seus próprios registros independentes
+- O sistema de reset quinzenal funciona corretamente (deleta registros antigos pelo `period_start`)
+
+### Impacto nos Dados Existentes
+
+Nenhum impacto negativo - os registros atuais continuarão funcionando normalmente. A nova constraint é mais permissiva.
 
