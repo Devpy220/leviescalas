@@ -20,6 +20,19 @@ export const memberColors = [
 
 export type MemberColor = typeof memberColors[number];
 
+// Result interface that supports both solid and gradient colors
+export interface MemberColorResult {
+  primary: string;
+  secondary?: string;
+  isGradient: boolean;
+  // For backwards compatibility
+  bg: string;
+  dot: string;
+  text: string;
+  border: string;
+  name: string;
+}
+
 interface Member {
   id: string;
   user_id: string;
@@ -29,6 +42,23 @@ interface Member {
     avatar_url?: string | null;
   };
 }
+
+/**
+ * Generate all unique 2-color combinations from the palette
+ * This gives us C(12,2) = 66 additional unique combinations
+ */
+function generateColorPairs(): Array<[number, number]> {
+  const pairs: Array<[number, number]> = [];
+  for (let i = 0; i < memberColors.length; i++) {
+    for (let j = i + 1; j < memberColors.length; j++) {
+      pairs.push([i, j]);
+    }
+  }
+  return pairs;
+}
+
+// Pre-generate all color pairs
+const colorPairs = generateColorPairs();
 
 /**
  * Creates a map of member user_id to a unique color index.
@@ -62,16 +92,84 @@ export function createMemberColorMap(members: Member[]): Map<string, number> {
 }
 
 /**
- * Get the color configuration for a specific member by user_id
+ * Creates an extended color map that supports bicolor combinations for members 13+
+ * Returns a map with indices where:
+ * - 0-11: solid colors
+ * - 12+: combination indices (need special handling)
  */
-export function getMemberColor(colorMap: Map<string, number>, userId: string): MemberColor {
-  const colorIndex = colorMap.get(userId) ?? 0;
-  return memberColors[colorIndex];
+export function createExtendedMemberColorMap(members: Member[]): Map<string, number> {
+  const map = new Map<string, number>();
+  
+  members.forEach((member, index) => {
+    // Assign index directly - we'll handle the color logic in getMemberColorExtended
+    map.set(member.user_id, index);
+  });
+  
+  return map;
 }
 
 /**
- * Get just the hex color for a member (simpler interface for some use cases)
+ * Get the extended color configuration for a specific member by index
+ * Supports both solid colors (0-11) and gradient combinations (12+)
+ */
+export function getMemberColorExtended(colorIndex: number): MemberColorResult {
+  // For first 12 members, use solid colors
+  if (colorIndex < memberColors.length) {
+    const color = memberColors[colorIndex];
+    return {
+      primary: color.bg,
+      secondary: undefined,
+      isGradient: false,
+      bg: color.bg,
+      dot: color.dot,
+      text: color.text,
+      border: color.border,
+      name: color.name,
+    };
+  }
+  
+  // For members 13+, use bicolor combinations
+  const pairIndex = (colorIndex - memberColors.length) % colorPairs.length;
+  const [firstColorIdx, secondColorIdx] = colorPairs[pairIndex];
+  const firstColor = memberColors[firstColorIdx];
+  const secondColor = memberColors[secondColorIdx];
+  
+  return {
+    primary: firstColor.bg,
+    secondary: secondColor.bg,
+    isGradient: true,
+    // For gradient, bg returns the CSS gradient
+    bg: `linear-gradient(135deg, ${firstColor.bg} 50%, ${secondColor.bg} 50%)`,
+    dot: firstColor.dot, // Use primary color for dot fallback
+    text: firstColor.text,
+    border: firstColor.border,
+    name: `${firstColor.name} + ${secondColor.name}`,
+  };
+}
+
+/**
+ * Get the color configuration for a specific member by user_id
+ * Now supports extended colors with gradients for members 13+
+ */
+export function getMemberColor(colorMap: Map<string, number>, userId: string): MemberColorResult {
+  const colorIndex = colorMap.get(userId) ?? 0;
+  return getMemberColorExtended(colorIndex);
+}
+
+/**
+ * Get just the hex color or gradient for a member (simpler interface for some use cases)
  */
 export function getMemberHexColor(colorMap: Map<string, number>, userId: string): string {
   return getMemberColor(colorMap, userId).bg;
+}
+
+/**
+ * Get the background style object for a member (supports both solid and gradient)
+ */
+export function getMemberBackgroundStyle(colorMap: Map<string, number>, userId: string): React.CSSProperties {
+  const color = getMemberColor(colorMap, userId);
+  if (color.isGradient) {
+    return { background: color.bg };
+  }
+  return { backgroundColor: color.bg };
 }
