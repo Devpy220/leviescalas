@@ -12,6 +12,7 @@ import {
   Sparkles,
   Calendar as CalendarIcon
 } from 'lucide-react';
+import { ASSIGNMENT_ROLES } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -119,6 +120,7 @@ interface Schedule {
   sector_id: string | null;
   confirmation_status?: ConfirmationStatus;
   decline_reason?: string | null;
+  assignment_role?: string | null;
   profile?: {
     name: string;
     avatar_url: string | null;
@@ -886,6 +888,11 @@ export default function UnifiedScheduleView({
                           <div>
                             <div className="flex items-center gap-2">
                               <p className="text-sm font-medium">{schedule.profile?.name || 'Membro'}</p>
+                              {schedule.assignment_role && ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES] && (
+                                <span className="text-sm" title={ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES].description}>
+                                  {ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES].icon}
+                                </span>
+                              )}
                               <Tooltip>
                                 <TooltipTrigger>
                                   {getConfirmationIcon(schedule.confirmation_status)}
@@ -895,6 +902,11 @@ export default function UnifiedScheduleView({
                                 </TooltipContent>
                               </Tooltip>
                             </div>
+                            {schedule.assignment_role && ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES] && (
+                              <p className={`text-xs ${ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES].color}`}>
+                                {ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES].label}
+                              </p>
+                            )}
                             {schedule.sector && (
                               <div className="flex items-center gap-1.5">
                                 <div 
@@ -1007,6 +1019,11 @@ export default function UnifiedScheduleView({
                             <div>
                               <div className="flex items-center gap-2">
                                 <p className="text-sm font-medium">{schedule.profile?.name || 'Membro'}</p>
+                                {schedule.assignment_role && ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES] && (
+                                  <span className="text-sm" title={ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES].description}>
+                                    {ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES].icon}
+                                  </span>
+                                )}
                                 <Tooltip>
                                   <TooltipTrigger>
                                     {getConfirmationIcon(schedule.confirmation_status)}
@@ -1016,6 +1033,11 @@ export default function UnifiedScheduleView({
                                   </TooltipContent>
                                 </Tooltip>
                               </div>
+                              {schedule.assignment_role && ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES] && (
+                                <p className={`text-xs ${ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES].color}`}>
+                                  {ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES].label}
+                                </p>
+                              )}
                               {schedule.sector && (
                                 <div className="flex items-center gap-1.5">
                                   <div 

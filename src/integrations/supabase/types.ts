@@ -538,6 +538,7 @@ export type Database = {
       }
       schedules: {
         Row: {
+          assignment_role: string | null
           confirmation_status: Database["public"]["Enums"]["confirmation_status"]
           confirmation_token: string | null
           confirmed_at: string | null
@@ -555,6 +556,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          assignment_role?: string | null
           confirmation_status?: Database["public"]["Enums"]["confirmation_status"]
           confirmation_token?: string | null
           confirmed_at?: string | null
@@ -572,6 +574,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          assignment_role?: string | null
           confirmation_status?: Database["public"]["Enums"]["confirmation_status"]
           confirmation_token?: string | null
           confirmed_at?: string | null
@@ -682,6 +685,7 @@ export type Database = {
     Views: {
       schedules_public: {
         Row: {
+          assignment_role: string | null
           confirmation_status:
             | Database["public"]["Enums"]["confirmation_status"]
             | null
@@ -701,6 +705,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          assignment_role?: string | null
           confirmation_status?:
             | Database["public"]["Enums"]["confirmation_status"]
             | null
@@ -720,6 +725,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          assignment_role?: string | null
           confirmation_status?:
             | Database["public"]["Enums"]["confirmation_status"]
             | null
@@ -984,26 +990,6 @@ export type Database = {
           joined_at: string
           name: string
           role: string
-          user_id: string
-        }[]
-      }
-      get_department_schedules_secure: {
-        Args: { dept_id: string }
-        Returns: {
-          confirmation_status: string
-          confirmation_token: string
-          confirmed_at: string
-          created_at: string
-          created_by: string
-          date: string
-          decline_reason: string
-          department_id: string
-          id: string
-          notes: string
-          sector_id: string
-          time_end: string
-          time_start: string
-          updated_at: string
           user_id: string
         }[]
       }
