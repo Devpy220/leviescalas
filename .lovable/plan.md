@@ -1,96 +1,141 @@
 
 
-## Plano: Corrigir Cores e Iniciais dos Avatares de Membros
+## Plano: Adicionar Função/Papel na Escala
 
-### Problema Identificado
+### Objetivo
 
-Há 3 componentes que exibem avatares de membros com:
-- **Cor fixa** (`bg-primary/10` ou `bg-primary/20`) em vez da cor única atribuída a cada membro
-- As iniciais já estão corretas (usando nome), mas as cores não seguem o sistema de cores
+Permitir que o líder identifique qual é a **função específica** de cada pessoa escalada no dia. Por exemplo, no ministério de estacionamento:
+- **Plantão**: Fica cuidando dos carros (não participa do culto)
+- **Participante**: Ajuda no início e pode participar do culto depois
 
-### Componentes Afetados
+Isso resolve o problema de saber quem vai ficar de fora e quem pode entrar no culto.
 
-| Componente | Problema | Linha |
-|------------|----------|-------|
-| `LeaderSlotAvailabilityView.tsx` | Usa `bg-primary/10` | 271 |
-| `LeaderAvailabilityView.tsx` | Usa `bg-primary/20` | 278 |
-| `SmartScheduleDialog.tsx` | Usa `bg-primary/20` | 488 |
+### Fluxo de Uso
 
-### Solução
-
-Atualizar cada componente para:
-1. Importar o sistema de cores: `createExtendedMemberColorMap`, `getMemberBackgroundStyle`
-2. Criar um mapa de cores baseado nos membros
-3. Aplicar a cor correta via `style={getMemberBgStyle(userId)}`
-4. Ajustar a cor do texto para branco (`text-white`)
-
-### Alterações por Arquivo
-
-#### 1. `src/components/department/LeaderSlotAvailabilityView.tsx`
-
-**Adicionar imports:**
-```typescript
-import { createExtendedMemberColorMap, getMemberBackgroundStyle } from '@/lib/memberColors';
+```text
+┌─────────────────────────────────────────────────────────────┐
+│  CRIAR ESCALA                                                │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │ Membro:    [João Silva         ▼]                    │   │
+│  │ Horário:   [Domingo Noite      ▼]                    │   │
+│  │ Função:    [🚗 Plantão        ▼]  ← NOVO CAMPO       │   │
+│  │            [✅ Participante      ]                    │   │
+│  │            [📋 Horário personalizado]                 │   │
+│  └──────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-**Criar mapa de cores:**
-```typescript
-const memberColorMap = useMemo(() => {
-  // Converter membros para o formato esperado
-  const membersForColor = members.map(m => ({
-    id: m.id,
-    user_id: m.id, // profile.id é o user_id
-    profile: { name: m.name }
-  }));
-  return createExtendedMemberColorMap(membersForColor);
-}, [members]);
-
-const getMemberBgStyle = (userId: string): React.CSSProperties => {
-  return getMemberBackgroundStyle(memberColorMap, userId);
-};
-```
-
-**Modificar AvatarFallback (linha 271):**
-```typescript
-// De:
-<AvatarFallback className="text-xs bg-primary/10">
-
-// Para:
-<AvatarFallback 
-  className="text-xs font-bold text-white"
-  style={getMemberBgStyle(member.id)}
->
-```
-
-#### 2. `src/components/department/LeaderAvailabilityView.tsx`
-
-Mesma lógica - adicionar sistema de cores e aplicar `style` no AvatarFallback.
-
-#### 3. `src/components/department/SmartScheduleDialog.tsx`
-
-Mesma lógica - o componente já recebe dados de membros, então apenas precisa integrar o sistema de cores.
-
-### Resultado Visual
+### Exibição Visual
 
 | Antes | Depois |
 |-------|--------|
-| Todos avatares com mesma cor laranja suave | Cada membro com sua cor única (vermelho, azul, verde, etc.) |
-| Difícil distinguir membros | Fácil identificação visual |
+| João 🟢 18:00-22:00 | João 🚗 **Plantão** 🟢 18:00-22:00 |
+| Maria 🟡 18:00-22:00 | Maria ✅ **Participa** 🟡 18:00-22:00 |
 
-### Arquivos a Modificar
+### Estrutura de Dados
 
-| Arquivo | Mudanças |
-|---------|----------|
-| `src/components/department/LeaderSlotAvailabilityView.tsx` | Adicionar import + useMemo + style no Avatar |
-| `src/components/department/LeaderAvailabilityView.tsx` | Adicionar import + useMemo + style no Avatar |
-| `src/components/department/SmartScheduleDialog.tsx` | Adicionar import + useMemo + style no Avatar |
+**Nova coluna na tabela `schedules`:**
 
-### Detalhes Técnicos
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `assignment_role` | text | "on_duty" (plantão), "participant" (participante), ou NULL (padrão) |
 
-O sistema de cores em `memberColors.ts`:
-- Membros 1-12: cores sólidas únicas (vermelho, azul, verde, etc.)
-- Membros 13+: gradientes bicolores únicos
-- Cores são atribuídas baseadas na ordem dos membros no array
+### Componentes a Modificar
 
-Para garantir consistência, todos os componentes devem usar o mesmo array de membros na mesma ordem ao criar o mapa de cores.
+| Componente | Mudança |
+|------------|---------|
+| `AddScheduleDialog.tsx` | Adicionar seletor de função |
+| `ScheduleTable.tsx` | Exibir ícone e label da função |
+| `ScheduleCalendar.tsx` | Exibir função no dialog de detalhes |
+| `UnifiedScheduleView.tsx` | Exibir função na visualização unificada |
+| `SmartScheduleDialog.tsx` | Adicionar opção de função padrão |
+
+### Detalhes da Implementação
+
+#### 1. Migração de Banco de Dados
+
+```sql
+-- Adicionar coluna para função/papel na escala
+ALTER TABLE schedules 
+ADD COLUMN assignment_role TEXT DEFAULT NULL;
+
+-- Comentário para documentação
+COMMENT ON COLUMN schedules.assignment_role IS 
+'Papel do membro na escala: on_duty (plantão/fica o tempo todo), participant (pode participar do culto), NULL (não definido)';
+```
+
+#### 2. Constantes de Funções
+
+Criar um mapeamento de funções com ícones e labels:
+
+```typescript
+const ASSIGNMENT_ROLES = {
+  on_duty: { 
+    label: 'Plantão', 
+    description: 'Fica o tempo todo (não participa do culto)',
+    icon: '🚗', // ou Shield, Car, Eye
+    color: 'text-amber-600'
+  },
+  participant: { 
+    label: 'Participante', 
+    description: 'Pode participar do culto',
+    icon: '✅', // ou Users, Church
+    color: 'text-green-600'
+  }
+};
+```
+
+#### 3. AddScheduleDialog - Novo Campo
+
+Adicionar um `Select` após o setor:
+
+```tsx
+<div className="space-y-2">
+  <Label className="flex items-center gap-2">
+    <UserCog className="w-4 h-4 text-muted-foreground" />
+    Função (opcional)
+  </Label>
+  <Select value={assignmentRole} onValueChange={setAssignmentRole}>
+    <SelectTrigger>
+      <SelectValue placeholder="Sem função específica" />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectItem value="none">Sem função específica</SelectItem>
+      <SelectItem value="on_duty">🚗 Plantão - Fica o tempo todo</SelectItem>
+      <SelectItem value="participant">✅ Participante - Pode ir ao culto</SelectItem>
+    </SelectContent>
+  </Select>
+</div>
+```
+
+#### 4. Exibição nas Escalas
+
+Na `ScheduleTable` e outros componentes, exibir a função com ícone:
+
+```tsx
+{schedule.assignment_role && (
+  <Badge variant="outline" className="text-[8px] px-1">
+    {schedule.assignment_role === 'on_duty' ? '🚗 Plantão' : '✅ Participa'}
+  </Badge>
+)}
+```
+
+### Arquivos a Criar/Modificar
+
+| Arquivo | Ação |
+|---------|------|
+| `supabase/migrations/xxx_add_assignment_role.sql` | Criar migração |
+| `src/lib/constants.ts` | Adicionar constantes de funções |
+| `src/components/department/AddScheduleDialog.tsx` | Adicionar seletor |
+| `src/components/department/ScheduleTable.tsx` | Exibir função |
+| `src/components/department/ScheduleCalendar.tsx` | Exibir no dialog |
+| `src/components/department/UnifiedScheduleView.tsx` | Exibir na visualização |
+| `src/integrations/supabase/types.ts` | Atualizado automaticamente |
+
+### Resultado Esperado
+
+Após implementação, o líder poderá:
+1. Ao criar uma escala, selecionar se a pessoa fica de **Plantão** ou pode **Participar**
+2. Visualizar nas escalas um ícone indicando a função de cada pessoa
+3. Identificar rapidamente quem fica e quem entra no culto
 
