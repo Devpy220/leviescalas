@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { format, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar as CalendarIcon, Clock, User, FileText, Layers } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, User, FileText, Layers, UserCog } from 'lucide-react';
+import { ASSIGNMENT_ROLES, AssignmentRole } from '@/lib/constants';
 import {
   Dialog,
   DialogContent,
@@ -84,6 +85,7 @@ export default function AddScheduleDialog({
   const [timeStart, setTimeStart] = useState('09:00');
   const [timeEnd, setTimeEnd] = useState('12:00');
   const [notes, setNotes] = useState('');
+  const [assignmentRole, setAssignmentRole] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -140,6 +142,7 @@ export default function AddScheduleDialog({
       setTimeStart('09:00');
       setTimeEnd('12:00');
       setNotes('');
+      setAssignmentRole('');
     }
   }, [open]);
 
@@ -194,6 +197,7 @@ export default function AddScheduleDialog({
         time_start: timeStart,
         time_end: timeEnd,
         notes: notes || null,
+        assignment_role: assignmentRole && assignmentRole !== 'none' ? assignmentRole : null,
         created_by: user?.id
       }).select().single();
 
@@ -394,6 +398,28 @@ export default function AddScheduleDialog({
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Assignment Role */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <UserCog className="w-4 h-4 text-muted-foreground" />
+              Função (opcional)
+            </Label>
+            <Select value={assignmentRole} onValueChange={setAssignmentRole}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sem função específica" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Sem função específica</SelectItem>
+                <SelectItem value="on_duty">
+                  {ASSIGNMENT_ROLES.on_duty.icon} {ASSIGNMENT_ROLES.on_duty.label} - {ASSIGNMENT_ROLES.on_duty.description}
+                </SelectItem>
+                <SelectItem value="participant">
+                  {ASSIGNMENT_ROLES.participant.icon} {ASSIGNMENT_ROLES.participant.label} - {ASSIGNMENT_ROLES.participant.description}
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Notes */}

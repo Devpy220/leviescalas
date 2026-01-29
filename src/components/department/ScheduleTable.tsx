@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Clock, Users, Calendar, CheckCircle2, XCircle, HelpCircle } from 'lucide-react';
 import { createExtendedMemberColorMap, getMemberBackgroundStyle } from '@/lib/memberColors';
+import { ASSIGNMENT_ROLES } from '@/lib/constants';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -27,6 +28,7 @@ interface Schedule {
   sector_id: string | null;
   confirmation_status?: ConfirmationStatus;
   decline_reason?: string | null;
+  assignment_role?: string | null;
   profile?: {
     name: string;
     avatar_url: string | null;
@@ -194,6 +196,11 @@ export default function ScheduleTable({ schedules, members, month, title }: Sche
                             <span className="text-[10px] font-medium leading-tight">
                               {schedule.profile?.name?.split(' ')[0] || 'Membro'}
                             </span>
+                            {schedule.assignment_role && ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES] && (
+                              <span className="text-[9px]" title={ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES].description}>
+                                {ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES].icon}
+                              </span>
+                            )}
                             {getConfirmationBadge(schedule.confirmation_status, schedule.decline_reason)}
                           </div>
                           {schedule.sector && (
