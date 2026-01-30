@@ -5,63 +5,10 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Calendar, Sun, Moon, AlertCircle } from 'lucide-react';
+import { Loader2, Calendar, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getCurrentPeriodInfo, getNextPeriodInfo, formatPeriodEnd, type PeriodInfo } from '@/lib/periodUtils';
-
-// Fixed slots configuration - matches UnifiedScheduleView
-const FIXED_SLOTS = [
-  { 
-    dayOfWeek: 0, 
-    timeStart: '09:00', 
-    timeEnd: '12:00', 
-    label: 'Domingo Manhã', 
-    icon: Sun,
-    bgColor: 'bg-cyan-100/80 dark:bg-cyan-900/30',
-    borderColor: 'border-cyan-300 dark:border-cyan-700/50',
-    activeColor: 'bg-cyan-500'
-  },
-  { 
-    dayOfWeek: 0, 
-    timeStart: '18:00', 
-    timeEnd: '22:00', 
-    label: 'Domingo Noite', 
-    icon: Moon,
-    bgColor: 'bg-rose-100/80 dark:bg-rose-900/30',
-    borderColor: 'border-rose-300 dark:border-rose-700/50',
-    activeColor: 'bg-rose-500'
-  },
-  { 
-    dayOfWeek: 1, 
-    timeStart: '19:20', 
-    timeEnd: '22:00', 
-    label: 'Segunda', 
-    icon: Moon,
-    bgColor: 'bg-amber-100/80 dark:bg-amber-900/30',
-    borderColor: 'border-amber-300 dark:border-amber-700/50',
-    activeColor: 'bg-amber-500'
-  },
-  { 
-    dayOfWeek: 3, 
-    timeStart: '19:20', 
-    timeEnd: '22:00', 
-    label: 'Quarta', 
-    icon: Moon,
-    bgColor: 'bg-violet-100/80 dark:bg-violet-900/30',
-    borderColor: 'border-violet-300 dark:border-violet-700/50',
-    activeColor: 'bg-violet-500'
-  },
-  { 
-    dayOfWeek: 5, 
-    timeStart: '19:20', 
-    timeEnd: '22:00', 
-    label: 'Sexta', 
-    icon: Moon,
-    bgColor: 'bg-pink-100/80 dark:bg-pink-900/30',
-    borderColor: 'border-pink-300 dark:border-pink-700/50',
-    activeColor: 'bg-pink-500'
-  },
-];
+import { getCurrentPeriodInfo, getNextPeriodInfo, formatPeriodEnd } from '@/lib/periodUtils';
+import { FIXED_SLOTS, getSlotKey } from '@/lib/fixedSlots';
 
 interface SlotAvailabilityProps {
   departmentId: string;
@@ -137,8 +84,7 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
     }
   };
 
-  const getSlotKey = (slot: typeof FIXED_SLOTS[0]) => 
-    `${slot.dayOfWeek}-${slot.timeStart}-${slot.timeEnd}`;
+  const getLocalSlotKey = (slot: typeof FIXED_SLOTS[0]) => getSlotKey(slot);
 
   const isSlotAvailable = (slot: typeof FIXED_SLOTS[0]) => {
     const record = availability.find(a => 

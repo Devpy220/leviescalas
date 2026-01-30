@@ -25,32 +25,10 @@ import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, Calendar, Users, Check, X, AlertCircle, Send, Bell } from 'lucide-react';
-import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSunday, isWednesday } from 'date-fns';
+import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { createExtendedMemberColorMap, getMemberBackgroundStyle } from '@/lib/memberColors';
-
-interface SmartScheduleDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  departmentId: string;
-  onSchedulesCreated: () => void;
-}
-
-interface FixedSlot {
-  id: string;
-  dayOfWeek: number;
-  timeStart: string;
-  timeEnd: string;
-  label: string;
-  defaultMembers: number;
-}
-
-// Horários fixos pré-definidos com quantidade padrão de membros
-const FIXED_SLOTS: FixedSlot[] = [
-  { id: 'wed-night', dayOfWeek: 3, timeStart: '19:20', timeEnd: '22:00', label: 'Quarta 19:20-22:00', defaultMembers: 3 },
-  { id: 'sun-morning', dayOfWeek: 0, timeStart: '08:00', timeEnd: '11:30', label: 'Domingo Manhã', defaultMembers: 3 },
-  { id: 'sun-night', dayOfWeek: 0, timeStart: '18:00', timeEnd: '22:00', label: 'Domingo Noite', defaultMembers: 5 },
-];
+import { SMART_SLOTS as FIXED_SLOTS } from '@/lib/fixedSlots';
 
 // Período especial pré-definido
 const SPECIAL_PERIOD = {
@@ -59,6 +37,13 @@ const SPECIAL_PERIOD = {
   startDate: '2026-01-05',
   endDate: '2026-01-15'
 };
+
+interface SmartScheduleDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  departmentId: string;
+  onSchedulesCreated: () => void;
+}
 
 interface SuggestedSchedule {
   date: string;
@@ -128,7 +113,9 @@ export default function SmartScheduleDialog({
     const start = startOfMonth(new Date(year, month - 1));
     const end = endOfMonth(new Date(year, month - 1));
     const allDays = eachDayOfInterval({ start, end });
-    return allDays.filter(day => isSunday(day) || isWednesday(day));
+    // Filter days that match any of our fixed slots
+    const validDays = FIXED_SLOTS.map(s => s.dayOfWeek);
+    return allDays.filter(day => validDays.includes(day.getDay()));
   };
 
   const handleGenerate = async () => {
