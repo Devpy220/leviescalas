@@ -1,127 +1,168 @@
 
-# Plano: Layout de Escalas em Colunas Horizontais
+# Plano: Seleção Múltipla de Membros na Criação de Escalas
 
 ## Resumo
-Transformar a visualização de escalas de uma lista vertical (um dia abaixo do outro) para um **grid horizontal de 3 colunas**, onde cada coluna representa um dia de escala com o nome do dia/data no topo e os membros escalados listados abaixo.
+Transformar o diálogo de criação de escalas (`AddScheduleDialog`) para permitir selecionar **múltiplos membros de uma vez**, e depois editar individualmente os setores e funções de cada um antes de salvar.
 
-## Novo Design Visual
+## Novo Fluxo de Trabalho
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────┐
-│  📅 Escalas de Fevereiro 2026                                       │
-│  5 dias com escalas • 15 pessoas escaladas                          │
+│  PASSO 1: Escolher Data e Horário                                   │
+│  ┌─────────────────┐  ┌─────────────────┐                           │
+│  │ 📅 Data: 02/02  │  │ ⏰ Domingo Noite│                           │
+│  └─────────────────┘  └─────────────────┘                           │
 └─────────────────────────────────────────────────────────────────────┘
-
-┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
-│ DOMINGO MANHÃ    │  │ DOMINGO NOITE    │  │ QUARTA           │
-│ 02 de fevereiro  │  │ 02 de fevereiro  │  │ 05 de fevereiro  │
-│ 08:00 - 12:00    │  │ 18:00 - 22:00    │  │ 19:00 - 22:00    │
-├──────────────────┤  ├──────────────────┤  ├──────────────────┤
-│ 👤 João Silva    │  │ 👤 Maria Santos  │  │ 👤 Pedro Costa   │
-│    Estacionamento│  │    Recepção      │  │    Som           │
-│ 👤 Ana Costa     │  │ 👤 Lucas Ferreira│  │ 👤 Paulo Lima    │
-│    Som           │  │    Mídia         │  │    Mídia         │
-│ 👤 Carlos Lima   │  │                  │  │                  │
-│    Mídia         │  │                  │  │                  │
-└──────────────────┘  └──────────────────┘  └──────────────────┘
-
-┌──────────────────┐  ┌──────────────────┐
-│ SEXTA            │  │ DOMINGO MANHÃ    │
-│ 07 de fevereiro  │  │ 09 de fevereiro  │
-│ 19:00 - 22:00    │  │ 08:00 - 12:00    │
-├──────────────────┤  ├──────────────────┤
-│ 👤 Marcos Souza  │  │ 👤 Felipe Dias   │
-│    Estacionamento│  │    Recepção      │
-└──────────────────┘  └──────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────────┐
+│  PASSO 2: Selecionar Membros (Checkboxes)                           │
+│  ┌───────────────────────────────────────────────────┐              │
+│  │ ☑ João Silva           ⚠️ (bloqueado)             │              │
+│  │ ☑ Maria Santos                                    │              │
+│  │ ☐ Pedro Costa                                     │              │
+│  │ ☑ Ana Lima                                        │              │
+│  │ ☐ Carlos Ferreira                                 │              │
+│  └───────────────────────────────────────────────────┘              │
+│  [3 membros selecionados]               [Selecionar Todos]          │
+└─────────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────────┐
+│  PASSO 3: Configurar Cada Membro                                    │
+│  ┌───────────────────────────────────────────────────────────────┐  │
+│  │ 👤 João Silva                                                 │  │
+│  │    Setor: [Estacionamento ▼]  Função: [🚗 Plantão ▼]          │  │
+│  ├───────────────────────────────────────────────────────────────┤  │
+│  │ 👤 Maria Santos                                               │  │
+│  │    Setor: [Recepção ▼]        Função: [✅ Participante ▼]     │  │
+│  ├───────────────────────────────────────────────────────────────┤  │
+│  │ 👤 Ana Lima                                                   │  │
+│  │    Setor: [Som ▼]             Função: [Nenhuma ▼]             │  │
+│  └───────────────────────────────────────────────────────────────┘  │
+│                                                                     │
+│  Observações: [________________________]                            │
+│                                                                     │
+│                    [Cancelar]  [Criar 3 Escalas]                    │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
-## Mudanças Principais
+## Mudanças Detalhadas
 
-### 1. Estrutura de Dados
-- Agrupar escalas por **slot de horário** (Domingo Manhã, Domingo Noite, Quarta, etc.) em vez de apenas por data
-- Cada "coluna" representa um slot específico em uma data específica
+### 1. Refatorar AddScheduleDialog
 
-### 2. Layout CSS
-- Usar `grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4` para responsividade
-- No mobile: 1 coluna
-- Em tablets: 2 colunas
-- Em desktop: 3 colunas
+**Estado atual:**
+- Seleciona 1 membro por vez
+- Cria 1 escala por submit
 
-### 3. Card de Cada Slot
-Cada card terá:
-- **Cabeçalho colorido**: Nome do slot (ex: "DOMINGO MANHÃ") com cor do slot definida em `fixedSlots.ts`
-- **Data**: Formato "02 de fevereiro"
-- **Horário**: Ex: "08:00 - 12:00"
-- **Lista de membros**: Avatar compacto + Nome + Setor + Ícone de função (Plantão/Participante)
+**Novo estado:**
+- Lista de membros com checkboxes para seleção múltipla
+- Array de configurações individuais por membro selecionado
+- Inserção em lote (batch insert) no Supabase
 
-### 4. Separação de Domingo
-- Domingo Manhã e Domingo Noite serão tratados como **slots separados** no grid
-- Cada um terá sua própria coluna/card
+### 2. Estrutura de Dados
+
+```typescript
+interface MemberScheduleConfig {
+  user_id: string;
+  name: string;
+  sector_id: string | null;
+  assignment_role: string | null;
+}
+
+// Estado do componente
+const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+const [memberConfigs, setMemberConfigs] = useState<Record<string, MemberScheduleConfig>>({});
+```
+
+### 3. Interface do Usuário
+
+O diálogo será dividido em seções claras:
+
+**Seção 1 - Data e Horário:**
+- Calendário para escolher a data
+- Badges de slots fixos para escolher o horário
+
+**Seção 2 - Seleção de Membros:**
+- Lista de todos os membros com checkboxes
+- Indicador visual de membros bloqueados (⚠️)
+- Botão "Selecionar Todos" / "Limpar Seleção"
+- Contador de membros selecionados
+
+**Seção 3 - Configuração Individual:**
+- Para cada membro selecionado, mostrar:
+  - Nome do membro (não editável)
+  - Dropdown de Setor
+  - Dropdown de Função (Plantão/Participante)
+- Área de texto para observações gerais (compartilhada)
+
+### 4. Lógica de Submissão
+
+```typescript
+const handleSubmit = async () => {
+  // Validar que há membros selecionados
+  if (selectedMembers.length === 0) {
+    toast({ variant: 'destructive', title: 'Selecione ao menos um membro' });
+    return;
+  }
+
+  // Criar array de escalas para inserção em lote
+  const schedulesToInsert = selectedMembers.map(userId => ({
+    department_id: departmentId,
+    user_id: userId,
+    date: format(date, 'yyyy-MM-dd'),
+    time_start: timeStart,
+    time_end: timeEnd,
+    sector_id: memberConfigs[userId]?.sector_id || null,
+    assignment_role: memberConfigs[userId]?.assignment_role || null,
+    notes: notes || null,
+    created_by: user?.id
+  }));
+
+  // Inserção em lote
+  const { error } = await supabase
+    .from('schedules')
+    .insert(schedulesToInsert);
+};
+```
 
 ---
 
 ## Detalhes Técnicos
 
-### Arquivo a ser modificado
-`src/components/department/UnifiedScheduleView.tsx`
+### Arquivo Modificado
+`src/components/department/AddScheduleDialog.tsx`
 
-### Nova estrutura de agrupamento
+### Componentes Utilizados
+- `Checkbox` do Radix UI (já disponível em `src/components/ui/checkbox.tsx`)
+- `ScrollArea` para lista de membros (se necessário)
+- `Accordion` ou `Collapsible` para configuração individual (opcional)
+
+### Importações Adicionais
 ```typescript
-// Agrupar por slot (dayOfWeek + timeStart) + data
-interface SlotGroup {
-  date: Date;
-  slotInfo: FixedSlot;
-  schedules: Schedule[];
-}
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
 ```
 
-### Componente de Card do Slot
-```typescript
-function SlotCard({ date, slotInfo, schedules, isLeader, ... }) {
-  return (
-    <Card className={cn("overflow-hidden", slotInfo.bgColor)}>
-      <CardHeader className="p-3 pb-2">
-        <p className={cn("font-bold text-sm uppercase", slotInfo.textColor)}>
-          {slotInfo.label}
-        </p>
-        <p className="text-xs text-muted-foreground">
-          {format(date, "d 'de' MMMM")} • {slotInfo.timeStart} - {slotInfo.timeEnd}
-        </p>
-      </CardHeader>
-      <CardContent className="p-3 pt-0">
-        {/* Lista compacta de membros */}
-      </CardContent>
-    </Card>
-  );
-}
-```
+### Layout Responsivo
+- Em telas pequenas: lista vertical com configurações inline
+- Em telas maiores: possibilidade de grid para configurações
 
-### Grid Responsivo
-```typescript
-<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-  {slotGroups.map(group => (
-    <SlotCard key={`${group.date}-${group.slotInfo.id}`} {...group} />
-  ))}
-</div>
-```
+---
 
-### Lista de Membros Compacta
-- Avatares menores (h-8 w-8)
-- Nome e setor na mesma linha
-- Ícone de função (🚗 Plantão / ✅ Participante) ao lado do nome
-- Status de confirmação como badge pequeno
+## Comportamento de Notificações
+- O trigger `notify_on_schedule_insert` já existente será acionado automaticamente para cada escala inserida
+- Não há necessidade de alterações no sistema de notificações
 
 ---
 
 ## Benefícios
-1. **Visualização rápida**: Ver 3 dias de uma vez facilita o planejamento
-2. **Comparação**: Fácil comparar quem está escalado em diferentes dias
-3. **Otimização de espaço**: Uso melhor do espaço horizontal em telas grandes
-4. **Responsividade**: Adapta-se automaticamente a diferentes tamanhos de tela
+1. **Velocidade**: Criar várias escalas de uma vez, economizando tempo
+2. **Flexibilidade**: Configurar setor e função individualmente para cada membro
+3. **Visibilidade**: Ver todos os membros e quem está bloqueado antes de escalar
+4. **Consistência**: Mesmo horário para todos os membros selecionados
 
 ---
 
 ## Arquivos Impactados
 | Arquivo | Mudança |
 |---------|---------|
-| `src/components/department/UnifiedScheduleView.tsx` | Refatorar layout de lista vertical para grid horizontal |
+| `src/components/department/AddScheduleDialog.tsx` | Refatorar para seleção múltipla e configuração individual |
