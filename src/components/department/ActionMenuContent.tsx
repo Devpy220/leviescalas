@@ -1,4 +1,4 @@
-import { Download, Clock, UserPlus, FileText, FileSpreadsheet, Calendar, Layers, Users } from 'lucide-react';
+import { Download, Clock, UserPlus, FileText, FileSpreadsheet, Calendar, Layers, Users, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -64,6 +64,12 @@ const actionItems = [
     label: 'Convidar Membro', 
     color: 'text-blue-500 hover:text-blue-400 hover:bg-blue-500/10',
   },
+  { 
+    id: 'my-schedules',
+    icon: CalendarDays, 
+    label: 'Minhas Escalas', 
+    color: 'text-pink-500 hover:text-pink-400 hover:bg-pink-500/10',
+  },
 ];
 
 export default function ActionMenuContent({
@@ -90,6 +96,10 @@ export default function ActionMenuContent({
         break;
       case 'invite':
         onOpenInvite();
+        onClose();
+        break;
+      case 'my-schedules':
+        window.location.href = '/my-schedules';
         onClose();
         break;
     }
