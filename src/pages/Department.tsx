@@ -26,10 +26,9 @@ import InviteMemberDialog from '@/components/department/InviteMemberDialog';
 import DepartmentAvatar from '@/components/department/DepartmentAvatar';
 import DepartmentSettingsDialog from '@/components/department/DepartmentSettingsDialog';
 import SmartScheduleDialog from '@/components/department/SmartScheduleDialog';
-import AvailabilityCalendar from '@/components/department/AvailabilityCalendar';
 import MemberPreferences from '@/components/department/MemberPreferences';
+import LeaderBlackoutDatesView from '@/components/department/LeaderBlackoutDatesView';
 import SlotAvailability from '@/components/department/SlotAvailability';
-import LeaderAvailabilityView from '@/components/department/LeaderAvailabilityView';
 import LeaderSlotAvailabilityView from '@/components/department/LeaderSlotAvailabilityView';
 import UnifiedScheduleView from '@/components/department/UnifiedScheduleView';
 import MyAvailabilitySheet from '@/components/department/MyAvailabilitySheet';
@@ -544,10 +543,7 @@ export default function Department() {
               )}
               
               {isLeader && (
-                <LeaderAvailabilityView 
-                  departmentId={id!} 
-                  onOpenSmartSchedule={() => setShowSmartSchedule(true)} 
-                />
+                <LeaderBlackoutDatesView departmentId={id!} />
               )}
             </div>
           </TabsContent>
@@ -557,9 +553,8 @@ export default function Department() {
             <TabsContent value="availability" className="mt-6 animate-fade-in">
               <div className="space-y-6">
                 <h3 className="text-lg font-semibold mb-4">Minha Disponibilidade</h3>
-                <div className="grid gap-6 lg:grid-cols-3 max-w-6xl">
+                <div className="grid gap-6 lg:grid-cols-2 max-w-4xl">
                   <SlotAvailability departmentId={id!} userId={user?.id || ''} />
-                  <AvailabilityCalendar departmentId={id!} userId={user?.id || ''} />
                   <MemberPreferences departmentId={id!} userId={user?.id || ''} />
                 </div>
               </div>
