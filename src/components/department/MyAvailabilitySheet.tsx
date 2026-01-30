@@ -1,7 +1,6 @@
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Clock } from 'lucide-react';
 import SlotAvailability from './SlotAvailability';
-import AvailabilityCalendar from './AvailabilityCalendar';
 import MemberPreferences from './MemberPreferences';
 
 interface MyAvailabilitySheetProps {
@@ -26,13 +25,12 @@ export default function MyAvailabilitySheet({
             Minha Disponibilidade
           </SheetTitle>
           <SheetDescription>
-            Marque os horários e datas em que você pode ser escalado
+            Marque os horários semanais e datas de bloqueio
           </SheetDescription>
         </SheetHeader>
         
         <div className="mt-6 space-y-6">
           <SlotAvailability departmentId={departmentId} userId={userId} />
-          <AvailabilityCalendar departmentId={departmentId} userId={userId} />
           <MemberPreferences departmentId={departmentId} userId={userId} />
         </div>
       </SheetContent>
