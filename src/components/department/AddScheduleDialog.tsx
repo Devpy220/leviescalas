@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { format, getDay } from 'date-fns';
+import { format, getDay, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar as CalendarIcon, Clock, User, FileText, Layers, UserCog } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, User, FileText, Layers, UserCog, AlertTriangle } from 'lucide-react';
 import { ASSIGNMENT_ROLES, AssignmentRole } from '@/lib/constants';
+import { SIMPLE_SLOTS, getAvailableSlotsForDay } from '@/lib/fixedSlots';
 import {
   Dialog,
   DialogContent,
@@ -28,19 +29,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
-
-// Fixed slots configuration - matches SlotAvailability.tsx
-const FIXED_SLOTS = [
-  { dayOfWeek: 0, timeStart: '09:00', timeEnd: '12:00', label: 'Domingo Manhã' },
-  { dayOfWeek: 0, timeStart: '18:00', timeEnd: '22:00', label: 'Domingo Noite' },
-  { dayOfWeek: 1, timeStart: '19:20', timeEnd: '22:00', label: 'Segunda' },
-  { dayOfWeek: 3, timeStart: '19:20', timeEnd: '22:00', label: 'Quarta' },
-  { dayOfWeek: 5, timeStart: '19:20', timeEnd: '22:00', label: 'Sexta' },
-];
 
 interface Member {
   id: string;
@@ -87,17 +80,17 @@ export default function AddScheduleDialog({
   const [notes, setNotes] = useState('');
   const [assignmentRole, setAssignmentRole] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [memberBlackouts, setMemberBlackouts] = useState<Record<string, string[]>>({});
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Get available slots for selected date
-  const getAvailableSlots = (selectedDate: Date | undefined) => {
-    if (!selectedDate) return [];
-    const dayOfWeek = getDay(selectedDate);
-    return FIXED_SLOTS.filter(slot => slot.dayOfWeek === dayOfWeek);
-  };
+  // Check if selected member has this date blocked
+  const isMemberBlocked = selectedMember && date 
+    ? memberBlackouts[selectedMember]?.includes(format(date, 'yyyy-MM-dd'))
+    : false;
 
-  const availableSlots = getAvailableSlots(date);
+  // Get available slots for selected date
+  const availableSlots = date ? getAvailableSlotsForDay(getDay(date)) : [];
 
   useEffect(() => {
     if (selectedDate) {
@@ -108,7 +101,7 @@ export default function AddScheduleDialog({
   // Update times when slot is selected
   useEffect(() => {
     if (selectedSlot && selectedSlot !== 'custom') {
-      const slot = FIXED_SLOTS.find(s => `${s.dayOfWeek}-${s.timeStart}` === selectedSlot);
+      const slot = SIMPLE_SLOTS.find(s => `${s.dayOfWeek}-${s.timeStart}` === selectedSlot);
       if (slot) {
         setTimeStart(slot.timeStart);
         setTimeEnd(slot.timeEnd);
@@ -132,8 +125,9 @@ export default function AddScheduleDialog({
 
   useEffect(() => {
     if (open) {
-      // Fetch sectors when dialog opens
+      // Fetch sectors and member blackouts when dialog opens
       fetchSectors();
+      fetchMemberBlackouts();
     } else {
       // Reset form when dialog closes
       setSelectedMember('');
@@ -158,6 +152,27 @@ export default function AddScheduleDialog({
       setSectors(data || []);
     } catch (error) {
       console.error('Error fetching sectors:', error);
+    }
+  };
+
+  const fetchMemberBlackouts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('member_preferences')
+        .select('user_id, blackout_dates')
+        .eq('department_id', departmentId);
+
+      if (error) throw error;
+      
+      const blackouts: Record<string, string[]> = {};
+      (data || []).forEach(pref => {
+        if (pref.blackout_dates && pref.blackout_dates.length > 0) {
+          blackouts[pref.user_id] = pref.blackout_dates;
+        }
+      });
+      setMemberBlackouts(blackouts);
+    } catch (error) {
+      console.error('Error fetching member blackouts:', error);
     }
   };
 
@@ -276,14 +291,30 @@ export default function AddScheduleDialog({
                 <SelectValue placeholder="Selecione um membro" />
               </SelectTrigger>
               <SelectContent>
-                {members.map((member) => (
-                  <SelectItem key={member.id} value={member.user_id}>
-                    {member.profile.name}
-                  </SelectItem>
-                ))}
+                {members.map((member) => {
+                  const isBlocked = date && memberBlackouts[member.user_id]?.includes(format(date, 'yyyy-MM-dd'));
+                  return (
+                    <SelectItem key={member.id} value={member.user_id}>
+                      <span className={isBlocked ? 'text-destructive' : ''}>
+                        {member.profile.name}
+                        {isBlocked && ' ⚠️ Bloqueado'}
+                      </span>
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>
+
+          {/* Blackout Warning */}
+          {isMemberBlocked && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                Este membro marcou este dia como indisponível! A escala pode ser criada, mas considere escolher outra data ou membro.
+              </AlertDescription>
+            </Alert>
+          )}
 
           {/* Sector Select */}
           {sectors.length > 0 && (
