@@ -15,9 +15,9 @@ export interface FixedSlot {
 export const FIXED_SLOTS: FixedSlot[] = [
   { 
     dayOfWeek: 0, 
-    timeStart: '09:00', 
+    timeStart: '08:00', 
     timeEnd: '12:00', 
-    label: 'Domingo Manhã', 
+    label: 'Domingo Manhã',
     icon: Sun,
     bgColor: 'bg-cyan-100/80 dark:bg-cyan-900/30',
     borderColor: 'border-cyan-300 dark:border-cyan-700/50',
