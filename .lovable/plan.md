@@ -1,141 +1,127 @@
 
+# Plano: Layout de Escalas em Colunas Horizontais
 
-## Plano: Adicionar Função/Papel na Escala
+## Resumo
+Transformar a visualização de escalas de uma lista vertical (um dia abaixo do outro) para um **grid horizontal de 3 colunas**, onde cada coluna representa um dia de escala com o nome do dia/data no topo e os membros escalados listados abaixo.
 
-### Objetivo
-
-Permitir que o líder identifique qual é a **função específica** de cada pessoa escalada no dia. Por exemplo, no ministério de estacionamento:
-- **Plantão**: Fica cuidando dos carros (não participa do culto)
-- **Participante**: Ajuda no início e pode participar do culto depois
-
-Isso resolve o problema de saber quem vai ficar de fora e quem pode entrar no culto.
-
-### Fluxo de Uso
+## Novo Design Visual
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│  CRIAR ESCALA                                                │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │ Membro:    [João Silva         ▼]                    │   │
-│  │ Horário:   [Domingo Noite      ▼]                    │   │
-│  │ Função:    [🚗 Plantão        ▼]  ← NOVO CAMPO       │   │
-│  │            [✅ Participante      ]                    │   │
-│  │            [📋 Horário personalizado]                 │   │
-│  └──────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│  📅 Escalas de Fevereiro 2026                                       │
+│  5 dias com escalas • 15 pessoas escaladas                          │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
+│ DOMINGO MANHÃ    │  │ DOMINGO NOITE    │  │ QUARTA           │
+│ 02 de fevereiro  │  │ 02 de fevereiro  │  │ 05 de fevereiro  │
+│ 08:00 - 12:00    │  │ 18:00 - 22:00    │  │ 19:00 - 22:00    │
+├──────────────────┤  ├──────────────────┤  ├──────────────────┤
+│ 👤 João Silva    │  │ 👤 Maria Santos  │  │ 👤 Pedro Costa   │
+│    Estacionamento│  │    Recepção      │  │    Som           │
+│ 👤 Ana Costa     │  │ 👤 Lucas Ferreira│  │ 👤 Paulo Lima    │
+│    Som           │  │    Mídia         │  │    Mídia         │
+│ 👤 Carlos Lima   │  │                  │  │                  │
+│    Mídia         │  │                  │  │                  │
+└──────────────────┘  └──────────────────┘  └──────────────────┘
+
+┌──────────────────┐  ┌──────────────────┐
+│ SEXTA            │  │ DOMINGO MANHÃ    │
+│ 07 de fevereiro  │  │ 09 de fevereiro  │
+│ 19:00 - 22:00    │  │ 08:00 - 12:00    │
+├──────────────────┤  ├──────────────────┤
+│ 👤 Marcos Souza  │  │ 👤 Felipe Dias   │
+│    Estacionamento│  │    Recepção      │
+└──────────────────┘  └──────────────────┘
 ```
 
-### Exibição Visual
+## Mudanças Principais
 
-| Antes | Depois |
-|-------|--------|
-| João 🟢 18:00-22:00 | João 🚗 **Plantão** 🟢 18:00-22:00 |
-| Maria 🟡 18:00-22:00 | Maria ✅ **Participa** 🟡 18:00-22:00 |
+### 1. Estrutura de Dados
+- Agrupar escalas por **slot de horário** (Domingo Manhã, Domingo Noite, Quarta, etc.) em vez de apenas por data
+- Cada "coluna" representa um slot específico em uma data específica
 
-### Estrutura de Dados
+### 2. Layout CSS
+- Usar `grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4` para responsividade
+- No mobile: 1 coluna
+- Em tablets: 2 colunas
+- Em desktop: 3 colunas
 
-**Nova coluna na tabela `schedules`:**
+### 3. Card de Cada Slot
+Cada card terá:
+- **Cabeçalho colorido**: Nome do slot (ex: "DOMINGO MANHÃ") com cor do slot definida em `fixedSlots.ts`
+- **Data**: Formato "02 de fevereiro"
+- **Horário**: Ex: "08:00 - 12:00"
+- **Lista de membros**: Avatar compacto + Nome + Setor + Ícone de função (Plantão/Participante)
 
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `assignment_role` | text | "on_duty" (plantão), "participant" (participante), ou NULL (padrão) |
+### 4. Separação de Domingo
+- Domingo Manhã e Domingo Noite serão tratados como **slots separados** no grid
+- Cada um terá sua própria coluna/card
 
-### Componentes a Modificar
+---
 
-| Componente | Mudança |
-|------------|---------|
-| `AddScheduleDialog.tsx` | Adicionar seletor de função |
-| `ScheduleTable.tsx` | Exibir ícone e label da função |
-| `ScheduleCalendar.tsx` | Exibir função no dialog de detalhes |
-| `UnifiedScheduleView.tsx` | Exibir função na visualização unificada |
-| `SmartScheduleDialog.tsx` | Adicionar opção de função padrão |
+## Detalhes Técnicos
 
-### Detalhes da Implementação
+### Arquivo a ser modificado
+`src/components/department/UnifiedScheduleView.tsx`
 
-#### 1. Migração de Banco de Dados
-
-```sql
--- Adicionar coluna para função/papel na escala
-ALTER TABLE schedules 
-ADD COLUMN assignment_role TEXT DEFAULT NULL;
-
--- Comentário para documentação
-COMMENT ON COLUMN schedules.assignment_role IS 
-'Papel do membro na escala: on_duty (plantão/fica o tempo todo), participant (pode participar do culto), NULL (não definido)';
-```
-
-#### 2. Constantes de Funções
-
-Criar um mapeamento de funções com ícones e labels:
-
+### Nova estrutura de agrupamento
 ```typescript
-const ASSIGNMENT_ROLES = {
-  on_duty: { 
-    label: 'Plantão', 
-    description: 'Fica o tempo todo (não participa do culto)',
-    icon: '🚗', // ou Shield, Car, Eye
-    color: 'text-amber-600'
-  },
-  participant: { 
-    label: 'Participante', 
-    description: 'Pode participar do culto',
-    icon: '✅', // ou Users, Church
-    color: 'text-green-600'
-  }
-};
+// Agrupar por slot (dayOfWeek + timeStart) + data
+interface SlotGroup {
+  date: Date;
+  slotInfo: FixedSlot;
+  schedules: Schedule[];
+}
 ```
 
-#### 3. AddScheduleDialog - Novo Campo
+### Componente de Card do Slot
+```typescript
+function SlotCard({ date, slotInfo, schedules, isLeader, ... }) {
+  return (
+    <Card className={cn("overflow-hidden", slotInfo.bgColor)}>
+      <CardHeader className="p-3 pb-2">
+        <p className={cn("font-bold text-sm uppercase", slotInfo.textColor)}>
+          {slotInfo.label}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {format(date, "d 'de' MMMM")} • {slotInfo.timeStart} - {slotInfo.timeEnd}
+        </p>
+      </CardHeader>
+      <CardContent className="p-3 pt-0">
+        {/* Lista compacta de membros */}
+      </CardContent>
+    </Card>
+  );
+}
+```
 
-Adicionar um `Select` após o setor:
-
-```tsx
-<div className="space-y-2">
-  <Label className="flex items-center gap-2">
-    <UserCog className="w-4 h-4 text-muted-foreground" />
-    Função (opcional)
-  </Label>
-  <Select value={assignmentRole} onValueChange={setAssignmentRole}>
-    <SelectTrigger>
-      <SelectValue placeholder="Sem função específica" />
-    </SelectTrigger>
-    <SelectContent>
-      <SelectItem value="none">Sem função específica</SelectItem>
-      <SelectItem value="on_duty">🚗 Plantão - Fica o tempo todo</SelectItem>
-      <SelectItem value="participant">✅ Participante - Pode ir ao culto</SelectItem>
-    </SelectContent>
-  </Select>
+### Grid Responsivo
+```typescript
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+  {slotGroups.map(group => (
+    <SlotCard key={`${group.date}-${group.slotInfo.id}`} {...group} />
+  ))}
 </div>
 ```
 
-#### 4. Exibição nas Escalas
+### Lista de Membros Compacta
+- Avatares menores (h-8 w-8)
+- Nome e setor na mesma linha
+- Ícone de função (🚗 Plantão / ✅ Participante) ao lado do nome
+- Status de confirmação como badge pequeno
 
-Na `ScheduleTable` e outros componentes, exibir a função com ícone:
+---
 
-```tsx
-{schedule.assignment_role && (
-  <Badge variant="outline" className="text-[8px] px-1">
-    {schedule.assignment_role === 'on_duty' ? '🚗 Plantão' : '✅ Participa'}
-  </Badge>
-)}
-```
+## Benefícios
+1. **Visualização rápida**: Ver 3 dias de uma vez facilita o planejamento
+2. **Comparação**: Fácil comparar quem está escalado em diferentes dias
+3. **Otimização de espaço**: Uso melhor do espaço horizontal em telas grandes
+4. **Responsividade**: Adapta-se automaticamente a diferentes tamanhos de tela
 
-### Arquivos a Criar/Modificar
+---
 
-| Arquivo | Ação |
-|---------|------|
-| `supabase/migrations/xxx_add_assignment_role.sql` | Criar migração |
-| `src/lib/constants.ts` | Adicionar constantes de funções |
-| `src/components/department/AddScheduleDialog.tsx` | Adicionar seletor |
-| `src/components/department/ScheduleTable.tsx` | Exibir função |
-| `src/components/department/ScheduleCalendar.tsx` | Exibir no dialog |
-| `src/components/department/UnifiedScheduleView.tsx` | Exibir na visualização |
-| `src/integrations/supabase/types.ts` | Atualizado automaticamente |
-
-### Resultado Esperado
-
-Após implementação, o líder poderá:
-1. Ao criar uma escala, selecionar se a pessoa fica de **Plantão** ou pode **Participar**
-2. Visualizar nas escalas um ícone indicando a função de cada pessoa
-3. Identificar rapidamente quem fica e quem entra no culto
-
+## Arquivos Impactados
+| Arquivo | Mudança |
+|---------|---------|
+| `src/components/department/UnifiedScheduleView.tsx` | Refatorar layout de lista vertical para grid horizontal |
