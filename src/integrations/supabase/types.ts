@@ -536,6 +536,81 @@ export type Database = {
         }
         Relationships: []
       }
+      schedule_swaps: {
+        Row: {
+          created_at: string
+          department_id: string
+          id: string
+          reason: string | null
+          requester_schedule_id: string
+          requester_user_id: string
+          resolved_at: string | null
+          status: Database["public"]["Enums"]["swap_status"]
+          target_schedule_id: string
+          target_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          department_id: string
+          id?: string
+          reason?: string | null
+          requester_schedule_id: string
+          requester_user_id: string
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["swap_status"]
+          target_schedule_id: string
+          target_user_id: string
+        }
+        Update: {
+          created_at?: string
+          department_id?: string
+          id?: string
+          reason?: string | null
+          requester_schedule_id?: string
+          requester_user_id?: string
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["swap_status"]
+          target_schedule_id?: string
+          target_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedule_swaps_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedule_swaps_requester_schedule_id_fkey"
+            columns: ["requester_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedule_swaps_requester_schedule_id_fkey"
+            columns: ["requester_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedules_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedule_swaps_target_schedule_id_fkey"
+            columns: ["target_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedule_swaps_target_schedule_id_fkey"
+            columns: ["target_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedules_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       schedules: {
         Row: {
           assignment_role: string | null
@@ -812,6 +887,7 @@ export type Database = {
         Returns: boolean
       }
       ensure_admin_role: { Args: never; Returns: boolean }
+      execute_schedule_swap: { Args: { swap_id: string }; Returns: undefined }
       generate_church_code: { Args: never; Returns: string }
       get_all_departments_admin: {
         Args: never
@@ -1111,6 +1187,7 @@ export type Database = {
         | "cancelled"
         | "expired"
         | "pending"
+      swap_status: "pending" | "accepted" | "rejected" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1249,6 +1326,7 @@ export const Constants = {
         "expired",
         "pending",
       ],
+      swap_status: ["pending", "accepted", "rejected", "cancelled"],
     },
   },
 } as const
