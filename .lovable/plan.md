@@ -1,184 +1,66 @@
 
+<context>
+O problema continua no fluxo “Selecionar Membros” (janela pequena dentro de “Nova Escala”): aparecem alguns nomes, mas a lista não rola (nem no celular nem no computador). Isso indica que a área que deveria rolar está ficando com altura “automática”/insuficiente ou sem um container com altura fixa, então o ScrollArea do Radix não entra em modo de rolagem de verdade.
 
-# Plano: Seleção de Membros em Janela Separada
+Pelo código atual em `src/components/department/AddScheduleDialog.tsx`, o “Member Selection Dialog” está assim:
+- `DialogContent` tem `max-h-[85vh] flex flex-col overflow-hidden` (mas não tem altura fixa)
+- a lista está em `<div className="flex-1 min-h-0 overflow-hidden">`
+- e dentro disso: `<ScrollArea className="h-full max-h-[50vh] ...">`
 
-## Problema
+O ponto crítico: `h-full` dentro de um flex layout cuja altura não está explicitamente definida costuma quebrar a rolagem (o “100%” não se resolve corretamente), e `max-h` sozinho também pode não forçar a criação de um viewport com overflow. Resultado: a lista fica “parada”, mostrando só parte do conteúdo e sem rolar.
+</context>
 
-O diálogo de criação de escalas tem muitos elementos (data, horário, botão "Escalar Todos") que ocupam espaço antes da lista de membros. Isso faz com que a lista de membros tenha pouco espaço visível, dificultando a seleção individual.
+<goal>
+Garantir que a janela “Selecionar Membros” tenha:
+1) Altura definida (não apenas max-height)
+2) Uma área central que ocupa o “resto” da janela (flex-1) e realmente permite overflow/scroll
+3) Rolagem consistente em desktop e mobile
+</goal>
 
-## Solução
+<plan>
+1) Ajustar o layout do “Member Selection Dialog” para ter altura fixa e hierarquia de flex correta
+   - Arquivo: `src/components/department/AddScheduleDialog.tsx`
+   - Trocar no dialog de seleção de membros:
+     - De: `DialogContent className="... max-h-[85vh] flex flex-col overflow-hidden"`
+     - Para: algo com altura real, por exemplo:
+       - `className="sm:max-w-[420px] h-[80vh] max-h-[80vh] flex flex-col overflow-hidden"`
+     - Motivo: `h-[80vh]` dá uma base real para o flex calcular alturas internas. `max-h` sozinho não garante isso.
 
-Substituir a lista inline por **dois botões lado a lado**:
-1. **Escalar Todos** - Seleciona todos os membros disponíveis (já existe)
-2. **Selecionar Individualmente** - Abre uma **nova janela (Dialog)** com a lista completa de membros para seleção
+2) Trocar o ScrollArea para “flex-1 min-h-0” (em vez de `h-full max-h[...]`)
+   - Ainda no mesmo trecho do “Member Selection Dialog”:
+     - Remover o wrapper que força `h-full` no ScrollArea.
+     - Estrutura alvo:
+       - Header: `flex-shrink-0`
+       - Lista: `<ScrollArea className="flex-1 min-h-0 border rounded-md"> ... </ScrollArea>`
+       - Footer: `flex-shrink-0`
+   - Motivo: em flexbox, o padrão mais confiável para scroll interno é “flex-1 + min-h-0” no elemento scrollável. `h-full` costuma falhar quando o pai não tem altura computável.
 
-## Nova Interface
+3) Se ainda houver instabilidade, substituir Radix ScrollArea por overflow nativo (plano B simples e muito confiável)
+   - Caso o Radix ScrollArea continue sem rolar por causa da combinação “Dialog dentro de Dialog” + estilos, substituir apenas a área rolável por:
+     - `<div className="flex-1 min-h-0 overflow-y-auto border rounded-md"> ... </div>`
+   - Motivo: `overflow-y-auto` nativo é o comportamento mais previsível em todos os browsers e dispositivos.
 
-```text
-┌──────────────────────────────────────────────────────────────┐
-│  📅 Data: Domingo, 02 de Fevereiro                           │
-│  ⏰ Horário: Noite (18:00 - 22:00)                           │
-├──────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ┌─────────────────────────┐  ┌─────────────────────────┐   │
-│  │ 👥 ESCALAR TODOS        │  │ ☑️ SELECIONAR           │   │
-│  │    (8 membros)          │  │    INDIVIDUALMENTE      │   │
-│  └─────────────────────────┘  └─────────────────────────┘   │
-│                                                              │
-│  Membros selecionados: 3                                     │
-│  ┌─────┐ ┌─────┐ ┌─────┐                                    │
-│  │ JS  │ │ MC  │ │ AL  │  [Ver/Editar]                      │
-│  └─────┘ └─────┘ └─────┘                                    │
-│                                                              │
-│                              [Cancelar]  [Continuar (3)]     │
-└──────────────────────────────────────────────────────────────┘
-```
+4) Ajuste de UX (pequeno, mas importante): evitar “duplo toggle” no clique
+   - Hoje o item tem `onClick={() => toggleMember(...)}` e o Checkbox também chama `toggleMember`.
+   - Ajustar para:
+     - Ou deixar apenas o clique na linha (row) e no Checkbox apenas impedir propagação
+     - Ou remover o onClick da linha e deixar só o checkbox
+   - Isso não corrige o scroll, mas evita comportamento confuso ao tocar/clicar.
 
-### Janela de Seleção Individual (ao clicar no botão)
+5) Critério de aceite (teste rápido)
+   - Abrir: Departamento → Nova Escala → Selecionar Individual
+   - Esperado:
+     - A janela tem altura consistente.
+     - A lista mostra parte dos nomes e permite rolar até o último membro (mouse wheel/trackpad no desktop e swipe no mobile).
+     - Footer (“Selecionar Todos / Limpar / Confirmar”) permanece visível e não “sobe” junto com a lista.
 
-```text
-┌─────────────────────────────────────────────────┐
-│  Selecionar Membros                     [ X ]   │
-├─────────────────────────────────────────────────┤
-│  ┌───────────────────────────────────────────┐  │
-│  │ ☑ João Silva                              │  │
-│  │ ☑ Maria Costa                             │  │
-│  │ ☐ Pedro Santos                            │  │
-│  │ ☑ Ana Lima                                │  │
-│  │ ☐ Carlos Ferreira                         │  │
-│  │ ☐ Juliana Pereira        (Scroll ↓)      │  │
-│  │ ☐ Roberto Gomes                           │  │
-│  │ ☐ Fernanda Silva         🚫 Bloqueado    │  │
-│  │ ...                                       │  │
-│  └───────────────────────────────────────────┘  │
-│                                                 │
-│  [Selecionar Todos]  [Limpar]    [Confirmar]   │
-└─────────────────────────────────────────────────┘
-```
+</plan>
 
----
+<files-to-change>
+- `src/components/department/AddScheduleDialog.tsx`
+</files-to-change>
 
-## Mudanças Técnicas
-
-### Arquivo: `src/components/department/AddScheduleDialog.tsx`
-
-**1. Adicionar estado para controlar o sub-diálogo:**
-```tsx
-const [showMemberPicker, setShowMemberPicker] = useState(false);
-```
-
-**2. Substituir a lista inline (linhas ~478-558) por dois botões + preview:**
-
-```tsx
-{/* Action Buttons Row */}
-<div className="grid grid-cols-2 gap-3 py-3 border-t border-b">
-  {/* Schedule All Button */}
-  <Button
-    type="button"
-    className="h-14 flex-col gap-1"
-    variant="default"
-    onClick={() => {
-      selectAllAvailable();
-      setStep('configure');
-    }}
-    disabled={availableMembers.length === 0}
-  >
-    <Users className="w-5 h-5" />
-    <span className="text-xs">Escalar Todos ({availableMembers.length})</span>
-  </Button>
-  
-  {/* Select Individually Button */}
-  <Button
-    type="button"
-    variant="outline"
-    className="h-14 flex-col gap-1"
-    onClick={() => setShowMemberPicker(true)}
-  >
-    <CheckSquare className="w-5 h-5" />
-    <span className="text-xs">Selecionar Individual</span>
-  </Button>
-</div>
-
-{/* Selected Members Preview */}
-{selectedMembers.length > 0 && (
-  <div className="space-y-2">
-    <div className="flex items-center justify-between">
-      <Label className="text-sm">
-        {selectedMembers.length} membro{selectedMembers.length > 1 ? 's' : ''} selecionado{selectedMembers.length > 1 ? 's' : ''}
-      </Label>
-      <Button variant="link" size="sm" onClick={() => setShowMemberPicker(true)}>
-        Editar
-      </Button>
-    </div>
-    <div className="flex flex-wrap gap-2">
-      {selectedMembers.slice(0, 8).map((userId) => {
-        const member = getMemberById(userId);
-        return (
-          <Avatar key={userId} className="h-8 w-8 border-2 border-primary/20">
-            <AvatarFallback>{member?.profile.name.slice(0,2).toUpperCase()}</AvatarFallback>
-          </Avatar>
-        );
-      })}
-      {selectedMembers.length > 8 && (
-        <span className="text-sm text-muted-foreground">+{selectedMembers.length - 8}</span>
-      )}
-    </div>
-  </div>
-)}
-```
-
-**3. Adicionar o sub-diálogo de seleção de membros:**
-
-```tsx
-{/* Member Selection Dialog */}
-<Dialog open={showMemberPicker} onOpenChange={setShowMemberPicker}>
-  <DialogContent className="sm:max-w-[400px] max-h-[80vh]">
-    <DialogHeader>
-      <DialogTitle>Selecionar Membros</DialogTitle>
-      <DialogDescription>
-        {availableMembers.length} disponíveis, {blockedMembers.size} bloqueados
-      </DialogDescription>
-    </DialogHeader>
-    
-    <ScrollArea className="h-[400px] border rounded-md">
-      <div className="p-2 space-y-1">
-        {members.map((member) => (
-          // ... checkbox items com avatar e nome
-        ))}
-      </div>
-    </ScrollArea>
-    
-    <div className="flex justify-between">
-      <div className="flex gap-2">
-        <Button variant="ghost" size="sm" onClick={selectAllAvailable}>
-          Selecionar Todos
-        </Button>
-        <Button variant="ghost" size="sm" onClick={clearSelection}>
-          Limpar
-        </Button>
-      </div>
-      <Button onClick={() => setShowMemberPicker(false)}>
-        Confirmar ({selectedMembers.length})
-      </Button>
-    </div>
-  </DialogContent>
-</Dialog>
-```
-
----
-
-## Benefícios
-
-1. **Mais espaço** - A janela separada tem altura dedicada (400px) para a lista
-2. **Scroll claro** - Todos os membros visíveis com scroll fluido
-3. **Fluxo limpo** - Dois caminhos claros: "todos" ou "individual"
-4. **Preview** - Avatares mostram quem foi selecionado sem abrir a janela
-
----
-
-## Arquivos Impactados
-
-| Arquivo | Mudança |
-|---------|---------|
-| `src/components/department/AddScheduleDialog.tsx` | Adicionar sub-diálogo para seleção individual de membros |
-
+<risks-and-notes>
+- “Dialog dentro de Dialog” (Radix) às vezes cria interações estranhas com foco/scroll dependendo do layout. Por isso o Plano B (overflow nativo) está incluído: é simples e resolve 99% dos casos.
+- Vamos manter z-index e backgrounds do dialog/menus conforme padrões do projeto para evitar “menus transparentes” e sobreposição estranha.
+</risks-and-notes>
