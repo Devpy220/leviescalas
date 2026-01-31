@@ -4,14 +4,10 @@ import {
   Calendar, 
   ArrowLeft,
   Clock,
-  MapPin,
   Loader2,
-  CalendarDays,
   Heart,
   Church,
-  CheckCircle2,
-  XCircle,
-  HelpCircle
+  ArrowLeftRight
 } from 'lucide-react';
 import { LeviLogo } from '@/components/LeviLogo';
 import Footer from '@/components/Footer';
@@ -19,28 +15,19 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Textarea } from '@/components/ui/textarea';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { NotificationBell } from '@/components/NotificationBell';
 import { SupportNotification } from '@/components/SupportNotification';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { SwapRequestDialog } from '@/components/schedules/SwapRequestDialog';
+import { SwapResponseDialog } from '@/components/schedules/SwapResponseDialog';
+import { PendingSwapBadge } from '@/components/schedules/PendingSwapBadge';
 import { useAuth } from '@/hooks/useAuth';
+import { useScheduleSwaps, type ScheduleSwap } from '@/hooks/useScheduleSwaps';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { SUPPORT_PRICE_ID } from '@/lib/constants';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-
-type ConfirmationStatus = 'pending' | 'confirmed' | 'declined';
 
 interface Schedule {
   id: string;
@@ -54,8 +41,6 @@ interface Schedule {
   sector_color: string | null;
   church_name: string | null;
   church_logo_url: string | null;
-  confirmation_status: ConfirmationStatus;
-  confirmation_token: string | null;
 }
 
 interface SupportPlan {
@@ -67,19 +52,29 @@ export default function MySchedules() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
   const [supportPlan, setSupportPlan] = useState<SupportPlan>({ isActive: false, loading: false });
-  const [confirmingId, setConfirmingId] = useState<string | null>(null);
-  const [decliningId, setDecliningId] = useState<string | null>(null);
-  const [showDeclineDialog, setShowDeclineDialog] = useState(false);
-  const [declineReason, setDeclineReason] = useState('');
-  const [selectedScheduleForDecline, setSelectedScheduleForDecline] = useState<Schedule | null>(null);
-  const { user, session, loading: authLoading } = useAuth();
+  const [swapDialogOpen, setSwapDialogOpen] = useState(false);
+  const [responseDialogOpen, setResponseDialogOpen] = useState(false);
+  const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
+  const [selectedSwap, setSelectedSwap] = useState<ScheduleSwap | null>(null);
+  const [cancellingSwapId, setCancellingSwapId] = useState<string | null>(null);
+  const [departmentIds, setDepartmentIds] = useState<string[]>([]);
+  const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Wait for auth to finish loading (ProtectedRoute ensures user exists)
-    if (authLoading) return;
+  // Get the first department ID for swaps (we'll need to handle multi-department later)
+  const primaryDepartmentId = departmentIds[0];
+  const { 
+    swaps, 
+    createSwapRequest, 
+    respondToSwap, 
+    cancelSwap,
+    getSwapForSchedule,
+    getPendingSwapsForUser 
+  } = useScheduleSwaps(primaryDepartmentId);
 
+  useEffect(() => {
+    if (authLoading) return;
     if (user) {
       fetchSchedules();
     }
@@ -103,6 +98,7 @@ export default function MySchedules() {
       }
 
       const deptIds = memberData.map(m => m.department_id);
+      setDepartmentIds(deptIds);
 
       const { data: schedulesData, error: schedulesError } = await supabase
         .from('schedules')
@@ -114,26 +110,22 @@ export default function MySchedules() {
           notes,
           department_id,
           sector_id,
-          confirmation_status,
-          confirmation_token,
           sectors(name, color)
         `)
         .eq('user_id', user.id)
         .in('department_id', deptIds)
+        .gte('date', new Date().toISOString().split('T')[0])
         .order('date', { ascending: true });
 
       if (schedulesError) throw schedulesError;
 
-      // Fetch departments with church info
       const { data: departments } = await supabase
         .from('departments')
         .select('id, name, church_id')
         .in('id', deptIds);
 
-      // Get unique church IDs
       const churchIds = [...new Set((departments || []).map(d => d.church_id).filter(Boolean))] as string[];
       
-      // Fetch church info
       const churchMap: Record<string, { name: string; logo_url: string | null }> = {};
       if (churchIds.length > 0) {
         const { data: churches } = await supabase
@@ -148,7 +140,6 @@ export default function MySchedules() {
         }
       }
 
-      // Create department map with church info
       const deptMap = Object.fromEntries((departments || []).map(d => [d.id, {
         name: d.name,
         church_name: d.church_id ? churchMap[d.church_id]?.name : null,
@@ -167,8 +158,6 @@ export default function MySchedules() {
         sector_color: s.sectors?.color || null,
         church_name: deptMap[s.department_id]?.church_name || null,
         church_logo_url: deptMap[s.department_id]?.church_logo_url || null,
-        confirmation_status: s.confirmation_status || 'pending',
-        confirmation_token: s.confirmation_token,
       }));
 
       setSchedules(enrichedSchedules);
@@ -179,109 +168,38 @@ export default function MySchedules() {
     }
   };
 
-  const handleConfirm = async (schedule: Schedule) => {
-    if (!schedule.confirmation_token) {
-      toast({
-        variant: 'destructive',
-        title: 'Erro',
-        description: 'Token de confirmação não encontrado.',
-      });
-      return;
-    }
-    
-    setConfirmingId(schedule.id);
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/confirm-schedule?token=${schedule.confirmation_token}&action=confirm`,
-        { method: 'GET' }
-      );
-      
-      if (response.ok) {
-        toast({
-          title: 'Presença confirmada!',
-          description: 'Sua presença foi registrada com sucesso.',
-        });
-        fetchSchedules();
-      } else {
-        throw new Error('Erro ao confirmar');
-      }
-    } catch (error) {
-      console.error('Error confirming:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao confirmar',
-        description: 'Tente novamente mais tarde.',
-      });
-    } finally {
-      setConfirmingId(null);
-    }
+  const handleOpenSwapDialog = (schedule: Schedule) => {
+    setSelectedSchedule(schedule);
+    setSwapDialogOpen(true);
   };
 
-  const handleDecline = async () => {
-    if (!selectedScheduleForDecline?.confirmation_token) return;
-    
-    setDecliningId(selectedScheduleForDecline.id);
-    try {
-      const reasonParam = declineReason ? `&reason=${encodeURIComponent(declineReason)}` : '';
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/confirm-schedule?token=${selectedScheduleForDecline.confirmation_token}&action=decline${reasonParam}`,
-        { method: 'GET' }
-      );
-      
-      if (response.ok) {
-        toast({
-          title: 'Ausência registrada',
-          description: 'O líder será notificado.',
-        });
-        setShowDeclineDialog(false);
-        setDeclineReason('');
-        setSelectedScheduleForDecline(null);
-        fetchSchedules();
-      } else {
-        throw new Error('Erro ao registrar ausência');
-      }
-    } catch (error) {
-      console.error('Error declining:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao registrar',
-        description: 'Tente novamente mais tarde.',
-      });
-    } finally {
-      setDecliningId(null);
-    }
+  const handleSwapSubmit = async (targetScheduleId: string, targetUserId: string, reason?: string) => {
+    if (!selectedSchedule) return false;
+    return createSwapRequest(selectedSchedule.id, targetScheduleId, targetUserId, reason);
   };
 
-  const openDeclineDialog = (schedule: Schedule) => {
-    setSelectedScheduleForDecline(schedule);
-    setDeclineReason('');
-    setShowDeclineDialog(true);
+  const handleRespondToSwap = (swap: ScheduleSwap) => {
+    setSelectedSwap(swap);
+    setResponseDialogOpen(true);
   };
 
-  const getStatusBadge = (status: ConfirmationStatus) => {
-    switch (status) {
-      case 'confirmed':
-        return (
-          <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 gap-1">
-            <CheckCircle2 className="w-3 h-3" />
-            Confirmado
-          </Badge>
-        );
-      case 'declined':
-        return (
-          <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 gap-1">
-            <XCircle className="w-3 h-3" />
-            Ausência registrada
-          </Badge>
-        );
-      default:
-        return (
-          <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 gap-1">
-            <HelpCircle className="w-3 h-3" />
-            Aguardando confirmação
-          </Badge>
-        );
+  const handleAcceptSwap = async (swapId: string) => {
+    const success = await respondToSwap(swapId, true);
+    if (success) {
+      fetchSchedules(); // Refresh schedules after swap
     }
+    return success;
+  };
+
+  const handleRejectSwap = async (swapId: string) => {
+    return respondToSwap(swapId, false);
+  };
+
+  const handleCancelSwap = async (swapId: string) => {
+    setCancellingSwapId(swapId);
+    await cancelSwap(swapId);
+    setCancellingSwapId(null);
+    return true;
   };
 
   const handleSupportLevi = async () => {
@@ -304,6 +222,9 @@ export default function MySchedules() {
     }
   };
 
+  // Get pending swaps where user is the target
+  const pendingSwapsForMe = getPendingSwapsForUser();
+
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -315,7 +236,6 @@ export default function MySchedules() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <SupportNotification />
-      {/* Header */}
       <header className="sticky top-0 z-50 glass border-b border-border/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -336,8 +256,42 @@ export default function MySchedules() {
       </header>
 
       <main className="container mx-auto px-4 py-8 flex-1">
+        {/* Pending swap requests for me */}
+        {pendingSwapsForMe.length > 0 && (
+          <Card className="mb-6 p-4 border-primary/50 bg-primary/5">
+            <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+              <ArrowLeftRight className="w-5 h-5 text-primary" />
+              Solicitações de Troca ({pendingSwapsForMe.length})
+            </h4>
+            <div className="space-y-2">
+              {pendingSwapsForMe.map(swap => (
+                <div 
+                  key={swap.id}
+                  className="flex items-center justify-between p-3 bg-background rounded-lg border"
+                >
+                  <div>
+                    <p className="font-medium text-sm">{swap.requester_name} quer trocar com você</p>
+                    {swap.requester_schedule && swap.target_schedule && (
+                      <p className="text-xs text-muted-foreground">
+                        {format(parseISO(swap.requester_schedule.date), "dd/MM", { locale: ptBR })} ↔{' '}
+                        {format(parseISO(swap.target_schedule.date), "dd/MM", { locale: ptBR })}
+                      </p>
+                    )}
+                  </div>
+                  <Button 
+                    size="sm" 
+                    onClick={() => handleRespondToSwap(swap)}
+                  >
+                    Ver Detalhes
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
         <h3 className="font-display text-xl font-semibold text-foreground mb-6">
-          Todas as Escalas
+          Próximas Escalas
         </h3>
         
         {loading ? (
@@ -356,102 +310,86 @@ export default function MySchedules() {
           </Card>
         ) : (
           <div className="grid gap-3">
-            {schedules.map((schedule) => (
-              <Card key={schedule.id} className="p-4 relative overflow-hidden">
-                {/* Church logo badge */}
-                {schedule.church_logo_url && (
-                  <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-background border-2 border-primary/20 overflow-hidden shadow-md">
-                    <img 
-                      src={schedule.church_logo_url} 
-                      alt={schedule.church_name || 'Igreja'} 
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-                
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between pr-10">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                        <Calendar className="w-6 h-6 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-foreground">
-                          {format(parseISO(schedule.date), "EEEE, d 'de' MMMM", { locale: ptBR })}
-                        </p>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Clock className="w-4 h-4" />
-                          {schedule.time_start.slice(0, 5)} - {schedule.time_end.slice(0, 5)}
-                        </div>
-                      </div>
+            {schedules.map((schedule) => {
+              const swap = getSwapForSchedule(schedule.id);
+              
+              return (
+                <Card key={schedule.id} className="p-4 relative overflow-hidden">
+                  {schedule.church_logo_url && (
+                    <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-background border-2 border-primary/20 overflow-hidden shadow-md">
+                      <img 
+                        src={schedule.church_logo_url} 
+                        alt={schedule.church_name || 'Igreja'} 
+                        className="w-full h-full object-cover"
+                      />
                     </div>
-                    <div className="text-right">
-                      <Badge variant="secondary">{schedule.department_name}</Badge>
-                      {schedule.church_name && (
-                        <div className="flex items-center gap-1 text-xs text-primary/80 mt-1 justify-end">
-                          <Church className="w-3 h-3" />
-                          {schedule.church_name}
-                        </div>
-                      )}
-                      {schedule.sector_name && (
-                        <div className="flex items-center gap-1.5 text-xs mt-1 justify-end">
-                          {schedule.sector_color && (
-                            <div 
-                              className="w-2.5 h-2.5 rounded-full" 
-                              style={{ backgroundColor: schedule.sector_color }}
-                            />
-                          )}
-                          <span style={{ color: schedule.sector_color || undefined }} className="font-medium">
-                            {schedule.sector_name}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  )}
                   
-                  {/* Status and Actions */}
-                  <div className="flex items-center justify-between pt-2 border-t border-border/50">
-                    {getStatusBadge(schedule.confirmation_status)}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between pr-10">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                          <Calendar className="w-6 h-6 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground">
+                            {format(parseISO(schedule.date), "EEEE, d 'de' MMMM", { locale: ptBR })}
+                          </p>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Clock className="w-4 h-4" />
+                            {schedule.time_start.slice(0, 5)} - {schedule.time_end.slice(0, 5)}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <Badge variant="secondary">{schedule.department_name}</Badge>
+                        {schedule.church_name && (
+                          <div className="flex items-center gap-1 text-xs text-primary/80 mt-1 justify-end">
+                            <Church className="w-3 h-3" />
+                            {schedule.church_name}
+                          </div>
+                        )}
+                        {schedule.sector_name && (
+                          <div className="flex items-center gap-1.5 text-xs mt-1 justify-end">
+                            {schedule.sector_color && (
+                              <div 
+                                className="w-2.5 h-2.5 rounded-full" 
+                                style={{ backgroundColor: schedule.sector_color }}
+                              />
+                            )}
+                            <span style={{ color: schedule.sector_color || undefined }} className="font-medium">
+                              {schedule.sector_name}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                     
-                    {schedule.confirmation_status === 'pending' && schedule.confirmation_token && (
-                      <div className="flex gap-2">
+                    {/* Swap section */}
+                    <div className="pt-2 border-t border-border/50">
+                      {swap ? (
+                        <PendingSwapBadge 
+                          swap={swap}
+                          onCancel={handleCancelSwap}
+                          onRespond={handleRespondToSwap}
+                          cancelling={cancellingSwapId === swap.id}
+                        />
+                      ) : (
                         <Button
                           size="sm"
                           variant="outline"
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
-                          onClick={() => openDeclineDialog(schedule)}
-                          disabled={decliningId === schedule.id}
+                          className="w-full"
+                          onClick={() => handleOpenSwapDialog(schedule)}
                         >
-                          {decliningId === schedule.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <>
-                              <XCircle className="w-4 h-4 mr-1" />
-                              Não poderei
-                            </>
-                          )}
+                          <ArrowLeftRight className="w-4 h-4 mr-2" />
+                          Pedir Troca
                         </Button>
-                        <Button
-                          size="sm"
-                          className="bg-green-600 hover:bg-green-700"
-                          onClick={() => handleConfirm(schedule)}
-                          disabled={confirmingId === schedule.id}
-                        >
-                          {confirmingId === schedule.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <>
-                              <CheckCircle2 className="w-4 h-4 mr-1" />
-                              Confirmar
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              );
+            })}
           </div>
         )}
 
@@ -490,48 +428,28 @@ export default function MySchedules() {
       
       <Footer />
 
-      {/* Decline Dialog */}
-      <AlertDialog open={showDeclineDialog} onOpenChange={setShowDeclineDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Registrar Ausência</AlertDialogTitle>
-            <AlertDialogDescription>
-              {selectedScheduleForDecline && (
-                <>
-                  Confirmar que você não poderá comparecer no dia{' '}
-                  <strong>
-                    {format(parseISO(selectedScheduleForDecline.date), "d 'de' MMMM", { locale: ptBR })}
-                  </strong>
-                  ?
-                </>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          
-          <div className="space-y-2">
-            <label className="text-sm text-muted-foreground">
-              Motivo (opcional):
-            </label>
-            <Textarea
-              placeholder="Ex: Compromisso familiar, viagem..."
-              value={declineReason}
-              onChange={(e) => setDeclineReason(e.target.value)}
-              rows={2}
-            />
-          </div>
-          
-          <AlertDialogFooter>
-            <AlertDialogCancel>Voltar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDecline}
-              className="bg-red-600 hover:bg-red-700"
-              disabled={decliningId !== null}
-            >
-              {decliningId ? 'Registrando...' : 'Confirmar Ausência'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Swap Request Dialog */}
+      <SwapRequestDialog
+        open={swapDialogOpen}
+        onOpenChange={setSwapDialogOpen}
+        schedule={selectedSchedule ? {
+          id: selectedSchedule.id,
+          date: selectedSchedule.date,
+          time_start: selectedSchedule.time_start,
+          time_end: selectedSchedule.time_end,
+          department_id: selectedSchedule.department_id,
+        } : null}
+        onSubmit={handleSwapSubmit}
+      />
+
+      {/* Swap Response Dialog */}
+      <SwapResponseDialog
+        open={responseDialogOpen}
+        onOpenChange={setResponseDialogOpen}
+        swap={selectedSwap}
+        onAccept={handleAcceptSwap}
+        onReject={handleRejectSwap}
+      />
     </div>
   );
 }
