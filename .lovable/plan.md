@@ -1,115 +1,178 @@
 
-# Plano: Botões Flutuantes para Criação de Escalas
 
-## Resumo
+# Plano: Seleção de Membros em Janela Separada
 
-Transformar os botões "Gerar Escalas com IA" e "Adicionar Escala Manual" em **botões flutuantes de ícone** no canto inferior direito da tela, removendo-os do Card atual.
+## Problema
 
-## Situação Atual
+O diálogo de criação de escalas tem muitos elementos (data, horário, botão "Escalar Todos") que ocupam espaço antes da lista de membros. Isso faz com que a lista de membros tenha pouco espaço visível, dificultando a seleção individual.
 
-Os botões ocupam um Card inteiro com texto completo:
+## Solução
 
-```text
-┌────────────────────────────────────────────────────────────────┐
-│  [ ✨ Gerar Escalas com IA ]  [ 📅 Adicionar Escala Manual ]  │
-└────────────────────────────────────────────────────────────────┘
-```
+Substituir a lista inline por **dois botões lado a lado**:
+1. **Escalar Todos** - Seleciona todos os membros disponíveis (já existe)
+2. **Selecionar Individualmente** - Abre uma **nova janela (Dialog)** com a lista completa de membros para seleção
 
 ## Nova Interface
 
-Dois botões flutuantes pequenos, empilhados verticalmente, no canto inferior direito:
-
 ```text
-                                                    ┌─────┐
-                                                    │ ✨  │  ← IA
-                                                    └─────┘
-                                                    ┌─────┐
-                                                    │ 📅  │  ← Manual
-                                                    └─────┘
+┌──────────────────────────────────────────────────────────────┐
+│  📅 Data: Domingo, 02 de Fevereiro                           │
+│  ⏰ Horário: Noite (18:00 - 22:00)                           │
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ┌─────────────────────────┐  ┌─────────────────────────┐   │
+│  │ 👥 ESCALAR TODOS        │  │ ☑️ SELECIONAR           │   │
+│  │    (8 membros)          │  │    INDIVIDUALMENTE      │   │
+│  └─────────────────────────┘  └─────────────────────────┘   │
+│                                                              │
+│  Membros selecionados: 3                                     │
+│  ┌─────┐ ┌─────┐ ┌─────┐                                    │
+│  │ JS  │ │ MC  │ │ AL  │  [Ver/Editar]                      │
+│  └─────┘ └─────┘ └─────┘                                    │
+│                                                              │
+│                              [Cancelar]  [Continuar (3)]     │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-### Comportamento
-- **Posição fixa** no canto inferior direito (fixed bottom-right)
-- **Apenas ícones** (sem texto)
-- **Tooltips** aparecem ao passar o mouse mostrando a função
-- **Design empilhado** - IA em cima, Manual embaixo
-- **Cores distintas** - IA com cor primária/gradient, Manual com outline
-- **Sombra e elevação** para efeito flutuante
+### Janela de Seleção Individual (ao clicar no botão)
 
-### Interação
-- Clique no botão de IA → Abre `SmartScheduleDialog`
-- Clique no botão Manual → Abre calendário para selecionar data
+```text
+┌─────────────────────────────────────────────────┐
+│  Selecionar Membros                     [ X ]   │
+├─────────────────────────────────────────────────┤
+│  ┌───────────────────────────────────────────┐  │
+│  │ ☑ João Silva                              │  │
+│  │ ☑ Maria Costa                             │  │
+│  │ ☐ Pedro Santos                            │  │
+│  │ ☑ Ana Lima                                │  │
+│  │ ☐ Carlos Ferreira                         │  │
+│  │ ☐ Juliana Pereira        (Scroll ↓)      │  │
+│  │ ☐ Roberto Gomes                           │  │
+│  │ ☐ Fernanda Silva         🚫 Bloqueado    │  │
+│  │ ...                                       │  │
+│  └───────────────────────────────────────────┘  │
+│                                                 │
+│  [Selecionar Todos]  [Limpar]    [Confirmar]   │
+└─────────────────────────────────────────────────┘
+```
 
 ---
 
-## Mudança Técnica
+## Mudanças Técnicas
 
-### Arquivo: `src/components/department/UnifiedScheduleView.tsx`
+### Arquivo: `src/components/department/AddScheduleDialog.tsx`
 
-**Remover o Card de ações do líder (linhas ~294-333)**
+**1. Adicionar estado para controlar o sub-diálogo:**
+```tsx
+const [showMemberPicker, setShowMemberPicker] = useState(false);
+```
 
-**Adicionar botões flutuantes fixos:**
+**2. Substituir a lista inline (linhas ~478-558) por dois botões + preview:**
 
 ```tsx
-{/* Floating action buttons for leaders */}
-{isLeader && (
-  <div className="fixed bottom-6 right-6 flex flex-col gap-2 z-40">
-    {/* Smart Schedule Button */}
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button 
-          size="icon"
-          className="w-12 h-12 rounded-full shadow-lg gradient-vibrant hover:shadow-glow-sm transition-all"
-          onClick={onOpenSmartSchedule}
-        >
-          <Sparkles className="w-5 h-5" />
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent side="left">
-        Gerar Escalas com IA
-      </TooltipContent>
-    </Tooltip>
-    
-    {/* Manual Schedule Button */}
-    <Popover open={showCalendarPicker} onOpenChange={setShowCalendarPicker}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <PopoverTrigger asChild>
-            <Button 
-              size="icon"
-              variant="outline"
-              className="w-12 h-12 rounded-full shadow-lg bg-background hover:bg-accent transition-all"
-            >
-              <CalendarPlus className="w-5 h-5" />
-            </Button>
-          </PopoverTrigger>
-        </TooltipTrigger>
-        <TooltipContent side="left">
-          Adicionar Escala Manual
-        </TooltipContent>
-      </Tooltip>
-      <PopoverContent className="w-auto p-0" align="end" side="top">
-        <Calendar ... />
-      </PopoverContent>
-    </Popover>
+{/* Action Buttons Row */}
+<div className="grid grid-cols-2 gap-3 py-3 border-t border-b">
+  {/* Schedule All Button */}
+  <Button
+    type="button"
+    className="h-14 flex-col gap-1"
+    variant="default"
+    onClick={() => {
+      selectAllAvailable();
+      setStep('configure');
+    }}
+    disabled={availableMembers.length === 0}
+  >
+    <Users className="w-5 h-5" />
+    <span className="text-xs">Escalar Todos ({availableMembers.length})</span>
+  </Button>
+  
+  {/* Select Individually Button */}
+  <Button
+    type="button"
+    variant="outline"
+    className="h-14 flex-col gap-1"
+    onClick={() => setShowMemberPicker(true)}
+  >
+    <CheckSquare className="w-5 h-5" />
+    <span className="text-xs">Selecionar Individual</span>
+  </Button>
+</div>
+
+{/* Selected Members Preview */}
+{selectedMembers.length > 0 && (
+  <div className="space-y-2">
+    <div className="flex items-center justify-between">
+      <Label className="text-sm">
+        {selectedMembers.length} membro{selectedMembers.length > 1 ? 's' : ''} selecionado{selectedMembers.length > 1 ? 's' : ''}
+      </Label>
+      <Button variant="link" size="sm" onClick={() => setShowMemberPicker(true)}>
+        Editar
+      </Button>
+    </div>
+    <div className="flex flex-wrap gap-2">
+      {selectedMembers.slice(0, 8).map((userId) => {
+        const member = getMemberById(userId);
+        return (
+          <Avatar key={userId} className="h-8 w-8 border-2 border-primary/20">
+            <AvatarFallback>{member?.profile.name.slice(0,2).toUpperCase()}</AvatarFallback>
+          </Avatar>
+        );
+      })}
+      {selectedMembers.length > 8 && (
+        <span className="text-sm text-muted-foreground">+{selectedMembers.length - 8}</span>
+      )}
+    </div>
   </div>
 )}
 ```
 
+**3. Adicionar o sub-diálogo de seleção de membros:**
+
+```tsx
+{/* Member Selection Dialog */}
+<Dialog open={showMemberPicker} onOpenChange={setShowMemberPicker}>
+  <DialogContent className="sm:max-w-[400px] max-h-[80vh]">
+    <DialogHeader>
+      <DialogTitle>Selecionar Membros</DialogTitle>
+      <DialogDescription>
+        {availableMembers.length} disponíveis, {blockedMembers.size} bloqueados
+      </DialogDescription>
+    </DialogHeader>
+    
+    <ScrollArea className="h-[400px] border rounded-md">
+      <div className="p-2 space-y-1">
+        {members.map((member) => (
+          // ... checkbox items com avatar e nome
+        ))}
+      </div>
+    </ScrollArea>
+    
+    <div className="flex justify-between">
+      <div className="flex gap-2">
+        <Button variant="ghost" size="sm" onClick={selectAllAvailable}>
+          Selecionar Todos
+        </Button>
+        <Button variant="ghost" size="sm" onClick={clearSelection}>
+          Limpar
+        </Button>
+      </div>
+      <Button onClick={() => setShowMemberPicker(false)}>
+        Confirmar ({selectedMembers.length})
+      </Button>
+    </div>
+  </DialogContent>
+</Dialog>
+```
+
 ---
 
-## Estilos
+## Benefícios
 
-| Botão | Estilo |
-|-------|--------|
-| IA (Sparkles) | `gradient-vibrant` com sombra glow, posição superior |
-| Manual (CalendarPlus) | `outline` com fundo background, posição inferior |
-
-### Classes CSS
-- `fixed bottom-6 right-6` - Posiciona no canto inferior direito
-- `w-12 h-12 rounded-full` - Botões redondos de 48px
-- `shadow-lg` - Sombra para efeito flutuante
-- `z-40` - Acima do conteúdo normal
+1. **Mais espaço** - A janela separada tem altura dedicada (400px) para a lista
+2. **Scroll claro** - Todos os membros visíveis com scroll fluido
+3. **Fluxo limpo** - Dois caminhos claros: "todos" ou "individual"
+4. **Preview** - Avatares mostram quem foi selecionado sem abrir a janela
 
 ---
 
@@ -117,16 +180,5 @@ Dois botões flutuantes pequenos, empilhados verticalmente, no canto inferior di
 
 | Arquivo | Mudança |
 |---------|---------|
-| `src/components/department/UnifiedScheduleView.tsx` | Remover Card de botões e adicionar botões flutuantes |
+| `src/components/department/AddScheduleDialog.tsx` | Adicionar sub-diálogo para seleção individual de membros |
 
----
-
-## Resultado Visual
-
-Antes:
-- Card ocupando largura total com dois botões grandes
-
-Depois:
-- Dois botões circulares pequenos flutuando no canto inferior direito
-- Mais espaço para o grid de escalas
-- Interface mais limpa e moderna
