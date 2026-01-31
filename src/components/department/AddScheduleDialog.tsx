@@ -89,6 +89,7 @@ export default function AddScheduleDialog({
   const [loading, setLoading] = useState(false);
   const [memberBlackouts, setMemberBlackouts] = useState<Record<string, string[]>>({});
   const [step, setStep] = useState<'select' | 'configure'>('select');
+  const [showMemberPicker, setShowMemberPicker] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -454,108 +455,65 @@ export default function AddScheduleDialog({
               )}
             </div>
 
-            {/* Quick Schedule All Button */}
-            {availableMembers.length > 0 && (
-              <div className="pt-3 pb-2 border-t border-b">
-                <Button
-                  type="button"
-                  className="w-full gap-2 h-12 text-base"
-                  variant="default"
-                  onClick={() => {
-                    selectAllAvailable();
-                    setStep('configure');
-                  }}
-                >
-                  <Users className="w-5 h-5" />
-                  Escalar Todos ({availableMembers.length} membros)
-                </Button>
-                <p className="text-xs text-muted-foreground text-center mt-2">
-                  ou selecione individualmente abaixo
-                </p>
-              </div>
-            )}
-
-            {/* Member Selection */}
-            <div className="space-y-2 flex-1 flex flex-col min-h-0">
-              <div className="flex items-center justify-between">
-                <Label className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-muted-foreground" />
-                  Membros ({selectedMembers.length} selecionado{selectedMembers.length !== 1 ? 's' : ''})
-                </Label>
-                <div className="flex gap-2">
-                  {selectedMembers.length > 0 && selectedMembers.length < availableMembers.length && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={selectAllAvailable}
-                      className="text-xs h-7"
-                    >
-                      <CheckSquare className="w-3 h-3 mr-1" />
-                      Todos
-                    </Button>
-                  )}
-                  {selectedMembers.length > 0 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={clearSelection}
-                      className="text-xs h-7"
-                    >
-                      <X className="w-3 h-3 mr-1" />
-                      Limpar
-                    </Button>
-                  )}
-                </div>
-              </div>
+            {/* Action Buttons Row */}
+            <div className="grid grid-cols-2 gap-3 py-3 border-t border-b">
+              {/* Schedule All Button */}
+              <Button
+                type="button"
+                className="h-14 flex-col gap-1"
+                variant="default"
+                onClick={() => {
+                  selectAllAvailable();
+                  setStep('configure');
+                }}
+                disabled={availableMembers.length === 0}
+              >
+                <Users className="w-5 h-5" />
+                <span className="text-xs">Escalar Todos ({availableMembers.length})</span>
+              </Button>
               
-              <ScrollArea className="min-h-[180px] max-h-[300px] border rounded-md">
-                <div className="p-2 space-y-1">
-                  {members.map((member) => {
-                    const isBlocked = blockedMembers.has(member.user_id);
-                    const isSelected = selectedMembers.includes(member.user_id);
-                    
+              {/* Select Individually Button */}
+              <Button
+                type="button"
+                variant="outline"
+                className="h-14 flex-col gap-1"
+                onClick={() => setShowMemberPicker(true)}
+              >
+                <CheckSquare className="w-5 h-5" />
+                <span className="text-xs">Selecionar Individual</span>
+              </Button>
+            </div>
+
+            {/* Selected Members Preview */}
+            {selectedMembers.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm">
+                    {selectedMembers.length} membro{selectedMembers.length > 1 ? 's' : ''} selecionado{selectedMembers.length > 1 ? 's' : ''}
+                  </Label>
+                  <Button variant="link" size="sm" onClick={() => setShowMemberPicker(true)} className="h-auto p-0">
+                    Editar
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {selectedMembers.slice(0, 8).map((userId) => {
+                    const member = getMemberById(userId);
+                    if (!member) return null;
                     return (
-                      <div
-                        key={member.id}
-                        className={cn(
-                          "flex items-center gap-3 p-2 rounded-md cursor-pointer transition-colors",
-                          isSelected ? "bg-primary/10" : "hover:bg-muted/50",
-                          isBlocked && "opacity-60"
-                        )}
-                        onClick={() => toggleMember(member.user_id)}
-                      >
-                        <Checkbox
-                          checked={isSelected}
-                          onCheckedChange={() => toggleMember(member.user_id)}
-                        />
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={member.profile.avatar_url || undefined} />
-                          <AvatarFallback className="text-xs">
-                            {member.profile.name.slice(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <p className={cn(
-                            "text-sm font-medium truncate",
-                            isBlocked && "text-destructive"
-                          )}>
-                            {member.profile.name}
-                          </p>
-                        </div>
-                        {isBlocked && (
-                          <Badge variant="destructive" className="text-xs shrink-0">
-                            <AlertTriangle className="w-3 h-3 mr-1" />
-                            Bloqueado
-                          </Badge>
-                        )}
-                      </div>
+                      <Avatar key={userId} className="h-8 w-8 border-2 border-primary/20">
+                        <AvatarImage src={member.profile.avatar_url || undefined} />
+                        <AvatarFallback className="text-xs">
+                          {member.profile.name.slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
                     );
                   })}
+                  {selectedMembers.length > 8 && (
+                    <span className="text-sm text-muted-foreground self-center">+{selectedMembers.length - 8}</span>
+                  )}
                 </div>
-              </ScrollArea>
-            </div>
+              </div>
+            )}
 
             <DialogFooter>
               <Button
@@ -711,6 +669,78 @@ export default function AddScheduleDialog({
           </div>
         )}
       </DialogContent>
+
+      {/* Member Selection Dialog */}
+      <Dialog open={showMemberPicker} onOpenChange={setShowMemberPicker}>
+        <DialogContent className="sm:max-w-[400px] max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Selecionar Membros</DialogTitle>
+            <DialogDescription>
+              {availableMembers.length} disponíveis, {blockedMembers.size} bloqueados
+            </DialogDescription>
+          </DialogHeader>
+          
+          <ScrollArea className="h-[400px] border rounded-md flex-1">
+            <div className="p-2 space-y-1">
+              {members.map((member) => {
+                const isBlocked = blockedMembers.has(member.user_id);
+                const isSelected = selectedMembers.includes(member.user_id);
+                
+                return (
+                  <div
+                    key={member.id}
+                    className={cn(
+                      "flex items-center gap-3 p-2 rounded-md cursor-pointer transition-colors",
+                      isSelected ? "bg-primary/10" : "hover:bg-muted/50",
+                      isBlocked && "opacity-60"
+                    )}
+                    onClick={() => toggleMember(member.user_id)}
+                  >
+                    <Checkbox
+                      checked={isSelected}
+                      onCheckedChange={() => toggleMember(member.user_id)}
+                    />
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={member.profile.avatar_url || undefined} />
+                      <AvatarFallback className="text-xs">
+                        {member.profile.name.slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className={cn(
+                        "text-sm font-medium truncate",
+                        isBlocked && "text-destructive"
+                      )}>
+                        {member.profile.name}
+                      </p>
+                    </div>
+                    {isBlocked && (
+                      <Badge variant="destructive" className="text-xs shrink-0">
+                        <AlertTriangle className="w-3 h-3 mr-1" />
+                        Bloqueado
+                      </Badge>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </ScrollArea>
+          
+          <div className="flex justify-between pt-4">
+            <div className="flex gap-2">
+              <Button variant="ghost" size="sm" onClick={selectAllAvailable}>
+                Selecionar Todos
+              </Button>
+              <Button variant="ghost" size="sm" onClick={clearSelection}>
+                Limpar
+              </Button>
+            </div>
+            <Button onClick={() => setShowMemberPicker(false)}>
+              Confirmar ({selectedMembers.length})
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
