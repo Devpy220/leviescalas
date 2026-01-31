@@ -510,7 +510,7 @@ export default function AddScheduleDialog({
                 </div>
               </div>
               
-              <ScrollArea className="flex-1 border rounded-md">
+              <ScrollArea className="min-h-[180px] max-h-[300px] border rounded-md">
                 <div className="p-2 space-y-1">
                   {members.map((member) => {
                     const isBlocked = blockedMembers.has(member.user_id);
