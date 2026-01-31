@@ -1,249 +1,146 @@
 
 
-# Plano: Sistema de Troca de Escalas
+# Plano: Botão "Escalar Todos" e Layout em Grade nas Escalas
 
-## Resumo
-Substituir os botões de "Confirmar/Não poderei" por um sistema de **solicitação de troca de escalas**, onde membros podem pedir para trocar seus dias com outros membros do departamento. A troca só é concluída quando ambas as partes aceitam.
+## Resumo das Mudanças
 
-## Novo Fluxo de Trabalho
+Duas melhorias na experiência do líder e dos membros:
 
-```text
-┌─────────────────────────────────────────────────────────────────────┐
-│  MEMBRO A: Vê sua escala de Domingo e quer trocar                   │
-│                                                                     │
-│  ┌────────────────────────────────────────────────────────────────┐ │
-│  │ 📅 Domingo, 02 de Fevereiro - 18:00 às 22:00                   │ │
-│  │ Setor: Estacionamento                                          │ │
-│  │                                                                │ │
-│  │ [ 🔄 Pedir Troca ]                                             │ │
-│  └────────────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────────┐
-│  DIÁLOGO: Escolher dia para trocar                                  │
-│  ┌────────────────────────────────────────────────────────────────┐ │
-│  │ "Qual dia você quer trocar?"                                   │ │
-│  │                                                                │ │
-│  │ ┌───────────────────────────────────────────────────────────┐  │ │
-│  │ │ ○ Quarta, 05/02 - Maria Santos (Som)                      │  │ │
-│  │ │ ○ Domingo, 09/02 - Pedro Costa (Mídia)                    │  │ │
-│  │ │ ○ Sexta, 07/02 - Ana Lima (Recepção)                      │  │ │
-│  │ └───────────────────────────────────────────────────────────┘  │ │
-│  │                                                                │ │
-│  │ Motivo (opcional): [___________________________]               │ │
-│  │                                                                │ │
-│  │             [Cancelar]  [Solicitar Troca]                      │ │
-│  └────────────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────────┐
-│  TODOS OS MEMBROS: Vêem a solicitação pendente                      │
-│                                                                     │
-│  ┌────────────────────────────────────────────────────────────────┐ │
-│  │ 🔄 TROCA PENDENTE                                              │ │
-│  │                                                                │ │
-│  │ João quer trocar:                                              │ │
-│  │ ➡️ Domingo 02/02 (18h) por Quarta 05/02 (19h)                  │ │
-│  │                                                                │ │
-│  │ Aguardando: Maria Santos aceitar                               │ │
-│  └────────────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────────┐
-│  MEMBRO B (Maria): Recebe notificação e pode aceitar ou recusar     │
-│                                                                     │
-│  ┌────────────────────────────────────────────────────────────────┐ │
-│  │ 🔔 João Silva quer trocar de escala com você!                  │ │
-│  │                                                                │ │
-│  │ Troca proposta:                                                │ │
-│  │ • João: Domingo 02/02 → ficará com Quarta 05/02                │ │
-│  │ • Você: Quarta 05/02 → ficará com Domingo 02/02                │ │
-│  │                                                                │ │
-│  │     [ ❌ Recusar ]  [ ✅ Aceitar Troca ]                       │ │
-│  └────────────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────────────┘
-```
+1. **Botão "Escalar Todos"** - Na criação de escalas, após escolher data e horário, adicionar um botão que escala automaticamente **todos os membros disponíveis** com um único clique (já existe como "Selecionar Todos" mas será mais proeminente)
+
+2. **Layout Lado a Lado** - Na página "Minhas Escalas", trocar o layout de lista vertical para uma **grade horizontal** com as escalas uma ao lado da outra, igual ao UnifiedScheduleView
 
 ---
 
-## Mudanças Principais
+## Mudança 1: Botão "Escalar Todos" mais Proeminente
 
-### 1. Nova Tabela no Banco de Dados
+### Situação Atual
+O `AddScheduleDialog` já possui um botão "Todos" pequeno, mas não é muito visível.
 
-Criar tabela `schedule_swaps` para rastrear solicitações de troca:
+### Nova Interface
 
-| Coluna | Tipo | Descrição |
-|--------|------|-----------|
-| id | uuid | Identificador único |
-| department_id | uuid | Departamento da troca |
-| requester_schedule_id | uuid | Escala do solicitante |
-| target_schedule_id | uuid | Escala que quer trocar |
-| requester_user_id | uuid | ID do solicitante |
-| target_user_id | uuid | ID do membro alvo |
-| status | enum | pending / accepted / rejected / cancelled |
-| reason | text | Motivo da solicitação |
-| created_at | timestamp | Data de criação |
-| resolved_at | timestamp | Data de resolução |
+```text
+┌─────────────────────────────────────────────────────────────────────┐
+│  📅 Data: Domingo, 02 de Fevereiro                                  │
+│  ⏰ Horário: Noite (18:00 - 22:00)                                  │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │      [👥 ESCALAR TODOS OS MEMBROS]                          │   │  ← BOTÃO GRANDE NOVO
+│  │      Escala 8 membros disponíveis de uma vez                │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+│  ── ou selecione individualmente ──                                 │
+│                                                                     │
+│  ☑ João Silva              ☐ Maria Santos                          │
+│  ☐ Pedro Costa             ☑ Ana Lima                              │
+└─────────────────────────────────────────────────────────────────────┘
+```
 
-### 2. Remover Botões de Confirmar/Não Poderei
+### Implementação
 
-Na página "Minhas Escalas" (`MySchedules.tsx`), substituir os botões atuais por um único botão "Pedir Troca".
+Adicionar um botão destacado antes da lista de membros que:
+- Seleciona automaticamente todos os membros não-bloqueados
+- Avança direto para o passo de configuração
+- Exibe quantidade de membros que serão escalados
 
-### 3. Criar Componente de Diálogo de Troca
+---
 
-Novo componente `SwapRequestDialog.tsx`:
-- Lista todas as outras escalas do departamento (de outros membros)
-- Permite selecionar qual escala deseja em troca
-- Campo opcional para motivo
+## Mudança 2: Layout em Grade na Página "Minhas Escalas"
 
-### 4. Exibir Trocas Pendentes
+### Situação Atual
+As escalas são exibidas em **lista vertical** (uma embaixo da outra).
 
-Mostrar em todas as visualizações (Minhas Escalas e UnifiedScheduleView) quando há uma troca pendente para aquela escala.
+### Novo Layout
 
-### 5. Notificações
+```text
+┌───────────────────────────────────────────────────────────────────────────────┐
+│  Próximas Escalas                                                             │
+├───────────────────────────────────────────────────────────────────────────────┤
+│                                                                               │
+│  ┌─────────────────────┐  ┌─────────────────────┐  ┌─────────────────────┐   │
+│  │ DOM 02/02           │  │ QUA 05/02           │  │ DOM 09/02           │   │
+│  │ 18:00 - 22:00       │  │ 19:30 - 22:00       │  │ 08:00 - 12:00       │   │
+│  │                     │  │                     │  │                     │   │
+│  │ Estacionamento 🚗   │  │ Recepção ✅         │  │ Som                 │   │
+│  │                     │  │                     │  │                     │   │
+│  │ [🔄 Pedir Troca]    │  │ [🔄 Pedir Troca]    │  │ [🔄 Pedir Troca]    │   │
+│  └─────────────────────┘  └─────────────────────┘  └─────────────────────┘   │
+│                                                                               │
+│  ┌─────────────────────┐  ┌─────────────────────┐                            │
+│  │ QUA 12/02           │  │ DOM 16/02           │                            │
+│  │ 19:30 - 22:00       │  │ 18:00 - 22:00       │                            │
+│  └─────────────────────┘  └─────────────────────┘                            │
+│                                                                               │
+└───────────────────────────────────────────────────────────────────────────────┘
+```
 
-Criar notificações para:
-- Quando alguém solicita trocar com você
-- Quando sua troca foi aceita
-- Quando sua troca foi recusada
-- Quando uma troca é cancelada
+### Implementação
+
+Alterar o grid de `grid gap-3` (lista vertical) para `grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4` (grade responsiva):
+- 1 coluna em telas pequenas
+- 2 colunas em tablets
+- 3 colunas em desktop
+
+Redesenhar cada card de escala para ser mais compacto e adequado à visualização em grade.
 
 ---
 
 ## Detalhes Técnicos
 
-### Migração SQL
+### Arquivo 1: `src/components/department/AddScheduleDialog.tsx`
 
-```sql
--- Criar enum para status da troca
-CREATE TYPE swap_status AS ENUM ('pending', 'accepted', 'rejected', 'cancelled');
+**Mudanças:**
+- Adicionar botão destacado "Escalar Todos" logo abaixo da seleção de horário
+- O botão mostra quantos membros serão escalados
+- Ao clicar, seleciona todos os membros disponíveis e avança para configuração
 
--- Criar tabela de trocas
-CREATE TABLE schedule_swaps (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  department_id UUID NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
-  requester_schedule_id UUID NOT NULL REFERENCES schedules(id) ON DELETE CASCADE,
-  target_schedule_id UUID NOT NULL REFERENCES schedules(id) ON DELETE CASCADE,
-  requester_user_id UUID NOT NULL,
-  target_user_id UUID NOT NULL,
-  status swap_status NOT NULL DEFAULT 'pending',
-  reason TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  resolved_at TIMESTAMPTZ
-);
-
--- Habilitar RLS
-ALTER TABLE schedule_swaps ENABLE ROW LEVEL SECURITY;
-
--- Políticas RLS
--- Membros do departamento podem ver trocas
-CREATE POLICY "Members can view department swaps"
-ON schedule_swaps FOR SELECT
-USING (is_department_member(auth.uid(), department_id));
-
--- Usuários podem criar solicitações de troca para suas próprias escalas
-CREATE POLICY "Users can create swap requests"
-ON schedule_swaps FOR INSERT
-WITH CHECK (requester_user_id = auth.uid());
-
--- Usuários podem atualizar trocas onde são o alvo (aceitar/recusar)
-CREATE POLICY "Target users can respond to swaps"
-ON schedule_swaps FOR UPDATE
-USING (target_user_id = auth.uid() OR requester_user_id = auth.uid());
-
--- Solicitante pode cancelar sua própria solicitação
-CREATE POLICY "Requesters can cancel own swaps"
-ON schedule_swaps FOR DELETE
-USING (requester_user_id = auth.uid() AND status = 'pending');
+**Novo código (após seleção de horário):**
+```typescript
+{/* Quick Schedule All Button */}
+<div className="pt-2 border-t">
+  <Button
+    type="button"
+    className="w-full gap-2"
+    variant="default"
+    onClick={() => {
+      selectAllAvailable();
+      setStep('configure');
+    }}
+    disabled={availableMembers.length === 0}
+  >
+    <Users className="w-4 h-4" />
+    Escalar Todos ({availableMembers.length} membros)
+  </Button>
+  <p className="text-xs text-muted-foreground text-center mt-2">
+    ou selecione individualmente abaixo
+  </p>
+</div>
 ```
 
-### Função para Executar a Troca
+### Arquivo 2: `src/pages/MySchedules.tsx`
 
-```sql
-CREATE OR REPLACE FUNCTION execute_schedule_swap(swap_id UUID)
-RETURNS void
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-DECLARE
-  swap_record schedule_swaps%ROWTYPE;
-  requester_schedule schedules%ROWTYPE;
-  target_schedule schedules%ROWTYPE;
-BEGIN
-  SELECT * INTO swap_record FROM schedule_swaps WHERE id = swap_id;
-  
-  IF swap_record.status != 'accepted' THEN
-    RAISE EXCEPTION 'Swap is not accepted';
-  END IF;
+**Mudanças:**
+- Alterar o grid para layout responsivo horizontal
+- Redesenhar cards para formato mais compacto
+- Manter funcionalidade de troca integrada
 
-  SELECT * INTO requester_schedule FROM schedules WHERE id = swap_record.requester_schedule_id;
-  SELECT * INTO target_schedule FROM schedules WHERE id = swap_record.target_schedule_id;
-
-  -- Trocar os user_ids das escalas
-  UPDATE schedules SET user_id = swap_record.target_user_id 
-  WHERE id = swap_record.requester_schedule_id;
-  
-  UPDATE schedules SET user_id = swap_record.requester_user_id 
-  WHERE id = swap_record.target_schedule_id;
-  
-  -- Marcar troca como resolvida
-  UPDATE schedule_swaps SET resolved_at = now() WHERE id = swap_id;
-END;
-$$;
+**Novo layout:**
+```typescript
+// De: <div className="grid gap-3">
+// Para:
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+  {schedules.map((schedule) => (
+    <ScheduleCard key={schedule.id} schedule={schedule} ... />
+  ))}
+</div>
 ```
 
-### Componentes React
-
-**Novo arquivo: `src/components/department/SwapRequestDialog.tsx`**
-- Mostra lista de escalas disponíveis para troca
-- Permite selecionar uma escala
-- Campo de motivo
-- Botão de solicitar
-
-**Novo arquivo: `src/components/department/PendingSwapBadge.tsx`**
-- Badge que aparece na escala quando há troca pendente
-- Mostra quem está solicitando a troca
-
-**Novo arquivo: `src/components/department/SwapResponseDialog.tsx`**
-- Diálogo para aceitar/recusar uma troca
-- Mostra detalhes da proposta
-
-### Modificações em Arquivos Existentes
-
-| Arquivo | Mudança |
-|---------|---------|
-| `src/pages/MySchedules.tsx` | Remover botões confirmar/recusar, adicionar botão "Pedir Troca" |
-| `src/components/department/UnifiedScheduleView.tsx` | Mostrar indicador de trocas pendentes |
-| `src/hooks/useNotifications.tsx` | Adicionar handlers para notificações de troca |
-
----
-
-## Fluxo de Aceitação de Troca
-
-1. **Membro A** solicita troca (cria registro em `schedule_swaps`)
-2. **Notificação** é enviada para Membro B
-3. **Membro B** vê a solicitação e pode:
-   - Aceitar → executa `execute_schedule_swap()` que troca os `user_id` das escalas
-   - Recusar → atualiza status para `rejected`
-4. **Notificação** é enviada para Membro A com o resultado
-5. **Todos** vêem as escalas atualizadas
-
----
-
-## Interface Visual
-
-### Botão de Troca (substitui confirmar/recusar)
-- Ícone: 🔄 (ArrowLeftRight ou Repeat)
-- Cor: Azul/Primária
-- Texto: "Pedir Troca"
-
-### Indicador de Troca Pendente
-- Badge amarelo/âmbar
-- Texto: "Troca pendente" ou "Aguardando resposta"
-
-### Resposta à Troca
-- Botão verde "Aceitar Troca" ✅
-- Botão vermelho "Recusar" ❌
+**Novo card (compacto para grade):**
+- Header colorido com dia da semana
+- Data e horário
+- Setor e departamento
+- Botão de troca na parte inferior
 
 ---
 
@@ -251,10 +148,15 @@ $$;
 
 | Arquivo | Mudança |
 |---------|---------|
-| Nova migração SQL | Criar tabela `schedule_swaps` e função de troca |
-| `src/pages/MySchedules.tsx` | Substituir botões por "Pedir Troca" e mostrar trocas pendentes |
-| `src/components/department/SwapRequestDialog.tsx` | Novo componente para solicitar troca |
-| `src/components/department/SwapResponseDialog.tsx` | Novo componente para aceitar/recusar troca |
-| `src/components/department/UnifiedScheduleView.tsx` | Mostrar indicadores de troca pendente |
-| `src/integrations/supabase/types.ts` | Auto-atualizado com nova tabela |
+| `src/components/department/AddScheduleDialog.tsx` | Adicionar botão "Escalar Todos" destacado |
+| `src/pages/MySchedules.tsx` | Alterar para layout em grade responsiva |
+
+---
+
+## Benefícios
+
+1. **Velocidade para líderes** - Escalar todos de uma vez com um clique
+2. **Melhor visualização** - Ver todas as escalas lado a lado sem scroll excessivo
+3. **Consistência** - Layout similar ao UnifiedScheduleView do departamento
+4. **Responsividade** - Funciona bem em desktop e mobile
 
