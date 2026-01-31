@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Calendar } from '@/components/ui/calendar';
 import {
   Popover,
@@ -291,45 +291,55 @@ export default function UnifiedScheduleView({
         </CardHeader>
       </Card>
 
-      {/* Leader actions */}
+      {/* Floating action buttons for leaders */}
       {isLeader && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex flex-col sm:flex-row gap-3">
+        <div className="fixed bottom-6 right-6 flex flex-col gap-2 z-40">
+          {/* Smart Schedule Button */}
+          <Tooltip>
+            <TooltipTrigger asChild>
               <Button 
+                size="icon"
+                className="w-12 h-12 rounded-full shadow-lg bg-primary hover:bg-primary/90 hover:shadow-glow-sm transition-all"
                 onClick={onOpenSmartSchedule}
-                className="flex-1 gap-2"
-                variant="default"
               >
-                <Sparkles className="w-4 h-4" />
-                Gerar Escalas com IA
+                <Sparkles className="w-5 h-5" />
               </Button>
-              
-              {/* Calendar picker for manual schedule */}
-              <Popover open={showCalendarPicker} onOpenChange={setShowCalendarPicker}>
+            </TooltipTrigger>
+            <TooltipContent side="left">
+              Gerar Escalas com IA
+            </TooltipContent>
+          </Tooltip>
+          
+          {/* Manual Schedule Button */}
+          <Popover open={showCalendarPicker} onOpenChange={setShowCalendarPicker}>
+            <Tooltip>
+              <TooltipTrigger asChild>
                 <PopoverTrigger asChild>
                   <Button 
+                    size="icon"
                     variant="outline"
-                    className="flex-1 gap-2"
+                    className="w-12 h-12 rounded-full shadow-lg bg-background hover:bg-accent transition-all"
                   >
-                    <CalendarPlus className="w-4 h-4" />
-                    Adicionar Escala Manual
+                    <CalendarPlus className="w-5 h-5" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="center">
-                  <Calendar
-                    mode="single"
-                    selected={undefined}
-                    onSelect={handleDateSelect}
-                    initialFocus
-                    locale={ptBR}
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </CardContent>
-        </Card>
+              </TooltipTrigger>
+              <TooltipContent side="left">
+                Adicionar Escala Manual
+              </TooltipContent>
+            </Tooltip>
+            <PopoverContent className="w-auto p-0" align="end" side="top">
+              <Calendar
+                mode="single"
+                selected={undefined}
+                onSelect={handleDateSelect}
+                initialFocus
+                locale={ptBR}
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
       )}
 
       {/* Horizontal Grid of Slot Cards */}
