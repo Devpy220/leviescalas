@@ -1,162 +1,64 @@
 
+# Plano: Corrigir Exibição de Membros no Diálogo de Criação de Escalas
 
-# Plano: Botão "Escalar Todos" e Layout em Grade nas Escalas
+## Problema Identificado
 
-## Resumo das Mudanças
+O usuário relata que ao criar uma escala, só consegue ver **1 membro** para selecionar, quando deveria ver todos os **15 membros** do departamento.
 
-Duas melhorias na experiência do líder e dos membros:
+Após investigação, confirmei que:
+- ✅ O banco de dados está retornando **todos os 15 membros** corretamente
+- ✅ A função RPC `get_department_member_profiles` funciona perfeitamente  
+- ✅ As requisições de rede mostram todos os dados corretos
 
-1. **Botão "Escalar Todos"** - Na criação de escalas, após escolher data e horário, adicionar um botão que escala automaticamente **todos os membros disponíveis** com um único clique (já existe como "Selecionar Todos" mas será mais proeminente)
+## Causa Raiz
 
-2. **Layout Lado a Lado** - Na página "Minhas Escalas", trocar o layout de lista vertical para uma **grade horizontal** com as escalas uma ao lado da outra, igual ao UnifiedScheduleView
+O problema está no **layout CSS** do componente `AddScheduleDialog.tsx`. A área de scroll (`ScrollArea`) que contém a lista de membros tem altura calculada incorretamente:
 
----
-
-## Mudança 1: Botão "Escalar Todos" mais Proeminente
-
-### Situação Atual
-O `AddScheduleDialog` já possui um botão "Todos" pequeno, mas não é muito visível.
-
-### Nova Interface
-
-```text
-┌─────────────────────────────────────────────────────────────────────┐
-│  📅 Data: Domingo, 02 de Fevereiro                                  │
-│  ⏰ Horário: Noite (18:00 - 22:00)                                  │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  ┌─────────────────────────────────────────────────────────────┐   │
-│  │      [👥 ESCALAR TODOS OS MEMBROS]                          │   │  ← BOTÃO GRANDE NOVO
-│  │      Escala 8 membros disponíveis de uma vez                │   │
-│  └─────────────────────────────────────────────────────────────┘   │
-│                                                                     │
-│  ── ou selecione individualmente ──                                 │
-│                                                                     │
-│  ☑ João Silva              ☐ Maria Santos                          │
-│  ☐ Pedro Costa             ☑ Ana Lima                              │
-└─────────────────────────────────────────────────────────────────────┘
+```tsx
+// Problema atual
+<div className="space-y-2 flex-1 flex flex-col min-h-0">
+  ...
+  <ScrollArea className="flex-1 border rounded-md">
 ```
 
-### Implementação
+O `flex-1` combinado com `min-h-0` faz com que a altura do ScrollArea colapse para um valor muito pequeno, mostrando apenas 1 membro. O diálogo tem muitos elementos antes da lista (seletor de data, slots de horário, botão "Escalar Todos"), o que consome quase todo o espaço disponível.
 
-Adicionar um botão destacado antes da lista de membros que:
-- Seleciona automaticamente todos os membros não-bloqueados
-- Avança direto para o passo de configuração
-- Exibe quantidade de membros que serão escalados
+## Solução
 
----
+Definir uma **altura mínima e máxima** explícita para o `ScrollArea`:
 
-## Mudança 2: Layout em Grade na Página "Minhas Escalas"
-
-### Situação Atual
-As escalas são exibidas em **lista vertical** (uma embaixo da outra).
-
-### Novo Layout
-
-```text
-┌───────────────────────────────────────────────────────────────────────────────┐
-│  Próximas Escalas                                                             │
-├───────────────────────────────────────────────────────────────────────────────┤
-│                                                                               │
-│  ┌─────────────────────┐  ┌─────────────────────┐  ┌─────────────────────┐   │
-│  │ DOM 02/02           │  │ QUA 05/02           │  │ DOM 09/02           │   │
-│  │ 18:00 - 22:00       │  │ 19:30 - 22:00       │  │ 08:00 - 12:00       │   │
-│  │                     │  │                     │  │                     │   │
-│  │ Estacionamento 🚗   │  │ Recepção ✅         │  │ Som                 │   │
-│  │                     │  │                     │  │                     │   │
-│  │ [🔄 Pedir Troca]    │  │ [🔄 Pedir Troca]    │  │ [🔄 Pedir Troca]    │   │
-│  └─────────────────────┘  └─────────────────────┘  └─────────────────────┘   │
-│                                                                               │
-│  ┌─────────────────────┐  ┌─────────────────────┐                            │
-│  │ QUA 12/02           │  │ DOM 16/02           │                            │
-│  │ 19:30 - 22:00       │  │ 18:00 - 22:00       │                            │
-│  └─────────────────────┘  └─────────────────────┘                            │
-│                                                                               │
-└───────────────────────────────────────────────────────────────────────────────┘
+```tsx
+// Correção
+<ScrollArea className="min-h-[180px] max-h-[300px] border rounded-md">
 ```
 
-### Implementação
+Isso garante que:
+- Altura mínima de 180px (~4-5 membros visíveis)
+- Altura máxima de 300px (~8-10 membros visíveis)
+- O scroll interno funciona para ver todos os membros
 
-Alterar o grid de `grid gap-3` (lista vertical) para `grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4` (grade responsiva):
-- 1 coluna em telas pequenas
-- 2 colunas em tablets
-- 3 colunas em desktop
+## Mudança Técnica
 
-Redesenhar cada card de escala para ser mais compacto e adequado à visualização em grade.
+### Arquivo: `src/components/department/AddScheduleDialog.tsx`
 
----
+**Linha ~513:**
+```tsx
+// De:
+<ScrollArea className="flex-1 border rounded-md">
 
-## Detalhes Técnicos
-
-### Arquivo 1: `src/components/department/AddScheduleDialog.tsx`
-
-**Mudanças:**
-- Adicionar botão destacado "Escalar Todos" logo abaixo da seleção de horário
-- O botão mostra quantos membros serão escalados
-- Ao clicar, seleciona todos os membros disponíveis e avança para configuração
-
-**Novo código (após seleção de horário):**
-```typescript
-{/* Quick Schedule All Button */}
-<div className="pt-2 border-t">
-  <Button
-    type="button"
-    className="w-full gap-2"
-    variant="default"
-    onClick={() => {
-      selectAllAvailable();
-      setStep('configure');
-    }}
-    disabled={availableMembers.length === 0}
-  >
-    <Users className="w-4 h-4" />
-    Escalar Todos ({availableMembers.length} membros)
-  </Button>
-  <p className="text-xs text-muted-foreground text-center mt-2">
-    ou selecione individualmente abaixo
-  </p>
-</div>
-```
-
-### Arquivo 2: `src/pages/MySchedules.tsx`
-
-**Mudanças:**
-- Alterar o grid para layout responsivo horizontal
-- Redesenhar cards para formato mais compacto
-- Manter funcionalidade de troca integrada
-
-**Novo layout:**
-```typescript
-// De: <div className="grid gap-3">
 // Para:
-<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-  {schedules.map((schedule) => (
-    <ScheduleCard key={schedule.id} schedule={schedule} ... />
-  ))}
-</div>
+<ScrollArea className="min-h-[180px] max-h-[300px] border rounded-md">
 ```
-
-**Novo card (compacto para grade):**
-- Header colorido com dia da semana
-- Data e horário
-- Setor e departamento
-- Botão de troca na parte inferior
-
----
 
 ## Arquivos Impactados
 
 | Arquivo | Mudança |
 |---------|---------|
-| `src/components/department/AddScheduleDialog.tsx` | Adicionar botão "Escalar Todos" destacado |
-| `src/pages/MySchedules.tsx` | Alterar para layout em grade responsiva |
+| `src/components/department/AddScheduleDialog.tsx` | Adicionar altura mínima/máxima ao ScrollArea da lista de membros |
 
----
+## Resultado Esperado
 
-## Benefícios
-
-1. **Velocidade para líderes** - Escalar todos de uma vez com um clique
-2. **Melhor visualização** - Ver todas as escalas lado a lado sem scroll excessivo
-3. **Consistência** - Layout similar ao UnifiedScheduleView do departamento
-4. **Responsividade** - Funciona bem em desktop e mobile
-
+Após a correção:
+- A lista de membros terá espaço adequado para exibir múltiplos membros
+- O scroll permitirá navegar por todos os 15 membros
+- O botão "Escalar Todos" continuará funcionando normalmente
