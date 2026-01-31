@@ -454,6 +454,27 @@ export default function AddScheduleDialog({
               )}
             </div>
 
+            {/* Quick Schedule All Button */}
+            {availableMembers.length > 0 && (
+              <div className="pt-3 pb-2 border-t border-b">
+                <Button
+                  type="button"
+                  className="w-full gap-2 h-12 text-base"
+                  variant="default"
+                  onClick={() => {
+                    selectAllAvailable();
+                    setStep('configure');
+                  }}
+                >
+                  <Users className="w-5 h-5" />
+                  Escalar Todos ({availableMembers.length} membros)
+                </Button>
+                <p className="text-xs text-muted-foreground text-center mt-2">
+                  ou selecione individualmente abaixo
+                </p>
+              </div>
+            )}
+
             {/* Member Selection */}
             <div className="space-y-2 flex-1 flex flex-col min-h-0">
               <div className="flex items-center justify-between">
@@ -462,16 +483,18 @@ export default function AddScheduleDialog({
                   Membros ({selectedMembers.length} selecionado{selectedMembers.length !== 1 ? 's' : ''})
                 </Label>
                 <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={selectAllAvailable}
-                    className="text-xs h-7"
-                  >
-                    <CheckSquare className="w-3 h-3 mr-1" />
-                    Todos
-                  </Button>
+                  {selectedMembers.length > 0 && selectedMembers.length < availableMembers.length && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={selectAllAvailable}
+                      className="text-xs h-7"
+                    >
+                      <CheckSquare className="w-3 h-3 mr-1" />
+                      Todos
+                    </Button>
+                  )}
                   {selectedMembers.length > 0 && (
                     <Button
                       type="button"
