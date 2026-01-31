@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { format, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar as CalendarIcon, Clock, Users, FileText, Layers, UserCog, AlertTriangle, CheckSquare, X } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Users, FileText, Layers, UserCog, AlertTriangle, CheckSquare, X, Pencil } from 'lucide-react';
 import { ASSIGNMENT_ROLES, AssignmentRole } from '@/lib/constants';
 import { SIMPLE_SLOTS, getAvailableSlotsForDay } from '@/lib/fixedSlots';
 import {
@@ -90,6 +90,12 @@ export default function AddScheduleDialog({
   const [memberBlackouts, setMemberBlackouts] = useState<Record<string, string[]>>({});
   const [step, setStep] = useState<'select' | 'configure'>('select');
   const [showMemberPicker, setShowMemberPicker] = useState(false);
+  
+  // NEW: State for member edit dialog
+  const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
+  const [localSectorId, setLocalSectorId] = useState<string>('');
+  const [localRole, setLocalRole] = useState<string>('');
+  
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -545,87 +551,61 @@ export default function AddScheduleDialog({
               </p>
             </div>
 
-            {/* Member Configurations - using native scroll for reliability */}
+            {/* Member Configurations - READ-ONLY display with Edit button */}
             <div className="flex-1 min-h-0 overflow-y-auto border rounded-md">
-              <div className="p-3 space-y-3">
+              <div className="p-3 space-y-2">
                 {selectedMembers.map((userId) => {
                   const member = getMemberById(userId);
                   if (!member) return null;
                   const config = memberConfigs[userId] || { sector_id: '', assignment_role: '' };
+                  const sectorName = sectors.find(s => s.id === config.sector_id)?.name || 'Nenhum';
+                  const roleName = config.assignment_role && config.assignment_role !== 'none' 
+                    ? `${ASSIGNMENT_ROLES[config.assignment_role as AssignmentRole]?.icon || ''} ${ASSIGNMENT_ROLES[config.assignment_role as AssignmentRole]?.label || 'Nenhuma'}`
+                    : 'Nenhuma';
                   
                   return (
                     <div
                       key={userId}
-                      className="border rounded-lg p-3 space-y-3 bg-background"
+                      className="flex items-center gap-3 p-3 border rounded-lg bg-background hover:bg-muted/30 transition-colors"
                     >
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={member.profile.avatar_url || undefined} />
-                          <AvatarFallback className="text-xs">
-                            {member.profile.name.slice(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="font-medium text-sm">{member.profile.name}</span>
+                      <Avatar className="h-9 w-9 shrink-0">
+                        <AvatarImage src={member.profile.avatar_url || undefined} />
+                        <AvatarFallback className="text-xs">
+                          {member.profile.name.slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{member.profile.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          Setor: {sectorName} • Função: {roleName}
+                        </p>
+                      </div>
+                      
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8 px-2"
+                          onClick={() => {
+                            setEditingMemberId(userId);
+                            setLocalSectorId(config.sector_id || '');
+                            setLocalRole(config.assignment_role || '');
+                          }}
+                        >
+                          <Pencil className="w-3.5 h-3.5 mr-1" />
+                          Editar
+                        </Button>
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="ml-auto h-6 w-6 p-0"
+                          className="h-8 w-8 p-0"
                           onClick={() => toggleMember(userId)}
                         >
                           <X className="w-4 h-4" />
                         </Button>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-2">
-                        {/* Sector Select */}
-                        <div className="space-y-1">
-                          <Label className="text-xs flex items-center gap-1">
-                            <Layers className="w-3 h-3" />
-                            Setor
-                          </Label>
-                          <Select 
-                            value={config.sector_id || 'none'} 
-                            onValueChange={(v) => updateMemberConfig(userId, 'sector_id', v === 'none' ? '' : v)}
-                          >
-                            <SelectTrigger className="h-8 text-xs">
-                              <SelectValue placeholder="Selecionar" />
-                            </SelectTrigger>
-                            <SelectContent position="popper" sideOffset={4}>
-                              <SelectItem value="none">Nenhum</SelectItem>
-                              {sectors.map((sector) => (
-                                <SelectItem key={sector.id} value={sector.id}>
-                                  {sector.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        {/* Assignment Role Select */}
-                        <div className="space-y-1">
-                          <Label className="text-xs flex items-center gap-1">
-                            <UserCog className="w-3 h-3" />
-                            Função
-                          </Label>
-                          <Select 
-                            value={config.assignment_role || 'none'} 
-                            onValueChange={(v) => updateMemberConfig(userId, 'assignment_role', v === 'none' ? '' : v)}
-                          >
-                            <SelectTrigger className="h-8 text-xs">
-                              <SelectValue placeholder="Selecionar" />
-                            </SelectTrigger>
-                            <SelectContent position="popper" sideOffset={4}>
-                              <SelectItem value="none">Nenhuma</SelectItem>
-                              <SelectItem value="on_duty">
-                                {ASSIGNMENT_ROLES.on_duty.icon} {ASSIGNMENT_ROLES.on_duty.label}
-                              </SelectItem>
-                              <SelectItem value="participant">
-                                {ASSIGNMENT_ROLES.participant.icon} {ASSIGNMENT_ROLES.participant.label}
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
                       </div>
                     </div>
                   );
@@ -740,6 +720,153 @@ export default function AddScheduleDialog({
               Confirmar ({selectedMembers.length})
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Member Config Edit Dialog - opens when editing a specific member */}
+      <Dialog 
+        open={editingMemberId !== null} 
+        onOpenChange={(open) => !open && setEditingMemberId(null)}
+      >
+        <DialogContent className="sm:max-w-[380px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {editingMemberId && (() => {
+                const member = getMemberById(editingMemberId);
+                if (!member) return 'Editar Configuração';
+                return (
+                  <>
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={member.profile.avatar_url || undefined} />
+                      <AvatarFallback className="text-xs">
+                        {member.profile.name.slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="truncate">{member.profile.name}</span>
+                  </>
+                );
+              })()}
+            </DialogTitle>
+            <DialogDescription>
+              Configure o setor e função para este membro.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Sector Select */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-muted-foreground" />
+                Setor
+              </Label>
+              <Select 
+                value={localSectorId || 'none'} 
+                onValueChange={(v) => setLocalSectorId(v === 'none' ? '' : v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar setor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhum</SelectItem>
+                  {sectors.map((sector) => (
+                    <SelectItem key={sector.id} value={sector.id}>
+                      {sector.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Role Select */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <UserCog className="w-4 h-4 text-muted-foreground" />
+                Função
+              </Label>
+              <Select 
+                value={localRole || 'none'} 
+                onValueChange={(v) => setLocalRole(v === 'none' ? '' : v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar função" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhuma</SelectItem>
+                  <SelectItem value="on_duty">
+                    {ASSIGNMENT_ROLES.on_duty.icon} {ASSIGNMENT_ROLES.on_duty.label}
+                  </SelectItem>
+                  <SelectItem value="participant">
+                    {ASSIGNMENT_ROLES.participant.icon} {ASSIGNMENT_ROLES.participant.label}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Quick Apply Buttons */}
+            <div className="border-t pt-4 space-y-2">
+              <p className="text-xs text-muted-foreground">Ações rápidas:</p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    // Apply current sector to all selected members
+                    selectedMembers.forEach(userId => {
+                      updateMemberConfig(userId, 'sector_id', localSectorId);
+                    });
+                    toast({
+                      title: 'Setor aplicado',
+                      description: `Setor aplicado para ${selectedMembers.length} membro(s).`,
+                    });
+                  }}
+                  disabled={!localSectorId}
+                >
+                  Aplicar Setor a Todos
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    // Apply current role to all selected members
+                    selectedMembers.forEach(userId => {
+                      updateMemberConfig(userId, 'assignment_role', localRole);
+                    });
+                    toast({
+                      title: 'Função aplicada',
+                      description: `Função aplicada para ${selectedMembers.length} membro(s).`,
+                    });
+                  }}
+                  disabled={!localRole}
+                >
+                  Aplicar Função a Todos
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setEditingMemberId(null)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                if (editingMemberId) {
+                  updateMemberConfig(editingMemberId, 'sector_id', localSectorId);
+                  updateMemberConfig(editingMemberId, 'assignment_role', localRole);
+                  setEditingMemberId(null);
+                }
+              }}
+            >
+              Salvar
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </Dialog>
