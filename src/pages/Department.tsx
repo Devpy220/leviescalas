@@ -33,6 +33,7 @@ import LeaderSlotAvailabilityView from '@/components/department/LeaderSlotAvaila
 import UnifiedScheduleView from '@/components/department/UnifiedScheduleView';
 import MyAvailabilitySheet from '@/components/department/MyAvailabilitySheet';
 import ActionMenuPopover from '@/components/department/ActionMenuPopover';
+import ScheduleCountDialog from '@/components/department/ScheduleCountDialog';
 import { exportToPDF, exportToExcel } from '@/lib/exportSchedules';
 import { SupportNotification } from '@/components/SupportNotification';
 import { format } from 'date-fns';
@@ -102,6 +103,7 @@ interface Schedule {
 
 export default function Department() {
   const [showAvailabilitySheet, setShowAvailabilitySheet] = useState(false);
+  const [showScheduleCount, setShowScheduleCount] = useState(false);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, session, loading: authLoading, ensureSession } = useAuth();
@@ -448,6 +450,7 @@ export default function Department() {
                   onExportExcel={handleExportExcel}
                   onOpenAvailability={() => setShowAvailabilitySheet(true)}
                   onOpenInvite={() => setShowInviteMember(true)}
+                  onOpenScheduleCount={() => setShowScheduleCount(true)}
                 />
               )}
               
@@ -619,6 +622,14 @@ export default function Department() {
         userId={user?.id || ''} 
         open={showAvailabilitySheet}
         onOpenChange={setShowAvailabilitySheet}
+      />
+
+      {/* Schedule Count Dialog for workload overview */}
+      <ScheduleCountDialog
+        open={showScheduleCount}
+        onOpenChange={setShowScheduleCount}
+        schedules={schedules}
+        members={members}
       />
     </div>
     </TooltipProvider>

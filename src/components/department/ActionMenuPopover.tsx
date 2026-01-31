@@ -23,6 +23,7 @@ interface ActionMenuPopoverProps {
   onExportExcel: () => void;
   onOpenAvailability: () => void;
   onOpenInvite: () => void;
+  onOpenScheduleCount: () => void;
 }
 
 export default function ActionMenuPopover({
@@ -33,6 +34,7 @@ export default function ActionMenuPopover({
   onExportExcel,
   onOpenAvailability,
   onOpenInvite,
+  onOpenScheduleCount,
 }: ActionMenuPopoverProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -91,6 +93,7 @@ export default function ActionMenuPopover({
               onExportExcel={onExportExcel}
               onOpenAvailability={onOpenAvailability}
               onOpenInvite={onOpenInvite}
+              onOpenScheduleCount={onOpenScheduleCount}
               onClose={closeMenu}
             />
           </DrawerContent>
@@ -129,6 +132,7 @@ export default function ActionMenuPopover({
           onExportExcel={onExportExcel}
           onOpenAvailability={onOpenAvailability}
           onOpenInvite={onOpenInvite}
+          onOpenScheduleCount={onOpenScheduleCount}
           onClose={closeMenu}
         />
       </PopoverContent>
