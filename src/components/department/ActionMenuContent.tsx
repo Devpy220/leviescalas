@@ -1,4 +1,4 @@
-import { Download, Clock, UserPlus, FileText, FileSpreadsheet, Calendar, Layers, Users, CalendarDays } from 'lucide-react';
+import { Download, Clock, UserPlus, FileText, FileSpreadsheet, Calendar, Layers, Users, CalendarDays, BarChart2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -21,6 +21,7 @@ interface ActionMenuContentProps {
   onExportExcel: () => void;
   onOpenAvailability: () => void;
   onOpenInvite: () => void;
+  onOpenScheduleCount: () => void;
   onClose: () => void;
 }
 
@@ -70,6 +71,12 @@ const actionItems = [
     label: 'Minhas Escalas', 
     color: 'text-pink-500 hover:text-pink-400 hover:bg-pink-500/10',
   },
+  { 
+    id: 'schedule-count',
+    icon: BarChart2, 
+    label: 'Resumo da Equipe', 
+    color: 'text-indigo-500 hover:text-indigo-400 hover:bg-indigo-500/10',
+  },
 ];
 
 export default function ActionMenuContent({
@@ -80,6 +87,7 @@ export default function ActionMenuContent({
   onExportExcel,
   onOpenAvailability,
   onOpenInvite,
+  onOpenScheduleCount,
   onClose,
 }: ActionMenuContentProps) {
 
@@ -100,6 +108,10 @@ export default function ActionMenuContent({
         break;
       case 'my-schedules':
         window.location.href = '/my-schedules';
+        onClose();
+        break;
+      case 'schedule-count':
+        onOpenScheduleCount();
         onClose();
         break;
     }
