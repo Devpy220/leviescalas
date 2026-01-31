@@ -672,7 +672,7 @@ export default function AddScheduleDialog({
 
       {/* Member Selection Dialog */}
       <Dialog open={showMemberPicker} onOpenChange={setShowMemberPicker}>
-        <DialogContent className="sm:max-w-[400px] max-h-[85vh] flex flex-col overflow-hidden">
+        <DialogContent className="sm:max-w-[400px] h-[80vh] max-h-[80vh] flex flex-col overflow-hidden">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle>Selecionar Membros</DialogTitle>
             <DialogDescription>
@@ -680,52 +680,51 @@ export default function AddScheduleDialog({
             </DialogDescription>
           </DialogHeader>
           
-          <div className="flex-1 min-h-0 overflow-hidden">
-            <ScrollArea className="h-full max-h-[50vh] border rounded-md">
-              <div className="p-2 space-y-1">
-                {members.map((member) => {
-                  const isBlocked = blockedMembers.has(member.user_id);
-                  const isSelected = selectedMembers.includes(member.user_id);
-                  
-                  return (
-                    <div
-                      key={member.id}
-                      className={cn(
-                        "flex items-center gap-3 p-2 rounded-md cursor-pointer transition-colors",
-                        isSelected ? "bg-primary/10" : "hover:bg-muted/50",
-                        isBlocked && "opacity-60"
-                      )}
-                      onClick={() => toggleMember(member.user_id)}
-                    >
-                      <Checkbox
-                        checked={isSelected}
-                        onCheckedChange={() => toggleMember(member.user_id)}
-                      />
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={member.profile.avatar_url || undefined} />
-                        <AvatarFallback className="text-xs">
-                          {member.profile.name.slice(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className={cn(
-                          "text-sm font-medium truncate",
-                          isBlocked && "text-destructive"
-                        )}>
-                          {member.profile.name}
-                        </p>
-                      </div>
-                      {isBlocked && (
-                        <Badge variant="destructive" className="text-xs shrink-0">
-                          <AlertTriangle className="w-3 h-3 mr-1" />
-                          Bloqueado
-                        </Badge>
-                      )}
+          {/* Native overflow scroll - more reliable than ScrollArea in nested dialogs */}
+          <div className="flex-1 min-h-0 overflow-y-auto border rounded-md">
+            <div className="p-2 space-y-1">
+              {members.map((member) => {
+                const isBlocked = blockedMembers.has(member.user_id);
+                const isSelected = selectedMembers.includes(member.user_id);
+                
+                return (
+                  <div
+                    key={member.id}
+                    className={cn(
+                      "flex items-center gap-3 p-2 rounded-md cursor-pointer transition-colors",
+                      isSelected ? "bg-primary/10" : "hover:bg-muted/50",
+                      isBlocked && "opacity-60"
+                    )}
+                    onClick={() => toggleMember(member.user_id)}
+                  >
+                    <Checkbox
+                      checked={isSelected}
+                      className="pointer-events-none"
+                    />
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={member.profile.avatar_url || undefined} />
+                      <AvatarFallback className="text-xs">
+                        {member.profile.name.slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className={cn(
+                        "text-sm font-medium truncate",
+                        isBlocked && "text-destructive"
+                      )}>
+                        {member.profile.name}
+                      </p>
                     </div>
-                  );
-                })}
-              </div>
-            </ScrollArea>
+                    {isBlocked && (
+                      <Badge variant="destructive" className="text-xs shrink-0">
+                        <AlertTriangle className="w-3 h-3 mr-1" />
+                        Bloqueado
+                      </Badge>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
           
           <div className="flex justify-between pt-4 flex-shrink-0">
