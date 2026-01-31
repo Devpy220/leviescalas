@@ -545,9 +545,9 @@ export default function AddScheduleDialog({
               </p>
             </div>
 
-            {/* Member Configurations */}
-            <ScrollArea className="flex-1 min-h-0">
-              <div className="space-y-3 pr-4">
+            {/* Member Configurations - using native scroll for reliability */}
+            <div className="flex-1 min-h-0 overflow-y-auto border rounded-md">
+              <div className="p-3 space-y-3">
                 {selectedMembers.map((userId) => {
                   const member = getMemberById(userId);
                   if (!member) return null;
@@ -556,7 +556,7 @@ export default function AddScheduleDialog({
                   return (
                     <div
                       key={userId}
-                      className="border rounded-lg p-3 space-y-3"
+                      className="border rounded-lg p-3 space-y-3 bg-background"
                     >
                       <div className="flex items-center gap-2">
                         <Avatar className="h-8 w-8">
@@ -591,7 +591,7 @@ export default function AddScheduleDialog({
                             <SelectTrigger className="h-8 text-xs">
                               <SelectValue placeholder="Selecionar" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent position="popper" sideOffset={4}>
                               <SelectItem value="none">Nenhum</SelectItem>
                               {sectors.map((sector) => (
                                 <SelectItem key={sector.id} value={sector.id}>
@@ -615,7 +615,7 @@ export default function AddScheduleDialog({
                             <SelectTrigger className="h-8 text-xs">
                               <SelectValue placeholder="Selecionar" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent position="popper" sideOffset={4}>
                               <SelectItem value="none">Nenhuma</SelectItem>
                               <SelectItem value="on_duty">
                                 {ASSIGNMENT_ROLES.on_duty.icon} {ASSIGNMENT_ROLES.on_duty.label}
@@ -631,7 +631,7 @@ export default function AddScheduleDialog({
                   );
                 })}
               </div>
-            </ScrollArea>
+            </div>
 
             {/* Notes */}
             <div className="space-y-2">
