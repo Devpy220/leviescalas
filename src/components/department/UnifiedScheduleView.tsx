@@ -6,9 +6,6 @@ import {
   Clock,
   Trash2,
   Users,
-  CheckCircle2,
-  XCircle,
-  HelpCircle,
   Sparkles,
   Calendar as CalendarIcon,
   CalendarPlus
@@ -53,8 +50,6 @@ import {
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
-type ConfirmationStatus = 'pending' | 'confirmed' | 'declined';
-
 interface Schedule {
   id: string;
   user_id: string;
@@ -63,8 +58,6 @@ interface Schedule {
   time_end: string;
   notes: string | null;
   sector_id: string | null;
-  confirmation_status?: ConfirmationStatus;
-  decline_reason?: string | null;
   assignment_role?: string | null;
   profile?: {
     name: string;
@@ -215,27 +208,7 @@ export default function UnifiedScheduleView({
     return { totalScheduled, daysCount: uniqueDates.size, slotsCount: slotGroups.length };
   }, [slotGroups]);
 
-  const getConfirmationIcon = (status?: ConfirmationStatus) => {
-    switch (status) {
-      case 'confirmed':
-        return <CheckCircle2 className="w-3 h-3 text-green-500" />;
-      case 'declined':
-        return <XCircle className="w-3 h-3 text-red-500" />;
-      default:
-        return <HelpCircle className="w-3 h-3 text-amber-500" />;
-    }
-  };
-
-  const getConfirmationText = (status?: ConfirmationStatus, declineReason?: string | null) => {
-    switch (status) {
-      case 'confirmed':
-        return 'Presença confirmada';
-      case 'declined':
-        return `Não poderá comparecer${declineReason ? `: ${declineReason}` : ''}`;
-      default:
-        return 'Aguardando confirmação';
-    }
-  };
+  // Confirmation status functions removed - now using swap system instead
 
   const handleDeleteSchedule = async () => {
     if (!selectedSchedule) return;
@@ -369,8 +342,6 @@ export default function UnifiedScheduleView({
               isLeader={isLeader}
               getMemberColorValue={getMemberColorValue}
               getMemberBgStyle={getMemberBgStyle}
-              getConfirmationIcon={getConfirmationIcon}
-              getConfirmationText={getConfirmationText}
               onAddSchedule={onAddSchedule}
               onDelete={(schedule) => {
                 setSelectedSchedule(schedule);
@@ -457,8 +428,6 @@ interface SlotCardProps {
   isLeader: boolean;
   getMemberColorValue: (userId: string) => { bg: string; dot: string };
   getMemberBgStyle: (userId: string) => React.CSSProperties;
-  getConfirmationIcon: (status?: ConfirmationStatus) => React.ReactNode;
-  getConfirmationText: (status?: ConfirmationStatus, declineReason?: string | null) => string;
   onAddSchedule: (date?: Date) => void;
   onDelete: (schedule: Schedule) => void;
 }
@@ -468,8 +437,6 @@ function SlotCard({
   isLeader,
   getMemberColorValue,
   getMemberBgStyle,
-  getConfirmationIcon,
-  getConfirmationText,
   onAddSchedule,
   onDelete
 }: SlotCardProps) {
@@ -522,8 +489,6 @@ function SlotCard({
               isLeader={isLeader}
               getMemberColorValue={getMemberColorValue}
               getMemberBgStyle={getMemberBgStyle}
-              getConfirmationIcon={getConfirmationIcon}
-              getConfirmationText={getConfirmationText}
               onDelete={onDelete}
             />
           ))}
@@ -539,8 +504,6 @@ interface MemberRowProps {
   isLeader: boolean;
   getMemberColorValue: (userId: string) => { bg: string; dot: string };
   getMemberBgStyle: (userId: string) => React.CSSProperties;
-  getConfirmationIcon: (status?: ConfirmationStatus) => React.ReactNode;
-  getConfirmationText: (status?: ConfirmationStatus, declineReason?: string | null) => string;
   onDelete: (schedule: Schedule) => void;
 }
 
@@ -549,23 +512,13 @@ function MemberRow({
   isLeader,
   getMemberColorValue,
   getMemberBgStyle,
-  getConfirmationIcon,
-  getConfirmationText,
   onDelete
 }: MemberRowProps) {
   const color = getMemberColorValue(schedule.user_id);
-  const statusBg = schedule.confirmation_status === 'confirmed'
-    ? 'bg-green-50/50 dark:bg-green-950/20'
-    : schedule.confirmation_status === 'declined'
-    ? 'bg-red-50/50 dark:bg-red-950/20'
-    : '';
 
   return (
     <div
-      className={cn(
-        "flex items-center gap-2 p-2 rounded-md border-l-4",
-        statusBg
-      )}
+      className="flex items-center gap-2 p-2 rounded-md border-l-4"
       style={{ borderLeftColor: schedule.sector?.color || color.bg }}
     >
       {/* Compact Avatar */}
@@ -597,15 +550,6 @@ function MemberRow({
             </Tooltip>
           )}
           
-          {/* Confirmation status */}
-          <Tooltip>
-            <TooltipTrigger>
-              {getConfirmationIcon(schedule.confirmation_status)}
-            </TooltipTrigger>
-            <TooltipContent>
-              {getConfirmationText(schedule.confirmation_status, schedule.decline_reason)}
-            </TooltipContent>
-          </Tooltip>
         </div>
         
         {/* Sector */}
