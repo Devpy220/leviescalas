@@ -309,64 +309,69 @@ export default function MySchedules() {
             </p>
           </Card>
         ) : (
-          <div className="grid gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {schedules.map((schedule) => {
               const swap = getSwapForSchedule(schedule.id);
+              const dateObj = parseISO(schedule.date);
+              const dayOfWeek = format(dateObj, "EEE", { locale: ptBR }).toUpperCase();
+              const dayMonth = format(dateObj, "dd/MM", { locale: ptBR });
               
               return (
-                <Card key={schedule.id} className="p-4 relative overflow-hidden">
-                  {schedule.church_logo_url && (
-                    <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-background border-2 border-primary/20 overflow-hidden shadow-md">
-                      <img 
-                        src={schedule.church_logo_url} 
-                        alt={schedule.church_name || 'Igreja'} 
-                        className="w-full h-full object-cover"
-                      />
+                <Card key={schedule.id} className="relative overflow-hidden flex flex-col">
+                  {/* Colored header */}
+                  <div className="bg-primary/10 px-4 py-3 border-b border-border/50">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-primary text-lg">{dayOfWeek}</span>
+                        <span className="text-foreground font-medium">{dayMonth}</span>
+                      </div>
+                      {schedule.church_logo_url && (
+                        <div className="w-7 h-7 rounded-full bg-background border-2 border-primary/20 overflow-hidden shadow-sm">
+                          <img 
+                            src={schedule.church_logo_url} 
+                            alt={schedule.church_name || 'Igreja'} 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
                     </div>
-                  )}
+                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
+                      <Clock className="w-3.5 h-3.5" />
+                      {schedule.time_start.slice(0, 5)} - {schedule.time_end.slice(0, 5)}
+                    </div>
+                  </div>
                   
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between pr-10">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                          <Calendar className="w-6 h-6 text-primary" />
+                  {/* Content */}
+                  <div className="p-4 flex-1 flex flex-col">
+                    <div className="flex-1 space-y-2">
+                      <Badge variant="secondary" className="text-xs">
+                        {schedule.department_name}
+                      </Badge>
+                      
+                      {schedule.church_name && (
+                        <div className="flex items-center gap-1 text-xs text-primary/80">
+                          <Church className="w-3 h-3" />
+                          {schedule.church_name}
                         </div>
-                        <div>
-                          <p className="font-medium text-foreground">
-                            {format(parseISO(schedule.date), "EEEE, d 'de' MMMM", { locale: ptBR })}
-                          </p>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Clock className="w-4 h-4" />
-                            {schedule.time_start.slice(0, 5)} - {schedule.time_end.slice(0, 5)}
-                          </div>
+                      )}
+                      
+                      {schedule.sector_name && (
+                        <div className="flex items-center gap-1.5 text-sm">
+                          {schedule.sector_color && (
+                            <div 
+                              className="w-2.5 h-2.5 rounded-full" 
+                              style={{ backgroundColor: schedule.sector_color }}
+                            />
+                          )}
+                          <span style={{ color: schedule.sector_color || undefined }} className="font-medium">
+                            {schedule.sector_name}
+                          </span>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <Badge variant="secondary">{schedule.department_name}</Badge>
-                        {schedule.church_name && (
-                          <div className="flex items-center gap-1 text-xs text-primary/80 mt-1 justify-end">
-                            <Church className="w-3 h-3" />
-                            {schedule.church_name}
-                          </div>
-                        )}
-                        {schedule.sector_name && (
-                          <div className="flex items-center gap-1.5 text-xs mt-1 justify-end">
-                            {schedule.sector_color && (
-                              <div 
-                                className="w-2.5 h-2.5 rounded-full" 
-                                style={{ backgroundColor: schedule.sector_color }}
-                              />
-                            )}
-                            <span style={{ color: schedule.sector_color || undefined }} className="font-medium">
-                              {schedule.sector_name}
-                            </span>
-                          </div>
-                        )}
-                      </div>
+                      )}
                     </div>
                     
                     {/* Swap section */}
-                    <div className="pt-2 border-t border-border/50">
+                    <div className="pt-3 mt-3 border-t border-border/50">
                       {swap ? (
                         <PendingSwapBadge 
                           swap={swap}
