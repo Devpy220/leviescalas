@@ -1,64 +1,132 @@
 
-# Plano: Corrigir Exibição de Membros no Diálogo de Criação de Escalas
+# Plano: Botões Flutuantes para Criação de Escalas
 
-## Problema Identificado
+## Resumo
 
-O usuário relata que ao criar uma escala, só consegue ver **1 membro** para selecionar, quando deveria ver todos os **15 membros** do departamento.
+Transformar os botões "Gerar Escalas com IA" e "Adicionar Escala Manual" em **botões flutuantes de ícone** no canto inferior direito da tela, removendo-os do Card atual.
 
-Após investigação, confirmei que:
-- ✅ O banco de dados está retornando **todos os 15 membros** corretamente
-- ✅ A função RPC `get_department_member_profiles` funciona perfeitamente  
-- ✅ As requisições de rede mostram todos os dados corretos
+## Situação Atual
 
-## Causa Raiz
+Os botões ocupam um Card inteiro com texto completo:
 
-O problema está no **layout CSS** do componente `AddScheduleDialog.tsx`. A área de scroll (`ScrollArea`) que contém a lista de membros tem altura calculada incorretamente:
-
-```tsx
-// Problema atual
-<div className="space-y-2 flex-1 flex flex-col min-h-0">
-  ...
-  <ScrollArea className="flex-1 border rounded-md">
+```text
+┌────────────────────────────────────────────────────────────────┐
+│  [ ✨ Gerar Escalas com IA ]  [ 📅 Adicionar Escala Manual ]  │
+└────────────────────────────────────────────────────────────────┘
 ```
 
-O `flex-1` combinado com `min-h-0` faz com que a altura do ScrollArea colapse para um valor muito pequeno, mostrando apenas 1 membro. O diálogo tem muitos elementos antes da lista (seletor de data, slots de horário, botão "Escalar Todos"), o que consome quase todo o espaço disponível.
+## Nova Interface
 
-## Solução
+Dois botões flutuantes pequenos, empilhados verticalmente, no canto inferior direito:
 
-Definir uma **altura mínima e máxima** explícita para o `ScrollArea`:
-
-```tsx
-// Correção
-<ScrollArea className="min-h-[180px] max-h-[300px] border rounded-md">
+```text
+                                                    ┌─────┐
+                                                    │ ✨  │  ← IA
+                                                    └─────┘
+                                                    ┌─────┐
+                                                    │ 📅  │  ← Manual
+                                                    └─────┘
 ```
 
-Isso garante que:
-- Altura mínima de 180px (~4-5 membros visíveis)
-- Altura máxima de 300px (~8-10 membros visíveis)
-- O scroll interno funciona para ver todos os membros
+### Comportamento
+- **Posição fixa** no canto inferior direito (fixed bottom-right)
+- **Apenas ícones** (sem texto)
+- **Tooltips** aparecem ao passar o mouse mostrando a função
+- **Design empilhado** - IA em cima, Manual embaixo
+- **Cores distintas** - IA com cor primária/gradient, Manual com outline
+- **Sombra e elevação** para efeito flutuante
+
+### Interação
+- Clique no botão de IA → Abre `SmartScheduleDialog`
+- Clique no botão Manual → Abre calendário para selecionar data
+
+---
 
 ## Mudança Técnica
 
-### Arquivo: `src/components/department/AddScheduleDialog.tsx`
+### Arquivo: `src/components/department/UnifiedScheduleView.tsx`
 
-**Linha ~513:**
+**Remover o Card de ações do líder (linhas ~294-333)**
+
+**Adicionar botões flutuantes fixos:**
+
 ```tsx
-// De:
-<ScrollArea className="flex-1 border rounded-md">
-
-// Para:
-<ScrollArea className="min-h-[180px] max-h-[300px] border rounded-md">
+{/* Floating action buttons for leaders */}
+{isLeader && (
+  <div className="fixed bottom-6 right-6 flex flex-col gap-2 z-40">
+    {/* Smart Schedule Button */}
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button 
+          size="icon"
+          className="w-12 h-12 rounded-full shadow-lg gradient-vibrant hover:shadow-glow-sm transition-all"
+          onClick={onOpenSmartSchedule}
+        >
+          <Sparkles className="w-5 h-5" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="left">
+        Gerar Escalas com IA
+      </TooltipContent>
+    </Tooltip>
+    
+    {/* Manual Schedule Button */}
+    <Popover open={showCalendarPicker} onOpenChange={setShowCalendarPicker}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <PopoverTrigger asChild>
+            <Button 
+              size="icon"
+              variant="outline"
+              className="w-12 h-12 rounded-full shadow-lg bg-background hover:bg-accent transition-all"
+            >
+              <CalendarPlus className="w-5 h-5" />
+            </Button>
+          </PopoverTrigger>
+        </TooltipTrigger>
+        <TooltipContent side="left">
+          Adicionar Escala Manual
+        </TooltipContent>
+      </Tooltip>
+      <PopoverContent className="w-auto p-0" align="end" side="top">
+        <Calendar ... />
+      </PopoverContent>
+    </Popover>
+  </div>
+)}
 ```
+
+---
+
+## Estilos
+
+| Botão | Estilo |
+|-------|--------|
+| IA (Sparkles) | `gradient-vibrant` com sombra glow, posição superior |
+| Manual (CalendarPlus) | `outline` com fundo background, posição inferior |
+
+### Classes CSS
+- `fixed bottom-6 right-6` - Posiciona no canto inferior direito
+- `w-12 h-12 rounded-full` - Botões redondos de 48px
+- `shadow-lg` - Sombra para efeito flutuante
+- `z-40` - Acima do conteúdo normal
+
+---
 
 ## Arquivos Impactados
 
 | Arquivo | Mudança |
 |---------|---------|
-| `src/components/department/AddScheduleDialog.tsx` | Adicionar altura mínima/máxima ao ScrollArea da lista de membros |
+| `src/components/department/UnifiedScheduleView.tsx` | Remover Card de botões e adicionar botões flutuantes |
 
-## Resultado Esperado
+---
 
-Após a correção:
-- A lista de membros terá espaço adequado para exibir múltiplos membros
-- O scroll permitirá navegar por todos os 15 membros
-- O botão "Escalar Todos" continuará funcionando normalmente
+## Resultado Visual
+
+Antes:
+- Card ocupando largura total com dois botões grandes
+
+Depois:
+- Dois botões circulares pequenos flutuando no canto inferior direito
+- Mais espaço para o grid de escalas
+- Interface mais limpa e moderna
