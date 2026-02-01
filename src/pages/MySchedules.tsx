@@ -25,7 +25,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useScheduleSwaps, type ScheduleSwap } from '@/hooks/useScheduleSwaps';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { SUPPORT_PRICE_ID } from '@/lib/constants';
+import { SUPPORT_PRICE_ID, ASSIGNMENT_ROLES } from '@/lib/constants';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -41,6 +41,7 @@ interface Schedule {
   sector_color: string | null;
   church_name: string | null;
   church_logo_url: string | null;
+  assignment_role: string | null;
 }
 
 interface SupportPlan {
@@ -110,6 +111,7 @@ export default function MySchedules() {
           notes,
           department_id,
           sector_id,
+          assignment_role,
           sectors(name, color)
         `)
         .eq('user_id', user.id)
@@ -158,6 +160,7 @@ export default function MySchedules() {
         sector_color: s.sectors?.color || null,
         church_name: deptMap[s.department_id]?.church_name || null,
         church_logo_url: deptMap[s.department_id]?.church_logo_url || null,
+        assignment_role: s.assignment_role || null,
       }));
 
       setSchedules(enrichedSchedules);
@@ -366,6 +369,19 @@ export default function MySchedules() {
                           <span style={{ color: schedule.sector_color || undefined }} className="font-medium">
                             {schedule.sector_name}
                           </span>
+                        </div>
+                      )}
+                      
+                      {/* Assignment Role Badge */}
+                      {schedule.assignment_role && ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES] && (
+                        <div className="flex items-center gap-1.5 text-sm">
+                          <span>{ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES].icon}</span>
+                          <Badge 
+                            variant="outline" 
+                            className={ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES].color}
+                          >
+                            {ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES].label}
+                          </Badge>
                         </div>
                       )}
                     </div>
