@@ -1,83 +1,108 @@
 
-# Correções: Indicador de Plantão/Participante e Filtragem de Escalas para Membros
+# Correções: Login, Recuperação de Senha e Nomenclatura de Funções
 
-## Resumo dos Problemas
+## Resumo dos Problemas Identificados
 
-### Problema 1: Assignment Role não aparece
-O campo `assignment_role` (Plantão 🚗 / Participante ✅) **não está sendo buscado do banco de dados**. Na função `fetchSchedules` em `Department.tsx`, a query não inclui esse campo:
+### Problema 1: Login automático ao invés de escolher conta
+O sistema redireciona automaticamente para o dashboard quando o usuário já está logado e clica em "Entrar". Isso acontece porque:
+- Na página `/igreja/{slug}`, o botão "Entrar" vai para `/auth?church={slug}`
+- O `Auth.tsx` detecta que já existe uma sessão e redireciona para o dashboard
 
-```sql
--- Query atual (falta assignment_role):
-select id, user_id, date, time_start, time_end, notes, sector_id, confirmation_status, decline_reason, sectors(name, color)
+**Solução:** Adicionar um parâmetro `forceLogin=true` no link "Entrar" da página da igreja, e no `Auth.tsx` fazer logout automático quando esse parâmetro estiver presente, permitindo ao usuário entrar com outra conta.
 
--- Query correta:
-select id, user_id, date, time_start, time_end, notes, sector_id, assignment_role, confirmation_status, decline_reason, sectors(name, color)
+### Problema 2: Recuperação de senha não mostra tela para mudar
+O fluxo de recuperação está implementado, mas pode não estar funcionando corretamente em alguns casos. O código detecta o link de recuperação e mostra a tela de redefinição. 
+
+**Solução:** Verificar e garantir que a tela `reset-password` está sendo exibida corretamente após clicar no link do email. Adicionar logs e melhorar o tratamento do link de recuperação.
+
+### Problema 3: Mudar "Participante" para "Culto"
+O usuário quer que a função "Participante" (✅) seja renomeada para "Culto".
+
+**Solução:** Atualizar o arquivo `src/lib/constants.ts` para mudar o label de "Participante" para "Culto".
+
+---
+
+## Alterações a Serem Feitas
+
+### 1. Arquivo: `src/lib/constants.ts`
+Mudar o label de "Participante" para "Culto":
+
+```typescript
+export const ASSIGNMENT_ROLES = {
+  on_duty: { 
+    label: 'Plantão', 
+    description: 'Fica o tempo todo (não participa do culto)',
+    icon: '🚗',
+    color: 'text-amber-600 dark:text-amber-400'
+  },
+  participant: { 
+    label: 'Culto',  // ← Mudança de "Participante" para "Culto"
+    description: 'Pode participar do culto',
+    icon: '✅',
+    color: 'text-green-600 dark:text-green-400'
+  }
+} as const;
 ```
 
-### Problema 2: Membros veem todas as escalas
-Atualmente, o componente `UnifiedScheduleView` exibe **todas as escalas para todos**. Membros deveriam ver **apenas seus próprios dias escalados**, enquanto líderes continuam vendo a escala completa.
+### 2. Arquivo: `src/pages/ChurchPublic.tsx`
+Adicionar parâmetro `forceLogin=true` no botão "Entrar":
 
----
-
-## Solução
-
-### 1. Incluir `assignment_role` na query de busca
-
-**Arquivo:** `src/pages/Department.tsx`
-
-Adicionar `assignment_role` na query do Supabase e no mapeamento dos dados formatados.
-
----
-
-### 2. Passar `currentUserId` para o componente de visualização
-
-**Arquivo:** `src/pages/Department.tsx`
-
-Adicionar a prop `currentUserId` ao chamar `UnifiedScheduleView`:
 ```tsx
-<UnifiedScheduleView 
-  schedules={schedules}
-  members={members}
-  isLeader={isLeader}
-  currentUserId={user?.id || ''}  // ← NOVO
-  ...
-/>
+<Link to={`/auth?church=${slug}&forceLogin=true`}>
+  <Button variant="outline" size="sm">
+    <LogIn className="w-4 h-4 mr-1" />
+    Entrar
+  </Button>
+</Link>
+```
+
+### 3. Arquivo: `src/pages/Auth.tsx`
+Detectar o parâmetro `forceLogin` e fazer logout antes de mostrar a tela de login:
+
+```typescript
+// No início do componente, junto com outros useEffect
+const forceLogin = searchParams.get('forceLogin') === 'true';
+
+useEffect(() => {
+  const handleForceLogin = async () => {
+    if (forceLogin && session) {
+      // Fazer logout silencioso para permitir login com outra conta
+      await supabase.auth.signOut();
+    }
+  };
+  handleForceLogin();
+}, [forceLogin, session]);
+```
+
+Também ajustar a lógica de redirecionamento para não redirecionar quando `forceLogin` está ativo:
+
+```typescript
+// Na verificação de sessão existente
+if (!loading && session && !isRecovery && !isLoading && !forceLogin) {
+  navigate(postAuthRedirect, { replace: true });
+}
 ```
 
 ---
 
-### 3. Filtrar escalas baseado no papel do usuário
+## Fluxo Após as Alterações
 
-**Arquivo:** `src/components/department/UnifiedScheduleView.tsx`
+### Para Login:
+1. Usuário na página da igreja clica em "Entrar"
+2. Sistema redireciona para `/auth?church=slug&forceLogin=true`
+3. Se já logado, faz logout silencioso
+4. Mostra tela de login limpa para entrar com qualquer conta
 
-- Adicionar prop `currentUserId` na interface
-- Quando `isLeader = false`, filtrar `schedules` para mostrar apenas onde `user_id === currentUserId`
-- Atualizar o resumo do mês para refletir apenas as escalas do membro
+### Para Recuperação de Senha:
+1. Usuário solicita recuperação de senha
+2. Recebe email com link
+3. Clica no link → sistema detecta o parâmetro de recuperação
+4. Exibe formulário para criar nova senha
+5. Após salvar, redireciona para login
 
----
-
-### 4. Ajustar mensagem de estado vazio
-
-**Arquivo:** `src/components/department/UnifiedScheduleView.tsx`
-
-Quando um membro não tem escalas no mês, exibir mensagem apropriada:
-- "Você não tem escalas para {mês}" (para membros)
-- "Nenhuma escala para {mês}" (para líderes)
-
----
-
-## Resultado Esperado
-
-### Para Líderes:
-- ✅ Veem **todas as escalas** da equipe
-- ✅ Veem indicador de **Plantão 🚗** ou **Participante ✅** em cada membro
-- ✅ Podem adicionar/remover escalas
-
-### Para Membros:
-- ✅ Veem **apenas seus próprios dias** de escala
-- ✅ Veem seu indicador de função (Plantão/Participante)
-- ✅ Não veem escalas de outros membros
-- ✅ Não veem botões de adicionar/remover
+### Para Funções nas Escalas:
+- "Plantão" 🚗 - Membro fica o tempo todo (não participa do culto)
+- "Culto" ✅ - Membro pode participar do culto (antes era "Participante")
 
 ---
 
@@ -85,38 +110,6 @@ Quando um membro não tem escalas no mês, exibir mensagem apropriada:
 
 | Arquivo | Mudança |
 |---------|---------|
-| `src/pages/Department.tsx` | Incluir `assignment_role` na query e passar `currentUserId` como prop |
-| `src/components/department/UnifiedScheduleView.tsx` | Aceitar `currentUserId` e filtrar escalas quando não for líder |
-
----
-
-## Detalhes Técnicos
-
-### Interface atualizada do componente:
-```typescript
-interface UnifiedScheduleViewProps {
-  schedules: Schedule[];
-  members: Member[];
-  isLeader: boolean;
-  currentUserId: string;  // ← NOVO
-  departmentId: string;
-  onAddSchedule: (date?: Date) => void;
-  onDeleteSchedule: () => void;
-  onOpenSmartSchedule: () => void;
-}
-```
-
-### Lógica de filtragem:
-```typescript
-// Filtrar escalas baseado no papel
-const visibleSchedules = useMemo(() => {
-  if (isLeader) return schedules;
-  return schedules.filter(s => s.user_id === currentUserId);
-}, [schedules, isLeader, currentUserId]);
-```
-
-### Header ajustado para membros:
-Para membros, o título muda de "Escalas de {mês}" para "Minhas Escalas de {mês}" para deixar claro que está vendo apenas suas próprias escalas.
-
-### Esconder legenda de membros para não-líderes:
-O card "Membros" (com a legenda de cores) será ocultado para membros comuns, já que eles só veem suas próprias escalas.
+| `src/lib/constants.ts` | Mudar "Participante" → "Culto" |
+| `src/pages/ChurchPublic.tsx` | Adicionar `forceLogin=true` no link "Entrar" |
+| `src/pages/Auth.tsx` | Tratar `forceLogin` para fazer logout e mostrar login limpo |
