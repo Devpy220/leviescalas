@@ -15,7 +15,7 @@ export const ASSIGNMENT_ROLES = {
     color: 'text-amber-600 dark:text-amber-400'
   },
   participant: { 
-    label: 'Participante', 
+    label: 'Culto', 
     description: 'Pode participar do culto',
     icon: '✅',
     color: 'text-green-600 dark:text-green-400'

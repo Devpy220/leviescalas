@@ -212,7 +212,7 @@ export default function ChurchPublic() {
               </Button>
             ) : (
               <div className="flex items-center gap-2">
-                <Link to={`/auth?church=${slug}`}>
+                <Link to={`/auth?church=${slug}&forceLogin=true`}>
                   <Button variant="outline" size="sm">
                     <LogIn className="w-4 h-4 mr-1" />
                     Entrar
