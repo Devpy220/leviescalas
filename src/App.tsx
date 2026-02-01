@@ -54,12 +54,12 @@ const App = () => (
                   <Route path="/" element={<Landing />} />
                   
                   {/* Admin area - restricted to leviescalas@gmail.com */}
-                  <Route path="/admin-login" element={<Navigate to="/auth" replace />} />
+                  <Route path="/admin-login" element={<Navigate to="/auth?forceLogin=true" replace />} />
                   <Route path="/admin" element={<Admin />} />
                   
                   {/* Redirects from old login routes */}
-                  <Route path="/login" element={<Navigate to="/auth" replace />} />
-                  <Route path="/entrar" element={<Navigate to="/auth" replace />} />
+                  <Route path="/login" element={<Navigate to="/auth?forceLogin=true" replace />} />
+                  <Route path="/entrar" element={<Navigate to="/auth?forceLogin=true" replace />} />
                   
                   {/* Church access - updated 2023-12-23 */}
                   <Route path="/acessar" element={<Index />} />
