@@ -91,6 +91,7 @@ interface UnifiedScheduleViewProps {
   schedules: Schedule[];
   members: Member[];
   isLeader: boolean;
+  currentUserId: string;
   departmentId: string;
   onAddSchedule: (date?: Date) => void;
   onDeleteSchedule: () => void;
@@ -101,6 +102,7 @@ export default function UnifiedScheduleView({
   schedules, 
   members,
   isLeader, 
+  currentUserId,
   departmentId,
   onAddSchedule,
   onDeleteSchedule,
@@ -120,11 +122,17 @@ export default function UnifiedScheduleView({
     return getMemberBackgroundStyle(memberColorMap, userId);
   };
 
-  // Group schedules by date + slot
+  // Filter schedules based on user role - members only see their own schedules
+  const visibleSchedules = useMemo(() => {
+    if (isLeader) return schedules;
+    return schedules.filter(s => s.user_id === currentUserId);
+  }, [schedules, isLeader, currentUserId]);
+
+  // Group schedules by date + slot - use visibleSchedules instead of schedules
   const slotGroups = useMemo(() => {
     const groups: SlotGroup[] = [];
     
-    schedules.forEach(schedule => {
+    visibleSchedules.forEach(schedule => {
       const date = parseISO(schedule.date);
       
       if (!isSameMonth(date, currentMonth)) return;
@@ -193,7 +201,7 @@ export default function UnifiedScheduleView({
     });
     
     return groups;
-  }, [schedules, currentMonth]);
+  }, [visibleSchedules, currentMonth]);
 
   // Get month's schedule summary
   const monthScheduleSummary = useMemo(() => {
@@ -258,10 +266,10 @@ export default function UnifiedScheduleView({
             <div>
               <CardTitle className="flex items-center gap-2 capitalize">
                 <CalendarIcon className="w-5 h-5" />
-                Escalas de {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
+                {isLeader ? 'Escalas de' : 'Minhas Escalas de'} {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
               </CardTitle>
               <CardDescription>
-                {monthScheduleSummary.daysCount} dias • {monthScheduleSummary.slotsCount} escalas • {monthScheduleSummary.totalScheduled} pessoas
+                {monthScheduleSummary.daysCount} {monthScheduleSummary.daysCount === 1 ? 'dia' : 'dias'} • {monthScheduleSummary.slotsCount} {monthScheduleSummary.slotsCount === 1 ? 'escala' : 'escalas'}{isLeader ? ` • ${monthScheduleSummary.totalScheduled} pessoas` : ''}
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
@@ -365,7 +373,9 @@ export default function UnifiedScheduleView({
           <CardContent className="py-12 text-center">
             <CalendarIcon className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
             <p className="text-muted-foreground mb-2">
-              Nenhuma escala para {format(currentMonth, 'MMMM', { locale: ptBR })}
+              {isLeader 
+                ? `Nenhuma escala para ${format(currentMonth, 'MMMM', { locale: ptBR })}`
+                : `Você não tem escalas para ${format(currentMonth, 'MMMM', { locale: ptBR })}`}
             </p>
             {isLeader && (
               <p className="text-sm text-muted-foreground">
@@ -376,31 +386,33 @@ export default function UnifiedScheduleView({
         </Card>
       )}
 
-      {/* Members legend */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Users className="w-4 h-4" />
-            Membros
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            {members.map((member) => {
-              const color = getMemberColorValue(member.user_id);
-              return (
-                <div key={member.user_id} className="flex items-center gap-1.5 text-xs">
-                  <div 
-                    className="w-3 h-3 rounded-full" 
-                    style={{ backgroundColor: color.dot }}
-                  />
-                  <span className="text-muted-foreground">{member.profile.name}</span>
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Members legend - only visible for leaders */}
+      {isLeader && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Membros
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {members.map((member) => {
+                const color = getMemberColorValue(member.user_id);
+                return (
+                  <div key={member.user_id} className="flex items-center gap-1.5 text-xs">
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: color.dot }}
+                    />
+                    <span className="text-muted-foreground">{member.profile.name}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
