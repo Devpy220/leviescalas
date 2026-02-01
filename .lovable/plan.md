@@ -1,106 +1,122 @@
 
-# Contagem de Escalas por Membro
+# Correções: Indicador de Plantão/Participante e Filtragem de Escalas para Membros
 
-## Resumo
-Adicionar uma nova funcionalidade no menu de 3 riscos (Action Menu) que permite ao líder visualizar quantas vezes cada membro da equipe está escalado, ajudando a identificar sobrecarga e distribuir melhor as escalas.
+## Resumo dos Problemas
 
-## O que será criado
+### Problema 1: Assignment Role não aparece
+O campo `assignment_role` (Plantão 🚗 / Participante ✅) **não está sendo buscado do banco de dados**. Na função `fetchSchedules` em `Department.tsx`, a query não inclui esse campo:
 
-### Nova tela "Resumo da Equipe"
-Uma janela (Dialog/Sheet) acessível pelo menu de ações que mostra:
-- Lista de todos os membros com contagem de escalas
-- Indicador visual de sobrecarga (cores: verde/amarelo/vermelho)
-- Ordenação por quantidade de escalas (mais escalado primeiro)
-- Média de escalas por pessoa como referência
+```sql
+-- Query atual (falta assignment_role):
+select id, user_id, date, time_start, time_end, notes, sector_id, confirmation_status, decline_reason, sectors(name, color)
 
-### Visual da contagem
-
-```text
-┌─────────────────────────────────────────┐
-│  📊 Resumo da Equipe                    │
-├─────────────────────────────────────────┤
-│  Média: 4 escalas por membro            │
-├─────────────────────────────────────────┤
-│  👤 João Silva          ████████ 8      │  🔴
-│  👤 Maria Santos        ██████   6      │  🟡
-│  👤 Pedro Costa         ████     4      │  🟢
-│  👤 Ana Oliveira        ████     4      │  🟢
-│  👤 Lucas Pereira       ██       2      │  🟢
-│  👤 Carla Souza         █        1      │  ⚪
-└─────────────────────────────────────────┘
+-- Query correta:
+select id, user_id, date, time_start, time_end, notes, sector_id, assignment_role, confirmation_status, decline_reason, sectors(name, color)
 ```
 
-### Indicadores de status
-- 🔴 **Vermelho**: Mais de 50% acima da média (possível sobrecarga)
-- 🟡 **Amarelo**: Entre 25% e 50% acima da média (atenção)
-- 🟢 **Verde**: Normal (dentro ou abaixo da média)
-- ⚪ **Cinza**: Muito abaixo da média (pode receber mais escalas)
+### Problema 2: Membros veem todas as escalas
+Atualmente, o componente `UnifiedScheduleView` exibe **todas as escalas para todos**. Membros deveriam ver **apenas seus próprios dias escalados**, enquanto líderes continuam vendo a escala completa.
 
 ---
 
-## Implementação Técnica
+## Solução
 
-### Arquivos a criar
-1. **`src/components/department/ScheduleCountDialog.tsx`**
-   - Componente principal da janela de contagem
-   - Recebe `schedules` e `members` como props
-   - Calcula contagens e renderiza a lista
+### 1. Incluir `assignment_role` na query de busca
 
-### Arquivos a modificar
+**Arquivo:** `src/pages/Department.tsx`
 
-2. **`src/components/department/ActionMenuContent.tsx`**
-   - Adicionar novo botão "Resumo da Equipe" com ícone `BarChart2`
-   - Adicionar novo action item na lista de ações
+Adicionar `assignment_role` na query do Supabase e no mapeamento dos dados formatados.
 
-3. **`src/components/department/ActionMenuPopover.tsx`**
-   - Passar nova prop `onOpenScheduleCount` para o ActionMenuContent
-   - Propagar callback para abrir o dialog
+---
 
-4. **`src/pages/Department.tsx`**
-   - Adicionar estado `showScheduleCount` para controlar visibilidade do dialog
-   - Passar `schedules` e `members` para o novo componente
-   - Renderizar `ScheduleCountDialog`
+### 2. Passar `currentUserId` para o componente de visualização
 
-### Estrutura do componente ScheduleCountDialog
+**Arquivo:** `src/pages/Department.tsx`
 
-```text
-Props:
-  - open: boolean
-  - onOpenChange: (open: boolean) => void
-  - schedules: Schedule[]
-  - members: Member[]
-
-Lógica interna:
-  1. Calcular contagem por user_id a partir de schedules
-  2. Calcular média
-  3. Determinar status de cada membro (sobrecarga/normal/baixo)
-  4. Ordenar por contagem decrescente
-  5. Renderizar lista com barras de progresso visuais
+Adicionar a prop `currentUserId` ao chamar `UnifiedScheduleView`:
+```tsx
+<UnifiedScheduleView 
+  schedules={schedules}
+  members={members}
+  isLeader={isLeader}
+  currentUserId={user?.id || ''}  // ← NOVO
+  ...
+/>
 ```
 
-### Design do componente
+---
 
-- **Desktop**: Dialog centralizado com largura média
-- **Mobile**: Sheet que sobe de baixo (Drawer)
-- Barra de progresso visual usando componente `Progress` existente
-- Avatar do membro ao lado do nome
-- Badge colorido indicando status
+### 3. Filtrar escalas baseado no papel do usuário
+
+**Arquivo:** `src/components/department/UnifiedScheduleView.tsx`
+
+- Adicionar prop `currentUserId` na interface
+- Quando `isLeader = false`, filtrar `schedules` para mostrar apenas onde `user_id === currentUserId`
+- Atualizar o resumo do mês para refletir apenas as escalas do membro
 
 ---
 
-## Fluxo do usuário
+### 4. Ajustar mensagem de estado vazio
 
-1. Líder abre o menu de 3 riscos
-2. Clica no novo botão "Resumo da Equipe" (ícone de gráfico)
-3. Abre a janela com a lista de membros ordenada
-4. Visualiza rapidamente quem está mais/menos escalado
-5. Fecha a janela e pode ajustar escalas conforme necessário
+**Arquivo:** `src/components/department/UnifiedScheduleView.tsx`
+
+Quando um membro não tem escalas no mês, exibir mensagem apropriada:
+- "Você não tem escalas para {mês}" (para membros)
+- "Nenhuma escala para {mês}" (para líderes)
 
 ---
 
-## Benefícios
+## Resultado Esperado
 
-- **Visibilidade**: Líder vê de forma clara a distribuição de escalas
-- **Prevenção**: Identificar sobrecarga antes que cause problemas
-- **Equidade**: Ajudar a distribuir melhor as escalas entre a equipe
-- **Simplicidade**: Acesso rápido pelo menu existente
+### Para Líderes:
+- ✅ Veem **todas as escalas** da equipe
+- ✅ Veem indicador de **Plantão 🚗** ou **Participante ✅** em cada membro
+- ✅ Podem adicionar/remover escalas
+
+### Para Membros:
+- ✅ Veem **apenas seus próprios dias** de escala
+- ✅ Veem seu indicador de função (Plantão/Participante)
+- ✅ Não veem escalas de outros membros
+- ✅ Não veem botões de adicionar/remover
+
+---
+
+## Arquivos a Modificar
+
+| Arquivo | Mudança |
+|---------|---------|
+| `src/pages/Department.tsx` | Incluir `assignment_role` na query e passar `currentUserId` como prop |
+| `src/components/department/UnifiedScheduleView.tsx` | Aceitar `currentUserId` e filtrar escalas quando não for líder |
+
+---
+
+## Detalhes Técnicos
+
+### Interface atualizada do componente:
+```typescript
+interface UnifiedScheduleViewProps {
+  schedules: Schedule[];
+  members: Member[];
+  isLeader: boolean;
+  currentUserId: string;  // ← NOVO
+  departmentId: string;
+  onAddSchedule: (date?: Date) => void;
+  onDeleteSchedule: () => void;
+  onOpenSmartSchedule: () => void;
+}
+```
+
+### Lógica de filtragem:
+```typescript
+// Filtrar escalas baseado no papel
+const visibleSchedules = useMemo(() => {
+  if (isLeader) return schedules;
+  return schedules.filter(s => s.user_id === currentUserId);
+}, [schedules, isLeader, currentUserId]);
+```
+
+### Header ajustado para membros:
+Para membros, o título muda de "Escalas de {mês}" para "Minhas Escalas de {mês}" para deixar claro que está vendo apenas suas próprias escalas.
+
+### Esconder legenda de membros para não-líderes:
+O card "Membros" (com a legenda de cores) será ocultado para membros comuns, já que eles só veem suas próprias escalas.
