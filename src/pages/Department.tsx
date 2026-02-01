@@ -89,6 +89,7 @@ interface Schedule {
   time_end: string;
   notes: string | null;
   sector_id: string | null;
+  assignment_role?: string | null;
   confirmation_status?: 'pending' | 'confirmed' | 'declined';
   decline_reason?: string | null;
   profile?: {
@@ -294,10 +295,10 @@ export default function Department() {
     if (!id) return;
     
     try {
-      // Fetch schedules with sectors (including color)
+      // Fetch schedules with sectors (including color) and assignment_role
       const { data: schedulesData, error: schedulesError } = await supabase
         .from('schedules')
-        .select('id, user_id, date, time_start, time_end, notes, sector_id, confirmation_status, decline_reason, sectors(name, color)')
+        .select('id, user_id, date, time_start, time_end, notes, sector_id, assignment_role, confirmation_status, decline_reason, sectors(name, color)')
         .eq('department_id', id)
         .order('date', { ascending: true });
 
@@ -326,6 +327,7 @@ export default function Department() {
         time_end: s.time_end,
         notes: s.notes,
         sector_id: s.sector_id,
+        assignment_role: s.assignment_role,
         confirmation_status: s.confirmation_status,
         decline_reason: s.decline_reason,
         profile: profileMap.get(s.user_id) || { name: 'Membro', avatar_url: null },
@@ -532,6 +534,7 @@ export default function Department() {
                 schedules={schedules}
                 members={members}
                 isLeader={isLeader}
+                currentUserId={currentUser?.id || ''}
                 onAddSchedule={handleAddSchedule}
                 onDeleteSchedule={handleScheduleDeleted}
                 departmentId={id!}
