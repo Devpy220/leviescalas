@@ -3,7 +3,7 @@ const Footer = () => {
     <footer className="border-t border-border/50 py-6 mt-auto">
       <div className="container mx-auto px-4 text-center">
         <p className="text-sm text-muted-foreground">
-          Dúvidas ou sugestões? Entre em contato:{' '}
+          Dúvidas, sugestões ou para cadastrar sua igreja:{' '}
           <a 
             href="mailto:suport@leviescalas.com.br" 
             className="text-primary hover:underline"

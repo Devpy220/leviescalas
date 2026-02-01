@@ -207,9 +207,16 @@ export default function ChurchPublic() {
             
             {/* Auth buttons */}
             {session ? (
-              <Button onClick={() => navigate('/dashboard')} className="gradient-vibrant text-white">
-                Meu Painel
-              </Button>
+              <div className="flex items-center gap-2">
+                <Link to={`/auth?church=${slug}&forceLogin=true`}>
+                  <Button variant="outline" size="sm">
+                    Trocar Conta
+                  </Button>
+                </Link>
+                <Button onClick={() => navigate('/dashboard')} className="gradient-vibrant text-white">
+                  Meu Painel
+                </Button>
+              </div>
             ) : (
               <div className="flex items-center gap-2">
                 <Link to={`/auth?church=${slug}&forceLogin=true`}>

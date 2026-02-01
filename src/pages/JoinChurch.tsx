@@ -206,7 +206,7 @@ export default function JoinChurch() {
           {!user && (
             <p className="text-center text-sm text-muted-foreground mt-6">
               Já tem uma conta?{' '}
-              <Link to="/auth?tab=login" className="text-primary hover:underline">
+              <Link to="/auth?tab=login&forceLogin=true" className="text-primary hover:underline">
                 Entrar
               </Link>
             </p>
