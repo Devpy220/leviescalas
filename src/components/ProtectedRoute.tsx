@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -17,6 +17,9 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const [verified, setVerified] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // Guard to prevent infinite recovery loops
+  const recoveryAttemptedRef = useRef(false);
 
   useEffect(() => {
     // Wait for auth context to finish loading
@@ -25,6 +28,17 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     // If we have a user or session, we're good
     if (user || session) {
       setVerified(true);
+      recoveryAttemptedRef.current = false; // Reset for future navigations
+      return;
+    }
+
+    // If we already attempted recovery and failed, redirect immediately
+    if (recoveryAttemptedRef.current) {
+      const returnUrl = location.pathname + location.search;
+      navigate('/auth', {
+        replace: true,
+        state: { returnUrl },
+      });
       return;
     }
 
@@ -34,6 +48,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     let cancelled = false;
     const hardTimeout = window.setTimeout(() => {
       if (cancelled) return;
+      recoveryAttemptedRef.current = true;
       const returnUrl = location.pathname + location.search;
       navigate('/auth', {
         replace: true,
@@ -51,6 +66,9 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
         setVerified(true);
         return;
       }
+      
+      // Mark that we're attempting recovery
+      recoveryAttemptedRef.current = true;
       
       const recovered = await ensureSession();
       if (cancelled) return;
