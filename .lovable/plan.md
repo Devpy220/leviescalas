@@ -1,141 +1,136 @@
 
-# Visualizar Escalas de Todos com Destaque nas Minhas
+# Escala da Equipe: Agrupar por Dia/Slot (como o Líder vê)
 
-## O que será implementado
+## Problema Atual
 
-Adicionar um botão na página "Minhas Escalas" (`/my-schedules`) para alternar entre:
-1. **Minhas Escalas** (padrão) - mostra apenas os dias em que você está escalado
-2. **Escala da Equipe** - mostra todas as escalas do departamento, com destaque nos seus dias colocarem destaque um fundo verde a pessoa que esta logado
+Na aba "Escala da Equipe" em Minhas Escalas, as escalas são exibidas **separadas por pessoa** - cada voluntário tem seu próprio card. Isso não corresponde à visualização que o líder tem no departamento.
+
+## Solução
+
+Reaproveitar a lógica de agrupamento do `UnifiedScheduleView` para mostrar as escalas **agrupadas por dia e horário**, com todos os voluntários escalados naquele turno listados dentro do mesmo card.
 
 ---
 
-## Interface proposta
+## Interface Proposta
 
 ```text
 ┌─────────────────────────────────────────────────┐
-│  ← Minhas Escalas                   🌙 🔔       │
-├─────────────────────────────────────────────────┤
-│                                                 │
-│  ┌──────────────────────────────────────────┐   │
-│  │  [👤 Minhas Escalas]  [👥 Escala da Equipe]  │   │
-│  └──────────────────────────────────────────┘   │
-│                                                 │
-│  Próximas Escalas                               │
-│                                                 │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐      │
-│  │DOM 02/02 │  │QUA 05/02 │  │DOM 09/02 │      │
-│  │ 08:00    │  │ 19:30    │  │ 08:00    │      │
-│  │ VOCÊ  ⭐ │  │ João     │  │ VOCÊ  ⭐ │      │
-│  │ Maria    │  │ Pedro    │  │ Carlos   │      │
-│  └──────────┘  └──────────┘  └──────────┘      │
-│                                                 │
+│  [👤 Minhas Escalas]  [👥 Escala da Equipe]     │
 └─────────────────────────────────────────────────┘
+
+┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
+│ DOMINGO MANHÃ    │  │ QUARTA           │  │ DOMINGO NOITE    │
+│ 02 de fevereiro  │  │ 05 de fevereiro  │  │ 09 de fevereiro  │
+│ ⏰ 08:00 - 12:00 │  │ ⏰ 19:00 - 22:00 │  │ ⏰ 18:00 - 22:00 │
+├──────────────────┤  ├──────────────────┤  ├──────────────────┤
+│ 🟢 VOCÊ ⭐       │  │ 🔵 João          │  │ 🟢 VOCÊ ⭐       │
+│    🚗 Plantão    │  │    ⛪ Culto      │  │    ⛪ Culto      │
+│ 🔴 Maria         │  │ 🟣 Pedro         │  │ 🟡 Carlos        │
+│    ⛪ Culto      │  │    🚗 Plantão    │  │    🚗 Plantão    │
+│ 🟡 Carlos        │  └──────────────────┘  │ 🔴 Maria         │
+│    ⛪ Culto      │                        │    ⛪ Culto      │
+├──────────────────┤                        ├──────────────────┤
+│ [🔄 Pedir Troca] │                        │ [🔄 Pedir Troca] │
+└──────────────────┘                        └──────────────────┘
 ```
 
 ---
 
-## Comportamento do toggle
+## Mudanças Técnicas
 
-| Modo | Exibe | Destaque |
-|------|-------|----------|
-| **Minhas Escalas** | Apenas escalas onde `user_id = meu_id` | Cards normais |
-| **Escala da Equipe** | Todas as escalas do departamento | Cards com borda especial + ícone ⭐ quando você está escalado |
-
----
-
-## Mudanças técnicas
-
-### 1. Adicionar estado para controlar o modo de visualização
+### 1. Importar estruturas do fixedSlots
 
 ```typescript
-const [viewMode, setViewMode] = useState<'mine' | 'team'>('mine');
+import { FIXED_SLOTS, FixedSlot } from '@/lib/fixedSlots';
 ```
 
-### 2. Modificar a query de escalas
+### 2. Criar interface para grupos de slot
 
-**Modo "Minhas Escalas"** (já existe):
 ```typescript
-.eq('user_id', user.id)
+interface SlotGroup {
+  date: Date;
+  slotInfo: FixedSlot;
+  schedules: Schedule[];
+}
 ```
 
-**Modo "Escala da Equipe"** (novo):
-```typescript
-// Remove o filtro de user_id para trazer todas as escalas do departamento
-// A RLS já permite: "Members can view department schedules"
-```
+### 3. Lógica de agrupamento (apenas no modo team)
 
-### 3. Buscar nomes dos voluntários
+Reaproveitar a mesma lógica do `UnifiedScheduleView`:
+- Agrupar escalas por data + horário de início
+- Identificar slot fixo correspondente (Domingo Manhã, Domingo Noite, etc.)
+- Ordenar grupos por data e depois por horário
 
-No modo "Escala da Equipe", precisamos também mostrar quem está escalado em cada dia. Usaremos a mesma função segura que o departamento usa:
-```typescript
-// get_department_member_profiles já existe e retorna nomes
-```
-
-### 4. Interface de toggle
-
-Usar `Tabs` ou botões com estilo segmentado para alternar entre os modos:
+### 4. Renderização condicional
 
 ```tsx
-<div className="flex bg-muted rounded-lg p-1 gap-1">
-  <Button
-    size="sm"
-    variant={viewMode === 'mine' ? 'default' : 'ghost'}
-    onClick={() => setViewMode('mine')}
-  >
-    <User className="w-4 h-4 mr-1" />
-    Minhas Escalas
-  </Button>
-  <Button
-    size="sm"
-    variant={viewMode === 'team' ? 'default' : 'ghost'}
-    onClick={() => setViewMode('team')}
-  >
-    <Users className="w-4 h-4 mr-1" />
-    Escala da Equipe
-  </Button>
+{viewMode === 'mine' ? (
+  // Grid atual de cards individuais
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    {schedules.map((schedule) => (
+      <ScheduleCard ... />
+    ))}
+  </div>
+) : (
+  // Novo: Grid de cards agrupados por slot
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    {slotGroups.map((group) => (
+      <TeamSlotCard 
+        group={group}
+        currentUserId={user.id}
+        memberProfiles={memberProfiles}
+        onRequestSwap={handleOpenSwapDialog}
+      />
+    ))}
+  </div>
+)}
+```
+
+### 5. Componente TeamSlotCard
+
+Novo componente que exibe:
+- Header colorido com nome do slot (Domingo Manhã, Quarta, etc.)
+- Data formatada (2 de fevereiro)
+- Horário (08:00 - 12:00)
+- Lista de voluntários escalados
+- **Destaque verde** para o usuário logado + badge "⭐ Você"
+- Botão "Pedir Troca" **apenas** se o usuário estiver escalado naquele slot
+
+### 6. Membro com destaque no card
+
+```tsx
+<div className={cn(
+  "flex items-center gap-2 p-2 rounded-md border-l-4",
+  isCurrentUser && "bg-green-100 dark:bg-green-900/40"
+)}>
+  <Avatar>...</Avatar>
+  <div>
+    <span className={cn(
+      "font-medium text-sm",
+      isCurrentUser && "text-green-700 dark:text-green-400"
+    )}>
+      {isCurrentUser ? "Você" : memberName}
+      {isCurrentUser && <span className="ml-1">⭐</span>}
+    </span>
+    {/* Badge de função: Plantão/Culto */}
+  </div>
 </div>
 ```
 
-### 5. Card com destaque visual
-
-Quando estiver no modo "Escala da Equipe" e o usuário estiver escalado naquele dia:
-
-```tsx
-<Card className={cn(
-  "relative overflow-hidden flex flex-col",
-  isMySchedule && "ring-2 ring-primary border-primary/50"
-)}>
-  {isMySchedule && (
-    <Badge className="absolute top-2 right-2 bg-primary text-white text-xs">
-      ⭐ Você
-    </Badge>
-  )}
-  ...
-</Card>
-```
-
 ---
 
-## Arquivo a ser modificado
+## Arquivo a Modificar
 
 | Arquivo | Mudanças |
 |---------|----------|
-| `src/pages/MySchedules.tsx` | Adicionar toggle de visualização, nova query para buscar todas escalas, lógica de destaque nos cards |
+| `src/pages/MySchedules.tsx` | Adicionar lógica de agrupamento, criar componente TeamSlotCard, renderização condicional por modo |
 
 ---
 
-## Segurança (já garantida)
+## Resultado Esperado
 
-A RLS do banco já permite que membros vejam as escalas do departamento:
-- Política: "Members can view department schedules" - `is_department_member(auth.uid(), department_id)`
-
-Isso significa que a query já funcionará sem erros de permissão.
-
----
-
-## Resultado esperado
-
-1. Usuário abre "Minhas Escalas" → vê apenas seus dias (comportamento atual)
-2. Clica em "Escala da Equipe" → vê todas as escalas do departamento
-3. Seus dias aparecem com destaque visual (borda colorida + badge "⭐ Você")
-4. Pode facilmente identificar quando está escalado junto com outros colegas
+1. **Minhas Escalas**: Mantém comportamento atual (cards individuais por escala)
+2. **Escala da Equipe**: Cards agrupados por dia/horário como o líder vê
+   - Cada card mostra todos os voluntários daquele turno
+   - Você aparece com fundo verde e badge "⭐ Você"
+   - Botão "Pedir Troca" aparece **somente nos cards onde você está escalado**
