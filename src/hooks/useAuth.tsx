@@ -21,7 +21,7 @@ interface AuthContextType {
   loading: boolean;
   authEvent: AuthChangeEvent | null;
   signUp: (email: string, password: string, name: string, whatsapp: string) => Promise<{ error: Error | null }>;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null; session: Session | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
   /**
@@ -239,6 +239,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // We only set a fallback timeout to guarantee loading=false if no event fires.
     const bootTimeout = window.setTimeout(() => setLoading(false), 5000);
     
+    // Warm up session on cold start (single-flight, cached - won't cause token storm)
+    // This helps in preview/iframe environments where the session may not hydrate quickly
+    void ensureSession();
+    
     return () => {
       subscription.unsubscribe();
       window.clearTimeout(bootTimeout);
@@ -304,17 +308,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const signIn = useCallback(async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string): Promise<{ error: Error | null; session: Session | null }> => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
       if (error) throw error;
-      return { error: null };
+      
+      // Immediately hydrate session state and cache to avoid timing issues
+      if (data.session) {
+        const guard = getAuthGuard();
+        setSession(data.session);
+        setUser(data.session.user);
+        guard.cachedSession = data.session;
+        guard.cacheTime = Date.now();
+      }
+      
+      return { error: null, session: data.session };
     } catch (error) {
-      return { error: error as Error };
+      return { error: error as Error, session: null };
     }
   }, []);
 
