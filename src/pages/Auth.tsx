@@ -391,40 +391,19 @@ export default function Auth() {
   };
   
   // Helper function to determine redirect based on department count
-  const getSmartRedirectDestination = async (userId: string, accessToken?: string): Promise<string> => {
+  // Uses a SECURITY DEFINER RPC to bypass RLS timing issues during login
+  const getSmartRedirectDestination = async (userId: string): Promise<string> => {
     try {
-      // Create headers with the fresh access token to ensure RLS works
-      const headers = accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined;
-      
-      // Get departments where user is a member
-      const { data: memberDepts, error: memberError } = await supabase
-        .from('members')
-        .select('department_id')
-        .eq('user_id', userId);
+      // Use RPC function that runs with SECURITY DEFINER - bypasses RLS timing issues
+      const { data: departmentCount, error } = await supabase.rpc('get_my_department_count');
 
-      if (memberError) {
-        console.error('Error fetching member departments:', memberError);
+      if (error) {
+        console.error('Error getting department count via RPC:', error);
+        // Fallback to dashboard on error
+        return '/dashboard';
       }
-
-      // Get departments where user is a leader
-      const { data: leaderDepts, error: leaderError } = await supabase
-        .from('departments')
-        .select('id')
-        .eq('leader_id', userId);
-
-      if (leaderError) {
-        console.error('Error fetching leader departments:', leaderError);
-      }
-
-      // Count unique departments
-      const allDeptIds = new Set([
-        ...(memberDepts || []).map(m => m.department_id),
-        ...(leaderDepts || []).map(d => d.id)
-      ]);
-
-      const departmentCount = allDeptIds.size;
       
-      console.log('[Auth] Smart redirect - departments found:', departmentCount, { memberDepts, leaderDepts });
+      console.log('[Auth] Smart redirect - departments found via RPC:', departmentCount);
 
       // 1 department -> go directly to schedules
       // 0 or 2+ departments -> go to dashboard
