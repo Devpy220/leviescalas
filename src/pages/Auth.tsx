@@ -360,8 +360,13 @@ export default function Auth() {
         return;
       }
 
+      // Small additional delay to ensure supabase client has the new session token
+      await new Promise(r => setTimeout(r, 200));
+      
       // Count user departments to determine redirect destination
       const redirectDestination = await getSmartRedirectDestination(currentSession.user.id);
+      
+      console.log('[Auth] Redirecting to:', redirectDestination);
       
       setIsLoading(false);
       toast({
@@ -382,19 +387,30 @@ export default function Auth() {
   };
   
   // Helper function to determine redirect based on department count
-  const getSmartRedirectDestination = async (userId: string): Promise<string> => {
+  const getSmartRedirectDestination = async (userId: string, accessToken?: string): Promise<string> => {
     try {
+      // Create headers with the fresh access token to ensure RLS works
+      const headers = accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined;
+      
       // Get departments where user is a member
-      const { data: memberDepts } = await supabase
+      const { data: memberDepts, error: memberError } = await supabase
         .from('members')
         .select('department_id')
         .eq('user_id', userId);
 
+      if (memberError) {
+        console.error('Error fetching member departments:', memberError);
+      }
+
       // Get departments where user is a leader
-      const { data: leaderDepts } = await supabase
+      const { data: leaderDepts, error: leaderError } = await supabase
         .from('departments')
         .select('id')
         .eq('leader_id', userId);
+
+      if (leaderError) {
+        console.error('Error fetching leader departments:', leaderError);
+      }
 
       // Count unique departments
       const allDeptIds = new Set([
@@ -403,6 +419,8 @@ export default function Auth() {
       ]);
 
       const departmentCount = allDeptIds.size;
+      
+      console.log('[Auth] Smart redirect - departments found:', departmentCount, { memberDepts, leaderDepts });
 
       // 1 department -> go directly to schedules
       // 0 or 2+ departments -> go to dashboard
