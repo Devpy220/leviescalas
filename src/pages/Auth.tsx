@@ -350,9 +350,8 @@ export default function Auth() {
         _role: 'admin' 
       });
       
-      setIsLoading(false);
-      
       if (hasRole) {
+        setIsLoading(false);
         toast({
           title: 'Bem-vindo, Admin!',
           description: 'Redirecionando para o painel administrativo.',
@@ -360,6 +359,17 @@ export default function Auth() {
         navigate('/admin', { replace: true });
         return;
       }
+
+      // Count user departments to determine redirect destination
+      const redirectDestination = await getSmartRedirectDestination(currentSession.user.id);
+      
+      setIsLoading(false);
+      toast({
+        title: 'Bem-vindo de volta!',
+        description: 'Login realizado com sucesso.',
+      });
+      navigate(redirectDestination, { replace: true });
+      return;
     }
 
     setIsLoading(false);
@@ -370,13 +380,61 @@ export default function Auth() {
     });
     navigate(postAuthRedirect, { replace: true });
   };
+  
+  // Helper function to determine redirect based on department count
+  const getSmartRedirectDestination = async (userId: string): Promise<string> => {
+    try {
+      // Get departments where user is a member
+      const { data: memberDepts } = await supabase
+        .from('members')
+        .select('department_id')
+        .eq('user_id', userId);
 
-  const handle2FASuccess = () => {
+      // Get departments where user is a leader
+      const { data: leaderDepts } = await supabase
+        .from('departments')
+        .select('id')
+        .eq('leader_id', userId);
+
+      // Count unique departments
+      const allDeptIds = new Set([
+        ...(memberDepts || []).map(m => m.department_id),
+        ...(leaderDepts || []).map(d => d.id)
+      ]);
+
+      const departmentCount = allDeptIds.size;
+
+      // 1 department -> go directly to schedules
+      // 0 or 2+ departments -> go to dashboard
+      if (departmentCount === 1) {
+        return '/my-schedules';
+      }
+      return '/dashboard';
+    } catch (error) {
+      console.error('Error counting departments:', error);
+      return '/dashboard';
+    }
+  };
+
+  const handle2FASuccess = async () => {
+    // Get current session to count departments
+    const currentSession = await ensureSession();
+    
+    if (currentSession?.user) {
+      const redirectDestination = await getSmartRedirectDestination(currentSession.user.id);
+      toast({
+        title: 'Bem-vindo de volta!',
+        description: 'Login realizado com sucesso.',
+      });
+      navigate(redirectDestination, { replace: true });
+      return;
+    }
+    
     toast({
       title: 'Bem-vindo de volta!',
       description: 'Login realizado com sucesso.',
     });
-    navigate(postAuthRedirect);
+    navigate(postAuthRedirect, { replace: true });
   };
 
   const handle2FACancel = async () => {
