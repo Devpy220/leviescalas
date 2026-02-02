@@ -360,8 +360,8 @@ export default function Auth() {
         return;
       }
 
-      // Small additional delay to ensure supabase client has the new session token
-      await new Promise(r => setTimeout(r, 200));
+      // Delay to ensure supabase client has propagated the new session token for RLS queries
+      await new Promise(r => setTimeout(r, 500));
       
       // Count user departments to determine redirect destination
       const redirectDestination = await getSmartRedirectDestination(currentSession.user.id);
