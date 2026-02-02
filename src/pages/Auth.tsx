@@ -94,6 +94,9 @@ export default function Auth() {
   // Ref to prevent duplicate redirects
   const hasRedirectedRef = useRef(false);
   
+  // Ref to block auto-redirect during password recovery flow
+  const isRecoveryFlowRef = useRef(false);
+  
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signIn, signUp, user, session, loading, authEvent, ensureSession } = useAuth();
@@ -159,8 +162,12 @@ export default function Auth() {
       // PKCE-style link: ?code=...
       if (ctx.code) {
         recoveryHandledRef.current = true;
+        // CRITICAL: Set recovery flag BEFORE exchanging code to block auto-redirect
+        isRecoveryFlowRef.current = true;
+        
         const { error } = await supabase.auth.exchangeCodeForSession(ctx.code);
         if (error) {
+          isRecoveryFlowRef.current = false;
           toast({
             variant: 'destructive',
             title: 'Link inválido',
@@ -176,6 +183,7 @@ export default function Auth() {
       // Implicit-style link (hash)
       if ((ctx.queryType ?? ctx.hashType) === 'recovery' && ctx.hashAccessToken) {
         recoveryHandledRef.current = true;
+        isRecoveryFlowRef.current = true;
         setActiveTab('reset-password');
       }
     };
@@ -198,27 +206,54 @@ export default function Auth() {
   useEffect(() => {
     const { isRecovery } = getRecoveryContextFromUrl();
 
-    // Don't redirect if we're in the middle of a login operation, force login, or already redirected
-    if (!loading && session && !isRecovery && !isLoading && !forceLogin && !hasRedirectedRef.current) {
+    // Don't redirect if:
+    // - Still loading auth state
+    // - No session
+    // - In recovery flow (URL or ref flag)
+    // - Active tab is reset-password (user is resetting password)
+    // - In the middle of a login operation
+    // - Force login mode
+    // - Already redirected
+    const isResetPasswordTab = activeTab === 'reset-password';
+    const shouldSkipRedirect = 
+      loading || 
+      !session || 
+      isRecovery || 
+      isRecoveryFlowRef.current || 
+      isResetPasswordTab ||
+      isLoading || 
+      forceLogin || 
+      hasRedirectedRef.current;
+
+    if (shouldSkipRedirect) {
+      return;
+    }
+    
+    // Add stabilization delay to avoid race conditions with session hydration
+    // This prevents the auth loop on cold preview starts
+    const stabilizationTimeout = setTimeout(async () => {
+      // Double-check ref conditions after delay (state may have changed)
+      if (isRecoveryFlowRef.current || hasRedirectedRef.current) {
+        return;
+      }
+      
       hasRedirectedRef.current = true;
       
       // Use smart redirect instead of default /dashboard
-      const handleSmartRedirect = async () => {
-        // If there's a specific redirect param, honor it
-        if (redirectParam && redirectParam.startsWith('/')) {
-          navigate(redirectParam, { replace: true });
-          return;
-        }
-        
-        // Otherwise, use smart redirect based on department count
-        const destination = await getSmartRedirectDestination(session.user.id);
-        console.log('[Auth] Already authenticated, smart redirecting to:', destination);
-        navigate(destination, { replace: true });
-      };
+      // If there's a specific redirect param, honor it
+      if (redirectParam && redirectParam.startsWith('/')) {
+        navigate(redirectParam, { replace: true });
+        return;
+      }
       
-      handleSmartRedirect();
-    }
-  }, [loading, session, navigate, redirectParam, isLoading, forceLogin]);
+      // Otherwise, use smart redirect based on department count
+      const destination = await getSmartRedirectDestination(session.user.id);
+      console.log('[Auth] Already authenticated, smart redirecting to:', destination);
+      navigate(destination, { replace: true });
+    }, 150);
+    
+    return () => clearTimeout(stabilizationTimeout);
+  }, [loading, session, navigate, redirectParam, isLoading, forceLogin, activeTab]);
 
   // Validate church from slug when accessing register tab
   // Validate church from URL params when accessing register tab
