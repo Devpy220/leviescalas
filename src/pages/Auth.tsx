@@ -215,6 +215,10 @@ export default function Auth() {
     handleForceLogin();
   }, [forceLogin, session, activeTab]);
 
+  // Get returnUrl from location.state (set by ProtectedRoute when redirecting unauthenticated users)
+  const location = window.location;
+  const routerLocation = { state: (window.history.state?.usr ?? {}) as Record<string, unknown> };
+
   // If user is already authenticated, redirect away from /auth (except password recovery flow, force login, or during active login)
   useEffect(() => {
     const { isRecovery } = getRecoveryContextFromUrl();
@@ -252,21 +256,29 @@ export default function Auth() {
       
       hasRedirectedRef.current = true;
       
-      // Use smart redirect instead of default /dashboard
-      // If there's a specific redirect param, honor it
+      // PRIORITY 1: Check if there's a returnUrl from ProtectedRoute in location.state
+      // This happens when user was redirected to /auth from a protected page
+      const stateReturnUrl = routerLocation.state?.returnUrl as string | undefined;
+      if (stateReturnUrl && stateReturnUrl.startsWith('/')) {
+        console.log('[Auth] Using returnUrl from state:', stateReturnUrl);
+        navigate(stateReturnUrl, { replace: true, state: {} });
+        return;
+      }
+      
+      // PRIORITY 2: Use redirect param from URL
       if (redirectParam && redirectParam.startsWith('/')) {
         navigate(redirectParam, { replace: true });
         return;
       }
       
-      // Otherwise, use smart redirect based on department count
+      // PRIORITY 3: Smart redirect based on department count
       const destination = await getSmartRedirectDestination(session.user.id);
       console.log('[Auth] Already authenticated, smart redirecting to:', destination);
       navigate(destination, { replace: true });
     }, 150);
     
     return () => clearTimeout(stabilizationTimeout);
-  }, [loading, session, navigate, redirectParam, isLoading, forceLogin, activeTab]);
+  }, [loading, session, navigate, redirectParam, isLoading, forceLogin, activeTab, routerLocation.state]);
 
   // Validate church from slug when accessing register tab
   // Validate church from URL params when accessing register tab
@@ -368,9 +380,14 @@ export default function Auth() {
 
   const handleLogin = async (data: LoginForm) => {
     setIsLoading(true);
+    
+    // Mark that we're handling navigation to prevent useEffect from interfering
+    hasRedirectedRef.current = true;
+    
     const { error, session: loginSession } = await signIn(data.email, data.password);
 
     if (error) {
+      hasRedirectedRef.current = false; // Reset on error so user can try again
       setIsLoading(false);
       const errorMessage = error.message.includes('Invalid login credentials')
         ? 'Email ou senha incorretos'
@@ -386,10 +403,11 @@ export default function Auth() {
       return;
     }
 
-    // Use the session returned directly from signIn - no need for delays
+    // Use the session returned directly from signIn
     const currentSession = loginSession;
     
     if (!currentSession?.user) {
+      hasRedirectedRef.current = false; // Reset on error
       setIsLoading(false);
       toast({
         variant: 'destructive',
@@ -398,6 +416,10 @@ export default function Auth() {
       });
       return;
     }
+
+    // CRITICAL: Wait for React context to hydrate from onAuthStateChange
+    // This prevents ProtectedRoute from seeing an empty session and causing a loop
+    await new Promise(resolve => setTimeout(resolve, 200));
 
     // Check if MFA verification is required
     const { data: mfaData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
@@ -425,7 +447,6 @@ export default function Auth() {
     }
 
     // Count user departments to determine redirect destination
-    // Session is already hydrated in state, so RLS should work immediately
     const redirectDestination = await getSmartRedirectDestination(currentSession.user.id);
     
     console.log('[Auth] Login complete, redirecting to:', redirectDestination);
@@ -466,6 +487,12 @@ export default function Auth() {
   };
 
   const handle2FASuccess = async () => {
+    // Mark that we're handling navigation
+    hasRedirectedRef.current = true;
+    
+    // CRITICAL: Wait for React context to hydrate after 2FA completion
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
     // Get current session to count departments
     const currentSession = await ensureSession();
     
