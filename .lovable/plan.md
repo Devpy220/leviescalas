@@ -1,113 +1,135 @@
 
+## Plano de Correção: Loop ao Logar 
 
-## Plano de Correção: Loop ao Logar e Recuperação de Senha
+### Diagnóstico do Problema
 
-### Diagnóstico dos Problemas
+O loop acontece por causa de uma **corrida de condições** entre três componentes:
 
-#### Problema 1: Loop ao Logar (Preview "frio")
-O ciclo ocorre por uma "corrida" entre três componentes:
-1. **ProtectedRoute** tenta verificar sessão → não encontra → redireciona para `/auth`
-2. **Auth.tsx** recebe a sessão atrasada → detecta usuário logado → redireciona para `/dashboard`
-3. Ciclo recomeça se o timing variar
+```text
+┌─────────────────────────────────────────────────────────────────────────┐
+│  1. Auth.tsx: handleLogin()                                             │
+│     └─ Faz login com sucesso                                            │
+│     └─ Chama getSmartRedirectDestination() → retorna "/my-schedules"    │
+│     └─ navigate("/my-schedules") ← PROBLEMA: navega antes do React      │
+│        atualizar user/session no contexto                               │
+├─────────────────────────────────────────────────────────────────────────┤
+│  2. ProtectedRoute em /my-schedules                                     │
+│     └─ Verifica user/session ← ainda NULL porque o estado React         │
+│        não sincronizou ainda                                            │
+│     └─ Tenta ensureSession() mas isso também demora                     │
+│     └─ Redireciona para /auth com returnUrl no state                    │
+├─────────────────────────────────────────────────────────────────────────┤
+│  3. Auth.tsx (novamente)                                                │
+│     └─ Agora a sessão existe                                            │
+│     └─ useEffect detecta sessão → redireciona                           │
+│     └─ MAS não lê returnUrl do state! Vai para /dashboard               │
+│     └─ Ciclo pode recomeçar...                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+```
 
-**Causa raiz**: A sessão demora para "hidratar" no primeiro carregamento do preview. O `ProtectedRoute` não espera o suficiente e manda para `/auth`, mas quando chega lá a sessão aparece e manda de volta.
+### Causas Raiz
 
-#### Problema 2: Recuperação de Senha Não Abre Formulário
-Quando o usuário clica no link do email de recuperação:
-1. O link traz um `?code=...` (fluxo PKCE) ou `#access_token=...` (fluxo implícito)
-2. O `Auth.tsx` troca o código por sessão com sucesso via `exchangeCodeForSession`
-3. Isso dispara o evento `SIGNED_IN` no Supabase
-4. O useEffect de "já autenticado" (linha 198-221) detecta `session` e redireciona para dashboard **antes** que `setActiveTab('reset-password')` faça efeito
+1. **`handleLogin` navega muito cedo**: O login é feito via Supabase API, mas o estado React (`user`/`session`) no `AuthProvider` ainda não atualizou quando `navigate()` é chamado.
 
-**Causa raiz**: O fluxo de recovery cria uma sessão temporária. O código atual detecta essa sessão como "usuário logado" e redireciona automaticamente, impedindo a exibição do formulário de nova senha.
+2. **Falta de sincronização**: O `signIn` retorna a `session` diretamente, mas não espera o `onAuthStateChange` propagar para o contexto React.
+
+3. **`Auth.tsx` ignora `returnUrl`**: Quando o usuário é mandado de volta para `/auth` pelo `ProtectedRoute`, o `returnUrl` está no `location.state`, mas o useEffect de "já autenticado" não usa isso.
 
 ---
 
 ### Correções Propostas
 
-#### A) Corrigir o Loop ao Logar
+#### A) Aguardar hidratação do contexto React após login
 
 **Arquivo: `src/pages/Auth.tsx`**
-- Adicionar um **delay de estabilização** no useEffect de "já autenticado" para dar tempo à sessão se estabilizar
-- Melhorar a checagem de `isRecovery` para incluir a aba `reset-password` ativa
 
-**Arquivo: `src/components/ProtectedRoute.tsx`**
-- O código atual já tem um delay de 300ms e timeout de 8s, o que é adequado
-- Vamos apenas garantir que o `user || session` seja verificado corretamente
+No `handleLogin`, após `signIn` retornar com sucesso, precisamos aguardar que o `onAuthStateChange` dispare e atualize o estado React antes de navegar. Isso evita que o `ProtectedRoute` veja um estado "vazio".
 
-#### B) Corrigir a Recuperação de Senha
+**Modificação**:
+- Adicionar uma pequena espera (100-200ms) após o `signIn` retornar, para dar tempo ao `onAuthStateChange` atualizar o contexto
+- Ou, verificar se o `user` do contexto está disponível antes de navegar
+
+#### B) Respeitar `returnUrl` do location.state
 
 **Arquivo: `src/pages/Auth.tsx`**
-1. **Bloquear redirecionamento automático quando estamos em fluxo de recovery**:
-   - Adicionar verificação: se `activeTab === 'reset-password'`, NÃO redirecionar
-   - Usar uma flag `isInRecoveryFlow` baseada no contexto da URL + aba atual
 
-2. **Garantir que o `setActiveTab('reset-password')` execute ANTES do redirect**:
-   - O `exchangeCodeForSession` vai disparar eventos de auth
-   - Precisamos setar a flag de recovery ANTES de trocar o código
+O useEffect que redireciona usuários já autenticados (linhas 218-269) precisa verificar se existe um `returnUrl` no `location.state` e usá-lo como prioridade sobre a lógica de smart redirect.
 
-3. **Evitar que o Supabase interprete a sessão de recovery como login normal**:
-   - Após trocar o código por sessão, imediatamente setar `activeTab` para `reset-password`
-   - Guardar uma ref `isRecoveryFlowRef` para bloquear o redirect automático
+**Modificação**:
+```typescript
+// Antes de chamar getSmartRedirectDestination:
+const stateReturnUrl = (location.state as any)?.returnUrl;
+if (stateReturnUrl && stateReturnUrl.startsWith('/')) {
+  navigate(stateReturnUrl, { replace: true, state: {} });
+  return;
+}
+```
+
+#### C) Prevenir navegação duplicada
+
+**Arquivo: `src/pages/Auth.tsx`**
+
+O `hasRedirectedRef` já existe, mas pode não estar sendo respeitado em todos os caminhos. Precisamos garantir que ele seja setado ANTES de qualquer `navigate()`.
 
 ---
 
-### Detalhes Técnicos da Implementação
+### Implementação Detalhada
 
-#### Mudanças em `src/pages/Auth.tsx`
+#### 1. `src/pages/Auth.tsx` - handleLogin (linhas 369-439)
 
-**1. Adicionar ref para controlar fluxo de recovery:**
+**Problema**: Navega imediatamente após login sem esperar o contexto React.
+
+**Solução**: Adicionar uma espera para garantir que o `user` no contexto React seja atualizado:
+
 ```typescript
-const isRecoveryFlowRef = useRef(false);
+// Após o login bem-sucedido, aguardar o contexto React sincronizar
+// Isso evita que ProtectedRoute veja um estado vazio
+await new Promise(resolve => setTimeout(resolve, 200));
 ```
 
-**2. Modificar o useEffect de troca de código (linhas 153-185):**
-- ANTES de chamar `exchangeCodeForSession`, setar `isRecoveryFlowRef.current = true`
-- Isso vai impedir o redirect automático no outro useEffect
+#### 2. `src/pages/Auth.tsx` - useEffect de redirecionamento (linhas 218-269)
 
-**3. Modificar o useEffect de "já autenticado" (linhas 198-221):**
-- Adicionar condição: `!isRecoveryFlowRef.current`
-- Adicionar condição: `activeTab !== 'reset-password'`
-- Isso garante que, se estivermos no fluxo de recuperação, não vai redirecionar
+**Problema**: Não usa o `returnUrl` do `location.state`.
 
-**4. Adicionar delay de estabilização para evitar loop:**
-- No useEffect de "já autenticado", adicionar um pequeno delay (100-200ms) para garantir que todos os estados tenham sido atualizados antes de decidir redirecionar
+**Solução**: Verificar `location.state` antes de calcular destino:
 
-#### Mudanças em `src/hooks/useAuth.tsx`
+```typescript
+// Verificar se existe returnUrl no state (vindo do ProtectedRoute)
+const stateReturnUrl = (location.state as any)?.returnUrl;
+if (stateReturnUrl && stateReturnUrl.startsWith('/')) {
+  navigate(stateReturnUrl, { replace: true, state: {} });
+  return;
+}
+```
 
-**1. Corrigir URL de redirecionamento (linha 341):**
-- A URL atual é `/admin-login?reset=true` que redireciona para `/auth?forceLogin=true`
-- O `forceLogin=true` faz logout da sessão!
-- Mudar para apenas `${window.location.origin}/auth`
+#### 3. `src/pages/Auth.tsx` - Prevenir múltiplos caminhos de navegação
+
+Garantir que `hasRedirectedRef.current = true` seja setado no início de QUALQUER bloco que chama `navigate()`, não apenas no useEffect.
 
 ---
 
 ### Arquivos a Serem Alterados
 
 1. **`src/pages/Auth.tsx`**
-   - Adicionar `isRecoveryFlowRef` para controlar fluxo
-   - Modificar useEffect de troca de código para setar flag antes
-   - Modificar useEffect de "já autenticado" para respeitar recovery flow
-   - Adicionar delay de estabilização
-
-2. **`src/hooks/useAuth.tsx`**
-   - Corrigir `redirectTo` na função `resetPassword` de `/admin-login?reset=true` para `/auth`
+   - `handleLogin`: Adicionar delay de sincronização após login
+   - `handle2FASuccess`: Adicionar delay de sincronização após 2FA
+   - useEffect de redirecionamento: Verificar `location.state.returnUrl`
+   - Garantir que `hasRedirectedRef` seja consistentemente usado
 
 ---
 
 ### Validação
 
-1. **Teste de Loop**:
-   - Abrir preview "frio" (sem sessão)
+1. **Teste de Login Normal**:
+   - Deslogar completamente
+   - Entrar com usuário que tem 1 departamento
+   - Deve ir direto para `/my-schedules` SEM loop
+
+2. **Teste de Login com 0 departamentos**:
+   - Entrar com usuário sem departamentos
+   - Deve ir para `/dashboard` SEM loop
+
+3. **Teste de Retorno**:
+   - Acessar `/my-schedules` diretamente sem sessão
    - Fazer login
-   - Deve ir para o destino correto sem ficar oscilando
-
-2. **Teste de Recuperação de Senha**:
-   - Solicitar recuperação de senha
-   - Clicar no link do email
-   - Deve aparecer o formulário "Nova senha" em vez de ir direto para dashboard
-
-3. **Teste de Usuário Já Logado**:
-   - Com sessão ativa, acessar `/auth`
-   - Deve redirecionar para dashboard/my-schedules (não mostrar login)
-
+   - Deve voltar para `/my-schedules` (returnUrl)
