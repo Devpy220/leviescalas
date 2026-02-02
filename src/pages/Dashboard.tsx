@@ -61,12 +61,15 @@ export default function Dashboard() {
   const [isFirstLogin, setIsFirstLogin] = useState(false);
   const [canCreateDepartment, setCanCreateDepartment] = useState(true);
   const [userName, setUserName] = useState<string>('');
-  const { user, loading: authLoading, authEvent, signOut } = useAuth();
+  const { user, session, loading: authLoading, authEvent, signOut } = useAuth();
   const { isAdmin } = useAdmin();
   const { isInstallable, install, isIOS, shouldShowInstallPrompt } = usePWAInstall();
   const [showInstallDialog, setShowInstallDialog] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // CRITICAL: Use fallback to prevent infinite loading when user state is delayed
+  const currentUser = user ?? session?.user ?? null;
 
   // Check if this is first login
   useEffect(() => {
@@ -84,7 +87,7 @@ export default function Dashboard() {
     if (authLoading) return;
 
     // If we have a user, fetch data (ProtectedRoute ensures user exists)
-    if (user) {
+    if (currentUser) {
       const fetchData = async () => {
         await Promise.all([
           fetchDepartments(),
@@ -95,14 +98,14 @@ export default function Dashboard() {
       fetchData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, authLoading]);
+  }, [currentUser?.id, authLoading]);
 
   const fetchUserName = async () => {
-    if (!user) return;
+    if (!currentUser) return;
     const { data, error } = await supabase
       .from('profiles')
       .select('name')
-      .eq('id', user.id)
+      .eq('id', currentUser.id)
       .maybeSingle();
     
     if (!error && data) {
@@ -111,13 +114,13 @@ export default function Dashboard() {
   };
 
   const checkCanCreateDepartment = async () => {
-    if (!user) return;
+    if (!currentUser) return;
     
     // Check if user is a church leader
     const { data: churches, error: churchError } = await supabase
       .from('churches')
       .select('id')
-      .eq('leader_id', user.id)
+      .eq('leader_id', currentUser.id)
       .limit(1);
     
     if (churchError) {
@@ -135,7 +138,7 @@ export default function Dashboard() {
     const { data: leaderDepts, error: leaderError } = await supabase
       .from('departments')
       .select('id')
-      .eq('leader_id', user.id)
+      .eq('leader_id', currentUser.id)
       .limit(1);
     
     if (leaderError) {
@@ -149,14 +152,14 @@ export default function Dashboard() {
   };
 
   const fetchDepartments = async () => {
-    if (!user) return;
+    if (!currentUser) return;
     
     try {
       // Fetch departments where user is leader (leaders have direct SELECT access)
       const { data: leaderDepts, error: leaderError } = await supabase
         .from('departments')
         .select('*')
-        .eq('leader_id', user.id) as any;
+        .eq('leader_id', currentUser.id) as any;
 
       if (leaderError) throw leaderError;
 
@@ -164,7 +167,7 @@ export default function Dashboard() {
       const { data: memberRelations, error: memberError } = await supabase
         .from('members')
         .select('department_id')
-        .eq('user_id', user.id);
+        .eq('user_id', currentUser.id);
 
       if (memberError) throw memberError;
 
@@ -289,7 +292,7 @@ export default function Dashboard() {
   };
 
 
-  if (!user) {
+  if (!currentUser) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />

@@ -79,9 +79,12 @@ export default function MySchedules() {
   const [departmentIds, setDepartmentIds] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'mine' | 'team'>('mine');
   const [memberProfiles, setMemberProfiles] = useState<Record<string, MemberProfile>>({});
-  const { user, loading: authLoading } = useAuth();
+  const { user, session, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  
+  // CRITICAL: Use fallback to prevent infinite loading when user state is delayed
+  const currentUser = user ?? session?.user ?? null;
 
   // Get the first department ID for swaps (we'll need to handle multi-department later)
   const primaryDepartmentId = departmentIds[0];
@@ -96,13 +99,13 @@ export default function MySchedules() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (user) {
+    if (currentUser) {
       fetchSchedules();
     }
-  }, [user?.id, authLoading, viewMode]);
+  }, [currentUser?.id, authLoading, viewMode]);
 
   const fetchSchedules = async () => {
-    if (!user) return;
+    if (!currentUser) return;
     
     setLoading(true);
     
@@ -110,7 +113,7 @@ export default function MySchedules() {
       const { data: memberData, error: memberError } = await supabase
         .from('members')
         .select('department_id')
-        .eq('user_id', user.id);
+        .eq('user_id', currentUser.id);
 
       if (memberError) throw memberError;
 
@@ -158,7 +161,7 @@ export default function MySchedules() {
 
       // Only filter by user in 'mine' mode
       if (viewMode === 'mine') {
-        query = query.eq('user_id', user.id);
+        query = query.eq('user_id', currentUser.id);
       }
 
       const { data: schedulesData, error: schedulesError } = await query;
@@ -348,7 +351,7 @@ export default function MySchedules() {
     return groups;
   }, [schedules, viewMode]);
 
-  if (!user) {
+  if (!currentUser) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />

@@ -20,13 +20,25 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   
   // Guard to prevent infinite recovery loops
   const recoveryAttemptedRef = useRef(false);
+  
+  // CRITICAL: Derive currentUser from either user OR session.user
+  // This ensures pages always have access to identity data
+  const currentUser = user ?? session?.user ?? null;
+  
+  // Debug log (temporary - can be removed after confirming fix)
+  useEffect(() => {
+    if (session && !user) {
+      console.log('[ProtectedRoute] Session exists but user is null - waiting for sync');
+    }
+  }, [session, user]);
 
   useEffect(() => {
     // Wait for auth context to finish loading
     if (authLoading) return;
 
-    // If we have a user or session, we're good
-    if (user || session) {
+    // FIXED: Only consider verified when we have a CURRENT USER (not just session)
+    // This prevents rendering pages before user data is ready
+    if (currentUser) {
       setVerified(true);
       recoveryAttemptedRef.current = false; // Reset for future navigations
       return;
@@ -96,7 +108,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   }, [user, session, authLoading, ensureSession, navigate, location.pathname, location.search]);
 
   // Show loading spinner while auth is loading or not yet verified
-  if (authLoading || (!verified && !user && !session)) {
+  // FIXED: Also wait if session exists but currentUser is not ready yet
+  if (authLoading || !verified || !currentUser) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
