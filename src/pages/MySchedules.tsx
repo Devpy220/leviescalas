@@ -7,8 +7,11 @@ import {
   Loader2,
   Heart,
   Church,
-  ArrowLeftRight
+  ArrowLeftRight,
+  User,
+  Users
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { LeviLogo } from '@/components/LeviLogo';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -42,6 +45,13 @@ interface Schedule {
   church_name: string | null;
   church_logo_url: string | null;
   assignment_role: string | null;
+  user_id: string;
+  user_name?: string;
+}
+
+interface MemberProfile {
+  id: string;
+  name: string;
 }
 
 interface SupportPlan {
@@ -59,6 +69,8 @@ export default function MySchedules() {
   const [selectedSwap, setSelectedSwap] = useState<ScheduleSwap | null>(null);
   const [cancellingSwapId, setCancellingSwapId] = useState<string | null>(null);
   const [departmentIds, setDepartmentIds] = useState<string[]>([]);
+  const [viewMode, setViewMode] = useState<'mine' | 'team'>('mine');
+  const [memberProfiles, setMemberProfiles] = useState<Record<string, MemberProfile>>({});
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -79,10 +91,12 @@ export default function MySchedules() {
     if (user) {
       fetchSchedules();
     }
-  }, [user?.id, authLoading]);
+  }, [user?.id, authLoading, viewMode]);
 
   const fetchSchedules = async () => {
     if (!user) return;
+    
+    setLoading(true);
     
     try {
       const { data: memberData, error: memberError } = await supabase
@@ -101,7 +115,22 @@ export default function MySchedules() {
       const deptIds = memberData.map(m => m.department_id);
       setDepartmentIds(deptIds);
 
-      const { data: schedulesData, error: schedulesError } = await supabase
+      // Fetch member profiles for team view
+      if (viewMode === 'team') {
+        const profilesMap: Record<string, MemberProfile> = {};
+        for (const deptId of deptIds) {
+          const { data: profiles } = await supabase.rpc('get_department_member_profiles', { dept_id: deptId });
+          if (profiles) {
+            profiles.forEach((p: any) => {
+              profilesMap[p.id] = { id: p.id, name: p.name };
+            });
+          }
+        }
+        setMemberProfiles(profilesMap);
+      }
+
+      // Build query - filter by user only in 'mine' mode
+      let query = supabase
         .from('schedules')
         .select(`
           id,
@@ -112,12 +141,19 @@ export default function MySchedules() {
           department_id,
           sector_id,
           assignment_role,
+          user_id,
           sectors(name, color)
         `)
-        .eq('user_id', user.id)
         .in('department_id', deptIds)
         .gte('date', new Date().toISOString().split('T')[0])
         .order('date', { ascending: true });
+
+      // Only filter by user in 'mine' mode
+      if (viewMode === 'mine') {
+        query = query.eq('user_id', user.id);
+      }
+
+      const { data: schedulesData, error: schedulesError } = await query;
 
       if (schedulesError) throw schedulesError;
 
@@ -161,6 +197,8 @@ export default function MySchedules() {
         church_name: deptMap[s.department_id]?.church_name || null,
         church_logo_url: deptMap[s.department_id]?.church_logo_url || null,
         assignment_role: s.assignment_role || null,
+        user_id: s.user_id,
+        user_name: memberProfiles[s.user_id]?.name || undefined,
       }));
 
       setSchedules(enrichedSchedules);
@@ -259,6 +297,30 @@ export default function MySchedules() {
       </header>
 
       <main className="container mx-auto px-4 py-8 flex-1">
+        {/* View Mode Toggle */}
+        <div className="flex justify-center mb-6">
+          <div className="flex bg-muted rounded-lg p-1 gap-1">
+            <Button
+              size="sm"
+              variant={viewMode === 'mine' ? 'default' : 'ghost'}
+              onClick={() => setViewMode('mine')}
+              className="gap-1.5"
+            >
+              <User className="w-4 h-4" />
+              Minhas Escalas
+            </Button>
+            <Button
+              size="sm"
+              variant={viewMode === 'team' ? 'default' : 'ghost'}
+              onClick={() => setViewMode('team')}
+              className="gap-1.5"
+            >
+              <Users className="w-4 h-4" />
+              Escala da Equipe
+            </Button>
+          </div>
+        </div>
+
         {/* Pending swap requests for me */}
         {pendingSwapsForMe.length > 0 && (
           <Card className="mb-6 p-4 border-primary/50 bg-primary/5">
@@ -318,14 +380,37 @@ export default function MySchedules() {
               const dateObj = parseISO(schedule.date);
               const dayOfWeek = format(dateObj, "EEE", { locale: ptBR }).toUpperCase();
               const dayMonth = format(dateObj, "dd/MM", { locale: ptBR });
+              const isMySchedule = schedule.user_id === user?.id;
+              const volunteerName = viewMode === 'team' 
+                ? (isMySchedule ? 'Você' : (memberProfiles[schedule.user_id]?.name || 'Voluntário'))
+                : null;
               
               return (
-                <Card key={schedule.id} className="relative overflow-hidden flex flex-col">
+                <Card 
+                  key={schedule.id} 
+                  className={cn(
+                    "relative overflow-hidden flex flex-col",
+                    viewMode === 'team' && isMySchedule && "ring-2 ring-green-500 bg-green-50 dark:bg-green-950/30"
+                  )}
+                >
+                  {/* Badge for user's schedule in team view */}
+                  {viewMode === 'team' && isMySchedule && (
+                    <Badge className="absolute top-2 right-2 bg-green-500 text-white text-xs z-10">
+                      ⭐ Você
+                    </Badge>
+                  )}
+                  
                   {/* Colored header */}
-                  <div className="bg-primary/10 px-4 py-3 border-b border-border/50">
+                  <div className={cn(
+                    "px-4 py-3 border-b border-border/50",
+                    viewMode === 'team' && isMySchedule ? "bg-green-100 dark:bg-green-900/40" : "bg-primary/10"
+                  )}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-primary text-lg">{dayOfWeek}</span>
+                        <span className={cn(
+                          "font-bold text-lg",
+                          viewMode === 'team' && isMySchedule ? "text-green-700 dark:text-green-400" : "text-primary"
+                        )}>{dayOfWeek}</span>
                         <span className="text-foreground font-medium">{dayMonth}</span>
                       </div>
                       {schedule.church_logo_url && (
@@ -347,6 +432,16 @@ export default function MySchedules() {
                   {/* Content */}
                   <div className="p-4 flex-1 flex flex-col">
                     <div className="flex-1 space-y-2">
+                      {/* Volunteer name in team view */}
+                      {viewMode === 'team' && volunteerName && (
+                        <div className={cn(
+                          "font-semibold text-sm",
+                          isMySchedule ? "text-green-700 dark:text-green-400" : "text-foreground"
+                        )}>
+                          {volunteerName}
+                        </div>
+                      )}
+                      
                       <Badge variant="secondary" className="text-xs">
                         {schedule.department_name}
                       </Badge>
@@ -386,27 +481,29 @@ export default function MySchedules() {
                       )}
                     </div>
                     
-                    {/* Swap section */}
-                    <div className="pt-3 mt-3 border-t border-border/50">
-                      {swap ? (
-                        <PendingSwapBadge 
-                          swap={swap}
-                          onCancel={handleCancelSwap}
-                          onRespond={handleRespondToSwap}
-                          cancelling={cancellingSwapId === swap.id}
-                        />
-                      ) : (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="w-full"
-                          onClick={() => handleOpenSwapDialog(schedule)}
-                        >
-                          <ArrowLeftRight className="w-4 h-4 mr-2" />
-                          Pedir Troca
-                        </Button>
-                      )}
-                    </div>
+                    {/* Swap section - only show for user's own schedules */}
+                    {(viewMode === 'mine' || isMySchedule) && (
+                      <div className="pt-3 mt-3 border-t border-border/50">
+                        {swap ? (
+                          <PendingSwapBadge 
+                            swap={swap}
+                            onCancel={handleCancelSwap}
+                            onRespond={handleRespondToSwap}
+                            cancelling={cancellingSwapId === swap.id}
+                          />
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full"
+                            onClick={() => handleOpenSwapDialog(schedule)}
+                          >
+                            <ArrowLeftRight className="w-4 h-4 mr-2" />
+                            Pedir Troca
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </Card>
               );
