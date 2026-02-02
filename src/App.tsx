@@ -38,6 +38,7 @@ const PageTracker = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+// App component - main entry point
 const App = () => (
   <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
     <QueryClientProvider client={queryClient}>
