@@ -91,6 +91,9 @@ export default function Auth() {
   const [isValidatingChurch, setIsValidatingChurch] = useState(false);
   // Admin is identified by email only (leviescalas@gmail.com)
   
+  // Ref to prevent duplicate redirects
+  const hasRedirectedRef = useRef(false);
+  
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signIn, signUp, user, session, loading, authEvent, ensureSession } = useAuth();
@@ -100,7 +103,6 @@ export default function Auth() {
   const churchCodeParam = searchParams.get('churchCode');
   const sessionExpired = searchParams.get('expired') === 'true';
   const forceLogin = searchParams.get('forceLogin') === 'true';
-  const postAuthRedirect = redirectParam && redirectParam.startsWith('/') ? redirectParam : '/dashboard';
   
   // Check if coming from a department invite link
   const isDepartmentInvite = redirectParam?.startsWith('/join/') || false;
@@ -196,11 +198,27 @@ export default function Auth() {
   useEffect(() => {
     const { isRecovery } = getRecoveryContextFromUrl();
 
-    // Don't redirect if we're in the middle of a login operation or force login
-    if (!loading && session && !isRecovery && !isLoading && !forceLogin) {
-      navigate(postAuthRedirect, { replace: true });
+    // Don't redirect if we're in the middle of a login operation, force login, or already redirected
+    if (!loading && session && !isRecovery && !isLoading && !forceLogin && !hasRedirectedRef.current) {
+      hasRedirectedRef.current = true;
+      
+      // Use smart redirect instead of default /dashboard
+      const handleSmartRedirect = async () => {
+        // If there's a specific redirect param, honor it
+        if (redirectParam && redirectParam.startsWith('/')) {
+          navigate(redirectParam, { replace: true });
+          return;
+        }
+        
+        // Otherwise, use smart redirect based on department count
+        const destination = await getSmartRedirectDestination(session.user.id);
+        console.log('[Auth] Already authenticated, smart redirecting to:', destination);
+        navigate(destination, { replace: true });
+      };
+      
+      handleSmartRedirect();
     }
-  }, [loading, session, navigate, postAuthRedirect, isLoading, forceLogin]);
+  }, [loading, session, navigate, redirectParam, isLoading, forceLogin]);
 
   // Validate church from slug when accessing register tab
   // Validate church from URL params when accessing register tab
@@ -302,7 +320,7 @@ export default function Auth() {
 
   const handleLogin = async (data: LoginForm) => {
     setIsLoading(true);
-    const { error } = await signIn(data.email, data.password);
+    const { error, session: loginSession } = await signIn(data.email, data.password);
 
     if (error) {
       setIsLoading(false);
@@ -320,10 +338,9 @@ export default function Auth() {
       return;
     }
 
-    // Wait a moment for the auth state to propagate, then read session via guard
-    await new Promise(r => setTimeout(r, 300));
-
-    const currentSession = await ensureSession();
+    // Use the session returned directly from signIn - no need for delays
+    const currentSession = loginSession;
+    
     if (!currentSession?.user) {
       setIsLoading(false);
       toast({
@@ -344,46 +361,33 @@ export default function Auth() {
     }
 
     // Check if user is admin and redirect accordingly
-    if (currentSession?.user) {
-      const { data: hasRole } = await supabase.rpc('has_role', { 
-        _user_id: currentSession.user.id, 
-        _role: 'admin' 
-      });
-      
-      if (hasRole) {
-        setIsLoading(false);
-        toast({
-          title: 'Bem-vindo, Admin!',
-          description: 'Redirecionando para o painel administrativo.',
-        });
-        navigate('/admin', { replace: true });
-        return;
-      }
-
-      // Delay to ensure supabase client has propagated the new session token for RLS queries
-      await new Promise(r => setTimeout(r, 500));
-      
-      // Count user departments to determine redirect destination
-      const redirectDestination = await getSmartRedirectDestination(currentSession.user.id);
-      
-      console.log('[Auth] Redirecting to:', redirectDestination);
-      
+    const { data: hasRole } = await supabase.rpc('has_role', { 
+      _user_id: currentSession.user.id, 
+      _role: 'admin' 
+    });
+    
+    if (hasRole) {
       setIsLoading(false);
       toast({
-        title: 'Bem-vindo de volta!',
-        description: 'Login realizado com sucesso.',
+        title: 'Bem-vindo, Admin!',
+        description: 'Redirecionando para o painel administrativo.',
       });
-      navigate(redirectDestination, { replace: true });
+      navigate('/admin', { replace: true });
       return;
     }
 
+    // Count user departments to determine redirect destination
+    // Session is already hydrated in state, so RLS should work immediately
+    const redirectDestination = await getSmartRedirectDestination(currentSession.user.id);
+    
+    console.log('[Auth] Login complete, redirecting to:', redirectDestination);
+    
     setIsLoading(false);
-
     toast({
       title: 'Bem-vindo de volta!',
       description: 'Login realizado com sucesso.',
     });
-    navigate(postAuthRedirect, { replace: true });
+    navigate(redirectDestination, { replace: true });
   };
   
   // Helper function to determine redirect based on department count
@@ -448,11 +452,13 @@ export default function Auth() {
       return;
     }
     
+    // Fallback to smart redirect via dashboard
+    const destination = redirectParam && redirectParam.startsWith('/') ? redirectParam : '/dashboard';
     toast({
       title: 'Bem-vindo de volta!',
       description: 'Login realizado com sucesso.',
     });
-    navigate(postAuthRedirect, { replace: true });
+    navigate(destination, { replace: true });
   };
 
   const handle2FACancel = async () => {
@@ -565,22 +571,20 @@ export default function Auth() {
     });
     
     // Redirect logic:
-    // 1. Department invite -> redirect to join page (postAuthRedirect contains /join/:code)
+    // 1. Department invite -> redirect to join page (redirectParam contains /join/:code)
     // 2. Church code from URL (volunteer via /join link) -> create department page
     // 3. Church slug -> church public page
-    // 4. Otherwise -> postAuthRedirect
+    // 4. Otherwise -> dashboard
     let redirectTo = '/dashboard';
     
-    if (isDepartmentInvite) {
+    if (isDepartmentInvite && redirectParam) {
       // Department invite - go back to join page to complete joining
-      redirectTo = postAuthRedirect;
+      redirectTo = redirectParam;
     } else if (churchCodeParam) {
       // Volunteer coming from church code link - go to create department
       redirectTo = `/departments/new?churchCode=${churchCodeParam.toUpperCase()}`;
     } else if (churchValidated.slug) {
       redirectTo = `/igreja/${churchValidated.slug}`;
-    } else {
-      redirectTo = postAuthRedirect;
     }
     
     navigate(redirectTo);
