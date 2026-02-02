@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Calendar, 
@@ -15,9 +15,10 @@ import { cn } from '@/lib/utils';
 import { LeviLogo } from '@/components/LeviLogo';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { NotificationBell } from '@/components/NotificationBell';
 import { SupportNotification } from '@/components/SupportNotification';
@@ -29,8 +30,15 @@ import { useScheduleSwaps, type ScheduleSwap } from '@/hooks/useScheduleSwaps';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { SUPPORT_PRICE_ID, ASSIGNMENT_ROLES } from '@/lib/constants';
-import { format, parseISO } from 'date-fns';
+import { FIXED_SLOTS, FixedSlot } from '@/lib/fixedSlots';
+import { format, parseISO, getDay, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+
+interface SlotGroup {
+  date: Date;
+  slotInfo: FixedSlot;
+  schedules: Schedule[];
+}
 
 interface Schedule {
   id: string;
@@ -266,6 +274,80 @@ export default function MySchedules() {
   // Get pending swaps where user is the target
   const pendingSwapsForMe = getPendingSwapsForUser();
 
+  // Group schedules by date + slot for team view
+  const slotGroups = useMemo(() => {
+    if (viewMode !== 'team') return [];
+    
+    const groups: SlotGroup[] = [];
+    
+    schedules.forEach(schedule => {
+      const date = parseISO(schedule.date);
+      const dayOfWeek = getDay(date);
+      
+      // Find matching slot by day of week and time
+      const slotInfo = FIXED_SLOTS.find(s => 
+        s.dayOfWeek === dayOfWeek && 
+        s.timeStart === schedule.time_start
+      );
+      
+      if (!slotInfo) {
+        // Create a generic slot for custom times
+        const genericSlot: FixedSlot = {
+          dayOfWeek,
+          timeStart: schedule.time_start,
+          timeEnd: schedule.time_end,
+          label: format(date, 'EEEE', { locale: ptBR }),
+          icon: FIXED_SLOTS[0].icon,
+          bgColor: 'bg-muted/50',
+          borderColor: 'border-border',
+          activeColor: 'bg-primary'
+        };
+        
+        // Check if group already exists
+        const existingGroup = groups.find(g => 
+          g.date.getTime() === date.getTime() && 
+          g.slotInfo.timeStart === schedule.time_start
+        );
+        
+        if (existingGroup) {
+          existingGroup.schedules.push(schedule);
+        } else {
+          groups.push({
+            date,
+            slotInfo: genericSlot,
+            schedules: [schedule]
+          });
+        }
+      } else {
+        // Check if group already exists for this date + slot
+        const existingGroup = groups.find(g => 
+          g.date.getTime() === date.getTime() && 
+          g.slotInfo.dayOfWeek === slotInfo.dayOfWeek &&
+          g.slotInfo.timeStart === slotInfo.timeStart
+        );
+        
+        if (existingGroup) {
+          existingGroup.schedules.push(schedule);
+        } else {
+          groups.push({
+            date,
+            slotInfo,
+            schedules: [schedule]
+          });
+        }
+      }
+    });
+    
+    // Sort groups by date, then by time
+    groups.sort((a, b) => {
+      const dateDiff = a.date.getTime() - b.date.getTime();
+      if (dateDiff !== 0) return dateDiff;
+      return a.slotInfo.timeStart.localeCompare(b.slotInfo.timeStart);
+    });
+    
+    return groups;
+  }, [schedules, viewMode]);
+
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -373,44 +455,25 @@ export default function MySchedules() {
               Você ainda não foi escalado em nenhum departamento.
             </p>
           </Card>
-        ) : (
+        ) : viewMode === 'mine' ? (
+          /* Personal schedules - individual cards */
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {schedules.map((schedule) => {
               const swap = getSwapForSchedule(schedule.id);
               const dateObj = parseISO(schedule.date);
               const dayOfWeek = format(dateObj, "EEE", { locale: ptBR }).toUpperCase();
               const dayMonth = format(dateObj, "dd/MM", { locale: ptBR });
-              const isMySchedule = schedule.user_id === user?.id;
-              const volunteerName = viewMode === 'team' 
-                ? (isMySchedule ? 'Você' : (memberProfiles[schedule.user_id]?.name || 'Voluntário'))
-                : null;
               
               return (
                 <Card 
                   key={schedule.id} 
-                  className={cn(
-                    "relative overflow-hidden flex flex-col",
-                    viewMode === 'team' && isMySchedule && "ring-2 ring-green-500 bg-green-50 dark:bg-green-950/30"
-                  )}
+                  className="relative overflow-hidden flex flex-col"
                 >
-                  {/* Badge for user's schedule in team view */}
-                  {viewMode === 'team' && isMySchedule && (
-                    <Badge className="absolute top-2 right-2 bg-green-500 text-white text-xs z-10">
-                      ⭐ Você
-                    </Badge>
-                  )}
-                  
                   {/* Colored header */}
-                  <div className={cn(
-                    "px-4 py-3 border-b border-border/50",
-                    viewMode === 'team' && isMySchedule ? "bg-green-100 dark:bg-green-900/40" : "bg-primary/10"
-                  )}>
+                  <div className="px-4 py-3 border-b border-border/50 bg-primary/10">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className={cn(
-                          "font-bold text-lg",
-                          viewMode === 'team' && isMySchedule ? "text-green-700 dark:text-green-400" : "text-primary"
-                        )}>{dayOfWeek}</span>
+                        <span className="font-bold text-lg text-primary">{dayOfWeek}</span>
                         <span className="text-foreground font-medium">{dayMonth}</span>
                       </div>
                       {schedule.church_logo_url && (
@@ -432,16 +495,6 @@ export default function MySchedules() {
                   {/* Content */}
                   <div className="p-4 flex-1 flex flex-col">
                     <div className="flex-1 space-y-2">
-                      {/* Volunteer name in team view */}
-                      {viewMode === 'team' && volunteerName && (
-                        <div className={cn(
-                          "font-semibold text-sm",
-                          isMySchedule ? "text-green-700 dark:text-green-400" : "text-foreground"
-                        )}>
-                          {volunteerName}
-                        </div>
-                      )}
-                      
                       <Badge variant="secondary" className="text-xs">
                         {schedule.department_name}
                       </Badge>
@@ -481,8 +534,145 @@ export default function MySchedules() {
                       )}
                     </div>
                     
-                    {/* Swap section - only show for user's own schedules */}
-                    {(viewMode === 'mine' || isMySchedule) && (
+                    {/* Swap section */}
+                    <div className="pt-3 mt-3 border-t border-border/50">
+                      {swap ? (
+                        <PendingSwapBadge 
+                          swap={swap}
+                          onCancel={handleCancelSwap}
+                          onRespond={handleRespondToSwap}
+                          cancelling={cancellingSwapId === swap.id}
+                        />
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => handleOpenSwapDialog(schedule)}
+                        >
+                          <ArrowLeftRight className="w-4 h-4 mr-2" />
+                          Pedir Troca
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        ) : (
+          /* Team schedules - grouped by slot */
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {slotGroups.map((group) => {
+              const { date, slotInfo, schedules: groupSchedules } = group;
+              const isCurrentDay = isToday(date);
+              const userScheduleInSlot = groupSchedules.find(s => s.user_id === user?.id);
+              const swap = userScheduleInSlot ? getSwapForSchedule(userScheduleInSlot.id) : null;
+              
+              return (
+                <Card 
+                  key={`${format(date, 'yyyy-MM-dd')}-${slotInfo.timeStart}`}
+                  className={cn(
+                    "overflow-hidden h-fit",
+                    isCurrentDay && "ring-2 ring-primary"
+                  )}
+                >
+                  {/* Slot Header */}
+                  <CardHeader className={cn("p-3 pb-2", slotInfo.bgColor)}>
+                    <div className="space-y-0.5">
+                      <p className="font-bold text-sm uppercase tracking-wide">
+                        {slotInfo.label}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(date, "d 'de' MMMM", { locale: ptBR })}
+                      </p>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {slotInfo.timeStart} - {slotInfo.timeEnd}
+                      </p>
+                    </div>
+                  </CardHeader>
+                  
+                  {/* Members List */}
+                  <CardContent className="p-3 pt-2">
+                    <div className="space-y-2">
+                      {groupSchedules.map((schedule) => {
+                        const isCurrentUser = schedule.user_id === user?.id;
+                        const memberName = memberProfiles[schedule.user_id]?.name || 'Voluntário';
+                        
+                        return (
+                          <div
+                            key={schedule.id}
+                            className={cn(
+                              "flex items-center gap-2 p-2 rounded-md border-l-4",
+                              isCurrentUser 
+                                ? "bg-green-100 dark:bg-green-900/40 border-l-green-500" 
+                                : "border-l-transparent"
+                            )}
+                            style={!isCurrentUser && schedule.sector_color ? { borderLeftColor: schedule.sector_color } : undefined}
+                          >
+                            {/* Avatar */}
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback 
+                                className={cn(
+                                  "text-xs font-medium",
+                                  isCurrentUser 
+                                    ? "bg-green-500 text-white" 
+                                    : "bg-primary/20 text-primary"
+                                )}
+                              >
+                                {(isCurrentUser ? 'V' : memberName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase())}
+                              </AvatarFallback>
+                            </Avatar>
+                            
+                            {/* Info */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <p className={cn(
+                                  "font-medium text-sm truncate",
+                                  isCurrentUser && "text-green-700 dark:text-green-400"
+                                )}>
+                                  {isCurrentUser ? 'Você' : memberName}
+                                  {isCurrentUser && <span className="ml-1">⭐</span>}
+                                </p>
+                                
+                                {/* Assignment role icon */}
+                                {schedule.assignment_role && ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES] && (
+                                  <span className="text-sm">
+                                    {ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES].icon}
+                                  </span>
+                                )}
+                              </div>
+                              
+                              {/* Sector and Role */}
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                {schedule.sector_name && (
+                                  <span className="flex items-center gap-1 truncate">
+                                    <div 
+                                      className="w-2 h-2 rounded-full shrink-0" 
+                                      style={{ backgroundColor: schedule.sector_color || undefined }}
+                                    />
+                                    {schedule.sector_name}
+                                  </span>
+                                )}
+                                
+                                {schedule.assignment_role && ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES] && (
+                                  <Badge variant="outline" className={cn(
+                                    "text-[10px] px-1 py-0 shrink-0",
+                                    ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES].color
+                                  )}>
+                                    {ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES].label}
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    
+                    {/* Swap button - only if user is in this slot */}
+                    {userScheduleInSlot && (
                       <div className="pt-3 mt-3 border-t border-border/50">
                         {swap ? (
                           <PendingSwapBadge 
@@ -496,7 +686,7 @@ export default function MySchedules() {
                             size="sm"
                             variant="outline"
                             className="w-full"
-                            onClick={() => handleOpenSwapDialog(schedule)}
+                            onClick={() => handleOpenSwapDialog(userScheduleInSlot)}
                           >
                             <ArrowLeftRight className="w-4 h-4 mr-2" />
                             Pedir Troca
@@ -504,7 +694,7 @@ export default function MySchedules() {
                         )}
                       </div>
                     )}
-                  </div>
+                  </CardContent>
                 </Card>
               );
             })}
