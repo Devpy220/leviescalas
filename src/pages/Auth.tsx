@@ -195,12 +195,25 @@ export default function Auth() {
   // Handle force login - sign out existing session to allow switching accounts
   useEffect(() => {
     const handleForceLogin = async () => {
-      if (forceLogin && session) {
+      // IMPORTANT: Never force-logout during password recovery.
+      // A recovery link can temporarily create a session that is required for updateUser({ password }).
+      const { isRecovery } = getRecoveryContextFromUrl();
+
+      if (forceLogin && session && !isRecovery && activeTab !== 'reset-password' && !isRecoveryFlowRef.current) {
         await supabase.auth.signOut();
+        return;
+      }
+
+      // If we are in recovery but the URL still has forceLogin=true (old links / redirects),
+      // strip it so other logic doesn't interfere.
+      if (forceLogin && isRecovery) {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('forceLogin');
+        window.history.replaceState({}, '', url.toString());
       }
     };
     handleForceLogin();
-  }, [forceLogin, session]);
+  }, [forceLogin, session, activeTab]);
 
   // If user is already authenticated, redirect away from /auth (except password recovery flow, force login, or during active login)
   useEffect(() => {

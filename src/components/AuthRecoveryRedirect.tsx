@@ -31,7 +31,12 @@ export function AuthRecoveryRedirect() {
     if (!isRecovery) return;
     if (location.pathname === "/auth") return;
 
-    navigate(`/auth${location.search}${location.hash}`, { replace: true });
+    // If a legacy redirect added forceLogin=true, remove it for recovery.
+    const search = new URLSearchParams(location.search);
+    search.delete('forceLogin');
+    const cleanedSearch = search.toString();
+    const next = `/auth${cleanedSearch ? `?${cleanedSearch}` : ''}${location.hash}`;
+    navigate(next, { replace: true });
   }, [location.pathname, location.search, location.hash, navigate]);
 
   return null;
