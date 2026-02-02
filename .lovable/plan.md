@@ -1,136 +1,124 @@
 
-# Escala da Equipe: Agrupar por Dia/Slot (como o Líder vê)
+# Redirecionamento Inteligente Pós-Login
 
-## Problema Atual
+## O que será implementado
 
-Na aba "Escala da Equipe" em Minhas Escalas, as escalas são exibidas **separadas por pessoa** - cada voluntário tem seu próprio card. Isso não corresponde à visualização que o líder tem no departamento.
+Modificar o fluxo de login para redirecionar o usuário baseado na quantidade de departamentos:
 
-## Solução
-
-Reaproveitar a lógica de agrupamento do `UnifiedScheduleView` para mostrar as escalas **agrupadas por dia e horário**, com todos os voluntários escalados naquele turno listados dentro do mesmo card.
-
----
-
-## Interface Proposta
-
-```text
-┌─────────────────────────────────────────────────┐
-│  [👤 Minhas Escalas]  [👥 Escala da Equipe]     │
-└─────────────────────────────────────────────────┘
-
-┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
-│ DOMINGO MANHÃ    │  │ QUARTA           │  │ DOMINGO NOITE    │
-│ 02 de fevereiro  │  │ 05 de fevereiro  │  │ 09 de fevereiro  │
-│ ⏰ 08:00 - 12:00 │  │ ⏰ 19:00 - 22:00 │  │ ⏰ 18:00 - 22:00 │
-├──────────────────┤  ├──────────────────┤  ├──────────────────┤
-│ 🟢 VOCÊ ⭐       │  │ 🔵 João          │  │ 🟢 VOCÊ ⭐       │
-│    🚗 Plantão    │  │    ⛪ Culto      │  │    ⛪ Culto      │
-│ 🔴 Maria         │  │ 🟣 Pedro         │  │ 🟡 Carlos        │
-│    ⛪ Culto      │  │    🚗 Plantão    │  │    🚗 Plantão    │
-│ 🟡 Carlos        │  └──────────────────┘  │ 🔴 Maria         │
-│    ⛪ Culto      │                        │    ⛪ Culto      │
-├──────────────────┤                        ├──────────────────┤
-│ [🔄 Pedir Troca] │                        │ [🔄 Pedir Troca] │
-└──────────────────┘                        └──────────────────┘
-```
+| Departamentos | Destino |
+|---------------|---------|
+| 0 | Dashboard (para criar ou entrar em um departamento) |
+| 1 | Minhas Escalas (acesso direto às suas escalas) |
+| 2+ | Dashboard (para escolher qual departamento acessar) |
 
 ---
 
-## Mudanças Técnicas
+## Problema do Loop Identificado
 
-### 1. Importar estruturas do fixedSlots
+O loop ocorre porque:
+1. `Auth.tsx` redireciona para `/dashboard` após login
+2. `ProtectedRoute` verifica sessão com delay de 300ms + timeout de 8s
+3. Se a sessão não é detectada a tempo, manda de volta para `/auth`
+4. Isso cria um ciclo infinito em algumas condições de rede/timing
+
+**Causa raiz**: A verificação de sessão no ProtectedRoute pode falhar se o `ensureSession()` demora ou não retorna a sessão corretamente.
+
+---
+
+## Solução Técnica
+
+### 1. Modificar Auth.tsx - handleLogin()
+
+Após login bem-sucedido, antes de redirecionar, consultar os departamentos do usuário:
 
 ```typescript
-import { FIXED_SLOTS, FixedSlot } from '@/lib/fixedSlots';
-```
+// Após verificar MFA e admin role...
 
-### 2. Criar interface para grupos de slot
+// Buscar departamentos do usuário
+const { data: memberDepts, error: memberError } = await supabase
+  .from('members')
+  .select('department_id')
+  .eq('user_id', currentSession.user.id);
 
-```typescript
-interface SlotGroup {
-  date: Date;
-  slotInfo: FixedSlot;
-  schedules: Schedule[];
+const { data: leaderDepts, error: leaderError } = await supabase
+  .from('departments')
+  .select('id')
+  .eq('leader_id', currentSession.user.id);
+
+// Contar total de departamentos únicos
+const allDeptIds = new Set([
+  ...(memberDepts || []).map(m => m.department_id),
+  ...(leaderDepts || []).map(d => d.id)
+]);
+
+const departmentCount = allDeptIds.size;
+
+// Redirecionar baseado na contagem
+if (departmentCount === 1) {
+  navigate('/my-schedules', { replace: true });
+} else {
+  navigate('/dashboard', { replace: true });
 }
 ```
 
-### 3. Lógica de agrupamento (apenas no modo team)
+### 2. Também aplicar na handle2FASuccess()
 
-Reaproveitar a mesma lógica do `UnifiedScheduleView`:
-- Agrupar escalas por data + horário de início
-- Identificar slot fixo correspondente (Domingo Manhã, Domingo Noite, etc.)
-- Ordenar grupos por data e depois por horário
+Mesma lógica para usuários que fazem login com 2FA.
 
-### 4. Renderização condicional
+### 3. Corrigir ProtectedRoute para evitar loop
 
-```tsx
-{viewMode === 'mine' ? (
-  // Grid atual de cards individuais
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-    {schedules.map((schedule) => (
-      <ScheduleCard ... />
-    ))}
-  </div>
-) : (
-  // Novo: Grid de cards agrupados por slot
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-    {slotGroups.map((group) => (
-      <TeamSlotCard 
-        group={group}
-        currentUserId={user.id}
-        memberProfiles={memberProfiles}
-        onRequestSwap={handleOpenSwapDialog}
-      />
-    ))}
-  </div>
-)}
-```
+Adicionar flag para evitar múltiplas tentativas de recuperação:
 
-### 5. Componente TeamSlotCard
+```typescript
+const recoveryAttemptedRef = useRef(false);
 
-Novo componente que exibe:
-- Header colorido com nome do slot (Domingo Manhã, Quarta, etc.)
-- Data formatada (2 de fevereiro)
-- Horário (08:00 - 12:00)
-- Lista de voluntários escalados
-- **Destaque verde** para o usuário logado + badge "⭐ Você"
-- Botão "Pedir Troca" **apenas** se o usuário estiver escalado naquele slot
-
-### 6. Membro com destaque no card
-
-```tsx
-<div className={cn(
-  "flex items-center gap-2 p-2 rounded-md border-l-4",
-  isCurrentUser && "bg-green-100 dark:bg-green-900/40"
-)}>
-  <Avatar>...</Avatar>
-  <div>
-    <span className={cn(
-      "font-medium text-sm",
-      isCurrentUser && "text-green-700 dark:text-green-400"
-    )}>
-      {isCurrentUser ? "Você" : memberName}
-      {isCurrentUser && <span className="ml-1">⭐</span>}
-    </span>
-    {/* Badge de função: Plantão/Culto */}
-  </div>
-</div>
+// Na lógica de recovery
+if (recoveryAttemptedRef.current) {
+  // Já tentamos recuperar, redirecionar para login
+  navigate('/auth', { replace: true });
+  return;
+}
+recoveryAttemptedRef.current = true;
 ```
 
 ---
 
-## Arquivo a Modificar
+## Arquivos a Modificar
 
 | Arquivo | Mudanças |
 |---------|----------|
-| `src/pages/MySchedules.tsx` | Adicionar lógica de agrupamento, criar componente TeamSlotCard, renderização condicional por modo |
+| `src/pages/Auth.tsx` | Adicionar lógica de contagem de departamentos em `handleLogin()` e `handle2FASuccess()` |
+| `src/components/ProtectedRoute.tsx` | Adicionar guard para evitar loop de tentativas de recovery |
+
+---
+
+## Fluxo Após Implementação
+
+```
+Usuário faz login
+        │
+        ▼
+  Verificar MFA → Se precisa 2FA → Tela 2FA → Sucesso
+        │                                       │
+        ▼                                       ▼
+  Verificar Admin → Se Admin → /admin
+        │
+        ▼
+  Contar departamentos
+        │
+        ├── 0 departamentos → /dashboard
+        │
+        ├── 1 departamento → /my-schedules
+        │
+        └── 2+ departamentos → /dashboard
+```
 
 ---
 
 ## Resultado Esperado
 
-1. **Minhas Escalas**: Mantém comportamento atual (cards individuais por escala)
-2. **Escala da Equipe**: Cards agrupados por dia/horário como o líder vê
-   - Cada card mostra todos os voluntários daquele turno
-   - Você aparece com fundo verde e badge "⭐ Você"
-   - Botão "Pedir Troca" aparece **somente nos cards onde você está escalado**
+1. **Membro de 1 departamento**: Login → vai direto para "Minhas Escalas"
+2. **Membro de 2+ departamentos**: Login → vai para Dashboard para escolher
+3. **Novo usuário (0 departamentos)**: Login → vai para Dashboard para criar/entrar
+4. **Admin**: Login → vai para /admin (comportamento mantido)
+5. **Loop corrigido**: ProtectedRoute não tenta recovery infinitamente
