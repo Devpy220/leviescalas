@@ -83,6 +83,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Ref to track if we've initialized
   const hasInitialized = useRef(false);
 
+  // SYNC: Ensure user is always set when session.user exists
+  // This prevents the "session exists but user is null" race condition
+  useEffect(() => {
+    if (session?.user && !user) {
+      console.log('[Auth] Syncing user from session.user');
+      setUser(session.user);
+    }
+  }, [session, user]);
+
   const bootstrapUser = useCallback(async (u: User) => {
     const guard = getAuthGuard();
     
