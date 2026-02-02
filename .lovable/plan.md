@@ -1,135 +1,93 @@
 
-## Plano de Correção: Loop ao Logar 
+Objetivo
+- Parar o “loop” que você descreve (URL fica fixa, mas a tela fica rodando carregamento para sempre) após login, em qualquer conta.
 
-### Diagnóstico do Problema
+O que está acontecendo (com todos os detalhes)
+Pelo que você descreveu agora, não é um loop de redirecionamento (/auth ↔ /dashboard). É um “loop” de carregamento infinito com a rota parada (ex.: /dashboard ou /my-schedules), que acontece quando a página depende de `user` para buscar dados, mas naquele momento `user` ainda está `null` (mesmo já existindo uma `session` válida).
 
-O loop acontece por causa de uma **corrida de condições** entre três componentes:
+1) Como isso nasce no ProtectedRoute
+- O ProtectedRoute valida acesso assim:
+  - Se `authLoading` ainda estiver true → mostra spinner.
+  - Se `user || session` → considera “ok” e renderiza a página protegida.
+  - Caso contrário → tenta `ensureSession()` e, se falhar, manda para /auth.
 
-```text
-┌─────────────────────────────────────────────────────────────────────────┐
-│  1. Auth.tsx: handleLogin()                                             │
-│     └─ Faz login com sucesso                                            │
-│     └─ Chama getSmartRedirectDestination() → retorna "/my-schedules"    │
-│     └─ navigate("/my-schedules") ← PROBLEMA: navega antes do React      │
-│        atualizar user/session no contexto                               │
-├─────────────────────────────────────────────────────────────────────────┤
-│  2. ProtectedRoute em /my-schedules                                     │
-│     └─ Verifica user/session ← ainda NULL porque o estado React         │
-│        não sincronizou ainda                                            │
-│     └─ Tenta ensureSession() mas isso também demora                     │
-│     └─ Redireciona para /auth com returnUrl no state                    │
-├─────────────────────────────────────────────────────────────────────────┤
-│  3. Auth.tsx (novamente)                                                │
-│     └─ Agora a sessão existe                                            │
-│     └─ useEffect detecta sessão → redireciona                           │
-│     └─ MAS não lê returnUrl do state! Vai para /dashboard               │
-│     └─ Ciclo pode recomeçar...                                          │
-└─────────────────────────────────────────────────────────────────────────┘
-```
+O problema é o “meio-termo”:
+- Em alguns instantes, pode existir `session` (ou o token já está no storage), mas o estado React `user` ainda não foi “entregue” para os componentes consumidores (timing de hidratação/eventos).
+- Nesse instante o ProtectedRoute deixa passar (porque `session` existe), mas a página (Dashboard, MySchedules etc.) só inicia `fetch` quando `user` existe.
 
-### Causas Raiz
+2) Como isso trava as páginas (exemplos reais do seu código)
+- `MySchedules.tsx`:
+  - Ele faz `const { user, loading: authLoading } = useAuth();`
+  - E só chama `fetchSchedules()` se `user` existir.
+  - Se `authLoading` já terminou e `user` ainda estiver null, o componente fica com `loading` interno true e não carrega nada (parece que “fica rodando para sempre”).
 
-1. **`handleLogin` navega muito cedo**: O login é feito via Supabase API, mas o estado React (`user`/`session`) no `AuthProvider` ainda não atualizou quando `navigate()` é chamado.
+- `Dashboard.tsx`:
+  - Idem: ele só busca dados se `user` existe.
+  - Se `user` não vier a tempo, a tela aparenta travar carregando (depende de como o UI mostra esse estado).
 
-2. **Falta de sincronização**: O `signIn` retorna a `session` diretamente, mas não espera o `onAuthStateChange` propagar para o contexto React.
+3) Por que acontece “em todas as contas”
+Porque é um problema de sincronização/estado, não de dados de uma conta específica:
+- depende de timing do browser, cache, restauração de aba, latência, e de quando o listener `onAuthStateChange` atualiza o estado.
+- o login pode ter sido bem-sucedido, mas o “user no React” ainda não chegou quando a tela protegida iniciou.
 
-3. **`Auth.tsx` ignora `returnUrl`**: Quando o usuário é mandado de volta para `/auth` pelo `ProtectedRoute`, o `returnUrl` está no `location.state`, mas o useEffect de "já autenticado" não usa isso.
+O que vamos mudar para resolver de forma definitiva
+A ideia é garantir que “usuário atual” sempre exista para a UI assim que existir uma sessão, e que o ProtectedRoute nunca libere a página enquanto ainda estivermos nesse estado ambíguo.
 
----
+Mudanças planejadas (sem gambiarra de Vite cache)
+A) Fortalecer o AuthProvider (useAuth.tsx)
+- Garantir que quando `session` existir, `user` nunca fique null por muito tempo.
+- Adicionar uma sincronização simples e segura:
+  - se `session?.user` existir e `user` estiver null, setar `user` = `session.user`.
+Isso elimina o cenário “session existe mas user não”, que é o que causa o carregamento infinito.
 
-### Correções Propostas
+B) Ajustar ProtectedRoute para validar “currentUser” (não apenas session)
+- Criar `const currentUser = user ?? session?.user`.
+- Considerar verificado somente quando `currentUser` existir.
+- Mostrar spinner enquanto `!currentUser` (mesmo que session exista), porque as páginas precisam disso para carregar.
+Isso evita renderizar Dashboard/MySchedules cedo demais.
 
-#### A) Aguardar hidratação do contexto React após login
+C) Padronizar páginas críticas a usarem fallback (user ?? session?.user)
+Mesmo com A e B, é uma melhoria de robustez:
+- Em páginas como `MySchedules.tsx` e `Dashboard.tsx`, trocar para:
+  - `const { user, session, loading: authLoading } = useAuth();`
+  - `const currentUser = user ?? session?.user;`
+  - Usar `currentUser` para disparar fetch e para ids.
+Assim, mesmo se em algum momento user atrasar, a tela não trava.
 
-**Arquivo: `src/pages/Auth.tsx`**
+D) Instrumentação temporária (para confirmar no preview)
+Como você relatou que ainda acontece no preview, vamos adicionar logs controlados (somente console) por um curto período:
+- No ProtectedRoute: logar (uma vez) quando entrar em estado “session existe mas user ainda não”.
+- No AuthProvider: logar quando sincronizar user a partir da session.
+Isso permite confirmar objetivamente que o bug era exatamente esse estado.
 
-No `handleLogin`, após `signIn` retornar com sucesso, precisamos aguardar que o `onAuthStateChange` dispare e atualize o estado React antes de navegar. Isso evita que o `ProtectedRoute` veja um estado "vazio".
+Arquivos que serão alterados
+- src/hooks/useAuth.tsx
+  - Adicionar sincronização user <- session.user quando necessário.
+- src/components/ProtectedRoute.tsx
+  - Trocar a condição de verificação para usar `currentUser` e segurar o render até ele existir.
+- src/pages/MySchedules.tsx
+  - Trocar para usar `currentUser` e não travar quando user atrasar.
+- src/pages/Dashboard.tsx
+  - Trocar para usar `currentUser` e não travar quando user atrasar.
 
-**Modificação**:
-- Adicionar uma pequena espera (100-200ms) após o `signIn` retornar, para dar tempo ao `onAuthStateChange` atualizar o contexto
-- Ou, verificar se o `user` do contexto está disponível antes de navegar
+Critérios de validação (o que você vai testar)
+1) Teste end-to-end do login (principal)
+- Logout completo
+- Login com conta que tem 1 departamento
+- Resultado esperado: abre /my-schedules e carrega os dados sem “rodar infinito”.
 
-#### B) Respeitar `returnUrl` do location.state
+2) Teste de cold start / preview
+- Recarregar a página (F5) enquanto está logado
+- Abrir /my-schedules direto
+- Resultado esperado: sem travar em spinner infinito.
 
-**Arquivo: `src/pages/Auth.tsx`**
+3) Teste com outras contas
+- Repetir com 2–3 contas diferentes
+- Resultado esperado: não travar, independentemente da conta.
 
-O useEffect que redireciona usuários já autenticados (linhas 218-269) precisa verificar se existe um `returnUrl` no `location.state` e usá-lo como prioridade sobre a lógica de smart redirect.
+Riscos / observações
+- Essas mudanças tratam o problema estrutural (estado ambíguo session/user) e não dependem de cache do Vite.
+- Se ainda houver travamento após isso, o próximo passo será identificar qual query específica está pendurando (ex.: uma RPC ou select) e adicionar timeout/erro amigável (similar ao que já existe em alguns pontos do app).
 
-**Modificação**:
-```typescript
-// Antes de chamar getSmartRedirectDestination:
-const stateReturnUrl = (location.state as any)?.returnUrl;
-if (stateReturnUrl && stateReturnUrl.startsWith('/')) {
-  navigate(stateReturnUrl, { replace: true, state: {} });
-  return;
-}
-```
-
-#### C) Prevenir navegação duplicada
-
-**Arquivo: `src/pages/Auth.tsx`**
-
-O `hasRedirectedRef` já existe, mas pode não estar sendo respeitado em todos os caminhos. Precisamos garantir que ele seja setado ANTES de qualquer `navigate()`.
-
----
-
-### Implementação Detalhada
-
-#### 1. `src/pages/Auth.tsx` - handleLogin (linhas 369-439)
-
-**Problema**: Navega imediatamente após login sem esperar o contexto React.
-
-**Solução**: Adicionar uma espera para garantir que o `user` no contexto React seja atualizado:
-
-```typescript
-// Após o login bem-sucedido, aguardar o contexto React sincronizar
-// Isso evita que ProtectedRoute veja um estado vazio
-await new Promise(resolve => setTimeout(resolve, 200));
-```
-
-#### 2. `src/pages/Auth.tsx` - useEffect de redirecionamento (linhas 218-269)
-
-**Problema**: Não usa o `returnUrl` do `location.state`.
-
-**Solução**: Verificar `location.state` antes de calcular destino:
-
-```typescript
-// Verificar se existe returnUrl no state (vindo do ProtectedRoute)
-const stateReturnUrl = (location.state as any)?.returnUrl;
-if (stateReturnUrl && stateReturnUrl.startsWith('/')) {
-  navigate(stateReturnUrl, { replace: true, state: {} });
-  return;
-}
-```
-
-#### 3. `src/pages/Auth.tsx` - Prevenir múltiplos caminhos de navegação
-
-Garantir que `hasRedirectedRef.current = true` seja setado no início de QUALQUER bloco que chama `navigate()`, não apenas no useEffect.
-
----
-
-### Arquivos a Serem Alterados
-
-1. **`src/pages/Auth.tsx`**
-   - `handleLogin`: Adicionar delay de sincronização após login
-   - `handle2FASuccess`: Adicionar delay de sincronização após 2FA
-   - useEffect de redirecionamento: Verificar `location.state.returnUrl`
-   - Garantir que `hasRedirectedRef` seja consistentemente usado
-
----
-
-### Validação
-
-1. **Teste de Login Normal**:
-   - Deslogar completamente
-   - Entrar com usuário que tem 1 departamento
-   - Deve ir direto para `/my-schedules` SEM loop
-
-2. **Teste de Login com 0 departamentos**:
-   - Entrar com usuário sem departamentos
-   - Deve ir para `/dashboard` SEM loop
-
-3. **Teste de Retorno**:
-   - Acessar `/my-schedules` diretamente sem sessão
-   - Fazer login
-   - Deve voltar para `/my-schedules` (returnUrl)
+Referência de troubleshooting
+- Se você quiser acompanhar padrões de travamento/loops no preview, podemos usar também: https://docs.lovable.dev/tips-tricks/troubleshooting
