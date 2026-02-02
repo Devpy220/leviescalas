@@ -1,125 +1,113 @@
 
-## Diagnóstico (o porquê de ainda ir para `/dashboard` e do “loop na primeira vez”)
 
-Pelos trechos atuais do `Auth.tsx`, existe um ponto que “puxa” o usuário para `/dashboard` mesmo quando a lógica inteligente decide `/my-schedules`:
+## Plano de Correção: Loop ao Logar e Recuperação de Senha
 
-1) **Auto-redirecionamento ao detectar sessão em `/auth`**  
-No `Auth.tsx` existe este efeito:
+### Diagnóstico dos Problemas
 
-- “Se já existe `session` e não é recovery e não está carregando, redireciona para `postAuthRedirect`”
-- `postAuthRedirect` por padrão é **`/dashboard`**
+#### Problema 1: Loop ao Logar (Preview "frio")
+O ciclo ocorre por uma "corrida" entre três componentes:
+1. **ProtectedRoute** tenta verificar sessão → não encontra → redireciona para `/auth`
+2. **Auth.tsx** recebe a sessão atrasada → detecta usuário logado → redireciona para `/dashboard`
+3. Ciclo recomeça se o timing variar
 
-Ou seja: em situações de timing (principalmente no primeiro login / primeiro carregamento do preview), o `session` pode ficar disponível e esse `useEffect` dispara e manda o usuário para `/dashboard` **antes**/em paralelo ao redirect inteligente.
+**Causa raiz**: A sessão demora para "hidratar" no primeiro carregamento do preview. O `ProtectedRoute` não espera o suficiente e manda para `/auth`, mas quando chega lá a sessão aparece e manda de volta.
 
-2) **Primeiro carregamento do preview pode não “hidratar” a sessão rápido**  
-No `AuthProvider` (useAuth), ele depende muito do `onAuthStateChange` para popular `session/user`. Em alguns ambientes (preview/iframe) pode haver atraso. O `ProtectedRoute` tenta “recuperar” e, se falhar/atrasar, redireciona para `/auth`, causando o “loop” na primeira vez. Depois de dar refresh, tudo fica “quente” e estabiliza, indo para `/dashboard`.
+#### Problema 2: Recuperação de Senha Não Abre Formulário
+Quando o usuário clica no link do email de recuperação:
+1. O link traz um `?code=...` (fluxo PKCE) ou `#access_token=...` (fluxo implícito)
+2. O `Auth.tsx` troca o código por sessão com sucesso via `exchangeCodeForSession`
+3. Isso dispara o evento `SIGNED_IN` no Supabase
+4. O useEffect de "já autenticado" (linha 198-221) detecta `session` e redireciona para dashboard **antes** que `setActiveTab('reset-password')` faça efeito
 
-3) **A contagem de departamentos pode falhar se o token ainda não foi aplicado aos requests**  
-Vocês já tentaram “delay” (200ms → 500ms), mas isso é frágil. O ideal é: **ter a sessão imediatamente disponível no estado** (sem depender do delay), ou usar uma função de backend para contar departamentos.
-
----
-
-## Objetivo do ajuste
-
-- Manter a regra:
-  - **1 departamento → `/my-schedules`**
-  - **0 ou 2+ departamentos → `/dashboard`**
-- Eliminar o “loop no primeiro carregamento”
-- Remover dependência de `setTimeout`/delay para que o token “propague”
+**Causa raiz**: O fluxo de recovery cria uma sessão temporária. O código atual detecta essa sessão como "usuário logado" e redireciona automaticamente, impedindo a exibição do formulário de nova senha.
 
 ---
 
-## Mudanças propostas (código)
+### Correções Propostas
 
-### A) `src/hooks/useAuth.tsx` — tornar o `signIn` “forte” e hidratar sessão imediatamente
-1. Alterar a assinatura do `signIn` para retornar também a `session`:
-   - De: `Promise<{ error: Error | null }>`
-   - Para: `Promise<{ error: Error | null; session: Session | null }>` (e opcionalmente `user`)
+#### A) Corrigir o Loop ao Logar
 
-2. Dentro do `signIn`, usar o retorno de `supabase.auth.signInWithPassword`:
-   - `const { data, error } = await supabase.auth.signInWithPassword(...)`
-   - Se `data.session` vier:
-     - Atualizar **imediatamente** `setSession(data.session)` e `setUser(data.session.user)`
-     - Atualizar o cache do guard (`guard.cachedSession`/`guard.cacheTime`)
-   - Isso reduz drasticamente a janela onde o app “não enxerga” a sessão.
+**Arquivo: `src/pages/Auth.tsx`**
+- Adicionar um **delay de estabilização** no useEffect de "já autenticado" para dar tempo à sessão se estabilizar
+- Melhorar a checagem de `isRecovery` para incluir a aba `reset-password` ativa
 
-3. Melhorar o “bootstrap inicial” da sessão no mount do provider:
-   - Após registrar o `onAuthStateChange`, disparar **uma única tentativa** de `ensureSession()` (single-flight) para “aquecer” a sessão em cold start.
-   - Com guard/caching, isso não vira storm, e ajuda muito no preview.
+**Arquivo: `src/components/ProtectedRoute.tsx`**
+- O código atual já tem um delay de 300ms e timeout de 8s, o que é adequado
+- Vamos apenas garantir que o `user || session` seja verificado corretamente
 
-### B) `src/pages/Auth.tsx` — parar de forçar `/dashboard` quando já tem sessão
-1. Ajustar o `useEffect` “já autenticado” (linhas ~195-203):
-   - Em vez de `navigate(postAuthRedirect)` (que por padrão é `/dashboard`),
-   - Fazer:
-     - Se existir `redirectParam` válido (ex.: veio de um link específico), respeitar.
-     - Caso contrário, calcular `redirectDestination = await getSmartRedirectDestination(session.user.id)` e navegar para ele.
-   - Adicionar um `ref` de “já redirecionei” para evitar double navigation.
+#### B) Corrigir a Recuperação de Senha
 
-2. Ajustar `handleLogin` para não depender de `ensureSession()` + delays:
-   - Usar `const { error, session: loginSession } = await signIn(...)`
-   - Se `loginSession?.user` existe, usar esse userId imediatamente para:
-     - checar MFA
-     - checar admin
-     - calcular redirect inteligente
-   - Isso elimina a necessidade do `await new Promise(setTimeout...)`.
+**Arquivo: `src/pages/Auth.tsx`**
+1. **Bloquear redirecionamento automático quando estamos em fluxo de recovery**:
+   - Adicionar verificação: se `activeTab === 'reset-password'`, NÃO redirecionar
+   - Usar uma flag `isInRecoveryFlow` baseada no contexto da URL + aba atual
 
-3. Ajustar `handle2FASuccess` para também evitar “sessão não pronta”:
-   - Depois do MFA verify, chamar `ensureSession()` uma vez e, se tiver session, aplicar `getSmartRedirectDestination`.
-   - Se ainda houver instabilidade, evoluir o `TwoFactorVerify` para chamar `ensureSession()` internamente antes de `onSuccess()` (opcional, mas recomendado).
+2. **Garantir que o `setActiveTab('reset-password')` execute ANTES do redirect**:
+   - O `exchangeCodeForSession` vai disparar eventos de auth
+   - Precisamos setar a flag de recovery ANTES de trocar o código
 
-### C) (Opcional, mas mais robusto) Criar uma função de backend para contar departamentos
-Se ainda existir alguma instabilidade por RLS/timing em `members/departments`, a solução mais confiável é uma função “security definer” do backend:
-
-- `get_my_department_count()` → retorna inteiro
-- Internamente:
-  - conta memberships em `members` (user_id = auth.uid())
-  - conta liderança em `departments` (leader_id = auth.uid())
-  - retorna total único
-
-O frontend chama só `supabase.rpc('get_my_department_count')` e decide o redirect sem depender de queries múltiplas.
-
-(Esse passo é “plano B” caso a hidratação imediata via `signIn` não resolva 100%.)
+3. **Evitar que o Supabase interprete a sessão de recovery como login normal**:
+   - Após trocar o código por sessão, imediatamente setar `activeTab` para `reset-password`
+   - Guardar uma ref `isRecoveryFlowRef` para bloquear o redirect automático
 
 ---
 
-## Arquivos que serão alterados
+### Detalhes Técnicos da Implementação
 
-1. `src/hooks/useAuth.tsx`
-   - `signIn` passa a retornar `session`
-   - `signIn` atualiza state/cache imediatamente
-   - “warm up” inicial com `ensureSession()` após listener
+#### Mudanças em `src/pages/Auth.tsx`
 
-2. `src/pages/Auth.tsx`
-   - Corrigir `useEffect` de “já autenticado” para usar redirect inteligente (não default `/dashboard`)
-   - `handleLogin` usar `session` retornada por `signIn` e remover delays frágeis
-   - Ajustar `handle2FASuccess` para ser mais consistente
+**1. Adicionar ref para controlar fluxo de recovery:**
+```typescript
+const isRecoveryFlowRef = useRef(false);
+```
 
-3. (Opcional) migração backend: função `get_my_department_count()`
+**2. Modificar o useEffect de troca de código (linhas 153-185):**
+- ANTES de chamar `exchangeCodeForSession`, setar `isRecoveryFlowRef.current = true`
+- Isso vai impedir o redirect automático no outro useEffect
 
----
+**3. Modificar o useEffect de "já autenticado" (linhas 198-221):**
+- Adicionar condição: `!isRecoveryFlowRef.current`
+- Adicionar condição: `activeTab !== 'reset-password'`
+- Isso garante que, se estivermos no fluxo de recuperação, não vai redirecionar
 
-## Como vamos validar (passo a passo)
+**4. Adicionar delay de estabilização para evitar loop:**
+- No useEffect de "já autenticado", adicionar um pequeno delay (100-200ms) para garantir que todos os estados tenham sido atualizados antes de decidir redirecionar
 
-1) **Teste o caso crítico (preview “frio”)**
-- Abrir preview “zerado” (sem refresh extra)
-- Fazer login com um usuário que tem **exatamente 1 departamento**
-- Resultado esperado: cair em **`/my-schedules`** sem loop
+#### Mudanças em `src/hooks/useAuth.tsx`
 
-2) **Teste usuário com 2+ departamentos**
-- Resultado esperado: cair em **`/dashboard`**
-
-3) **Teste “já logado” indo em `/auth`**
-- Digitar `/auth` na URL com sessão ativa
-- Resultado esperado: redirecionar automaticamente para o destino inteligente (não “sempre dashboard”)
-
-4) **(Se usa 2FA)**
-- Fazer login com 2FA habilitado
-- Após validar código, deve ir para destino inteligente sem cair num loop
+**1. Corrigir URL de redirecionamento (linha 341):**
+- A URL atual é `/admin-login?reset=true` que redireciona para `/auth?forceLogin=true`
+- O `forceLogin=true` faz logout da sessão!
+- Mudar para apenas `${window.location.origin}/auth`
 
 ---
 
-## Riscos e mitigação
+### Arquivos a Serem Alterados
 
-- Alterar a assinatura de `signIn` impacta chamadas existentes (principalmente `Auth.tsx`). Vamos ajustar todas as chamadas para a nova forma.
-- Warm-up do `ensureSession()` pode adicionar uma chamada extra ao iniciar. Como existe single-flight + cache, o impacto é mínimo e melhora a estabilidade.
+1. **`src/pages/Auth.tsx`**
+   - Adicionar `isRecoveryFlowRef` para controlar fluxo
+   - Modificar useEffect de troca de código para setar flag antes
+   - Modificar useEffect de "já autenticado" para respeitar recovery flow
+   - Adicionar delay de estabilização
+
+2. **`src/hooks/useAuth.tsx`**
+   - Corrigir `redirectTo` na função `resetPassword` de `/admin-login?reset=true` para `/auth`
+
+---
+
+### Validação
+
+1. **Teste de Loop**:
+   - Abrir preview "frio" (sem sessão)
+   - Fazer login
+   - Deve ir para o destino correto sem ficar oscilando
+
+2. **Teste de Recuperação de Senha**:
+   - Solicitar recuperação de senha
+   - Clicar no link do email
+   - Deve aparecer o formulário "Nova senha" em vez de ir direto para dashboard
+
+3. **Teste de Usuário Já Logado**:
+   - Com sessão ativa, acessar `/auth`
+   - Deve redirecionar para dashboard/my-schedules (não mostrar login)
 
