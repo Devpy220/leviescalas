@@ -1,93 +1,110 @@
 
 Objetivo
-- Parar o “loop” que você descreve (URL fica fixa, mas a tela fica rodando carregamento para sempre) após login, em qualquer conta.
+- Parar o travamento “fica carregando para sempre” após login (primeiro vai para /dashboard, depois de reiniciar vai para /my-schedules), que está acontecendo em todas as contas, tanto no Preview quanto no Publicado.
 
-O que está acontecendo (com todos os detalhes)
-Pelo que você descreveu agora, não é um loop de redirecionamento (/auth ↔ /dashboard). É um “loop” de carregamento infinito com a rota parada (ex.: /dashboard ou /my-schedules), que acontece quando a página depende de `user` para buscar dados, mas naquele momento `user` ainda está `null` (mesmo já existindo uma `session` válida).
+O que eu encontrei (diagnóstico com base em evidências reais)
+1) O console mostra um erro crítico de autenticação antes/depois do login:
+- `AuthApiError: Invalid Refresh Token: Refresh Token Not Found` (código `refresh_token_not_found`, status 400)
+Isso significa que o navegador está tentando “recuperar/atualizar” uma sessão antiga usando um refresh token que não existe mais no backend (token antigo/corrompido/invalidado). Quando isso acontece, o client de auth entra num estado inconsistente: ele tenta recuperar a sessão no boot, falha, e você acaba com login “meio funcionando” (toast de sucesso aparece), mas as páginas seguintes ficam presas em loading porque parte do sistema continua tentando consertar a sessão/refresh.
 
-1) Como isso nasce no ProtectedRoute
-- O ProtectedRoute valida acesso assim:
-  - Se `authLoading` ainda estiver true → mostra spinner.
-  - Se `user || session` → considera “ok” e renderiza a página protegida.
-  - Caso contrário → tenta `ensureSession()` e, se falhar, manda para /auth.
+2) O smart redirect está variando no mesmo usuário:
+- Log 1: `[Auth] Smart redirect - departments found via RPC: 0` → redireciona `/dashboard`
+- Log 2: depois: `[Auth] ...: 1` → redireciona `/my-schedules`
+Isso é um sintoma típico quando:
+- A sessão ainda não está estável (token inválido/refresh falhando), então chamadas autenticadas podem falhar/sair com resultado inesperado.
+- Ou há um “boot/hidratação” do auth acontecendo enquanto o redirect decide o destino, causando um resultado inconsistente.
 
-O problema é o “meio-termo”:
-- Em alguns instantes, pode existir `session` (ou o token já está no storage), mas o estado React `user` ainda não foi “entregue” para os componentes consumidores (timing de hidratação/eventos).
-- Nesse instante o ProtectedRoute deixa passar (porque `session` existe), mas a página (Dashboard, MySchedules etc.) só inicia `fetch` quando `user` existe.
+3) Há um bug estrutural no `ensureSession()` do `useAuth.tsx` que impede tratar erros do `getSession()`:
+Hoje o código faz:
+- `const { data } = await withTimeout(supabase.auth.getSession(), ...)`
+Mas `supabase.auth.getSession()` retorna `{ data, error }`.
+Como o `error` é descartado, o sistema não detecta explicitamente “refresh token inválido” para executar um “logout limpo” e limpar o storage. Resultado: o app pode continuar preso em tentativas de recuperação e manter a UI em spinner.
 
-2) Como isso trava as páginas (exemplos reais do seu código)
-- `MySchedules.tsx`:
-  - Ele faz `const { user, loading: authLoading } = useAuth();`
-  - E só chama `fetchSchedules()` se `user` existir.
-  - Se `authLoading` já terminou e `user` ainda estiver null, o componente fica com `loading` interno true e não carrega nada (parece que “fica rodando para sempre”).
+Hipótese mais provável (e consistente com o seu relato “tem lixo no sistema”)
+- O “lixo” é storage local (localStorage) com tokens antigos do auth.
+- Em especial, o refresh token salvo sob chaves `sb-...-auth-token` (padrão) pode ficar inválido por diversos motivos (troca de conta, reinstalação/PWA, limpeza parcial de storage, invalidação no backend, etc.).
+- Quando o app abre, o auth client tenta recuperar e atualizar a sessão com esse refresh token. Como o token não existe mais, dispara `refresh_token_not_found`.
+- A partir daí, o app pode:
+  - Logar “com sucesso” (porque você digitou email/senha e gerou tokens novos),
+  - mas ao mesmo tempo o client ainda tem tentativa de recuperação inicial falhando/concorrendo,
+  - e isso leva a travamentos pós-login (spinners) e redirects inconsistentes (0 departamento / 1 departamento).
 
-- `Dashboard.tsx`:
-  - Idem: ele só busca dados se `user` existe.
-  - Se `user` não vier a tempo, a tela aparenta travar carregando (depende de como o UI mostra esse estado).
+Plano de correção (mudanças no sistema “em geral”, não só numa tela)
+A) Corrigir `ensureSession()` para capturar e tratar erro de refresh token inválido
+Arquivos: `src/hooks/useAuth.tsx`
 
-3) Por que acontece “em todas as contas”
-Porque é um problema de sincronização/estado, não de dados de uma conta específica:
-- depende de timing do browser, cache, restauração de aba, latência, e de quando o listener `onAuthStateChange` atualiza o estado.
-- o login pode ter sido bem-sucedido, mas o “user no React” ainda não chegou quando a tela protegida iniciou.
+1. Alterar `ensureSession()` para preservar `{ data, error }` do `getSession()`
+- Em vez de descartar o `error`, vamos analisá-lo.
 
-O que vamos mudar para resolver de forma definitiva
-A ideia é garantir que “usuário atual” sempre exista para a UI assim que existir uma sessão, e que o ProtectedRoute nunca libere a página enquanto ainda estivermos nesse estado ambíguo.
+2. Quando `error` for `AuthApiError` com `code === 'refresh_token_not_found'` (ou mensagem contendo “Invalid Refresh Token”):
+- Executar um “logout limpo”:
+  - Limpar as chaves do auth do localStorage (as chaves `sb-...-auth-token` e correlatas).
+  - Limpar cache do guard (`guard.cachedSession`, `guard.cacheTime`, `guard.lastBootstrapUserId`).
+  - Chamar `supabase.auth.signOut()` (sem depender do refresh).
+  - Retornar `null` e garantir `setLoading(false)` para não manter a UI presa.
 
-Mudanças planejadas (sem gambiarra de Vite cache)
-A) Fortalecer o AuthProvider (useAuth.tsx)
-- Garantir que quando `session` existir, `user` nunca fique null por muito tempo.
-- Adicionar uma sincronização simples e segura:
-  - se `session?.user` existir e `user` estiver null, setar `user` = `session.user`.
-Isso elimina o cenário “session existe mas user não”, que é o que causa o carregamento infinito.
+Resultado esperado:
+- Em vez de ficar em estado quebrado, o app detecta o token inválido e “volta para um estado limpo” de deslogado, permitindo login normal sem travar.
 
-B) Ajustar ProtectedRoute para validar “currentUser” (não apenas session)
-- Criar `const currentUser = user ?? session?.user`.
-- Considerar verificado somente quando `currentUser` existir.
-- Mostrar spinner enquanto `!currentUser` (mesmo que session exista), porque as páginas precisam disso para carregar.
-Isso evita renderizar Dashboard/MySchedules cedo demais.
+B) Adicionar um “Recovery Guard” no bootstrap do AuthProvider para evitar travamento silencioso no boot
+Arquivos: `src/hooks/useAuth.tsx`
 
-C) Padronizar páginas críticas a usarem fallback (user ?? session?.user)
-Mesmo com A e B, é uma melhoria de robustez:
-- Em páginas como `MySchedules.tsx` e `Dashboard.tsx`, trocar para:
-  - `const { user, session, loading: authLoading } = useAuth();`
-  - `const currentUser = user ?? session?.user;`
-  - Usar `currentUser` para disparar fetch e para ids.
-Assim, mesmo se em algum momento user atrasar, a tela não trava.
+- No `useEffect` de inicialização (onde já existe `void ensureSession()`), vamos:
+  - Fazer `await ensureSession()` e, se detectar que limpamos sessão por erro de refresh token, opcionalmente redirecionar para `/auth?expired=true` (ou apenas manter deslogado, dependendo do comportamento atual desejado).
+- Importante: essa ação deve ser idempotente e não causar loops.
 
-D) Instrumentação temporária (para confirmar no preview)
-Como você relatou que ainda acontece no preview, vamos adicionar logs controlados (somente console) por um curto período:
-- No ProtectedRoute: logar (uma vez) quando entrar em estado “session existe mas user ainda não”.
-- No AuthProvider: logar quando sincronizar user a partir da session.
-Isso permite confirmar objetivamente que o bug era exatamente esse estado.
+C) Colocar timeout e fallback seguros nas RPCs usadas no redirect pós-login
+Arquivos: `src/pages/Auth.tsx`
+
+Problema atual:
+- `getSmartRedirectDestination()` depende de `supabase.rpc('get_my_department_count')`.
+- Se o auth estiver instável (ou o RPC estiver lento), o login fica esperando e a UI parece “rodar para sempre”.
+
+Mudança:
+- Envolver `supabase.rpc('get_my_department_count')` com um timeout curto (ex.: 3–5s) e fallback consistente:
+  - Se timeout ou erro: retornar `/dashboard` (ou `/my-schedules` se você preferir, mas recomendo `/dashboard` como “safe landing”).
+- Garantir que `setIsLoading(false)` sempre aconteça em `finally` no `handleLogin` e também no fluxo 2FA.
+
+Resultado esperado:
+- Mesmo que a RPC falhe momentaneamente, o usuário não fica preso em loading infinito.
+
+D) Instrumentação (temporária) para confirmar a causa no Preview e no Publicado
+Arquivos: `src/hooks/useAuth.tsx`, `src/pages/Auth.tsx`
+
+Adicionar logs controlados (somente console) por alguns dias:
+- Log quando detectar `refresh_token_not_found` e limpar storage.
+- Log do tempo (ms) gasto em `get_my_department_count` e se ocorreu timeout.
+
+Isso vai permitir confirmar objetivamente:
+- “O travamento é causado por refresh token inválido no storage”
+- “O redirect travava por RPC lenta/sem resposta”
+
+Sequência de implementação (para reduzir risco)
+1) Ajustar `ensureSession()` para capturar `{ error }` e tratar `refresh_token_not_found` com limpeza + signOut.
+2) Ajustar bootstrap do AuthProvider para usar esse `ensureSession()` de forma segura.
+3) Adicionar timeout/fallback no `getSmartRedirectDestination()` e garantir `isLoading` sempre desliga.
+4) (Opcional) Revisar `get_my_department_count` caso ainda haja inconsistência, mas primeiro precisamos estabilizar o auth.
+
+Como você vai validar (passo a passo)
+1) Teste principal (reproduz seu problema):
+- Abrir Preview
+- Fazer login com a conta de 1 departamento
+- Esperado: entrar sem “spinner infinito”.
+- Recarregar a página e repetir
+- Esperado: não alternar “primeiro dashboard / depois minhas escalas” por instabilidade.
+
+2) Teste de “storage sujo”:
+- Simular cenário real: repetir login/logout algumas vezes
+- Esperado: sem travas e sem `refresh_token_not_found` persistente.
+
+3) Confirmar pelo console:
+- Não deve mais aparecer `Invalid Refresh Token: Refresh Token Not Found`.
+- Se aparecer, deve vir acompanhado do log de “limpeza + logout”, e a app deve se recuperar (não travar).
+
+Observações importantes
+- Isso explica por que “só entra depois de reiniciar várias vezes”: reiniciar muda timing e às vezes “ganha” a corrida, mas o problema raiz (refresh token inválido no storage + falta de tratamento no ensureSession) continua.
+- Esse conserto é sistêmico: estabiliza autenticação no boot e evita que qualquer tela protegida fique presa por sessão quebrada.
 
 Arquivos que serão alterados
-- src/hooks/useAuth.tsx
-  - Adicionar sincronização user <- session.user quando necessário.
-- src/components/ProtectedRoute.tsx
-  - Trocar a condição de verificação para usar `currentUser` e segurar o render até ele existir.
-- src/pages/MySchedules.tsx
-  - Trocar para usar `currentUser` e não travar quando user atrasar.
-- src/pages/Dashboard.tsx
-  - Trocar para usar `currentUser` e não travar quando user atrasar.
-
-Critérios de validação (o que você vai testar)
-1) Teste end-to-end do login (principal)
-- Logout completo
-- Login com conta que tem 1 departamento
-- Resultado esperado: abre /my-schedules e carrega os dados sem “rodar infinito”.
-
-2) Teste de cold start / preview
-- Recarregar a página (F5) enquanto está logado
-- Abrir /my-schedules direto
-- Resultado esperado: sem travar em spinner infinito.
-
-3) Teste com outras contas
-- Repetir com 2–3 contas diferentes
-- Resultado esperado: não travar, independentemente da conta.
-
-Riscos / observações
-- Essas mudanças tratam o problema estrutural (estado ambíguo session/user) e não dependem de cache do Vite.
-- Se ainda houver travamento após isso, o próximo passo será identificar qual query específica está pendurando (ex.: uma RPC ou select) e adicionar timeout/erro amigável (similar ao que já existe em alguns pontos do app).
-
-Referência de troubleshooting
-- Se você quiser acompanhar padrões de travamento/loops no preview, podemos usar também: https://docs.lovable.dev/tips-tricks/troubleshooting
+- `src/hooks/useAuth.tsx` (correção do ensureSession + tratamento do refresh_token_not_found + limpeza de storage + logs)
+- `src/pages/Auth.tsx` (timeout/fallback nas RPCs do redirect e garantia de desligar loading)
