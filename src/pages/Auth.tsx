@@ -384,95 +384,118 @@ export default function Auth() {
     // Mark that we're handling navigation to prevent useEffect from interfering
     hasRedirectedRef.current = true;
     
-    const { error, session: loginSession } = await signIn(data.email, data.password);
+    try {
+      const { error, session: loginSession } = await signIn(data.email, data.password);
 
-    if (error) {
-      hasRedirectedRef.current = false; // Reset on error so user can try again
-      setIsLoading(false);
-      const errorMessage = error.message.includes('Invalid login credentials')
-        ? 'Email ou senha incorretos'
-        : error.message.includes('Email not confirmed')
-        ? 'Por favor, confirme seu email antes de entrar'
-        : 'Erro ao fazer login. Tente novamente.';
+      if (error) {
+        hasRedirectedRef.current = false; // Reset on error so user can try again
+        const errorMessage = error.message.includes('Invalid login credentials')
+          ? 'Email ou senha incorretos'
+          : error.message.includes('Email not confirmed')
+          ? 'Por favor, confirme seu email antes de entrar'
+          : 'Erro ao fazer login. Tente novamente.';
+        
+        toast({
+          variant: 'destructive',
+          title: 'Erro no login',
+          description: errorMessage,
+        });
+        return;
+      }
+
+      // Use the session returned directly from signIn
+      const currentSession = loginSession;
+      
+      if (!currentSession?.user) {
+        hasRedirectedRef.current = false; // Reset on error
+        toast({
+          variant: 'destructive',
+          title: 'Erro ao entrar',
+          description: 'Não foi possível iniciar a sessão. Tente novamente.',
+        });
+        return;
+      }
+
+      // CRITICAL: Wait for React context to hydrate from onAuthStateChange
+      // This prevents ProtectedRoute from seeing an empty session and causing a loop
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      // Check if MFA verification is required
+      const { data: mfaData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      
+      if (mfaData?.currentLevel === 'aal1' && mfaData?.nextLevel === 'aal2') {
+        setActiveTab('2fa-verify');
+        return;
+      }
+
+      // Check if user is admin and redirect accordingly
+      const { data: hasRole } = await supabase.rpc('has_role', { 
+        _user_id: currentSession.user.id, 
+        _role: 'admin' 
+      });
+      
+      if (hasRole) {
+        toast({
+          title: 'Bem-vindo, Admin!',
+          description: 'Redirecionando para o painel administrativo.',
+        });
+        navigate('/admin', { replace: true });
+        return;
+      }
+
+      // Count user departments to determine redirect destination
+      const redirectDestination = await getSmartRedirectDestination(currentSession.user.id);
+      
+      console.log('[Auth] Login complete, redirecting to:', redirectDestination);
       
       toast({
-        variant: 'destructive',
-        title: 'Erro no login',
-        description: errorMessage,
+        title: 'Bem-vindo de volta!',
+        description: 'Login realizado com sucesso.',
       });
-      return;
-    }
-
-    // Use the session returned directly from signIn
-    const currentSession = loginSession;
-    
-    if (!currentSession?.user) {
-      hasRedirectedRef.current = false; // Reset on error
-      setIsLoading(false);
+      navigate(redirectDestination, { replace: true });
+    } catch (err) {
+      console.error('[Auth] Unexpected error during login:', err);
+      hasRedirectedRef.current = false;
       toast({
         variant: 'destructive',
-        title: 'Erro ao entrar',
-        description: 'Não foi possível iniciar a sessão. Tente novamente.',
+        title: 'Erro inesperado',
+        description: 'Ocorreu um erro. Tente novamente.',
       });
-      return;
-    }
-
-    // CRITICAL: Wait for React context to hydrate from onAuthStateChange
-    // This prevents ProtectedRoute from seeing an empty session and causing a loop
-    await new Promise(resolve => setTimeout(resolve, 200));
-
-    // Check if MFA verification is required
-    const { data: mfaData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-    
-    if (mfaData?.currentLevel === 'aal1' && mfaData?.nextLevel === 'aal2') {
+    } finally {
+      // CRITICAL: Always turn off loading state to prevent stuck UI
       setIsLoading(false);
-      setActiveTab('2fa-verify');
-      return;
     }
-
-    // Check if user is admin and redirect accordingly
-    const { data: hasRole } = await supabase.rpc('has_role', { 
-      _user_id: currentSession.user.id, 
-      _role: 'admin' 
-    });
-    
-    if (hasRole) {
-      setIsLoading(false);
-      toast({
-        title: 'Bem-vindo, Admin!',
-        description: 'Redirecionando para o painel administrativo.',
-      });
-      navigate('/admin', { replace: true });
-      return;
-    }
-
-    // Count user departments to determine redirect destination
-    const redirectDestination = await getSmartRedirectDestination(currentSession.user.id);
-    
-    console.log('[Auth] Login complete, redirecting to:', redirectDestination);
-    
-    setIsLoading(false);
-    toast({
-      title: 'Bem-vindo de volta!',
-      description: 'Login realizado com sucesso.',
-    });
-    navigate(redirectDestination, { replace: true });
   };
   
   // Helper function to determine redirect based on department count
   // Uses a SECURITY DEFINER RPC to bypass RLS timing issues during login
+  // Includes timeout to prevent hanging on slow/unresponsive RPC calls
   const getSmartRedirectDestination = async (userId: string): Promise<string> => {
+    const RPC_TIMEOUT_MS = 4000; // 4 second timeout
+    const startTime = Date.now();
+    
     try {
-      // Use RPC function that runs with SECURITY DEFINER - bypasses RLS timing issues
-      const { data: departmentCount, error } = await supabase.rpc('get_my_department_count');
-
-      if (error) {
-        console.error('Error getting department count via RPC:', error);
-        // Fallback to dashboard on error
+      // Create a timeout promise
+      const timeoutPromise = new Promise<{ data: null; error: Error }>((resolve) => {
+        setTimeout(() => {
+          resolve({ data: null, error: new Error('RPC timeout') });
+        }, RPC_TIMEOUT_MS);
+      });
+      
+      // Race the RPC call against the timeout
+      const rpcPromise = supabase.rpc('get_my_department_count');
+      const result = await Promise.race([rpcPromise, timeoutPromise]);
+      
+      const elapsed = Date.now() - startTime;
+      
+      if (result.error) {
+        console.error(`[Auth] Error getting department count (${elapsed}ms):`, result.error);
+        // Fallback to dashboard on error or timeout
         return '/dashboard';
       }
       
-      console.log('[Auth] Smart redirect - departments found via RPC:', departmentCount);
+      const departmentCount = result.data as number;
+      console.log(`[Auth] Smart redirect - departments found via RPC: ${departmentCount} (${elapsed}ms)`);
 
       // 1 department -> go directly to schedules
       // 0 or 2+ departments -> go to dashboard
@@ -481,7 +504,8 @@ export default function Auth() {
       }
       return '/dashboard';
     } catch (error) {
-      console.error('Error counting departments:', error);
+      const elapsed = Date.now() - startTime;
+      console.error(`[Auth] Error counting departments (${elapsed}ms):`, error);
       return '/dashboard';
     }
   };

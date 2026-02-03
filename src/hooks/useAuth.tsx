@@ -134,6 +134,71 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * Recovers the session safely without causing token refresh storms.
    * Uses singleton guard and caching to ensure only ONE refresh happens at a time.
    */
+  /**
+   * Clears all auth-related storage to recover from corrupted token state.
+   * This is called when we detect invalid refresh tokens.
+   */
+  const clearAuthStorage = useCallback(() => {
+    console.warn('[Auth] Clearing auth storage due to invalid tokens');
+    try {
+      // Clear localStorage items that contain stale tokens
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.includes('supabase') || key.includes('sb-') || key.includes('auth'))) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => {
+        console.log('[Auth] Removing localStorage key:', key);
+        localStorage.removeItem(key);
+      });
+      
+      // Clear sessionStorage as well
+      const sessionKeysToRemove: string[] = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        if (key && (key.includes('supabase') || key.includes('sb-') || key.includes('auth'))) {
+          sessionKeysToRemove.push(key);
+        }
+      }
+      sessionKeysToRemove.forEach(key => sessionStorage.removeItem(key));
+      
+      // Clear internal guard cache
+      const guard = getAuthGuard();
+      guard.cachedSession = null;
+      guard.cacheTime = 0;
+      guard.lastBootstrapUserId = null;
+    } catch (e) {
+      console.error('[Auth] Error clearing storage:', e);
+    }
+  }, []);
+
+  /**
+   * Check if an error is related to an invalid/expired refresh token
+   */
+  const isInvalidRefreshTokenError = useCallback((error: unknown): boolean => {
+    if (!error) return false;
+    
+    const errorObj = error as { code?: string; message?: string };
+    const code = errorObj?.code ?? '';
+    const message = errorObj?.message ?? '';
+    
+    const invalidPatterns = [
+      'refresh_token_not_found',
+      'Invalid Refresh Token',
+      'Refresh Token Not Found',
+      'invalid_grant',
+      'bad_jwt',
+      'session_not_found',
+    ];
+    
+    return invalidPatterns.some(pattern => 
+      code.toLowerCase().includes(pattern.toLowerCase()) ||
+      message.toLowerCase().includes(pattern.toLowerCase())
+    );
+  }, []);
+
   const ensureSession = useCallback(async (): Promise<Session | null> => {
     const guard = getAuthGuard();
     const now = Date.now();
@@ -154,11 +219,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Only call getSession ONCE
         // In some environments (e.g., sandboxed iframes / strict privacy settings),
         // getSession() can hang. We hard-timeout to avoid infinite loading states.
-        const { data } = await withTimeout(
+        const result = await withTimeout(
           supabase.auth.getSession(),
           6000,
-          { data: { session: null } } as any
+          { data: { session: null }, error: null } as { data: { session: Session | null }; error: unknown }
         );
+        
+        const { data, error } = result;
+        
+        // CRITICAL: Check for refresh token errors and perform clean logout
+        if (error && isInvalidRefreshTokenError(error)) {
+          console.error('[Auth] Invalid refresh token detected:', error);
+          
+          // Clear all auth storage to recover from corrupted state
+          clearAuthStorage();
+          
+          // Force signOut to clean up Supabase client state
+          try {
+            await supabase.auth.signOut({ scope: 'local' });
+          } catch {
+            // Ignore signOut errors - storage is already cleared
+          }
+          
+          // Reset React state
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+          
+          console.log('[Auth] Clean logout completed after invalid refresh token');
+          return null;
+        }
         
         if (data.session?.user) {
           guard.cachedSession = data.session;
@@ -170,7 +260,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // No session found - user is truly logged out
         return null;
-      } catch {
+      } catch (err) {
+        // Also check for refresh token errors in catch block
+        if (isInvalidRefreshTokenError(err)) {
+          console.error('[Auth] Caught invalid refresh token error:', err);
+          clearAuthStorage();
+          try {
+            await supabase.auth.signOut({ scope: 'local' });
+          } catch {
+            // Ignore
+          }
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+          return null;
+        }
         return null;
       } finally {
         guard.refreshPromise = null;
@@ -178,7 +282,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
 
     return guard.refreshPromise;
-  }, []);
+  }, [clearAuthStorage, isInvalidRefreshTokenError]);
 
   useEffect(() => {
     // Prevent duplicate initialization
