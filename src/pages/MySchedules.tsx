@@ -9,7 +9,8 @@ import {
   Church,
   ArrowLeftRight,
   User,
-  Users
+  Users,
+  CalendarPlus
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LeviLogo } from '@/components/LeviLogo';
@@ -25,6 +26,13 @@ import { SupportNotification } from '@/components/SupportNotification';
 import { SwapRequestDialog } from '@/components/schedules/SwapRequestDialog';
 import { SwapResponseDialog } from '@/components/schedules/SwapResponseDialog';
 import { PendingSwapBadge } from '@/components/schedules/PendingSwapBadge';
+import MyAvailabilitySheet from '@/components/department/MyAvailabilitySheet';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from '@/hooks/useAuth';
 import { useScheduleSwaps, type ScheduleSwap } from '@/hooks/useScheduleSwaps';
 import { supabase } from '@/integrations/supabase/client';
@@ -79,6 +87,8 @@ export default function MySchedules() {
   const [departmentIds, setDepartmentIds] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'mine' | 'team'>('mine');
   const [memberProfiles, setMemberProfiles] = useState<Record<string, MemberProfile>>({});
+  const [availabilitySheetOpen, setAvailabilitySheetOpen] = useState(false);
+  const [leaderDepartments, setLeaderDepartments] = useState<{ id: string; name: string }[]>([]);
   const { user, session, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -101,8 +111,34 @@ export default function MySchedules() {
     if (authLoading) return;
     if (currentUser) {
       fetchSchedules();
+      fetchLeaderDepartments();
     }
   }, [currentUser?.id, authLoading, viewMode]);
+
+  const fetchLeaderDepartments = async () => {
+    if (!currentUser) return;
+    
+    try {
+      const { data: memberData, error } = await supabase
+        .from('members')
+        .select('department_id, role, departments(id, name)')
+        .eq('user_id', currentUser.id)
+        .eq('role', 'leader');
+
+      if (error) throw error;
+
+      const depts = (memberData || [])
+        .filter(m => m.departments)
+        .map(m => ({
+          id: (m.departments as any).id,
+          name: (m.departments as any).name
+        }));
+      
+      setLeaderDepartments(depts);
+    } catch (error) {
+      console.error('Error fetching leader departments:', error);
+    }
+  };
 
   const fetchSchedules = async () => {
     if (!currentUser) return;
@@ -383,7 +419,7 @@ export default function MySchedules() {
 
       <main className="container mx-auto px-4 py-8 flex-1">
         {/* View Mode Toggle */}
-        <div className="flex justify-center mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
           <div className="flex bg-muted rounded-lg p-1 gap-1">
             <Button
               size="sm"
@@ -403,6 +439,58 @@ export default function MySchedules() {
               <Users className="w-4 h-4" />
               Escala da Equipe
             </Button>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2">
+            {/* Availability Button - for all users */}
+            {departmentIds.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setAvailabilitySheetOpen(true)}
+                className="gap-1.5"
+              >
+                <Clock className="w-4 h-4" />
+                <span className="hidden sm:inline">Minha Disponibilidade</span>
+                <span className="sm:hidden">Disponibilidade</span>
+              </Button>
+            )}
+
+            {/* Create Schedule Button - for leaders only */}
+            {leaderDepartments.length === 1 && (
+              <Button
+                size="sm"
+                onClick={() => navigate(`/departments/${leaderDepartments[0].id}?action=add-schedule`)}
+                className="gap-1.5"
+              >
+                <CalendarPlus className="w-4 h-4" />
+                <span className="hidden sm:inline">Criar Escala</span>
+                <span className="sm:hidden">Criar</span>
+              </Button>
+            )}
+
+            {leaderDepartments.length > 1 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" className="gap-1.5">
+                    <CalendarPlus className="w-4 h-4" />
+                    <span className="hidden sm:inline">Criar Escala</span>
+                    <span className="sm:hidden">Criar</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {leaderDepartments.map(dept => (
+                    <DropdownMenuItem
+                      key={dept.id}
+                      onClick={() => navigate(`/departments/${dept.id}?action=add-schedule`)}
+                    >
+                      {dept.name}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
 
@@ -761,6 +849,16 @@ export default function MySchedules() {
         onAccept={handleAcceptSwap}
         onReject={handleRejectSwap}
       />
+
+      {/* My Availability Sheet */}
+      {departmentIds.length > 0 && currentUser && (
+        <MyAvailabilitySheet
+          departmentId={departmentIds[0]}
+          userId={currentUser.id}
+          open={availabilitySheetOpen}
+          onOpenChange={setAvailabilitySheetOpen}
+        />
+      )}
     </div>
   );
 }
