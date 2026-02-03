@@ -127,3 +127,12 @@ export const getSlotKey = (slot: { dayOfWeek: number; timeStart: string; timeEnd
 
 export const getAvailableSlotsForDay = (dayOfWeek: number) => 
   SIMPLE_SLOTS.filter(slot => slot.dayOfWeek === dayOfWeek);
+
+// Normalize time to HH:mm format (database may return HH:mm:ss)
+export const normalizeTime = (time: string) => time?.slice(0, 5);
+
+// Find a fixed slot by day of week and time (handles HH:mm:ss from database)
+export const findSlotByDayAndTime = (dayOfWeek: number, timeStart: string): FixedSlot | undefined => {
+  const normalizedTime = normalizeTime(timeStart);
+  return FIXED_SLOTS.find(s => s.dayOfWeek === dayOfWeek && s.timeStart === normalizedTime);
+};
