@@ -470,44 +470,76 @@ export default function Auth() {
   // Helper function to determine redirect based on department count
   // Uses a SECURITY DEFINER RPC to bypass RLS timing issues during login
   // Includes timeout to prevent hanging on slow/unresponsive RPC calls
+  // Also includes retry logic to handle session propagation delays
   const getSmartRedirectDestination = async (userId: string): Promise<string> => {
-    const RPC_TIMEOUT_MS = 4000; // 4 second timeout
-    const startTime = Date.now();
+    const RPC_TIMEOUT_MS = 4000; // 4 second timeout per attempt
+    const MAX_RETRIES = 2; // Retry up to 2 times if we get 0 (session might not be propagated)
+    const RETRY_DELAY_MS = 300; // Wait 300ms between retries
     
-    try {
-      // Create a timeout promise
-      const timeoutPromise = new Promise<{ data: null; error: Error }>((resolve) => {
-        setTimeout(() => {
-          resolve({ data: null, error: new Error('RPC timeout') });
-        }, RPC_TIMEOUT_MS);
-      });
+    const attemptRpc = async (attempt: number): Promise<{ count: number; elapsed: number; error?: Error }> => {
+      const startTime = Date.now();
       
-      // Race the RPC call against the timeout
-      const rpcPromise = supabase.rpc('get_my_department_count');
-      const result = await Promise.race([rpcPromise, timeoutPromise]);
+      try {
+        // Create a timeout promise
+        const timeoutPromise = new Promise<{ data: null; error: Error }>((resolve) => {
+          setTimeout(() => {
+            resolve({ data: null, error: new Error('RPC timeout') });
+          }, RPC_TIMEOUT_MS);
+        });
+        
+        // Race the RPC call against the timeout
+        const rpcPromise = supabase.rpc('get_my_department_count');
+        const result = await Promise.race([rpcPromise, timeoutPromise]);
+        
+        const elapsed = Date.now() - startTime;
+        
+        if (result.error) {
+          return { count: -1, elapsed, error: result.error };
+        }
+        
+        return { count: result.data as number, elapsed };
+      } catch (error) {
+        const elapsed = Date.now() - startTime;
+        return { count: -1, elapsed, error: error as Error };
+      }
+    };
+    
+    let lastResult: { count: number; elapsed: number; error?: Error } = { count: 0, elapsed: 0 };
+    
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      if (attempt > 0) {
+        // Wait before retry to let session propagate
+        console.log(`[Auth] Retrying department count (attempt ${attempt + 1}/${MAX_RETRIES + 1}) after ${RETRY_DELAY_MS}ms delay...`);
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+      }
       
-      const elapsed = Date.now() - startTime;
+      lastResult = await attemptRpc(attempt);
       
-      if (result.error) {
-        console.error(`[Auth] Error getting department count (${elapsed}ms):`, result.error);
-        // Fallback to dashboard on error or timeout
+      if (lastResult.error) {
+        console.error(`[Auth] Error getting department count (attempt ${attempt + 1}, ${lastResult.elapsed}ms):`, lastResult.error);
+        // On error, fallback to dashboard
         return '/dashboard';
       }
       
-      const departmentCount = result.data as number;
-      console.log(`[Auth] Smart redirect - departments found via RPC: ${departmentCount} (${elapsed}ms)`);
-
-      // 1 department -> go directly to schedules
-      // 0 or 2+ departments -> go to dashboard
-      if (departmentCount === 1) {
-        return '/my-schedules';
+      // If we got a non-zero count, we're good
+      if (lastResult.count > 0) {
+        console.log(`[Auth] Smart redirect - departments found via RPC: ${lastResult.count} (attempt ${attempt + 1}, ${lastResult.elapsed}ms)`);
+        
+        // 1 department -> go directly to schedules
+        // 2+ departments -> go to dashboard
+        if (lastResult.count === 1) {
+          return '/my-schedules';
+        }
+        return '/dashboard';
       }
-      return '/dashboard';
-    } catch (error) {
-      const elapsed = Date.now() - startTime;
-      console.error(`[Auth] Error counting departments (${elapsed}ms):`, error);
-      return '/dashboard';
+      
+      // Got 0 - this might be a session propagation issue, retry if we have attempts left
+      console.log(`[Auth] Smart redirect - got 0 departments (attempt ${attempt + 1}, ${lastResult.elapsed}ms), ${attempt < MAX_RETRIES ? 'retrying...' : 'giving up'}`);
     }
+    
+    // After all retries, if still 0, go to dashboard
+    console.log(`[Auth] Smart redirect - final count: ${lastResult.count} after ${MAX_RETRIES + 1} attempts, going to /dashboard`);
+    return '/dashboard';
   };
 
   const handle2FASuccess = async () => {
