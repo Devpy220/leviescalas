@@ -1,9 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const TWILIO_ACCOUNT_SID = Deno.env.get("TWILIO_ACCOUNT_SID");
-const TWILIO_AUTH_TOKEN = Deno.env.get("TWILIO_AUTH_TOKEN");
-const TWILIO_WHATSAPP_FROM = Deno.env.get("TWILIO_WHATSAPP_FROM");
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
 const corsHeaders = {
@@ -24,49 +21,37 @@ const formatTime = (time: string): string => {
   return time.slice(0, 5);
 };
 
-const sendWhatsAppMessage = async (to: string, message: string): Promise<{ success: boolean; error?: string }> => {
-  if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_WHATSAPP_FROM) {
-    console.log("Twilio credentials not configured");
-    return { success: false, error: "Twilio not configured" };
-  }
-
-  let formattedNumber = to.replace(/\D/g, '');
-  if (!formattedNumber.startsWith('55')) {
-    formattedNumber = '55' + formattedNumber;
-  }
-  const whatsappTo = `whatsapp:+${formattedNumber}`;
-
-  console.log("Sending WhatsApp reminder to:", whatsappTo);
-
+// Send push notification via the send-push-notification function
+const sendPushNotification = async (
+  userId: string,
+  title: string,
+  body: string,
+  data?: Record<string, unknown>
+): Promise<{ success: boolean; error?: string }> => {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+  
   try {
-    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`;
-    const authString = btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
-
-    const response = await fetch(twilioUrl, {
-      method: "POST",
+    const response = await fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
+      method: 'POST',
       headers: {
-        "Authorization": `Basic ${authString}`,
-        "Content-Type": "application/x-www-form-urlencoded",
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""}`
       },
-      body: new URLSearchParams({
-        From: TWILIO_WHATSAPP_FROM,
-        To: whatsappTo,
-        Body: message,
-      }),
+      body: JSON.stringify({ userId, title, body, data })
     });
 
     if (!response.ok) {
-      const errorData = await response.text();
-      console.error("Twilio API error:", errorData);
-      return { success: false, error: errorData };
+      const errorText = await response.text();
+      console.error('Push notification failed:', errorText);
+      return { success: false, error: errorText };
     }
 
-    const data = await response.json();
-    console.log("WhatsApp reminder sent:", data.sid);
-    return { success: true };
-  } catch (error: any) {
-    console.error("Error sending WhatsApp:", error);
-    return { success: false, error: error.message };
+    const result = await response.json();
+    return { success: result.sent > 0 };
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error sending push notification:', errorMessage);
+    return { success: false, error: errorMessage };
   }
 };
 
@@ -276,20 +261,28 @@ const handler = async (req: Request): Promise<Response> => {
         const confirmUrl = `${supabaseUrl}/functions/v1/confirm-schedule?token=${schedule.confirmation_token}&action=confirm`;
         const declineUrl = `${supabaseUrl}/functions/v1/confirm-schedule?token=${schedule.confirmation_token}&action=decline`;
 
-        // Send WhatsApp reminder if user has WhatsApp
-        if (profile.whatsapp) {
-          let whatsappMessage = `⏰ *Lembrete de Escala*\n\nOlá, ${profile.name}!\n\nLembrete da sua escala *amanhã*:\n📆 *Data:* ${formattedDate}\n⏰ *Horário:* ${formattedTimeStart} às ${formattedTimeEnd}\n🏢 *Departamento:* ${department.name}`;
-          
-          if (isPendingConfirmation) {
-            whatsappMessage = `⚠️ *CONFIRME SUA PRESENÇA*\n\nOlá, ${profile.name}!\n\nVocê ainda não confirmou sua presença na escala de *amanhã*:\n📆 *Data:* ${formattedDate}\n⏰ *Horário:* ${formattedTimeStart} às ${formattedTimeEnd}\n🏢 *Departamento:* ${department.name}\n\n✅ Confirmar: ${confirmUrl}\n❌ Não poderei: ${declineUrl}`;
+        // Send push notification (replaces WhatsApp)
+        const pushTitle = isPendingConfirmation 
+          ? `⚠️ Confirme sua Presença` 
+          : `⏰ Lembrete de Escala`;
+        const pushBody = isPendingConfirmation
+          ? `Escala amanhã em ${department.name} - ${formattedTimeStart}`
+          : `Amanhã: ${department.name} às ${formattedTimeStart}`;
+        
+        const pushResult = await sendPushNotification(
+          schedule.user_id,
+          pushTitle,
+          pushBody,
+          {
+            type: isPendingConfirmation ? 'confirmation_reminder' : 'schedule_reminder',
+            department_id: schedule.department_id,
+            date: schedule.date,
+            url: '/my-schedules'
           }
-          
-          whatsappMessage += `\n\n_LEVI - Sistema de Escalas_`;
-          
-          const whatsappResult = await sendWhatsAppMessage(profile.whatsapp, whatsappMessage);
-          if (whatsappResult.success) {
-            sentCount++;
-          }
+        );
+
+        if (pushResult.success) {
+          sentCount++;
         }
 
         // Send email reminder

@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Footer from '@/components/Footer';
-import { ArrowLeft, Shield, ShieldOff, Loader2, AlertTriangle, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Shield, ShieldOff, Loader2, AlertTriangle, Eye, EyeOff, Bell, BellOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/hooks/useAuth';
 import { useTwoFactor } from '@/hooks/useTwoFactor';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { TwoFactorSetup } from '@/components/auth/TwoFactorSetup';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,6 +26,7 @@ export default function Security() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { isEnabled, isLoading: mfaLoading, checkFactors, disable2FA } = useTwoFactor();
+  const { isSupported: pushSupported, isSubscribed: pushSubscribed, permission: pushPermission, loading: pushLoading, subscribe: subscribePush, unsubscribe: unsubscribePush } = usePushNotifications();
   const { toast } = useToast();
   
   const [showSetup, setShowSetup] = useState(false);
@@ -229,6 +231,75 @@ export default function Security() {
             <p className="text-xs text-muted-foreground">
               Essa configuração afeta apenas a visibilidade para outros membros dos seus departamentos. 
               Líderes de departamento sempre podem ver informações de contato para fins de coordenação.
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Push Notifications Card */}
+        <Card className="mt-6">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                pushSubscribed ? 'bg-green-500/10 text-green-500' : 'bg-muted text-muted-foreground'
+              }`}>
+                {pushSubscribed ? <Bell className="w-5 h-5" /> : <BellOff className="w-5 h-5" />}
+              </div>
+              <div className="flex-1">
+                <CardTitle className="text-lg">Notificações Push</CardTitle>
+                <CardDescription>
+                  Receba alertas de escalas diretamente no seu dispositivo
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {!pushSupported ? (
+              <div className="p-4 rounded-lg bg-muted/50">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-yellow-500 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-foreground">Navegador não suportado</p>
+                    <p className="text-sm text-muted-foreground">
+                      Seu navegador não suporta notificações push. Tente usar Chrome, Firefox, Edge ou Safari.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : pushPermission === 'denied' ? (
+              <div className="p-4 rounded-lg bg-destructive/10">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-destructive mt-0.5" />
+                  <div>
+                    <p className="font-medium text-foreground">Permissão bloqueada</p>
+                    <p className="text-sm text-muted-foreground">
+                      Você bloqueou as notificações. Para ativar, clique no ícone de cadeado na barra de endereços e permita notificações.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+                <div className="flex-1">
+                  <p className="font-medium text-foreground">
+                    {pushSubscribed ? 'Notificações ativas' : 'Notificações desativadas'}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {pushSubscribed 
+                      ? 'Você receberá alertas sobre novas escalas, lembretes e trocas.'
+                      : 'Ative para receber notificações no seu celular ou computador.'}
+                  </p>
+                </div>
+                <Switch
+                  checked={pushSubscribed}
+                  onCheckedChange={(checked) => checked ? subscribePush() : unsubscribePush()}
+                  disabled={pushLoading}
+                />
+              </div>
+            )}
+            
+            <p className="text-xs text-muted-foreground">
+              As notificações push substituem o WhatsApp. Você receberá alertas de: novas escalas, 
+              lembretes 48h e 2h antes, e atualizações de trocas de escala.
             </p>
           </CardContent>
         </Card>
