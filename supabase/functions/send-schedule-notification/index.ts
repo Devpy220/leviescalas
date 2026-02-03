@@ -3,9 +3,6 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-const TWILIO_ACCOUNT_SID = Deno.env.get("TWILIO_ACCOUNT_SID");
-const TWILIO_AUTH_TOKEN = Deno.env.get("TWILIO_AUTH_TOKEN");
-const TWILIO_WHATSAPP_FROM = Deno.env.get("TWILIO_WHATSAPP_FROM");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -59,51 +56,38 @@ const escapeHtml = (str: string): string => {
   });
 };
 
-// Send WhatsApp message via Twilio
-const sendWhatsAppMessage = async (to: string, message: string): Promise<{ success: boolean; error?: string }> => {
-  if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_WHATSAPP_FROM) {
-    console.log("Twilio credentials not configured, skipping WhatsApp notification");
-    return { success: false, error: "Twilio not configured" };
-  }
-
-  // Format phone number for WhatsApp
-  let formattedNumber = to.replace(/\D/g, '');
-  if (!formattedNumber.startsWith('55')) {
-    formattedNumber = '55' + formattedNumber;
-  }
-  const whatsappTo = `whatsapp:+${formattedNumber}`;
-
-  console.log("Sending WhatsApp to:", whatsappTo);
-
+// Send push notification via the send-push-notification function
+const sendPushNotification = async (
+  userId: string,
+  title: string,
+  body: string,
+  data?: Record<string, unknown>
+): Promise<{ success: boolean; error?: string }> => {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+  
   try {
-    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`;
-    const authString = btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
-
-    const response = await fetch(twilioUrl, {
-      method: "POST",
+    const response = await fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
+      method: 'POST',
       headers: {
-        "Authorization": `Basic ${authString}`,
-        "Content-Type": "application/x-www-form-urlencoded",
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""}`
       },
-      body: new URLSearchParams({
-        From: TWILIO_WHATSAPP_FROM,
-        To: whatsappTo,
-        Body: message,
-      }),
+      body: JSON.stringify({ userId, title, body, data })
     });
 
     if (!response.ok) {
-      const errorData = await response.text();
-      console.error("Twilio API error:", errorData);
-      return { success: false, error: errorData };
+      const errorText = await response.text();
+      console.error('Push notification failed:', errorText);
+      return { success: false, error: errorText };
     }
 
-    const data = await response.json();
-    console.log("WhatsApp sent successfully:", data.sid);
-    return { success: true };
-  } catch (error: any) {
-    console.error("Error sending WhatsApp:", error);
-    return { success: false, error: error.message };
+    const result = await response.json();
+    console.log('Push notification result:', result);
+    return { success: result.sent > 0 };
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error sending push notification:', errorMessage);
+    return { success: false, error: errorMessage };
   }
 };
 
@@ -418,21 +402,29 @@ const handler = async (req: Request): Promise<Response> => {
       })
     );
 
-    // WhatsApp notification (if user has WhatsApp)
-    if (profile.whatsapp) {
-      notificationPromises.push(
-        sendWhatsAppMessage(profile.whatsapp, whatsappMessage).then((result) => ({
-          type: 'whatsapp',
-          ...result
-        }))
-      );
-    }
+    // Push notification (replaces WhatsApp)
+    const pushTitle = type === 'new_schedule' ? `📅 Nova Escala` : `⚠️ Escala Alterada`;
+    const pushBody = type === 'new_schedule' 
+      ? `${department_name}: ${formattedDate} às ${formattedTimeStart}`
+      : `${department_name}: alterada para ${formattedDate}`;
+    
+    notificationPromises.push(
+      sendPushNotification(user_id, pushTitle, pushBody, {
+        type,
+        department_id,
+        date,
+        url: '/my-schedules'
+      }).then((result: { success: boolean; error?: string }) => ({
+        type: 'push',
+        ...result
+      }))
+    );
 
     const results = await Promise.all(notificationPromises);
     console.log("Notification results:", results);
 
-    const emailResult = results.find(r => r.type === 'email');
-    const whatsappResult = results.find(r => r.type === 'whatsapp');
+    const emailResult = results.find((r: { type: string }) => r.type === 'email');
+    const pushResult = results.find((r: { type: string }) => r.type === 'push');
 
     // Create notification record
     const notificationMessage = type === 'new_schedule' 
@@ -457,11 +449,11 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        email: emailResult?.success ? emailResult.data : null,
-        whatsapp: whatsappResult?.success ?? false,
+        email: emailResult?.success ? (emailResult as { data?: unknown }).data : null,
+        push: (pushResult as { success: boolean } | undefined)?.success ?? false,
         channels: {
           email: emailResult?.success ?? false,
-          whatsapp: whatsappResult?.success ?? false
+          push: (pushResult as { success: boolean } | undefined)?.success ?? false
         }
       }),
       {
