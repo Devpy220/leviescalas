@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === "development" && componentTagger(),
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt", // Changed to prompt for manual update control
       includeAssets: ["favicon.ico", "placeholder.svg"],
       manifest: {
         name: "LEVI - Gerenciador de Escalas",
@@ -48,8 +48,10 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         clientsClaim: true,
-        skipWaiting: true,
+        skipWaiting: false, // Let user control when to update
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        // More aggressive cache invalidation
+        cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -60,6 +62,19 @@ export default defineConfig(({ mode }) => ({
                 maxEntries: 10,
                 maxAgeSeconds: 60 * 60 * 24 * 365,
               },
+            },
+          },
+          {
+            // API calls - network first with fallback
+            urlPattern: /\/rest\/v1\//,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "api-cache",
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 5, // 5 minutes
+              },
+              networkTimeoutSeconds: 10,
             },
           },
         ],
