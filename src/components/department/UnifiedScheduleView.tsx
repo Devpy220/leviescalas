@@ -11,7 +11,7 @@ import {
   CalendarPlus
 } from 'lucide-react';
 import { ASSIGNMENT_ROLES } from '@/lib/constants';
-import { FIXED_SLOTS, FixedSlot } from '@/lib/fixedSlots';
+import { FIXED_SLOTS, FixedSlot, findSlotByDayAndTime, normalizeTime } from '@/lib/fixedSlots';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -139,18 +139,15 @@ export default function UnifiedScheduleView({
       
       const dayOfWeek = getDay(date);
       
-      // Find matching slot by day of week and time
-      const slotInfo = FIXED_SLOTS.find(s => 
-        s.dayOfWeek === dayOfWeek && 
-        s.timeStart === schedule.time_start
-      );
+      // Find matching slot by day of week and time (using normalized comparison)
+      const slotInfo = findSlotByDayAndTime(dayOfWeek, schedule.time_start);
       
       if (!slotInfo) {
         // Create a generic slot for custom times
         const genericSlot: FixedSlot = {
           dayOfWeek,
-          timeStart: schedule.time_start,
-          timeEnd: schedule.time_end,
+          timeStart: normalizeTime(schedule.time_start),
+          timeEnd: normalizeTime(schedule.time_end),
           label: format(date, 'EEEE', { locale: ptBR }),
           icon: FIXED_SLOTS[0].icon,
           bgColor: 'bg-muted/50',
@@ -161,7 +158,7 @@ export default function UnifiedScheduleView({
         // Check if group already exists
         const existingGroup = groups.find(g => 
           g.date.getTime() === date.getTime() && 
-          g.slotInfo.timeStart === schedule.time_start
+          g.slotInfo.timeStart === normalizeTime(schedule.time_start)
         );
         
         if (existingGroup) {
