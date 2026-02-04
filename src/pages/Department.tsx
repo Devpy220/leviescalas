@@ -8,7 +8,8 @@ import {
   Crown,
   Loader2,
   Clock,
-  Layers
+  Layers,
+  UserCog
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -21,6 +22,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import MemberList from '@/components/department/MemberList';
 import SectorManagement from '@/components/department/SectorManagement';
+import AssignmentRoleManagement from '@/components/department/AssignmentRoleManagement';
 import AddScheduleDialog from '@/components/department/AddScheduleDialog';
 import InviteMemberDialog from '@/components/department/InviteMemberDialog';
 import DepartmentAvatar from '@/components/department/DepartmentAvatar';
@@ -568,8 +570,12 @@ export default function Department() {
           )}
 
           <TabsContent value="sectors" className="mt-6">
-            <div className="max-w-2xl">
+            <div className="max-w-2xl space-y-8">
               <SectorManagement 
+                departmentId={id!}
+                isLeader={isLeader}
+              />
+              <AssignmentRoleManagement 
                 departmentId={id!}
                 isLeader={isLeader}
               />
