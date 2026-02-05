@@ -102,6 +102,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     try {
       guard.lastBootstrapUserId = u.id;
+
+      // Ensure we actually have a valid session before doing any DB writes.
+      // In some preview/partitioned-storage contexts, SIGNED_IN may fire before
+      // the client has a usable access token for PostgREST, which results in 401.
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session?.access_token) {
+        console.warn('[Auth] Bootstrap skipped: no valid session access token yet');
+        guard.lastBootstrapUserId = null;
+        return;
+      }
       
       // Retry helper with exponential backoff for token propagation
       const retryWithDelay = async <T,>(
@@ -113,6 +123,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (attempt > 0) {
             await new Promise(resolve => setTimeout(resolve, baseDelayMs * attempt));
           }
+
+          // Re-check session before each attempt to reduce 401s when token isn't ready.
+          const { data: fresh } = await supabase.auth.getSession();
+          if (!fresh.session?.access_token) {
+            continue;
+          }
+
           const result = await fn();
           if (!result.error) {
             return result;
@@ -142,19 +159,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const whatsapp = (u.user_metadata?.whatsapp as string | undefined) ?? '';
 
       await retryWithDelay(() => 
-        supabase
-          .from('profiles')
-          .upsert(
-            {
-              id: u.id,
-              email,
-              name,
-              whatsapp,
-              updated_at: new Date().toISOString(),
-            } as any,
-            { onConflict: 'id' }
-          )
-          .select() as PromiseLike<{ data: unknown; error: unknown }>
+        (
+          // Don't select back here; selecting can trigger extra RLS/permission checks
+          // and is not needed for bootstrap.
+          supabase
+            .from('profiles')
+            .upsert(
+              {
+                id: u.id,
+                email,
+                name,
+                whatsapp,
+                updated_at: new Date().toISOString(),
+              } as any,
+              { onConflict: 'id' }
+            )
+        ) as unknown as PromiseLike<{ data: unknown; error: unknown }>
       );
 
       // Admin role is granted server-side via ensure_admin_role RPC
