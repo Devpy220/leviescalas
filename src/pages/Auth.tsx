@@ -489,7 +489,7 @@ export default function Auth() {
         });
         
         // Race the RPC call against the timeout
-        const rpcPromise = supabase.rpc('get_my_department_count');
+        const rpcPromise = supabase.rpc('get_my_department_count', { p_user_id: userId });
         const result = await Promise.race([rpcPromise, timeoutPromise]);
         
         const elapsed = Date.now() - startTime;
