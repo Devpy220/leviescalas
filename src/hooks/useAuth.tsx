@@ -123,8 +123,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             errorObj?.status === 401 || 
             errorObj?.status === 403 ||
             errorObj?.code === 'PGRST301' ||
+           errorObj?.code === '42501' || // PostgreSQL insufficient_privilege (RLS violation)
             errorObj?.message?.includes('401') ||
-            errorObj?.message?.includes('JWT');
+           errorObj?.message?.includes('JWT') ||
+           errorObj?.message?.includes('row-level security');
           
           if (!isAuthError || attempt === maxRetries) {
             return result;
