@@ -109,10 +109,15 @@ export default function MySchedules() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (currentUser) {
-      fetchSchedules();
-      fetchLeaderDepartments();
+
+    if (!currentUser) {
+      navigate('/auth', { replace: true, state: { returnUrl: '/my-schedules' } });
+      return;
     }
+
+    fetchSchedules();
+    fetchLeaderDepartments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser?.id, authLoading, viewMode]);
 
   const fetchLeaderDepartments = async () => {
@@ -384,7 +389,7 @@ export default function MySchedules() {
     return groups;
   }, [schedules, viewMode]);
 
-  if (!currentUser) {
+  if (authLoading || !currentUser) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
