@@ -262,54 +262,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const guard = getAuthGuard();
     const now = Date.now();
 
+    // Optional debug (enable via localStorage.DEBUG_AUTH = '1')
+    const debug = (() => {
+      try {
+        return localStorage.getItem('DEBUG_AUTH') === '1';
+      } catch {
+        return false;
+      }
+    })();
+
     // 1) Return cached session if still valid
     if (guard.cachedSession && now - guard.cacheTime < SESSION_CACHE_TTL) {
+      if (debug) console.log('[Auth] ensureSession: using cached session');
       return guard.cachedSession;
     }
 
     // 2) If a refresh is already in-flight, wait for it
     if (guard.refreshPromise) {
+      if (debug) console.log('[Auth] ensureSession: waiting for in-flight refresh');
       return guard.refreshPromise;
     }
 
     // 3) Start new refresh operation
     guard.refreshPromise = (async () => {
       try {
-        // Only call getSession ONCE
-        // In some environments (e.g., sandboxed iframes / strict privacy settings),
-        // getSession() can hang. We hard-timeout to avoid infinite loading states.
+        if (debug) console.log('[Auth] ensureSession: starting');
+
+        // First attempt: getSession (fast, no network refresh required)
         const result = await withTimeout(
           supabase.auth.getSession(),
           6000,
           { data: { session: null }, error: null } as { data: { session: Session | null }; error: unknown }
         );
-        
+
         const { data, error } = result;
-        
+
         // CRITICAL: Check for refresh token errors and perform clean logout
         if (error && isInvalidRefreshTokenError(error)) {
           console.error('[Auth] Invalid refresh token detected:', error);
-          
+
           // Clear all auth storage to recover from corrupted state
           clearAuthStorage();
-          
-          // Force signOut to clean up Supabase client state
+
+          // Force signOut to clean up client state
           try {
             await supabase.auth.signOut({ scope: 'local' });
           } catch {
             // Ignore signOut errors - storage is already cleared
           }
-          
+
           // Reset React state
           setSession(null);
           setUser(null);
           setLoading(false);
-          
+
           console.log('[Auth] Clean logout completed after invalid refresh token');
           return null;
         }
-        
+
         if (data.session?.user) {
+          if (debug) console.log('[Auth] ensureSession: getSession returned session');
           guard.cachedSession = data.session;
           guard.cacheTime = Date.now();
           setSession(data.session);
@@ -317,6 +329,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return data.session;
         }
 
+        // Second attempt: refreshSession (helps when client state is stale after sleep/unpause)
+        // IMPORTANT: This is still single-flight due to guard.refreshPromise.
+        if (debug) console.log('[Auth] ensureSession: getSession returned null; trying refreshSession');
+        const refreshResult = await withTimeout(
+          supabase.auth.refreshSession(),
+          6000,
+          { data: { session: null }, error: null } as { data: { session: Session | null }; error: unknown }
+        );
+
+        const { data: refreshData, error: refreshError } = refreshResult;
+
+        if (refreshError && isInvalidRefreshTokenError(refreshError)) {
+          console.error('[Auth] Invalid refresh token detected on refreshSession:', refreshError);
+          clearAuthStorage();
+          try {
+            await supabase.auth.signOut({ scope: 'local' });
+          } catch {
+            // Ignore
+          }
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+          return null;
+        }
+
+        if (refreshData.session?.user) {
+          if (debug) console.log('[Auth] ensureSession: refreshSession recovered session');
+          guard.cachedSession = refreshData.session;
+          guard.cacheTime = Date.now();
+          setSession(refreshData.session);
+          setUser(refreshData.session.user);
+          return refreshData.session;
+        }
+
+        if (debug) console.log('[Auth] ensureSession: no session found');
         // No session found - user is truly logged out
         return null;
       } catch (err) {
@@ -334,6 +381,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setLoading(false);
           return null;
         }
+        if (debug) console.log('[Auth] ensureSession: failed with error', err);
         return null;
       } finally {
         guard.refreshPromise = null;
@@ -341,7 +389,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
 
     return guard.refreshPromise;
-  }, [clearAuthStorage, isInvalidRefreshTokenError]);
+  }, [clearAuthStorage, isInvalidRefreshTokenError]);// end ensureSession
 
   useEffect(() => {
     // Prevent duplicate initialization
