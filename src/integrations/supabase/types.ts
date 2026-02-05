@@ -1179,7 +1179,9 @@ export type Database = {
           name: string
         }[]
       }
-      get_my_department_count: { Args: never; Returns: number }
+      get_my_department_count:
+        | { Args: never; Returns: number }
+        | { Args: { p_user_id?: string }; Returns: number }
       get_schedule_for_user: {
         Args: { dept_id: string; target_user_id: string }
         Returns: {
