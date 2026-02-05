@@ -103,26 +103,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       guard.lastBootstrapUserId = u.id;
       
+      // Retry helper with exponential backoff for token propagation
+      const retryWithDelay = async <T,>(
+        fn: () => PromiseLike<{ data: T; error: unknown }>,
+        maxRetries = 3,
+        baseDelayMs = 300
+      ): Promise<{ data: T | null; error: unknown }> => {
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+          if (attempt > 0) {
+            await new Promise(resolve => setTimeout(resolve, baseDelayMs * attempt));
+          }
+          const result = await fn();
+          if (!result.error) {
+            return result;
+          }
+          // Check if it's an auth error (401/403) - worth retrying
+          const errorObj = result.error as { code?: string; status?: number; message?: string };
+          const isAuthError = 
+            errorObj?.status === 401 || 
+            errorObj?.status === 403 ||
+            errorObj?.code === 'PGRST301' ||
+            errorObj?.message?.includes('401') ||
+            errorObj?.message?.includes('JWT');
+          
+          if (!isAuthError || attempt === maxRetries) {
+            return result;
+          }
+          console.log(`[Auth] Bootstrap retry ${attempt + 1}/${maxRetries} after auth error`);
+        }
+        return { data: null, error: new Error('Max retries exceeded') };
+      };
+
       // Ensure profile exists (some flows like password recovery won't recreate it).
       const email = u.email ?? '';
       const name = (u.user_metadata?.name as string | undefined) ?? '';
       const whatsapp = (u.user_metadata?.whatsapp as string | undefined) ?? '';
 
-      await supabase
-        .from('profiles')
-        .upsert(
-          {
-            id: u.id,
-            email,
-            name,
-            whatsapp,
-            updated_at: new Date().toISOString(),
-          } as any,
-          { onConflict: 'id' }
-        );
+      await retryWithDelay(() => 
+        supabase
+          .from('profiles')
+          .upsert(
+            {
+              id: u.id,
+              email,
+              name,
+              whatsapp,
+              updated_at: new Date().toISOString(),
+            } as any,
+            { onConflict: 'id' }
+          )
+          .select() as PromiseLike<{ data: unknown; error: unknown }>
+      );
 
       // Admin role is granted server-side via ensure_admin_role RPC
-      await supabase.rpc('ensure_admin_role');
+      await retryWithDelay(async () => {
+        const result = await supabase.rpc('ensure_admin_role');
+        return result as { data: boolean; error: unknown };
+      });
     } catch {
       // Silent: bootstrap should never block auth flow.
       // Reset so we can retry on next login
