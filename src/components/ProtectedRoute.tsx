@@ -20,6 +20,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   
   // Guard to prevent infinite recovery loops
   const recoveryAttemptedRef = useRef(false);
+  // Guard to prevent concurrent recovery attempts
+  const isRecoveringRef = useRef(false);
   
   // CRITICAL: Derive currentUser from either user OR session.user
   // This ensures pages always have access to identity data
@@ -41,6 +43,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     if (currentUser) {
       setVerified(true);
       recoveryAttemptedRef.current = false; // Reset for future navigations
+      isRecoveringRef.current = false;
       return;
     }
 
@@ -54,58 +57,75 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
       return;
     }
 
+    // Prevent concurrent recovery attempts
+    if (isRecoveringRef.current) {
+      return;
+    }
+
     // No user and no session after auth loaded.
     // Try ONE safe recovery (common after the tab sleeps / laptop resumes).
     // Also set a hard timeout so we never show an infinite spinner if recovery hangs.
     let cancelled = false;
+    isRecoveringRef.current = true;
+
     const hardTimeout = window.setTimeout(() => {
       if (cancelled) return;
       recoveryAttemptedRef.current = true;
+      isRecoveringRef.current = false;
       const returnUrl = location.pathname + location.search;
       navigate('/auth', {
         replace: true,
         state: { returnUrl },
       });
-    }, 8000);
+    }, 5000); // Reduced from 8s to 5s for faster feedback
     
-    // Add 300ms delay before attempting recovery to let React state synchronize
-    const recoveryDelay = window.setTimeout(async () => {
+    // Add 500ms delay before attempting recovery to let React state synchronize
+    const recoveryDelay = window.setTimeout(() => {
       if (cancelled) return;
       
-      // Check again if user/session appeared during the delay
-      if (user || session) {
-        window.clearTimeout(hardTimeout);
-        setVerified(true);
-        return;
-      }
-      
-      // Mark that we're attempting recovery
-      recoveryAttemptedRef.current = true;
-      
-      const recovered = await ensureSession();
-      if (cancelled) return;
+      // Use async IIFE to avoid async in useEffect
+      (async () => {
+        try {
+          const recovered = await ensureSession();
+          if (cancelled) return;
 
-      window.clearTimeout(hardTimeout);
-      
-      if (recovered?.user) {
-        setVerified(true);
-        return;
-      }
+          window.clearTimeout(hardTimeout);
+          
+          if (recovered?.user) {
+            setVerified(true);
+            isRecoveringRef.current = false;
+            return;
+          }
 
-      // Store the intended destination so we can redirect back after login
-      const returnUrl = location.pathname + location.search;
-      navigate('/auth', {
-        replace: true,
-        state: { returnUrl },
-      });
-    }, 300);
+          // Mark recovery as attempted
+          recoveryAttemptedRef.current = true;
+          isRecoveringRef.current = false;
+
+          // Store the intended destination so we can redirect back after login
+          const returnUrl = location.pathname + location.search;
+          navigate('/auth', {
+            replace: true,
+            state: { returnUrl },
+          });
+        } catch {
+          if (cancelled) return;
+          isRecoveringRef.current = false;
+          recoveryAttemptedRef.current = true;
+          const returnUrl = location.pathname + location.search;
+          navigate('/auth', {
+            replace: true,
+            state: { returnUrl },
+          });
+        }
+      })();
+    }, 500); // Increased from 300ms to 500ms for better state sync
 
     return () => {
       cancelled = true;
       window.clearTimeout(hardTimeout);
       window.clearTimeout(recoveryDelay);
     };
-  }, [user, session, authLoading, ensureSession, navigate, location.pathname, location.search]);
+  }, [currentUser, authLoading, ensureSession, navigate, location.pathname, location.search]);
 
   // Show loading spinner while auth is loading or not yet verified
   // FIXED: Also wait if session exists but currentUser is not ready yet
