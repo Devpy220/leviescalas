@@ -24,13 +24,13 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "prompt", // Changed to prompt for manual update control
-      includeAssets: ["favicon.ico", "placeholder.svg"],
+      includeAssets: ["favicon.ico", "favicon.png", "levi-icon.svg", "placeholder.svg"],
       manifest: {
         name: "LEVI - Gerenciador de Escalas",
         short_name: "LEVI",
         description: "Gerencie escalas de departamentos de forma simples e eficiente",
-        theme_color: "#8B5CF6",
-        background_color: "#0F0F23",
+        theme_color: "#DD640A",
+        background_color: "#DD640A",
         display: "standalone",
         orientation: "portrait",
         scope: "/",

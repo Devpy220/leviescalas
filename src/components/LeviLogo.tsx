@@ -1,3 +1,5 @@
+import leviIcon from '@/assets/levi-icon.svg';
+
 interface LeviLogoProps {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
@@ -12,9 +14,9 @@ export function LeviLogo({ size = 'md', className = '' }: LeviLogoProps) {
   
   return (
     <img 
-      src="/favicon.png" 
+      src={leviIcon} 
       alt="LEVI" 
-      className={`${sizeClasses[size]} rounded-xl shadow-glow-sm ${className}`}
+      className={`${sizeClasses[size]} rounded-2xl shadow-glow-sm ${className}`}
     />
   );
 }
