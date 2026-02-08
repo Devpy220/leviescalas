@@ -39,11 +39,16 @@ export function usePWAUpdate() {
           });
         });
 
-        // Check for updates every 30 seconds
+        // Check for updates every 10 seconds for faster icon/asset delivery
         checkIntervalRef.current = setInterval(() => {
-          console.log('[PWA] Checking for updates...');
           reg.update().catch(console.error);
-        }, 30 * 1000);
+        }, 10 * 1000);
+
+        // Also check immediately on page focus (user returns to app)
+        const onFocus = () => reg.update().catch(console.error);
+        window.addEventListener('focus', onFocus);
+        // Store cleanup ref
+        (checkIntervalRef as any).__focusCleanup = onFocus;
 
       } catch (error) {
         console.error('[PWA] Registration failed:', error);
@@ -62,6 +67,10 @@ export function usePWAUpdate() {
       if (checkIntervalRef.current) {
         clearInterval(checkIntervalRef.current);
       }
+      const focusCleanup = (checkIntervalRef as any).__focusCleanup;
+      if (focusCleanup) {
+        window.removeEventListener('focus', focusCleanup);
+      }
     };
   }, []);
 
@@ -69,8 +78,14 @@ export function usePWAUpdate() {
     console.log('[PWA] User accepted update');
     
     if (registration?.waiting) {
-      // Tell the waiting service worker to activate
       registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    }
+    
+    // Also clear all caches to force fresh icon/asset downloads
+    if ('caches' in window) {
+      const cacheNames = await caches.keys();
+      await Promise.all(cacheNames.map(name => caches.delete(name)));
+      console.log('[PWA] All caches cleared for fresh assets');
     }
     
     setShowUpdatePrompt(false);
