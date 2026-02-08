@@ -2,7 +2,6 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/button';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -16,7 +15,6 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, session, loading: authLoading, ensureSession } = useAuth();
   const [verified, setVerified] = useState(false);
-  const [stuck, setStuck] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -53,31 +51,25 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     }
   }, [debug, location.pathname, authLoading, user, session, currentUser, verified]);
 
-  // If we sit on spinner too long, show recovery UI (no infinite spinner)
+  // Auto-redirect to /auth after 5 seconds if no session is found
   useEffect(() => {
     if (currentUser) {
       waitStartedAtRef.current = null;
-      setStuck(false);
-      return;
-    }
-
-    if (authLoading) {
-      if (!waitStartedAtRef.current) waitStartedAtRef.current = Date.now();
       return;
     }
 
     if (!waitStartedAtRef.current) waitStartedAtRef.current = Date.now();
 
     const t = window.setTimeout(() => {
-      const started = waitStartedAtRef.current ?? Date.now();
-      const elapsed = Date.now() - started;
-      if (elapsed >= 7000 && !currentUser) {
-        setStuck(true);
+      if (!currentUser) {
+        console.warn('[ProtectedRoute] Auto-redirect: no session after 5s');
+        const returnUrl = location.pathname + location.search;
+        navigate('/auth', { replace: true, state: { returnUrl } });
       }
-    }, 7500);
+    }, 5000);
 
     return () => window.clearTimeout(t);
-  }, [authLoading, currentUser]);
+  }, [authLoading, currentUser, navigate, location.pathname, location.search]);
 
   useEffect(() => {
     // Wait for auth context to finish loading
@@ -158,41 +150,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4 text-center px-6">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
-
-          {stuck ? (
-            <div className="max-w-md space-y-3">
-              <p className="text-sm text-muted-foreground">
-                A autenticação está demorando mais do que o esperado. Você pode tentar recuperar a sessão ou voltar para a tela de login.
-              </p>
-              <div className="flex items-center justify-center gap-2">
-                <Button
-                  variant="secondary"
-                  onClick={async () => {
-                    try {
-                      await ensureSession();
-                    } finally {
-                      // force re-render attempt
-                      setStuck(false);
-                    }
-                  }}
-                >
-                  Tentar recuperar
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    const returnUrl = location.pathname + location.search;
-                    navigate('/auth', { replace: true, state: { returnUrl } });
-                  }}
-                >
-                  Ir para login
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Dica: para diagnóstico, abra o console e ative <code className="px-1 py-0.5 rounded bg-muted">localStorage.DEBUG_AUTH='1'</code> e tente novamente.
-              </p>
-            </div>
-          ) : null}
+          <p className="text-sm text-muted-foreground">Verificando sessão…</p>
         </div>
       </div>
     );
