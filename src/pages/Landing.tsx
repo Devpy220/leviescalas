@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -16,9 +16,14 @@ import {
   ArrowRight,
   Sparkles,
   Heart,
-  Download
+  Download,
+  Play,
+  Pause,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import { LeviLogo } from '@/components/LeviLogo';
+import introVideo from '@/assets/levi-intro-video.mp4';
 
 const features = [
   {
@@ -73,8 +78,29 @@ const appFeatures = [
 export default function Landing() {
   const [showDemo, setShowDemo] = useState(false);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
   const { count, loading: countLoading } = useUserCount();
   const { isInstallable, shouldShowInstallPrompt } = usePWAInstall();
+
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const toggleMute = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+  };
 
   // Show PWA install prompt after 5 seconds if installable
   useEffect(() => {
@@ -209,6 +235,63 @@ export default function Landing() {
                   <span className="text-sm text-muted-foreground">+</span>
                 </div>
                 <p className="text-xs text-muted-foreground">voluntários cadastrados</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Video Section */}
+      <section className="py-12 lg:py-20 relative">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-8">
+              <span className="inline-block px-4 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+                Veja como funciona
+              </span>
+              <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
+                Conheça o LEVI em ação
+              </h2>
+            </div>
+            <div className="relative rounded-2xl overflow-hidden border border-border shadow-xl">
+              <video
+                ref={videoRef}
+                src={introVideo}
+                className="w-full aspect-video object-cover"
+                muted={isMuted}
+                loop
+                playsInline
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+              {!isPlaying && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Button
+                    size="lg"
+                    onClick={togglePlay}
+                    className="w-20 h-20 rounded-full gradient-vibrant shadow-glow hover:shadow-glow-lg transition-all"
+                  >
+                    <Play className="w-8 h-8 text-white ml-1" />
+                  </Button>
+                </div>
+              )}
+              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <LeviLogo size="sm" className="opacity-90" />
+                  <div>
+                    <p className="text-white font-display font-bold">LEVI</p>
+                    <p className="text-white/70 text-xs">Logística de Escalas para Voluntários</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="icon" onClick={togglePlay} className="text-white hover:bg-white/20">
+                    {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={toggleMute} className="text-white hover:bg-white/20">
+                    {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
