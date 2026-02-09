@@ -497,7 +497,7 @@ export default function Dashboard() {
                 <Link to="/payment">
                   <Button className="bg-rose-500 hover:bg-rose-600 text-white shadow-lg hover:shadow-xl transition-all gap-2">
                     <Heart className="w-4 h-4" />
-                    Apoiar via PIX
+                    Apoie o LEVI
                   </Button>
                 </Link>
               </div>
