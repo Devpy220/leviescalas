@@ -473,36 +473,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [bootstrapUser, ensureSession]);
 
-  // Keep-alive: when the user returns to the tab, check cached session.
-  // IMPORTANT: Do NOT call ensureSession on every focus - only if we're in loading state
+  // Keep-alive: only recover session when coming back online (not on every tab switch)
   useEffect(() => {
-    let t: number | undefined;
     const guard = getAuthGuard();
     
-    const attemptRecovery = () => {
-      if (t) window.clearTimeout(t);
-      // Debounce to 5 seconds to avoid rapid calls and token storms
-      t = window.setTimeout(() => {
-        // Only attempt if we have NO session and NO cached session
-        if (!session?.user && !guard.cachedSession) {
-          void ensureSession();
-        }
-      }, 5000);
+    const onOnline = () => {
+      // Only attempt if we have NO session at all
+      if (!session?.user && !guard.cachedSession) {
+        void ensureSession();
+      }
     };
 
-    const onVisibility = () => {
-      if (document.visibilityState === 'visible') attemptRecovery();
-    };
-
-    // Only add listeners, don't call immediately
-    window.addEventListener('online', attemptRecovery);
-    document.addEventListener('visibilitychange', onVisibility);
-
-    return () => {
-      if (t) window.clearTimeout(t);
-      window.removeEventListener('online', attemptRecovery);
-      document.removeEventListener('visibilitychange', onVisibility);
-    };
+    window.addEventListener('online', onOnline);
+    return () => window.removeEventListener('online', onOnline);
   }, [ensureSession, session?.user]);
 
   const signUp = useCallback(async (email: string, password: string, name: string, whatsapp: string) => {

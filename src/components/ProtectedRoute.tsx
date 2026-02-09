@@ -8,140 +8,73 @@ interface ProtectedRouteProps {
 }
 
 /**
- * ProtectedRoute component that centralizes authentication checks
- * for protected pages. This prevents multiple getSession() calls
- * and race conditions that cause rate limiting (429 errors).
+ * ProtectedRoute - single-pass auth check with 5s timeout.
+ * Eliminates duplicate timers and concurrent recovery attempts.
  */
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, session, loading: authLoading, ensureSession } = useAuth();
   const [verified, setVerified] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const recoveryDoneRef = useRef(false);
 
-  // Guard to prevent infinite recovery loops
-  const recoveryAttemptedRef = useRef(false);
-  // Guard to prevent concurrent recovery attempts
-  const isRecoveringRef = useRef(false);
-  // Track how long we've been waiting (for UX + diagnostics)
-  const waitStartedAtRef = useRef<number | null>(null);
-
-  // CRITICAL: Derive currentUser from either user OR session.user
-  // This ensures pages always have access to identity data
   const currentUser = user ?? session?.user ?? null;
 
-  // Debug log (enable via localStorage.DEBUG_AUTH = '1')
-  const debug = (() => {
-    try {
-      return localStorage.getItem('DEBUG_AUTH') === '1';
-    } catch {
-      return false;
-    }
-  })();
-
   useEffect(() => {
-    if (debug) {
-      console.log('[ProtectedRoute] state', {
-        path: location.pathname,
-        authLoading,
-        hasUser: !!user,
-        hasSession: !!session,
-        hasCurrentUser: !!currentUser,
-        verified,
-      });
-    }
-  }, [debug, location.pathname, authLoading, user, session, currentUser, verified]);
-
-  // Auto-redirect to /auth after 5 seconds if no session is found
-  useEffect(() => {
-    if (currentUser) {
-      waitStartedAtRef.current = null;
-      return;
-    }
-
-    if (!waitStartedAtRef.current) waitStartedAtRef.current = Date.now();
-
-    const t = window.setTimeout(() => {
-      if (!currentUser) {
-        console.warn('[ProtectedRoute] Auto-redirect: no session after 5s');
-        const returnUrl = location.pathname + location.search;
-        navigate('/auth', { replace: true, state: { returnUrl } });
-      }
-    }, 5000);
-
-    return () => window.clearTimeout(t);
-  }, [authLoading, currentUser, navigate, location.pathname, location.search]);
-
-  useEffect(() => {
-    // Wait for auth context to finish loading
+    // Still loading auth context — wait
     if (authLoading) return;
 
-    // Only consider verified when we have a CURRENT USER
+    // User found — done
     if (currentUser) {
       setVerified(true);
-      recoveryAttemptedRef.current = false; // Reset for future navigations
-      isRecoveringRef.current = false;
+      recoveryDoneRef.current = false;
       return;
     }
 
-    // If we already attempted recovery and failed, redirect immediately
-    if (recoveryAttemptedRef.current) {
+    // Already tried recovery and failed — redirect immediately
+    if (recoveryDoneRef.current) {
       const returnUrl = location.pathname + location.search;
-      navigate('/auth', {
-        replace: true,
-        state: { returnUrl },
-      });
+      navigate('/auth', { replace: true, state: { returnUrl } });
       return;
     }
 
-    // Prevent concurrent recovery attempts
-    if (isRecoveringRef.current) return;
-
+    // Single recovery attempt with hard 5s timeout
     let cancelled = false;
-    isRecoveringRef.current = true;
+    recoveryDoneRef.current = true;
 
     const hardTimeout = window.setTimeout(() => {
       if (cancelled) return;
-      recoveryAttemptedRef.current = true;
-      isRecoveringRef.current = false;
       const returnUrl = location.pathname + location.search;
       navigate('/auth', { replace: true, state: { returnUrl } });
     }, 5000);
 
-    // Small delay to let React state synchronize
-    const recoveryDelay = window.setTimeout(() => {
+    // Small delay then try ensureSession
+    const delay = window.setTimeout(() => {
       if (cancelled) return;
-
       (async () => {
         try {
           const recovered = await ensureSession();
           if (cancelled) return;
-
           window.clearTimeout(hardTimeout);
-
           if (recovered?.user) {
             setVerified(true);
-            isRecoveringRef.current = false;
             return;
           }
-
-          recoveryAttemptedRef.current = true;
-          isRecoveringRef.current = false;
-          const returnUrl = location.pathname + location.search;
-          navigate('/auth', { replace: true, state: { returnUrl } });
         } catch {
-          if (cancelled) return;
-          isRecoveringRef.current = false;
-          recoveryAttemptedRef.current = true;
+          // fall through to redirect
+        }
+        if (!cancelled) {
+          window.clearTimeout(hardTimeout);
           const returnUrl = location.pathname + location.search;
           navigate('/auth', { replace: true, state: { returnUrl } });
         }
       })();
-    }, 500);
+    }, 300);
 
     return () => {
       cancelled = true;
       window.clearTimeout(hardTimeout);
-      window.clearTimeout(recoveryDelay);
+      window.clearTimeout(delay);
     };
   }, [currentUser, authLoading, ensureSession, navigate, location.pathname, location.search]);
 
