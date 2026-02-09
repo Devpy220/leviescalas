@@ -383,7 +383,7 @@ export default function Landing() {
                 <Link to="/payment" className="block">
                   <Button className="w-full gradient-vibrant text-white shadow-glow hover:shadow-glow-lg transition-all text-lg py-6">
                     <Heart className="w-5 h-5 mr-2" />
-                    Apoiar com PIX
+                    Apoie o LEVI
                   </Button>
                 </Link>
                 
