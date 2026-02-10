@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, CreditCard, Trash2, AlertTriangle } from 'lucide-react';
+import { Loader2, Trash2, AlertTriangle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -53,7 +53,7 @@ export default function DepartmentSettingsDialog({
   const [name, setName] = useState(department.name);
   const [description, setDescription] = useState(department.description || '');
   const [saving, setSaving] = useState(false);
-  const [loadingPortal, setLoadingPortal] = useState(false);
+  
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
@@ -98,60 +98,6 @@ export default function DepartmentSettingsDialog({
     }
   };
 
-  const handleManageSubscription = async () => {
-    // Check if department has a Stripe customer
-    if (!department.stripe_customer_id) {
-      toast({
-        title: 'Assinatura não encontrada',
-        description: 'Você será redirecionado para a página de pagamento.',
-      });
-      onOpenChange(false);
-      navigate(`/payment?departmentId=${department.id}`);
-      return;
-    }
-
-    setLoadingPortal(true);
-    try {
-      if (!session?.access_token) {
-        toast({
-          variant: 'destructive',
-          title: 'Sessão expirada',
-          description: 'Por favor, faça login novamente.',
-        });
-        return;
-      }
-
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/customer-portal`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-        }
-      );
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao abrir portal');
-      }
-      
-      if (data?.url) {
-        window.open(data.url, '_blank');
-      }
-    } catch (error) {
-      console.error('Error opening customer portal:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro',
-        description: error instanceof Error ? error.message : 'Não foi possível abrir o portal de assinatura.',
-      });
-    } finally {
-      setLoadingPortal(false);
-    }
-  };
 
   const handleDelete = async () => {
     if (deleteConfirmText !== department.name) {
@@ -252,35 +198,6 @@ export default function DepartmentSettingsDialog({
                 {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Salvar Alterações
               </Button>
-            </div>
-
-            <Separator />
-
-            {/* Subscription */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-sm">Assinatura</p>
-                  <p className="text-xs text-muted-foreground capitalize">
-                    Status: {department.subscription_status === 'trial' ? 'Período de teste' : department.subscription_status}
-                  </p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleManageSubscription}
-                  disabled={loadingPortal}
-                >
-                  {loadingPortal ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <>
-                      <CreditCard className="w-4 h-4 mr-2" />
-                      Gerenciar
-                    </>
-                  )}
-                </Button>
-              </div>
             </div>
 
             <Separator />
