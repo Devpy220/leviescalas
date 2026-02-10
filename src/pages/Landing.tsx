@@ -17,13 +17,13 @@ import {
   Sparkles,
   Heart,
   Download,
-  Play,
-  Pause,
-  Volume2,
-  VolumeX
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { LeviLogo } from '@/components/LeviLogo';
-import introVideo from '@/assets/levi-intro-video.mp4';
+import screenshotCalendario from '@/assets/screenshot-calendario.jpg';
+import screenshotMembros from '@/assets/screenshot-membros.jpg';
+import screenshotNotificacoes from '@/assets/screenshot-notificacoes.jpg';
 
 const features = [
   {
@@ -75,32 +75,26 @@ const appFeatures = [
   'Suporte por email',
 ];
 
+const screenshots = [
+  { src: screenshotCalendario, title: 'Calendário de Escalas', description: 'Visualize todas as escalas do mês com cores por departamento' },
+  { src: screenshotMembros, title: 'Gestão de Membros', description: 'Gerencie voluntários, convite e controle permissões' },
+  { src: screenshotNotificacoes, title: 'Notificações', description: 'Lembretes automáticos por email para cada escala' },
+];
+
 export default function Landing() {
   const [showDemo, setShowDemo] = useState(false);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+  const [currentSlide, setCurrentSlide] = useState(0);
   const { count, loading: countLoading } = useUserCount();
   const { isInstallable, shouldShowInstallPrompt } = usePWAInstall();
 
-  const togglePlay = () => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-      } else {
-        videoRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
-    }
-  };
-
-  const toggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
-    }
-  };
+  // Auto-advance carousel
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % screenshots.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Show PWA install prompt after 5 seconds if installable
   useEffect(() => {
@@ -235,7 +229,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Video Section */}
+      {/* Screenshots Carousel Section */}
       <section className="py-12 lg:py-20 relative">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
@@ -247,45 +241,62 @@ export default function Landing() {
                 Conheça o LEVI em ação
               </h2>
             </div>
-            <div className="relative rounded-2xl overflow-hidden border border-border shadow-xl">
-              <video
-                ref={videoRef}
-                src={introVideo}
-                className="w-full aspect-video object-cover"
-                muted={isMuted}
-                loop
-                playsInline
-                onPlay={() => setIsPlaying(true)}
-                onPause={() => setIsPlaying(false)}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-              {!isPlaying && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Button
-                    size="lg"
-                    onClick={togglePlay}
-                    className="w-20 h-20 rounded-full gradient-vibrant shadow-glow hover:shadow-glow-lg transition-all"
-                  >
-                    <Play className="w-8 h-8 text-white ml-1" />
-                  </Button>
-                </div>
-              )}
+            <div className="relative rounded-2xl overflow-hidden border border-border shadow-xl bg-card">
+              <div className="relative aspect-video overflow-hidden">
+                {screenshots.map((screenshot, index) => (
+                  <img
+                    key={index}
+                    src={screenshot.src}
+                    alt={screenshot.title}
+                    className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700"
+                    style={{ opacity: index === currentSlide ? 1 : 0 }}
+                    loading="lazy"
+                  />
+                ))}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+              </div>
+              
+              {/* Caption */}
               <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <LeviLogo size="sm" className="opacity-90" />
-                  <div>
-                    <p className="text-white font-display font-bold">LEVI</p>
-                    <p className="text-white/70 text-xs">Logística de Escalas para Voluntários</p>
-                  </div>
+                <div>
+                  <p className="text-white font-display font-bold text-lg">
+                    {screenshots[currentSlide].title}
+                  </p>
+                  <p className="text-white/70 text-sm">
+                    {screenshots[currentSlide].description}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="icon" onClick={togglePlay} className="text-white hover:bg-white/20">
-                    {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setCurrentSlide((prev) => (prev - 1 + screenshots.length) % screenshots.length)}
+                    className="text-white hover:bg-white/20 h-9 w-9"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={toggleMute} className="text-white hover:bg-white/20">
-                    {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setCurrentSlide((prev) => (prev + 1) % screenshots.length)}
+                    className="text-white hover:bg-white/20 h-9 w-9"
+                  >
+                    <ChevronRight className="w-5 h-5" />
                   </Button>
                 </div>
+              </div>
+
+              {/* Dots */}
+              <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex gap-2">
+                {screenshots.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentSlide(index)}
+                    className={`w-2.5 h-2.5 rounded-full transition-all ${
+                      index === currentSlide ? 'bg-white scale-125' : 'bg-white/40'
+                    }`}
+                  />
+                ))}
               </div>
             </div>
           </div>
