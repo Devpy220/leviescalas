@@ -24,6 +24,9 @@ verify_jwt = true
 [functions.send-schedule-reminders]
 verify_jwt = false
 
+[functions.send-scheduled-reminders]
+verify_jwt = false
+
 [functions.auto-notify-schedule]
 verify_jwt = false
 

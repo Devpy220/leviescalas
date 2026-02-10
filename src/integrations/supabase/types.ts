@@ -610,6 +610,42 @@ export type Database = {
         }
         Relationships: []
       }
+      schedule_reminders_sent: {
+        Row: {
+          id: string
+          reminder_type: string
+          schedule_id: string
+          sent_at: string
+        }
+        Insert: {
+          id?: string
+          reminder_type: string
+          schedule_id: string
+          sent_at?: string
+        }
+        Update: {
+          id?: string
+          reminder_type?: string
+          schedule_id?: string
+          sent_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedule_reminders_sent_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedule_reminders_sent_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedules_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       schedule_swaps: {
         Row: {
           created_at: string
