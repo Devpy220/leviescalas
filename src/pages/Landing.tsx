@@ -140,12 +140,6 @@ export default function Landing() {
                 <span className="hidden sm:inline">Instalar</span>
               </Button>
             )}
-            <Link to="/admin-login">
-              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                <Shield className="w-4 h-4 mr-1" />
-                <span className="hidden sm:inline">Admin</span>
-              </Button>
-            </Link>
             <Link to="/auth?forceLogin=true">
               <Button variant="outline" size="sm" className="border-primary/50 text-primary hover:bg-primary/10">
                 Entrar
