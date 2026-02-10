@@ -972,7 +972,7 @@ export default function Auth() {
 
           {/* Login Form */}
           {activeTab === 'login' && (
-            <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-6 animate-fade-in">
+            <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4 animate-fade-in">
               <div className="space-y-2">
                 <Label htmlFor="login-email">Email</Label>
                 <Input
@@ -1037,33 +1037,35 @@ export default function Auth() {
               </button>
 
               {/* Social Login Divider */}
-              <div className="relative my-6">
+              <div className="relative my-4">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-border"></div>
                 </div>
               </div>
 
-              {/* Social Login Buttons */}
-              <div className="flex flex-col gap-3">
+              {/* Social Login Buttons - Icon Only */}
+              <div className="flex justify-center gap-4">
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full h-12 rounded-xl gap-3"
+                  size="icon"
+                  className="h-12 w-12 rounded-xl"
                   onClick={handleGoogleSignIn}
                   disabled={isLoading}
+                  title="Continuar com Google"
                 >
                   <GoogleIcon />
-                  Continuar com Google
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full h-12 rounded-xl gap-3"
+                  size="icon"
+                  className="h-12 w-12 rounded-xl"
                   onClick={handleAppleSignIn}
                   disabled={isLoading}
+                  title="Continuar com Apple"
                 >
                   <AppleIcon />
-                  Continuar com Apple
                 </Button>
               </div>
             </form>
