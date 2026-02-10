@@ -37,7 +37,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useScheduleSwaps, type ScheduleSwap } from '@/hooks/useScheduleSwaps';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { SUPPORT_PRICE_ID, ASSIGNMENT_ROLES } from '@/lib/constants';
+import { ASSIGNMENT_ROLES } from '@/lib/constants';
 import { FIXED_SLOTS, FixedSlot, findSlotByDayAndTime, normalizeTime } from '@/lib/fixedSlots';
 import { format, parseISO, getDay, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -70,15 +70,11 @@ interface MemberProfile {
   name: string;
 }
 
-interface SupportPlan {
-  isActive: boolean;
-  loading: boolean;
-}
 
 export default function MySchedules() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
-  const [supportPlan, setSupportPlan] = useState<SupportPlan>({ isActive: false, loading: false });
+  
   const [swapDialogOpen, setSwapDialogOpen] = useState(false);
   const [responseDialogOpen, setResponseDialogOpen] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
@@ -295,25 +291,6 @@ export default function MySchedules() {
     return true;
   };
 
-  const handleSupportLevi = async () => {
-    setSupportPlan(prev => ({ ...prev, loading: true }));
-    
-    try {
-      const { data, error } = await supabase.functions.invoke('create-support-checkout', {
-        body: { priceId: SUPPORT_PRICE_ID }
-      });
-
-      if (error) throw error;
-
-      if (data?.url) {
-        window.open(data.url, '_blank');
-      }
-    } catch (error) {
-      console.error('Error creating support checkout:', error);
-    } finally {
-      setSupportPlan(prev => ({ ...prev, loading: false }));
-    }
-  };
 
   // Get pending swaps where user is the target
   const pendingSwapsForMe = getPendingSwapsForUser();
@@ -795,7 +772,7 @@ export default function MySchedules() {
         )}
 
         {/* Support LEVI Card */}
-        <Card className="mt-12 p-6 gradient-vibrant text-white">
+        <Card className="mt-12 p-6 gradient-vibrant text-white cursor-pointer" onClick={() => navigate('/apoio')}>
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center">
@@ -804,20 +781,15 @@ export default function MySchedules() {
               <div>
                 <h3 className="font-display text-xl font-bold">Apoie o LEVI</h3>
                 <p className="text-white/80">
-                  Contribua com R$10/mês para manter a plataforma funcionando
+                  Contribua com qualquer valor para manter a plataforma funcionando
                 </p>
               </div>
             </div>
             <Button 
-              onClick={handleSupportLevi}
-              disabled={supportPlan.loading}
+              onClick={(e) => { e.stopPropagation(); navigate('/apoio'); }}
               className="bg-white text-primary hover:bg-white/90 font-semibold"
             >
-              {supportPlan.loading ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              ) : (
-                <Heart className="w-4 h-4 mr-2" />
-              )}
+              <Heart className="w-4 h-4 mr-2" />
               Apoiar Agora
             </Button>
           </div>
