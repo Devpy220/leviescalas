@@ -417,9 +417,20 @@ export default function Auth() {
         return;
       }
 
-      // CRITICAL: Wait for React context to hydrate from onAuthStateChange
-      // This prevents ProtectedRoute from seeing an empty session and causing a loop
-      await new Promise(resolve => setTimeout(resolve, 200));
+      // CRITICAL: Wait for AuthProvider to process the SIGNED_IN event
+      // Instead of a fixed delay, listen for the actual auth state change
+      await new Promise<void>((resolve) => {
+        if (user) { resolve(); return; }
+        const timeout = setTimeout(resolve, 3000);
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+          if (event === 'SIGNED_IN') {
+            clearTimeout(timeout);
+            subscription.unsubscribe();
+            setTimeout(resolve, 50);
+          }
+        });
+        setTimeout(() => subscription.unsubscribe(), 3100);
+      });
 
       // Check if MFA verification is required
       const { data: mfaData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
