@@ -1,104 +1,75 @@
 
-# Lembretes Multi-Horario (72h, 48h, 12h, 3h) + Permissao Automatica
+
+# Usar Screenshots Reais na Landing Page com Nomes Borrados
 
 ## Resumo
 
-Implementar lembretes de escala em **4 momentos** antes do horario da escala (72h, 48h, 12h, 3h), usando notificacoes push no aparelho como canal principal. Ao instalar o app (PWA), pedir automaticamente autorizacao de notificacao.
+Substituir as imagens atuais do carrossel na landing page pelos 8 screenshots reais enviados, aplicando desfoque (blur) nos nomes de pessoas visiveis para proteger a privacidade dos membros.
 
-## Mudancas
+## Screenshots Enviados
 
-### 1. Permissao automatica ao instalar o PWA
+1. Landing page (hero) - sem nomes visiveis
+2. Tela de login - sem nomes visiveis
+3. Minhas Escalas (pessoal) - nome "MATEUS HENRICKY" visivel
+4. Escala da Equipe - varios nomes visiveis (DOUGLAS DE ANDRADE, Sergio Ricardo, etc.)
+5. Disponibilidade Semanal - sem nomes visiveis
+6. Minhas Preferencias - sem nomes visiveis
+7. Dashboard - nome "Eduardo Lino Da Silva" e "Maranata Church" visiveis
+8. Apoio Voluntario - sem nomes visiveis
 
-**Arquivo: `src/components/PWAAutoInstaller.tsx`**
+## Abordagem para Borrar Nomes
 
-Apos o prompt de instalacao do PWA (ou ao fechar o modal iOS), chamar automaticamente o fluxo de `subscribe()` do hook `usePushNotifications` para solicitar permissao de notificacao. Isso garante que o usuario receba o pedido de permissao no momento mais natural -- logo apos instalar o app.
+Usar a API de edicao de imagens com IA (Gemini) via uma Edge Function temporaria para processar os screenshots que contem nomes (imagens 3, 4 e 7). A IA recebera cada imagem com a instrucao de borrar/censurar todos os nomes de pessoas, mantendo o restante da interface intacto. As imagens processadas serao salvas no storage.
 
-### 2. Nova Edge Function: `send-scheduled-reminders`
+## Detalhes Tecnicos
 
-**Arquivo: `supabase/functions/send-scheduled-reminders/index.ts`**
+### 1. Copiar todos os screenshots para src/assets
 
-Reescrever a logica de lembretes para funcionar com intervalos baseados em hora (nao apenas "amanha"):
+Copiar os 8 arquivos enviados para `src/assets/screenshots/`:
+- `screenshot-landing.png`
+- `screenshot-login.png`
+- `screenshot-minhas-escalas.png`
+- `screenshot-escala-equipe.png`
+- `screenshot-disponibilidade.png`
+- `screenshot-preferencias.png`
+- `screenshot-dashboard.png`
+- `screenshot-apoio.png`
 
-- Ao ser chamada (via cron a cada 30 minutos), a funcao:
-  1. Calcula os 4 "janelas" de tempo: escalas que comecam daqui a ~72h, ~48h, ~12h, ~3h (com margem de 30 min)
-  2. Para cada escala encontrada, verifica na tabela `schedule_reminders_sent` se o lembrete daquele intervalo ja foi enviado
-  3. Se nao foi enviado, dispara push notification e registra na tabela
+### 2. Processar imagens com nomes (usando IA)
 
-- Mensagens personalizadas por intervalo:
-  - 72h: "Voce tem escala em 3 dias em [departamento]"
-  - 48h: "Lembrete: escala em 2 dias em [departamento]"
-  - 12h: "Sua escala e amanha! [departamento] as [hora]"
-  - 3h: "Em 3 horas: [departamento] as [hora]"
+Para os screenshots 3, 4 e 7 que contem nomes visiveis, usar a API de edicao de imagens do Lovable AI para aplicar desfoque nos nomes. A instrucao sera: "Blur all personal names visible in this screenshot. Keep everything else unchanged."
 
-### 3. Tabela de controle de lembretes enviados
+As imagens processadas substituirao as originais na pasta de assets.
 
-**Nova migracao SQL**
+### 3. Atualizar o carrossel na Landing.tsx
 
-```sql
-CREATE TABLE public.schedule_reminders_sent (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  schedule_id UUID NOT NULL REFERENCES public.schedules(id) ON DELETE CASCADE,
-  reminder_type TEXT NOT NULL, -- '72h', '48h', '12h', '3h'
-  sent_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE(schedule_id, reminder_type)
-);
+Substituir o array `screenshots` atual (3 imagens placeholder) por um novo array com os 8 screenshots reais:
 
-ALTER TABLE public.schedule_reminders_sent ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Service role only" ON public.schedule_reminders_sent
-  FOR ALL USING (false);
+```
+const screenshots = [
+  { src: screenshotLanding, title: 'Pagina Inicial', description: 'Design moderno e intuitivo para sua igreja' },
+  { src: screenshotLogin, title: 'Acesso Seguro', description: 'Login com email, Google ou Apple' },
+  { src: screenshotMinhasEscalas, title: 'Minhas Escalas', description: 'Veja suas proximas escalas e peca trocas facilmente' },
+  { src: screenshotEscalaEquipe, title: 'Escala da Equipe', description: 'Visualize todos os voluntarios escalados por turno' },
+  { src: screenshotDisponibilidade, title: 'Disponibilidade Semanal', description: 'Marque os horarios em que voce pode servir' },
+  { src: screenshotPreferencias, title: 'Preferencias', description: 'Configure limites de escalas e datas de bloqueio' },
+  { src: screenshotDashboard, title: 'Dashboard', description: 'Gerencie departamentos e escalas em um so lugar' },
+  { src: screenshotApoio, title: 'Apoio Voluntario', description: '100% gratuito com recursos ilimitados' },
+];
 ```
 
-Essa tabela garante que cada lembrete seja enviado apenas uma vez por escala, mesmo se o cron rodar varias vezes.
+### 4. Remover imagens antigas
 
-### 4. Cron Job (pg_cron + pg_net)
+Deletar os arquivos antigos que nao serao mais usados:
+- `src/assets/screenshot-calendario.jpg`
+- `src/assets/screenshot-membros.jpg`
+- `src/assets/screenshot-notificacoes.jpg`
 
-Agendar a funcao para rodar a cada 30 minutos, cobrindo todas as janelas de lembrete:
-
-```sql
-SELECT cron.schedule(
-  'schedule-reminders-multi',
-  '*/30 * * * *',
-  $$
-  SELECT net.http_post(
-    url := 'https://zuksvsxnchwskqytuxxq.supabase.co/functions/v1/send-scheduled-reminders',
-    headers := '{"Content-Type":"application/json","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."}'::jsonb,
-    body := '{}'::jsonb
-  ) AS request_id;
-  $$
-);
-```
-
-### 5. Atualizar PWAAutoInstaller para pedir permissao
-
-**Arquivo: `src/components/PWAAutoInstaller.tsx`**
-
-- Importar `usePushNotifications`
-- Apos instalacao bem-sucedida (Android/Desktop) ou apos fechar o modal iOS, chamar `subscribe()` automaticamente
-- Isso dispara o `Notification.requestPermission()` do navegador
-
-## Arquivos a modificar/criar
+## Arquivos a modificar
 
 | Arquivo | Acao |
 |---------|------|
-| `src/components/PWAAutoInstaller.tsx` | Adicionar pedido automatico de permissao de notificacao |
-| `supabase/functions/send-scheduled-reminders/index.ts` | Nova funcao com logica multi-horario |
-| Nova migracao SQL | Tabela `schedule_reminders_sent` + cron job |
+| `src/assets/screenshots/` | Copiar e processar 8 screenshots |
+| `src/pages/Landing.tsx` | Atualizar imports e array do carrossel |
+| Assets antigos | Remover 3 imagens placeholder |
 
-## Fluxo
-
-```text
-Cron (a cada 30min)
-  |
-  v
-send-scheduled-reminders
-  |
-  +-- Busca escalas nas janelas 72h/48h/12h/3h
-  |
-  +-- Filtra as que ja foram notificadas (schedule_reminders_sent)
-  |
-  +-- Para cada pendente:
-       +-- Envia push notification (send-push-notification)
-       +-- Registra na tabela schedule_reminders_sent
-       +-- Cria registro em notifications (in-app)
-```
