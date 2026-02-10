@@ -1,75 +1,71 @@
 
 
-# Usar Screenshots Reais na Landing Page com Nomes Borrados
+# Simplificar Pagamento para Apenas PIX + Banner Rotativo "Apoie o Levi"
 
 ## Resumo
 
-Substituir as imagens atuais do carrossel na landing page pelos 8 screenshots reais enviados, aplicando desfoque (blur) nos nomes de pessoas visiveis para proteger a privacidade dos membros.
+1. Substituir o QR code atual pelo QR code real enviado pelo usuario
+2. Remover todas as formas de pagamento Stripe (edge functions: `create-support-checkout`, `create-checkout`, `customer-portal`, `check-subscription`, `complete-checkout`)
+3. Substituir o `SupportNotification` (modal popup) por um banner tipo "marquee" que percorre a tela a cada 2 dias com o texto "Apoie o Levi com qualquer valor, clique aqui" e ao clicar navega para `/apoio`
+4. Limpar referencias ao Stripe/checkout em `MySchedules.tsx` e outros componentes
 
-## Screenshots Enviados
+## Mudancas Detalhadas
 
-1. Landing page (hero) - sem nomes visiveis
-2. Tela de login - sem nomes visiveis
-3. Minhas Escalas (pessoal) - nome "MATEUS HENRICKY" visivel
-4. Escala da Equipe - varios nomes visiveis (DOUGLAS DE ANDRADE, Sergio Ricardo, etc.)
-5. Disponibilidade Semanal - sem nomes visiveis
-6. Minhas Preferencias - sem nomes visiveis
-7. Dashboard - nome "Eduardo Lino Da Silva" e "Maranata Church" visiveis
-8. Apoio Voluntario - sem nomes visiveis
+### 1. Substituir QR Code PIX
 
-## Abordagem para Borrar Nomes
+Copiar a imagem enviada (`WhatsApp_Image_2026-02-10_at_11.42.02.jpeg`) para `src/assets/pix-qrcode-levi.jpg`, substituindo o placeholder atual.
 
-Usar a API de edicao de imagens com IA (Gemini) via uma Edge Function temporaria para processar os screenshots que contem nomes (imagens 3, 4 e 7). A IA recebera cada imagem com a instrucao de borrar/censurar todos os nomes de pessoas, mantendo o restante da interface intacto. As imagens processadas serao salvas no storage.
+### 2. Remover Edge Functions de Stripe
 
-## Detalhes Tecnicos
+Deletar as seguintes edge functions que nao serao mais usadas:
+- `supabase/functions/create-support-checkout/` - checkout Stripe para apoio
+- `supabase/functions/create-checkout/` - checkout Stripe geral
+- `supabase/functions/customer-portal/` - portal do cliente Stripe
+- `supabase/functions/check-subscription/` - verificacao de assinatura
+- `supabase/functions/complete-checkout/` - finalizacao de checkout
 
-### 1. Copiar todos os screenshots para src/assets
+Atualizar `supabase/config.toml` para remover as entradas dessas funcoes.
 
-Copiar os 8 arquivos enviados para `src/assets/screenshots/`:
-- `screenshot-landing.png`
-- `screenshot-login.png`
-- `screenshot-minhas-escalas.png`
-- `screenshot-escala-equipe.png`
-- `screenshot-disponibilidade.png`
-- `screenshot-preferencias.png`
-- `screenshot-dashboard.png`
-- `screenshot-apoio.png`
+### 3. Reescrever SupportNotification como Banner Marquee
 
-### 2. Processar imagens com nomes (usando IA)
+**Arquivo: `src/components/SupportNotification.tsx`**
 
-Para os screenshots 3, 4 e 7 que contem nomes visiveis, usar a API de edicao de imagens do Lovable AI para aplicar desfoque nos nomes. A instrucao sera: "Blur all personal names visible in this screenshot. Keep everything else unchanged."
+Substituir o modal popup atual por um banner animado (marquee/ticker) que:
+- Aparece a cada 2 dias (verifica localStorage pela ultima vez que foi mostrado)
+- Exibe uma faixa na parte inferior da tela com texto animado deslizando: "Apoie o Levi com qualquer valor, clique aqui"
+- Ao clicar, navega para `/apoio` (pagina de pagamento PIX)
+- Pode ser fechado com X e registra no localStorage
+- Usa animacao CSS `@keyframes marquee` para o efeito de texto percorrendo
+- Remove toda dependencia do Stripe (`supabase.functions.invoke`, `SUPPORT_PRICE_ID`)
 
-As imagens processadas substituirao as originais na pasta de assets.
+### 4. Limpar MySchedules.tsx
 
-### 3. Atualizar o carrossel na Landing.tsx
+- Remover `handleSupportLevi` (usa `create-support-checkout`)
+- Remover `SupportPlan` interface e estado `supportPlan`
+- Remover import de `SUPPORT_PRICE_ID`
+- Substituir o botao "Apoiar Agora" (que chamava Stripe) por um link simples para `/apoio`
 
-Substituir o array `screenshots` atual (3 imagens placeholder) por um novo array com os 8 screenshots reais:
+### 5. Limpar constants.ts
 
-```
-const screenshots = [
-  { src: screenshotLanding, title: 'Pagina Inicial', description: 'Design moderno e intuitivo para sua igreja' },
-  { src: screenshotLogin, title: 'Acesso Seguro', description: 'Login com email, Google ou Apple' },
-  { src: screenshotMinhasEscalas, title: 'Minhas Escalas', description: 'Veja suas proximas escalas e peca trocas facilmente' },
-  { src: screenshotEscalaEquipe, title: 'Escala da Equipe', description: 'Visualize todos os voluntarios escalados por turno' },
-  { src: screenshotDisponibilidade, title: 'Disponibilidade Semanal', description: 'Marque os horarios em que voce pode servir' },
-  { src: screenshotPreferencias, title: 'Preferencias', description: 'Configure limites de escalas e datas de bloqueio' },
-  { src: screenshotDashboard, title: 'Dashboard', description: 'Gerencie departamentos e escalas em um so lugar' },
-  { src: screenshotApoio, title: 'Apoio Voluntario', description: '100% gratuito com recursos ilimitados' },
-];
-```
+- Remover `SUPPORT_PRICE_ID` de `src/lib/constants.ts`
 
-### 4. Remover imagens antigas
+### 6. Limpar DepartmentSettingsDialog.tsx
 
-Deletar os arquivos antigos que nao serao mais usados:
-- `src/assets/screenshot-calendario.jpg`
-- `src/assets/screenshot-membros.jpg`
-- `src/assets/screenshot-notificacoes.jpg`
+- Remover referencia a `customer-portal` edge function
 
-## Arquivos a modificar
+## Arquivos a modificar/deletar
 
 | Arquivo | Acao |
 |---------|------|
-| `src/assets/screenshots/` | Copiar e processar 8 screenshots |
-| `src/pages/Landing.tsx` | Atualizar imports e array do carrossel |
-| Assets antigos | Remover 3 imagens placeholder |
+| `src/assets/pix-qrcode-levi.jpg` | Substituir pelo QR code real |
+| `src/components/SupportNotification.tsx` | Reescrever como banner marquee a cada 2 dias |
+| `src/pages/MySchedules.tsx` | Remover logica Stripe, simplificar botao apoio |
+| `src/lib/constants.ts` | Remover `SUPPORT_PRICE_ID` |
+| `src/components/department/DepartmentSettingsDialog.tsx` | Remover referencia ao customer-portal |
+| `supabase/functions/create-support-checkout/` | Deletar |
+| `supabase/functions/create-checkout/` | Deletar |
+| `supabase/functions/customer-portal/` | Deletar |
+| `supabase/functions/check-subscription/` | Deletar |
+| `supabase/functions/complete-checkout/` | Deletar |
+| `supabase/config.toml` | Remover entradas das funcoes deletadas |
 
