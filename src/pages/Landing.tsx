@@ -22,9 +22,14 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { LeviLogo } from '@/components/LeviLogo';
-import screenshotCalendario from '@/assets/screenshot-calendario.jpg';
-import screenshotMembros from '@/assets/screenshot-membros.jpg';
-import screenshotNotificacoes from '@/assets/screenshot-notificacoes.jpg';
+import screenshotLanding from '@/assets/screenshots/screenshot-landing.png';
+import screenshotLogin from '@/assets/screenshots/screenshot-login.png';
+import screenshotMinhasEscalas from '@/assets/screenshots/screenshot-minhas-escalas.png';
+import screenshotEscalaEquipe from '@/assets/screenshots/screenshot-escala-equipe.png';
+import screenshotDisponibilidade from '@/assets/screenshots/screenshot-disponibilidade.png';
+import screenshotPreferencias from '@/assets/screenshots/screenshot-preferencias.png';
+import screenshotDashboard from '@/assets/screenshots/screenshot-dashboard.png';
+import screenshotApoio from '@/assets/screenshots/screenshot-apoio.png';
 
 const features = [
   {
@@ -77,9 +82,14 @@ const appFeatures = [
 ];
 
 const screenshots = [
-  { src: screenshotCalendario, title: 'Calendário de Escalas', description: 'Visualize todas as escalas do mês com cores por departamento' },
-  { src: screenshotMembros, title: 'Gestão de Membros', description: 'Gerencie voluntários, convite e controle permissões' },
-  { src: screenshotNotificacoes, title: 'Notificações', description: 'Lembretes automáticos por email para cada escala' },
+  { src: screenshotLanding, title: 'Página Inicial', description: 'Design moderno e intuitivo para sua igreja' },
+  { src: screenshotLogin, title: 'Acesso Seguro', description: 'Login com email, Google ou Apple' },
+  { src: screenshotMinhasEscalas, title: 'Minhas Escalas', description: 'Veja suas próximas escalas e peça trocas facilmente' },
+  { src: screenshotEscalaEquipe, title: 'Escala da Equipe', description: 'Visualize todos os voluntários escalados por turno' },
+  { src: screenshotDisponibilidade, title: 'Disponibilidade Semanal', description: 'Marque os horários em que você pode servir' },
+  { src: screenshotPreferencias, title: 'Preferências', description: 'Configure limites de escalas e datas de bloqueio' },
+  { src: screenshotDashboard, title: 'Dashboard', description: 'Gerencie departamentos e escalas em um só lugar' },
+  { src: screenshotApoio, title: 'Apoio Voluntário', description: '100% gratuito com recursos ilimitados' },
 ];
 
 export default function Landing() {
