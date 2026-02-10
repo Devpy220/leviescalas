@@ -1,93 +1,104 @@
 
-# Exclusividade Domingo Manha / Domingo Noite
+# Lembretes Multi-Horario (72h, 48h, 12h, 3h) + Permissao Automatica
 
 ## Resumo
 
-Implementar bloqueio mutuo entre os turnos de Domingo de Manha (08:00-12:00) e Domingo de Noite (18:00-22:00) em tres camadas:
+Implementar lembretes de escala em **4 momentos** antes do horario da escala (72h, 48h, 12h, 3h), usando notificacoes push no aparelho como canal principal. Ao instalar o app (PWA), pedir automaticamente autorizacao de notificacao.
 
-1. **Disponibilidade** -- ao marcar um turno de domingo, o outro e automaticamente desmarcado
-2. **Escala manual** -- ao criar escala para um turno de domingo, membros ja escalados no outro turno ficam bloqueados
-3. **Escala automatica (IA)** -- regra adicionada ao prompt para nunca escalar a mesma pessoa nos dois turnos do mesmo domingo
+## Mudancas
 
----
+### 1. Permissao automatica ao instalar o PWA
 
-## Detalhes Tecnicos
+**Arquivo: `src/components/PWAAutoInstaller.tsx`**
 
-### 1. SlotAvailability.tsx -- Exclusividade na marcacao de disponibilidade
+Apos o prompt de instalacao do PWA (ou ao fechar o modal iOS), chamar automaticamente o fluxo de `subscribe()` do hook `usePushNotifications` para solicitar permissao de notificacao. Isso garante que o usuario receba o pedido de permissao no momento mais natural -- logo apos instalar o app.
 
-Na funcao `toggleSlotAvailability`, apos marcar um turno de domingo como disponivel, automaticamente remover o turno oposto (se existir):
+### 2. Nova Edge Function: `send-scheduled-reminders`
 
-- Se marcou "Domingo de Manha" (dayOfWeek=0, 08:00), deletar registro de "Domingo de Noite" (dayOfWeek=0, 18:00) do mesmo periodo
-- Se marcou "Domingo de Noite", deletar "Domingo de Manha"
-- Exibir um aviso visual informando que os turnos de domingo sao exclusivos
+**Arquivo: `supabase/functions/send-scheduled-reminders/index.ts`**
 
-### 2. AddScheduleDialog.tsx -- Bloqueio na escala manual
+Reescrever a logica de lembretes para funcionar com intervalos baseados em hora (nao apenas "amanha"):
 
-No `useEffect` que busca conflitos cross-departamento (linha 172-197), adicionar uma consulta extra para verificar se algum membro ja esta escalado no turno oposto de domingo na mesma data:
+- Ao ser chamada (via cron a cada 30 minutos), a funcao:
+  1. Calcula os 4 "janelas" de tempo: escalas que comecam daqui a ~72h, ~48h, ~12h, ~3h (com margem de 30 min)
+  2. Para cada escala encontrada, verifica na tabela `schedule_reminders_sent` se o lembrete daquele intervalo ja foi enviado
+  3. Se nao foi enviado, dispara push notification e registra na tabela
 
-- Se a data selecionada e domingo e o slot e "Domingo de Manha", buscar membros ja escalados em "Domingo de Noite" naquela data (mesmo departamento)
-- Marcar esses membros como bloqueados com badge "Escalado Noite" (ou "Escalado Manha")
-- Adicionar ao estado `sundayConflicts` similar ao `crossDeptConflicts`
+- Mensagens personalizadas por intervalo:
+  - 72h: "Voce tem escala em 3 dias em [departamento]"
+  - 48h: "Lembrete: escala em 2 dias em [departamento]"
+  - 12h: "Sua escala e amanha! [departamento] as [hora]"
+  - 3h: "Em 3 horas: [departamento] as [hora]"
 
-### 3. generate-smart-schedule/index.ts -- Regra no prompt da IA
+### 3. Tabela de controle de lembretes enviados
 
-Adicionar uma regra explicita na secao "REGRAS IMPORTANTES" do prompt:
-
-```
-10. EXCLUSIVIDADE DOMINGO: Um membro NAO pode ser escalado nos dois turnos de domingo 
-    (Manha e Noite) no MESMO dia. Se escalou de manha, NAO escalar a noite e vice-versa.
-```
-
-### 4. Trigger no banco de dados (seguranca extra)
-
-Criar um trigger na tabela `schedules` que rejeita insercoes quando o mesmo usuario ja tem uma escala no turno oposto de domingo na mesma data e departamento. Isso garante a regra mesmo se o frontend falhar.
+**Nova migracao SQL**
 
 ```sql
-CREATE OR REPLACE FUNCTION check_sunday_slot_exclusivity()
-RETURNS TRIGGER AS $$
-BEGIN
-  -- Somente para domingos (day_of_week = 0)
-  IF EXTRACT(DOW FROM NEW.date) = 0 THEN
-    -- Se escalando de manha (antes de 13:00), verificar se ja tem noite
-    -- Se escalando de noite (13:00+), verificar se ja tem manha
-    IF NEW.time_start < '13:00:00' THEN
-      IF EXISTS (
-        SELECT 1 FROM schedules 
-        WHERE user_id = NEW.user_id 
-        AND date = NEW.date 
-        AND department_id = NEW.department_id
-        AND time_start >= '13:00:00'
-        AND id IS DISTINCT FROM NEW.id
-      ) THEN
-        RAISE EXCEPTION 'Membro ja escalado no turno da noite neste domingo';
-      END IF;
-    ELSE
-      IF EXISTS (
-        SELECT 1 FROM schedules 
-        WHERE user_id = NEW.user_id 
-        AND date = NEW.date 
-        AND department_id = NEW.department_id
-        AND time_start < '13:00:00'
-        AND id IS DISTINCT FROM NEW.id
-      ) THEN
-        RAISE EXCEPTION 'Membro ja escalado no turno da manha neste domingo';
-      END IF;
-    END IF;
-  END IF;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+CREATE TABLE public.schedule_reminders_sent (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  schedule_id UUID NOT NULL REFERENCES public.schedules(id) ON DELETE CASCADE,
+  reminder_type TEXT NOT NULL, -- '72h', '48h', '12h', '3h'
+  sent_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(schedule_id, reminder_type)
+);
 
-CREATE TRIGGER enforce_sunday_exclusivity
-BEFORE INSERT OR UPDATE ON schedules
-FOR EACH ROW EXECUTE FUNCTION check_sunday_slot_exclusivity();
+ALTER TABLE public.schedule_reminders_sent ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Service role only" ON public.schedule_reminders_sent
+  FOR ALL USING (false);
 ```
 
-### Arquivos a modificar
+Essa tabela garante que cada lembrete seja enviado apenas uma vez por escala, mesmo se o cron rodar varias vezes.
 
-| Arquivo | Mudanca |
-|---------|---------|
-| `src/components/department/SlotAvailability.tsx` | Auto-remover turno oposto ao marcar domingo |
-| `src/components/department/AddScheduleDialog.tsx` | Consultar e bloquear membros com conflito domingo |
-| `supabase/functions/generate-smart-schedule/index.ts` | Regra 10 no prompt |
-| Nova migracao SQL | Trigger de exclusividade |
+### 4. Cron Job (pg_cron + pg_net)
+
+Agendar a funcao para rodar a cada 30 minutos, cobrindo todas as janelas de lembrete:
+
+```sql
+SELECT cron.schedule(
+  'schedule-reminders-multi',
+  '*/30 * * * *',
+  $$
+  SELECT net.http_post(
+    url := 'https://zuksvsxnchwskqytuxxq.supabase.co/functions/v1/send-scheduled-reminders',
+    headers := '{"Content-Type":"application/json","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."}'::jsonb,
+    body := '{}'::jsonb
+  ) AS request_id;
+  $$
+);
+```
+
+### 5. Atualizar PWAAutoInstaller para pedir permissao
+
+**Arquivo: `src/components/PWAAutoInstaller.tsx`**
+
+- Importar `usePushNotifications`
+- Apos instalacao bem-sucedida (Android/Desktop) ou apos fechar o modal iOS, chamar `subscribe()` automaticamente
+- Isso dispara o `Notification.requestPermission()` do navegador
+
+## Arquivos a modificar/criar
+
+| Arquivo | Acao |
+|---------|------|
+| `src/components/PWAAutoInstaller.tsx` | Adicionar pedido automatico de permissao de notificacao |
+| `supabase/functions/send-scheduled-reminders/index.ts` | Nova funcao com logica multi-horario |
+| Nova migracao SQL | Tabela `schedule_reminders_sent` + cron job |
+
+## Fluxo
+
+```text
+Cron (a cada 30min)
+  |
+  v
+send-scheduled-reminders
+  |
+  +-- Busca escalas nas janelas 72h/48h/12h/3h
+  |
+  +-- Filtra as que ja foram notificadas (schedule_reminders_sent)
+  |
+  +-- Para cada pendente:
+       +-- Envia push notification (send-push-notification)
+       +-- Registra na tabela schedule_reminders_sent
+       +-- Cria registro em notifications (in-app)
+```
