@@ -1,100 +1,97 @@
 
+# Corrigir Loop de Login -- Navegacao Direta para "Minha Escala"
 
-## Bloquear Conflito de Horario entre Departamentos
+## Problema
 
-Quando um membro participa de varios departamentos, ele nao pode ser escalado no mesmo dia e horario em departamentos diferentes. O primeiro departamento que escalou prevalece; nos demais, o membro aparece como bloqueado.
+O fluxo atual tem uma **corrida de estado (race condition)**:
 
----
+1. `Auth.tsx` faz `signIn()`, recebe a sessao, e chama `navigate('/dashboard')` imediatamente.
+2. O `AuthProvider` ainda nao processou o evento `onAuthStateChange` -- entao `user` e `session` no React ainda sao `null`.
+3. `ProtectedRoute` nao encontra usuario, espera 300ms, tenta `ensureSession`, mas as vezes o timeout de 5s redireciona de volta para `/auth`.
+4. `/auth` detecta sessao valida e redireciona de volta para `/dashboard` -- **loop infinito no spinner**.
 
-### Como funciona hoje
+O delay de 200ms no `handleLogin` nao e suficiente para garantir que o `AuthProvider` ja atualizou o estado React.
 
-Atualmente, o sistema verifica apenas blackout dates (datas bloqueadas pelo membro) e disponibilidade semanal dentro do mesmo departamento. Nao existe nenhuma verificacao cruzada entre departamentos.
+## Solucao
 
-### O que sera feito
+A correcao envolve **duas mudancas coordenadas**:
 
-**1. Criar funcao de banco de dados para verificar conflitos**
+### 1. Auth.tsx -- Aguardar o estado React hidratar de verdade
 
-Uma funcao PostgreSQL `check_cross_department_conflicts` que recebe uma lista de user_ids, uma data, time_start e time_end, e retorna quais usuarios ja possuem escala em qualquer outro departamento naquele mesmo horario (com sobreposicao de horarios).
-
-**2. Criar trigger de validacao no INSERT da tabela schedules**
-
-Um trigger `before insert` na tabela `schedules` que automaticamente rejeita a insercao se o usuario ja tiver escala em outro departamento no mesmo dia com horarios sobrepostos. Isso garante protecao a nivel de banco, independente de qual fluxo criou a escala.
-
-**3. Atualizar AddScheduleDialog (escala manual)**
-
-- Ao selecionar data e horario, buscar conflitos cross-department para todos os membros do departamento
-- Membros com conflito aparecem com aviso visual (icone de alerta + nome do departamento onde ja estao escalados)
-- Membros conflitantes ficam desabilitados para selecao
-- O botao "Escalar Todos" pula automaticamente membros com conflito
-
-**4. Atualizar SmartScheduleDialog (escala automatica)**
-
-- Na preview das sugestoes, marcar visualmente escalas com conflito detectado
-- Antes de confirmar o lote, verificar conflitos e alertar o lider
-- O edge function `generate-smart-schedule` recebera uma regra adicional no prompt para nao escalar membros que ja possuem escala em outros departamentos no mesmo horario
-
-**5. Atualizar edge function generate-smart-schedule**
-
-- Buscar todas as escalas existentes (de qualquer departamento) dos membros no periodo solicitado
-- Passar essa informacao ao prompt da IA como restricao obrigatoria
-- Adicionar regra: "NAO escale um membro em data/horario onde ele ja esta escalado em outro departamento"
-
----
-
-### Detalhes tecnicos
-
-**Funcao PostgreSQL - verificacao de conflitos:**
+Em vez de um `setTimeout(200ms)` fixo (que pode nao ser suficiente), o `handleLogin` vai **aguardar ativamente** ate que o `user` esteja disponivel no contexto React, com um timeout maximo de 3 segundos.
 
 ```text
-check_cross_department_conflicts(
-  p_user_ids UUID[],
-  p_date DATE,
-  p_time_start TIME,
-  p_time_end TIME,
-  p_exclude_department_id UUID
-) RETURNS TABLE(user_id UUID, conflict_department_name TEXT)
+Fluxo atual:
+  signIn() -> sleep(200ms) -> navigate()
+  
+Fluxo novo:
+  signIn() -> poll ate user != null (max 3s, check a cada 50ms) -> navigate()
 ```
 
-Busca na tabela `schedules` JOIN `departments` onde:
-- user_id esta na lista fornecida
-- date = p_date
-- horarios se sobrepoem (time_start < p_time_end AND time_end > p_time_start)
-- department_id != p_exclude_department_id
+Implementacao: criar uma funcao `waitForAuthHydration` que retorna uma Promise resolvida quando o `onAuthStateChange` disparar `SIGNED_IN`. Isso usa o proprio listener do Supabase para saber o momento exato.
 
-**Trigger de validacao:**
+### 2. ProtectedRoute -- Aceitar sessao do Supabase diretamente
 
-```text
-prevent_cross_department_schedule_conflict()
-  BEFORE INSERT ON schedules
-  FOR EACH ROW
+O `ProtectedRoute` atualmente so confia no estado React (`user`/`session`). Se eles estiverem `null` por causa de um atraso na hidratacao, ele redireciona.
+
+A mudanca: antes de redirecionar para `/auth`, o `ProtectedRoute` vai chamar `supabase.auth.getSession()` diretamente (sem depender do React state). Se encontrar uma sessao valida, marca como verificado e atualiza o contexto.
+
+Isso elimina a janela onde o React state esta vazio mas a sessao ja existe no storage do navegador.
+
+### 3. Garantir navegacao para "Minha Escala" (my-schedules)
+
+O `getSmartRedirectDestination` ja redireciona para `/my-schedules` quando o usuario tem exatamente 1 departamento. A correcao do loop garante que esse redirecionamento funcione sem interrupção.
+
+## Detalhes Tecnicos
+
+### Arquivo: `src/pages/Auth.tsx`
+
+- Substituir o `await new Promise(resolve => setTimeout(resolve, 200))` (linha 422) por uma funcao que escuta `onAuthStateChange` para o evento `SIGNED_IN`:
+
+```typescript
+const waitForAuthHydration = (timeoutMs = 3000): Promise<void> => {
+  return new Promise((resolve) => {
+    // Se ja tem user no contexto, resolve imediatamente
+    if (user) { resolve(); return; }
+    
+    const timeout = setTimeout(resolve, timeoutMs);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN') {
+        clearTimeout(timeout);
+        subscription.unsubscribe();
+        // Pequeno delay para o React processar o setState
+        setTimeout(resolve, 50);
+      }
+    });
+    
+    // Cleanup em caso de timeout
+    setTimeout(() => subscription.unsubscribe(), timeoutMs + 100);
+  });
+};
 ```
 
-Rejeita o INSERT com mensagem de erro descritiva se detectar conflito.
+- Chamar `await waitForAuthHydration()` no lugar do sleep de 200ms.
 
-**UI - Indicador visual no AddScheduleDialog:**
+### Arquivo: `src/components/ProtectedRoute.tsx`
 
-- Badge vermelha "Conflito: [Nome do Dept]" ao lado do membro
-- Checkbox desabilitado com tooltip explicativo
-- Contador do "Escalar Todos" ajustado para excluir conflitantes
+- No bloco de recovery (quando `currentUser` e `null` e `authLoading` e `false`), antes de redirecionar, fazer um check sincrono direto:
 
-**Fluxo de dados:**
-
-```text
-Lider seleciona data/horario
-        |
-        v
-Frontend chama RPC check_cross_department_conflicts
-        |
-        v
-Membros com conflito ficam bloqueados na UI
-        |
-        v
-Lider confirma escala (somente membros livres)
-        |
-        v
-Trigger no banco valida novamente (seguranca extra)
-        |
-        v
-Escala criada com sucesso
+```typescript
+// Antes de redirecionar, verificar se a sessao existe no storage
+const { data } = await supabase.auth.getSession();
+if (data.session?.user) {
+  setVerified(true);
+  return; // Sessao existe, so falta o React hidratar
+}
+// Agora sim, redireciona para /auth
 ```
 
+- Remover o delay de 300ms antes do `ensureSession` (nao e mais necessario com a verificacao direta).
+
+## Resultado Esperado
+
+1. Usuario faz login
+2. `handleLogin` espera ate o AuthProvider processar a sessao (~50-100ms, nao 200ms fixo)
+3. Navega para `/my-schedules` (se 1 departamento) ou `/dashboard`
+4. `ProtectedRoute` encontra o usuario imediatamente -- sem loop
+5. Se por algum motivo o React state atrasar, o `ProtectedRoute` verifica direto no storage e aceita a sessao
