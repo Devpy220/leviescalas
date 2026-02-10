@@ -31,6 +31,13 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
       return;
     }
 
+    // User disappeared after being verified — real logout, redirect
+    if (verified) {
+      const returnUrl = location.pathname + location.search;
+      navigate('/auth', { replace: true, state: { returnUrl } });
+      return;
+    }
+
     // Already tried recovery and failed — redirect immediately
     if (recoveryDoneRef.current) {
       const returnUrl = location.pathname + location.search;
@@ -76,9 +83,9 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
       window.clearTimeout(hardTimeout);
       window.clearTimeout(delay);
     };
-  }, [currentUser, authLoading, ensureSession, navigate, location.pathname, location.search]);
+  }, [currentUser, authLoading, verified, ensureSession, navigate, location.pathname, location.search]);
 
-  if (authLoading || !verified || !currentUser) {
+  if (authLoading || !verified) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4 text-center px-6">
