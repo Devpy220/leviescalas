@@ -96,6 +96,7 @@ export default function AddScheduleDialog({
   const [localSectorId, setLocalSectorId] = useState<string>('');
   const [localRole, setLocalRole] = useState<string>('');
   const [crossDeptConflicts, setCrossDeptConflicts] = useState<Record<string, string>>({});
+  const [sundayConflicts, setSundayConflicts] = useState<Record<string, string>>({});
   
   const { toast } = useToast();
   const { user } = useAuth();
@@ -116,8 +117,8 @@ export default function AddScheduleDialog({
 
   // Available (non-blocked and non-conflicting) members
   const availableMembers = useMemo(() => 
-    members.filter(m => !blockedMembers.has(m.user_id) && !crossDeptConflicts[m.user_id]),
-    [members, blockedMembers, crossDeptConflicts]
+    members.filter(m => !blockedMembers.has(m.user_id) && !crossDeptConflicts[m.user_id] && !sundayConflicts[m.user_id]),
+    [members, blockedMembers, crossDeptConflicts, sundayConflicts]
   );
 
   useEffect(() => {
@@ -165,6 +166,7 @@ export default function AddScheduleDialog({
       setNotes('');
       setStep('select');
       setCrossDeptConflicts({});
+      setSundayConflicts({});
     }
   }, [open]);
 
@@ -194,6 +196,50 @@ export default function AddScheduleDialog({
       setSelectedMembers(prev => prev.filter(id => !conflicts[id]));
     };
     fetchConflicts();
+
+    // Check Sunday slot exclusivity conflicts
+    const fetchSundayConflicts = async () => {
+      if (!date) return;
+      const dayOfWeek = getDay(date);
+      if (dayOfWeek !== 0) {
+        setSundayConflicts({});
+        return;
+      }
+      // Determine if current slot is morning or night
+      const isMorning = timeStart < '13:00';
+      const oppositeTimeStart = isMorning ? '13:00:00' : '00:00:00';
+      const oppositeTimeEnd = isMorning ? '23:59:59' : '12:59:59';
+      
+      const dateStr = format(date, 'yyyy-MM-dd');
+      const userIds = members.map(m => m.user_id);
+      if (userIds.length === 0) return;
+      
+      const query = supabase
+        .from('schedules')
+        .select('user_id')
+        .eq('department_id', departmentId)
+        .eq('date', dateStr)
+        .in('user_id', userIds);
+      
+      if (isMorning) {
+        query.gte('time_start', '13:00:00');
+      } else {
+        query.lt('time_start', '13:00:00');
+      }
+      
+      const { data: sundayData, error: sundayError } = await query;
+      if (sundayError) {
+        console.error('Error checking sunday conflicts:', sundayError);
+        return;
+      }
+      const sConflicts: Record<string, string> = {};
+      (sundayData || []).forEach((s: any) => {
+        sConflicts[s.user_id] = isMorning ? 'Escalado Noite' : 'Escalado Manhã';
+      });
+      setSundayConflicts(sConflicts);
+      setSelectedMembers(prev => prev.filter(id => !sConflicts[id]));
+    };
+    fetchSundayConflicts();
   }, [date, timeStart, timeEnd, open, departmentId, members]);
 
   const fetchSectors = async () => {
@@ -234,7 +280,7 @@ export default function AddScheduleDialog({
 
   const toggleMember = (userId: string) => {
     // Prevent selecting blocked or conflicting members
-    if (blockedMembers.has(userId) || crossDeptConflicts[userId]) return;
+    if (blockedMembers.has(userId) || crossDeptConflicts[userId] || sundayConflicts[userId]) return;
     
     setSelectedMembers(prev => {
       if (prev.includes(userId)) {
@@ -702,7 +748,8 @@ export default function AddScheduleDialog({
               {members.map((member) => {
                 const isBlocked = blockedMembers.has(member.user_id);
                 const conflictDept = crossDeptConflicts[member.user_id];
-                const isDisabled = isBlocked || !!conflictDept;
+                const sundayConflict = sundayConflicts[member.user_id];
+                const isDisabled = isBlocked || !!conflictDept || !!sundayConflict;
                 const isSelected = selectedMembers.includes(member.user_id);
                 
                 return (
@@ -744,6 +791,12 @@ export default function AddScheduleDialog({
                       <Badge variant="destructive" className="text-xs shrink-0">
                         <AlertTriangle className="w-3 h-3 mr-1" />
                         Conflito: {conflictDept}
+                      </Badge>
+                    )}
+                    {sundayConflict && (
+                      <Badge variant="secondary" className="text-xs shrink-0 bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                        <AlertTriangle className="w-3 h-3 mr-1" />
+                        {sundayConflict}
                       </Badge>
                     )}
                   </div>
