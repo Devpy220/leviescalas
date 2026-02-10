@@ -2,88 +2,73 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
 /**
- * ProtectedRoute - single-pass auth check with 5s timeout.
- * Eliminates duplicate timers and concurrent recovery attempts.
+ * ProtectedRoute - checks React state first, then falls back to
+ * supabase.auth.getSession() to avoid race conditions during hydration.
  */
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, session, loading: authLoading, ensureSession } = useAuth();
+  const { user, session, loading: authLoading } = useAuth();
   const [verified, setVerified] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const recoveryDoneRef = useRef(false);
+  const checkDoneRef = useRef(false);
 
   const currentUser = user ?? session?.user ?? null;
 
   useEffect(() => {
-    // Still loading auth context — wait
     if (authLoading) return;
 
-    // User found — done
+    // User found in React state — done
     if (currentUser) {
       setVerified(true);
-      recoveryDoneRef.current = false;
+      checkDoneRef.current = false;
       return;
     }
 
-    // User disappeared after being verified — real logout, redirect
+    // User disappeared after being verified — real logout
     if (verified) {
       const returnUrl = location.pathname + location.search;
       navigate('/auth', { replace: true, state: { returnUrl } });
       return;
     }
 
-    // Already tried recovery and failed — redirect immediately
-    if (recoveryDoneRef.current) {
+    // Already checked storage and failed — redirect
+    if (checkDoneRef.current) {
       const returnUrl = location.pathname + location.search;
       navigate('/auth', { replace: true, state: { returnUrl } });
       return;
     }
 
-    // Single recovery attempt with hard 5s timeout
+    // Single check: look directly in Supabase storage
     let cancelled = false;
-    recoveryDoneRef.current = true;
+    checkDoneRef.current = true;
 
-    const hardTimeout = window.setTimeout(() => {
-      if (cancelled) return;
-      const returnUrl = location.pathname + location.search;
-      navigate('/auth', { replace: true, state: { returnUrl } });
-    }, 5000);
-
-    // Small delay then try ensureSession
-    const delay = window.setTimeout(() => {
-      if (cancelled) return;
-      (async () => {
-        try {
-          const recovered = await ensureSession();
-          if (cancelled) return;
-          window.clearTimeout(hardTimeout);
-          if (recovered?.user) {
-            setVerified(true);
-            return;
-          }
-        } catch {
-          // fall through to redirect
+    (async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (cancelled) return;
+        if (data.session?.user) {
+          // Session exists in storage, React just hasn't hydrated yet
+          setVerified(true);
+          return;
         }
-        if (!cancelled) {
-          window.clearTimeout(hardTimeout);
-          const returnUrl = location.pathname + location.search;
-          navigate('/auth', { replace: true, state: { returnUrl } });
-        }
-      })();
-    }, 300);
+      } catch {
+        // fall through
+      }
+      if (!cancelled) {
+        const returnUrl = location.pathname + location.search;
+        navigate('/auth', { replace: true, state: { returnUrl } });
+      }
+    })();
 
-    return () => {
-      cancelled = true;
-      window.clearTimeout(hardTimeout);
-      window.clearTimeout(delay);
-    };
-  }, [currentUser, authLoading, verified, ensureSession, navigate, location.pathname, location.search]);
+    return () => { cancelled = true; };
+  }, [currentUser, authLoading, verified, navigate, location.pathname, location.search]);
 
   if (authLoading || !verified) {
     return (
