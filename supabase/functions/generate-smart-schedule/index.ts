@@ -330,6 +330,7 @@ REGRAS IMPORTANTES:
 7. Respeite o máximo de escalas por mês de cada pessoa
 8. NÃO escale ninguém em datas onde não marcaram disponibilidade
 9. NÃO escale um membro em data/horário onde ele já está escalado em OUTRO DEPARTAMENTO (veja seção ESCALAS EM OUTROS DEPARTAMENTOS)
+10. EXCLUSIVIDADE DOMINGO: Um membro NÃO pode ser escalado nos dois turnos de domingo (Manhã e Noite) no MESMO dia. Se escalou de manhã, NÃO escalar à noite e vice-versa.
 
 IMPORTANTE: Cada entrada no array "schedules" deve representar UMA pessoa para UMA data/horário específico.
 Por exemplo, se Domingo Manhã precisa de 3 pessoas, crie 3 entradas separadas com a mesma data e horário.

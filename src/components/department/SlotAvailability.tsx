@@ -187,9 +187,32 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
         }
       }
 
+      // Sunday exclusivity: if marking a Sunday slot as available, remove the opposite
+      if (newValue && slot.dayOfWeek === 0) {
+        const oppositeTimeStart = slot.timeStart === '08:00' ? '18:00' : slot.timeStart === '18:00' ? '08:00' : null;
+        if (oppositeTimeStart) {
+          const oppositeTimeEnd = oppositeTimeStart === '08:00' ? '12:00' : '22:00';
+          const oppositeRecord = availability.find(a =>
+            a.day_of_week === 0 &&
+            normalizeTime(a.time_start) === oppositeTimeStart &&
+            normalizeTime(a.time_end) === oppositeTimeEnd
+          );
+          if (oppositeRecord) {
+            await supabase
+              .from('member_availability')
+              .delete()
+              .eq('id', oppositeRecord.id);
+            setAvailability(prev => prev.filter(a => a.id !== oppositeRecord.id));
+          }
+        }
+      }
+
+      const oppositeLabel = slot.timeStart === '08:00' ? 'Domingo de Noite' : slot.timeStart === '18:00' ? 'Domingo de Manhã' : null;
       toast({
         title: newValue ? 'Disponibilidade marcada!' : 'Disponibilidade removida',
-        description: slot.label,
+        description: newValue && slot.dayOfWeek === 0 && oppositeLabel
+          ? `${slot.label} (${oppositeLabel} foi desmarcado automaticamente)`
+          : slot.label,
       });
     } catch (error: unknown) {
       const err = error as { message?: string; details?: string; code?: string; hint?: string };
