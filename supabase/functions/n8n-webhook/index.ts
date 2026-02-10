@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -130,18 +131,35 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { schedule, eventType } = await req.json();
-    
-    console.log("n8n-webhook: Processing event:", eventType, "for schedule:", schedule?.id);
+    const webhookInputSchema = z.object({
+      schedule: z.object({
+        id: z.string().uuid("Invalid schedule ID"),
+        user_id: z.string().uuid("Invalid user ID"),
+        department_id: z.string().uuid("Invalid department ID"),
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format"),
+        time_start: z.string().max(20),
+        time_end: z.string().max(20),
+        notes: z.string().max(1000).optional(),
+        sector_id: z.string().uuid("Invalid sector ID").optional(),
+      }),
+      eventType: z.string().max(100).optional(),
+    });
 
-    if (!schedule) {
+    const rawBody = await req.json();
+    const validationResult = webhookInputSchema.safeParse(rawBody);
+    
+    if (!validationResult.success) {
+      console.error("n8n-webhook: Validation error:", validationResult.error.errors);
       return new Response(
-        JSON.stringify({ success: false, error: "No schedule data provided" }),
+        JSON.stringify({ success: false, error: "Invalid input", details: validationResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`) }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    const { schedule, eventType } = validationResult.data;
     const scheduleData = schedule as SchedulePayload;
+    
+    console.log("n8n-webhook: Processing event:", eventType, "for schedule:", scheduleData.id);
 
     // Fetch user profile
     const { data: profile, error: profileError } = await supabase

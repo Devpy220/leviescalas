@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -72,14 +73,37 @@ serve(async (req) => {
       });
     }
 
-    const body: ScheduleRequest = await req.json();
-    const { 
-      department_id, 
-      start_date, 
-      end_date, 
-      sector_id,
-      fixed_slots = []
-    } = body;
+    const fixedSlotSchema = z.object({
+      id: z.string().max(100),
+      dayOfWeek: z.number().int().min(0).max(6),
+      timeStart: z.string().regex(/^\d{2}:\d{2}$/, "Invalid time format"),
+      timeEnd: z.string().regex(/^\d{2}:\d{2}$/, "Invalid time format"),
+      label: z.string().max(100),
+      membersCount: z.number().int().min(1).max(50),
+    });
+
+    const scheduleRequestSchema = z.object({
+      department_id: z.string().uuid("Invalid department ID"),
+      start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format"),
+      end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format"),
+      sector_id: z.string().uuid("Invalid sector ID").optional(),
+      fixed_slots: z.array(fixedSlotSchema).max(20).optional().default([]),
+    });
+
+    const rawBody = await req.json();
+    const validationResult = scheduleRequestSchema.safeParse(rawBody);
+    
+    if (!validationResult.success) {
+      return new Response(JSON.stringify({ 
+        error: 'Dados inválidos', 
+        details: validationResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`)
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const { department_id, start_date, end_date, sector_id, fixed_slots } = validationResult.data;
 
     console.log('Generating schedule for period:', start_date, 'to', end_date);
     console.log('Fixed slots config:', JSON.stringify(fixed_slots));
