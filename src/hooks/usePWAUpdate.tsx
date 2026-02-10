@@ -9,6 +9,29 @@ export function usePWAUpdate() {
   const [registration, setRegistration] = useState<ServiceWorkerRegistrationWithUpdate | null>(null);
   const checkIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Force show update prompt on first load for installed PWAs to refresh icons
+  useEffect(() => {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+      || (window.navigator as any).standalone === true;
+    
+    const lastIconVersion = localStorage.getItem('pwa-icon-version');
+    const currentIconVersion = '2'; // Bump this whenever icons change
+    
+    if (isStandalone && lastIconVersion !== currentIconVersion) {
+      console.log('[PWA] Icon version changed, prompting update for installed PWA');
+      localStorage.setItem('pwa-icon-version', currentIconVersion);
+      // Clear caches and reload to force new icons
+      if ('caches' in window) {
+        caches.keys().then(names => {
+          Promise.all(names.map(name => caches.delete(name))).then(() => {
+            console.log('[PWA] Caches cleared for icon update');
+            window.location.reload();
+          });
+        });
+      }
+    }
+  }, []);
+
   useEffect(() => {
     if (!('serviceWorker' in navigator)) {
       return;
@@ -77,15 +100,18 @@ export function usePWAUpdate() {
   const applyUpdate = useCallback(async () => {
     console.log('[PWA] User accepted update');
     
-    if (registration?.waiting) {
-      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-    }
-    
-    // Also clear all caches to force fresh icon/asset downloads
+    // Clear ALL caches first to force fresh icon/asset downloads
     if ('caches' in window) {
       const cacheNames = await caches.keys();
       await Promise.all(cacheNames.map(name => caches.delete(name)));
       console.log('[PWA] All caches cleared for fresh assets');
+    }
+
+    if (registration?.waiting) {
+      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    } else {
+      // No waiting worker, just reload to pick up fresh assets
+      window.location.reload();
     }
     
     setShowUpdatePrompt(false);
