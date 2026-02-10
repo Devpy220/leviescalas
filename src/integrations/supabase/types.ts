@@ -943,6 +943,19 @@ export type Database = {
       admin_delete_department: { Args: { dept_id: string }; Returns: boolean }
       admin_delete_member: { Args: { member_id: string }; Returns: boolean }
       admin_delete_volunteer: { Args: { profile_id: string }; Returns: boolean }
+      check_cross_department_conflicts: {
+        Args: {
+          p_date: string
+          p_exclude_department_id: string
+          p_time_end: string
+          p_time_start: string
+          p_user_ids: string[]
+        }
+        Returns: {
+          conflict_department_name: string
+          user_id: string
+        }[]
+      }
       check_rate_limit: {
         Args: {
           p_endpoint: string

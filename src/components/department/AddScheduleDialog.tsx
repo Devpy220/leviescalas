@@ -95,6 +95,7 @@ export default function AddScheduleDialog({
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [localSectorId, setLocalSectorId] = useState<string>('');
   const [localRole, setLocalRole] = useState<string>('');
+  const [crossDeptConflicts, setCrossDeptConflicts] = useState<Record<string, string>>({});
   
   const { toast } = useToast();
   const { user } = useAuth();
@@ -113,10 +114,10 @@ export default function AddScheduleDialog({
     );
   }, [date, memberBlackouts]);
 
-  // Available (non-blocked) members
+  // Available (non-blocked and non-conflicting) members
   const availableMembers = useMemo(() => 
-    members.filter(m => !blockedMembers.has(m.user_id)),
-    [members, blockedMembers]
+    members.filter(m => !blockedMembers.has(m.user_id) && !crossDeptConflicts[m.user_id]),
+    [members, blockedMembers, crossDeptConflicts]
   );
 
   useEffect(() => {
@@ -163,8 +164,37 @@ export default function AddScheduleDialog({
       setTimeEnd('12:00');
       setNotes('');
       setStep('select');
+      setCrossDeptConflicts({});
     }
   }, [open]);
+
+  // Fetch cross-department conflicts when date/time changes
+  useEffect(() => {
+    if (!date || !timeStart || !timeEnd || !open) return;
+    const fetchConflicts = async () => {
+      const userIds = members.map(m => m.user_id);
+      if (userIds.length === 0) return;
+      const { data, error } = await supabase.rpc('check_cross_department_conflicts', {
+        p_user_ids: userIds,
+        p_date: format(date, 'yyyy-MM-dd'),
+        p_time_start: timeStart,
+        p_time_end: timeEnd,
+        p_exclude_department_id: departmentId
+      });
+      if (error) {
+        console.error('Error checking conflicts:', error);
+        return;
+      }
+      const conflicts: Record<string, string> = {};
+      (data || []).forEach((c: any) => {
+        conflicts[c.user_id] = c.conflict_department_name;
+      });
+      setCrossDeptConflicts(conflicts);
+      // Remove conflicting members from selection
+      setSelectedMembers(prev => prev.filter(id => !conflicts[id]));
+    };
+    fetchConflicts();
+  }, [date, timeStart, timeEnd, open, departmentId, members]);
 
   const fetchSectors = async () => {
     try {
@@ -203,6 +233,9 @@ export default function AddScheduleDialog({
   };
 
   const toggleMember = (userId: string) => {
+    // Prevent selecting blocked or conflicting members
+    if (blockedMembers.has(userId) || crossDeptConflicts[userId]) return;
+    
     setSelectedMembers(prev => {
       if (prev.includes(userId)) {
         // Remove from selection and config
@@ -310,12 +343,15 @@ export default function AddScheduleDialog({
       
       onScheduleCreated();
       onOpenChange(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating schedules:', error);
+      const isConflict = error?.message?.includes('Conflito de horário');
       toast({
         variant: 'destructive',
-        title: 'Erro ao criar escalas',
-        description: 'Não foi possível criar as escalas. Tente novamente.',
+        title: isConflict ? 'Conflito de horário' : 'Erro ao criar escalas',
+        description: isConflict 
+          ? error.message 
+          : 'Não foi possível criar as escalas. Tente novamente.',
       });
     } finally {
       setLoading(false);
@@ -665,20 +701,23 @@ export default function AddScheduleDialog({
             <div className="p-2 space-y-1">
               {members.map((member) => {
                 const isBlocked = blockedMembers.has(member.user_id);
+                const conflictDept = crossDeptConflicts[member.user_id];
+                const isDisabled = isBlocked || !!conflictDept;
                 const isSelected = selectedMembers.includes(member.user_id);
                 
                 return (
                   <div
                     key={member.id}
                     className={cn(
-                      "flex items-center gap-3 p-2 rounded-md cursor-pointer transition-colors",
-                      isSelected ? "bg-primary/10" : "hover:bg-muted/50",
-                      isBlocked && "opacity-60"
+                      "flex items-center gap-3 p-2 rounded-md transition-colors",
+                      isDisabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer",
+                      isSelected ? "bg-primary/10" : !isDisabled && "hover:bg-muted/50",
                     )}
-                    onClick={() => toggleMember(member.user_id)}
+                    onClick={() => !isDisabled && toggleMember(member.user_id)}
                   >
                     <Checkbox
                       checked={isSelected}
+                      disabled={isDisabled}
                       className="pointer-events-none"
                     />
                     <Avatar className="h-8 w-8">
@@ -690,7 +729,7 @@ export default function AddScheduleDialog({
                     <div className="flex-1 min-w-0">
                       <p className={cn(
                         "text-sm font-medium truncate",
-                        isBlocked && "text-destructive"
+                        isDisabled && "text-destructive"
                       )}>
                         {member.profile.name}
                       </p>
@@ -699,6 +738,12 @@ export default function AddScheduleDialog({
                       <Badge variant="destructive" className="text-xs shrink-0">
                         <AlertTriangle className="w-3 h-3 mr-1" />
                         Bloqueado
+                      </Badge>
+                    )}
+                    {conflictDept && (
+                      <Badge variant="destructive" className="text-xs shrink-0">
+                        <AlertTriangle className="w-3 h-3 mr-1" />
+                        Conflito: {conflictDept}
                       </Badge>
                     )}
                   </div>

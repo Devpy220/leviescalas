@@ -261,12 +261,15 @@ export default function SmartScheduleDialog({
 
       onSchedulesCreated();
       onOpenChange(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating schedules:', error);
+      const isConflict = error?.message?.includes('Conflito de horário');
       toast({
         variant: 'destructive',
-        title: 'Erro ao criar escalas',
-        description: 'Não foi possível salvar as escalas.',
+        title: isConflict ? 'Conflito de horário' : 'Erro ao criar escalas',
+        description: isConflict
+          ? error.message
+          : 'Não foi possível salvar as escalas.',
       });
     } finally {
       setSaving(false);
