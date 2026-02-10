@@ -1,97 +1,93 @@
 
-# Corrigir Loop de Login -- Navegacao Direta para "Minha Escala"
+# Exclusividade Domingo Manha / Domingo Noite
 
-## Problema
+## Resumo
 
-O fluxo atual tem uma **corrida de estado (race condition)**:
+Implementar bloqueio mutuo entre os turnos de Domingo de Manha (08:00-12:00) e Domingo de Noite (18:00-22:00) em tres camadas:
 
-1. `Auth.tsx` faz `signIn()`, recebe a sessao, e chama `navigate('/dashboard')` imediatamente.
-2. O `AuthProvider` ainda nao processou o evento `onAuthStateChange` -- entao `user` e `session` no React ainda sao `null`.
-3. `ProtectedRoute` nao encontra usuario, espera 300ms, tenta `ensureSession`, mas as vezes o timeout de 5s redireciona de volta para `/auth`.
-4. `/auth` detecta sessao valida e redireciona de volta para `/dashboard` -- **loop infinito no spinner**.
+1. **Disponibilidade** -- ao marcar um turno de domingo, o outro e automaticamente desmarcado
+2. **Escala manual** -- ao criar escala para um turno de domingo, membros ja escalados no outro turno ficam bloqueados
+3. **Escala automatica (IA)** -- regra adicionada ao prompt para nunca escalar a mesma pessoa nos dois turnos do mesmo domingo
 
-O delay de 200ms no `handleLogin` nao e suficiente para garantir que o `AuthProvider` ja atualizou o estado React.
-
-## Solucao
-
-A correcao envolve **duas mudancas coordenadas**:
-
-### 1. Auth.tsx -- Aguardar o estado React hidratar de verdade
-
-Em vez de um `setTimeout(200ms)` fixo (que pode nao ser suficiente), o `handleLogin` vai **aguardar ativamente** ate que o `user` esteja disponivel no contexto React, com um timeout maximo de 3 segundos.
-
-```text
-Fluxo atual:
-  signIn() -> sleep(200ms) -> navigate()
-  
-Fluxo novo:
-  signIn() -> poll ate user != null (max 3s, check a cada 50ms) -> navigate()
-```
-
-Implementacao: criar uma funcao `waitForAuthHydration` que retorna uma Promise resolvida quando o `onAuthStateChange` disparar `SIGNED_IN`. Isso usa o proprio listener do Supabase para saber o momento exato.
-
-### 2. ProtectedRoute -- Aceitar sessao do Supabase diretamente
-
-O `ProtectedRoute` atualmente so confia no estado React (`user`/`session`). Se eles estiverem `null` por causa de um atraso na hidratacao, ele redireciona.
-
-A mudanca: antes de redirecionar para `/auth`, o `ProtectedRoute` vai chamar `supabase.auth.getSession()` diretamente (sem depender do React state). Se encontrar uma sessao valida, marca como verificado e atualiza o contexto.
-
-Isso elimina a janela onde o React state esta vazio mas a sessao ja existe no storage do navegador.
-
-### 3. Garantir navegacao para "Minha Escala" (my-schedules)
-
-O `getSmartRedirectDestination` ja redireciona para `/my-schedules` quando o usuario tem exatamente 1 departamento. A correcao do loop garante que esse redirecionamento funcione sem interrupção.
+---
 
 ## Detalhes Tecnicos
 
-### Arquivo: `src/pages/Auth.tsx`
+### 1. SlotAvailability.tsx -- Exclusividade na marcacao de disponibilidade
 
-- Substituir o `await new Promise(resolve => setTimeout(resolve, 200))` (linha 422) por uma funcao que escuta `onAuthStateChange` para o evento `SIGNED_IN`:
+Na funcao `toggleSlotAvailability`, apos marcar um turno de domingo como disponivel, automaticamente remover o turno oposto (se existir):
 
-```typescript
-const waitForAuthHydration = (timeoutMs = 3000): Promise<void> => {
-  return new Promise((resolve) => {
-    // Se ja tem user no contexto, resolve imediatamente
-    if (user) { resolve(); return; }
-    
-    const timeout = setTimeout(resolve, timeoutMs);
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_IN') {
-        clearTimeout(timeout);
-        subscription.unsubscribe();
-        // Pequeno delay para o React processar o setState
-        setTimeout(resolve, 50);
-      }
-    });
-    
-    // Cleanup em caso de timeout
-    setTimeout(() => subscription.unsubscribe(), timeoutMs + 100);
-  });
-};
+- Se marcou "Domingo de Manha" (dayOfWeek=0, 08:00), deletar registro de "Domingo de Noite" (dayOfWeek=0, 18:00) do mesmo periodo
+- Se marcou "Domingo de Noite", deletar "Domingo de Manha"
+- Exibir um aviso visual informando que os turnos de domingo sao exclusivos
+
+### 2. AddScheduleDialog.tsx -- Bloqueio na escala manual
+
+No `useEffect` que busca conflitos cross-departamento (linha 172-197), adicionar uma consulta extra para verificar se algum membro ja esta escalado no turno oposto de domingo na mesma data:
+
+- Se a data selecionada e domingo e o slot e "Domingo de Manha", buscar membros ja escalados em "Domingo de Noite" naquela data (mesmo departamento)
+- Marcar esses membros como bloqueados com badge "Escalado Noite" (ou "Escalado Manha")
+- Adicionar ao estado `sundayConflicts` similar ao `crossDeptConflicts`
+
+### 3. generate-smart-schedule/index.ts -- Regra no prompt da IA
+
+Adicionar uma regra explicita na secao "REGRAS IMPORTANTES" do prompt:
+
+```
+10. EXCLUSIVIDADE DOMINGO: Um membro NAO pode ser escalado nos dois turnos de domingo 
+    (Manha e Noite) no MESMO dia. Se escalou de manha, NAO escalar a noite e vice-versa.
 ```
 
-- Chamar `await waitForAuthHydration()` no lugar do sleep de 200ms.
+### 4. Trigger no banco de dados (seguranca extra)
 
-### Arquivo: `src/components/ProtectedRoute.tsx`
+Criar um trigger na tabela `schedules` que rejeita insercoes quando o mesmo usuario ja tem uma escala no turno oposto de domingo na mesma data e departamento. Isso garante a regra mesmo se o frontend falhar.
 
-- No bloco de recovery (quando `currentUser` e `null` e `authLoading` e `false`), antes de redirecionar, fazer um check sincrono direto:
+```sql
+CREATE OR REPLACE FUNCTION check_sunday_slot_exclusivity()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Somente para domingos (day_of_week = 0)
+  IF EXTRACT(DOW FROM NEW.date) = 0 THEN
+    -- Se escalando de manha (antes de 13:00), verificar se ja tem noite
+    -- Se escalando de noite (13:00+), verificar se ja tem manha
+    IF NEW.time_start < '13:00:00' THEN
+      IF EXISTS (
+        SELECT 1 FROM schedules 
+        WHERE user_id = NEW.user_id 
+        AND date = NEW.date 
+        AND department_id = NEW.department_id
+        AND time_start >= '13:00:00'
+        AND id IS DISTINCT FROM NEW.id
+      ) THEN
+        RAISE EXCEPTION 'Membro ja escalado no turno da noite neste domingo';
+      END IF;
+    ELSE
+      IF EXISTS (
+        SELECT 1 FROM schedules 
+        WHERE user_id = NEW.user_id 
+        AND date = NEW.date 
+        AND department_id = NEW.department_id
+        AND time_start < '13:00:00'
+        AND id IS DISTINCT FROM NEW.id
+      ) THEN
+        RAISE EXCEPTION 'Membro ja escalado no turno da manha neste domingo';
+      END IF;
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
-```typescript
-// Antes de redirecionar, verificar se a sessao existe no storage
-const { data } = await supabase.auth.getSession();
-if (data.session?.user) {
-  setVerified(true);
-  return; // Sessao existe, so falta o React hidratar
-}
-// Agora sim, redireciona para /auth
+CREATE TRIGGER enforce_sunday_exclusivity
+BEFORE INSERT OR UPDATE ON schedules
+FOR EACH ROW EXECUTE FUNCTION check_sunday_slot_exclusivity();
 ```
 
-- Remover o delay de 300ms antes do `ensureSession` (nao e mais necessario com a verificacao direta).
+### Arquivos a modificar
 
-## Resultado Esperado
-
-1. Usuario faz login
-2. `handleLogin` espera ate o AuthProvider processar a sessao (~50-100ms, nao 200ms fixo)
-3. Navega para `/my-schedules` (se 1 departamento) ou `/dashboard`
-4. `ProtectedRoute` encontra o usuario imediatamente -- sem loop
-5. Se por algum motivo o React state atrasar, o `ProtectedRoute` verifica direto no storage e aceita a sessao
+| Arquivo | Mudanca |
+|---------|---------|
+| `src/components/department/SlotAvailability.tsx` | Auto-remover turno oposto ao marcar domingo |
+| `src/components/department/AddScheduleDialog.tsx` | Consultar e bloquear membros com conflito domingo |
+| `supabase/functions/generate-smart-schedule/index.ts` | Regra 10 no prompt |
+| Nova migracao SQL | Trigger de exclusividade |
