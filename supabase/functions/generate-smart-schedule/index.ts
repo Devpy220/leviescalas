@@ -136,6 +136,18 @@ serve(async (req) => {
       .eq('department_id', department_id)
       .gte('date', threeMonthsAgo.toISOString().split('T')[0]);
 
+    // Fetch cross-department schedules for all members in the requested period
+    const memberUserIds = members.map((m: any) => m.id);
+    const { data: crossDeptSchedules } = await supabase
+      .from('schedules')
+      .select('user_id, date, time_start, time_end, department_id')
+      .in('user_id', memberUserIds)
+      .neq('department_id', department_id)
+      .gte('date', start_date)
+      .lte('date', end_date);
+
+    console.log('Found cross-department schedules:', crossDeptSchedules?.length || 0);
+
     // Build context
     const membersList = members.map((m: any) => ({
       user_id: m.id,
@@ -235,6 +247,14 @@ serve(async (req) => {
       return `${m.name}: ${dates.length > 0 ? dates.join(', ') : 'Nenhuma data marcada'}`;
     }).join('\n');
 
+    // Build cross-department conflict description
+    const crossDeptDescription = (crossDeptSchedules || []).length > 0
+      ? (crossDeptSchedules || []).map((s: any) => {
+          const member = membersList.find((m: any) => m.user_id === s.user_id);
+          return `${member?.name || s.user_id}: ${s.date} ${s.time_start}-${s.time_end}`;
+        }).join('\n')
+      : 'Nenhum conflito cross-departamento.';
+
     // Build prompt for AI
     const prompt = `Você é um assistente de geração de escalas para ministérios de igreja.
 
@@ -271,6 +291,9 @@ ${Object.entries(scheduleCountByMember).length > 0
   : 'Nenhum histórico - distribuição livre.'
 }
 
+ESCALAS EM OUTROS DEPARTAMENTOS (CONFLITOS - NÃO ESCALAR NESSES HORÁRIOS):
+${crossDeptDescription}
+
 REGRAS IMPORTANTES:
 1. APENAS escale membros em datas onde eles marcaram disponibilidade
 2. RESPEITE A QUANTIDADE DE MEMBROS POR SLOT conforme a configuração acima:
@@ -282,6 +305,7 @@ REGRAS IMPORTANTES:
 6. Priorize quem tem menos escalas no histórico
 7. Respeite o máximo de escalas por mês de cada pessoa
 8. NÃO escale ninguém em datas onde não marcaram disponibilidade
+9. NÃO escale um membro em data/horário onde ele já está escalado em OUTRO DEPARTAMENTO (veja seção ESCALAS EM OUTROS DEPARTAMENTOS)
 
 IMPORTANTE: Cada entrada no array "schedules" deve representar UMA pessoa para UMA data/horário específico.
 Por exemplo, se Domingo Manhã precisa de 3 pessoas, crie 3 entradas separadas com a mesma data e horário.
@@ -293,7 +317,6 @@ Retorne APENAS um JSON válido no formato:
   ],
   "reasoning": "Breve explicação da lógica usada"
 }`;
-
     // Call Lovable AI
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
