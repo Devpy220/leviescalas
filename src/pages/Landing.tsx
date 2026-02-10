@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import Footer from '@/components/Footer';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -422,26 +423,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-12 border-t border-border">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <Link to="/" className="flex items-center gap-2 group">
-              <LeviLogo size="sm" className="transition-all duration-300 group-hover:scale-110 group-hover:shadow-glow" />
-              <span className="font-display font-semibold text-foreground">LEVI</span>
-            </Link>
-            <p className="text-sm text-muted-foreground">
-              Dúvidas ou sugestões? Entre em contato:{' '}
-              <a href="mailto:suport@leviescalas.com.br" className="text-primary hover:underline">
-                suport@leviescalas.com.br
-              </a>
-            </p>
-            <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} LEVI. Todos os direitos reservados.
-            </p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
