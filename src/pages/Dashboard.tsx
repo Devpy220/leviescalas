@@ -24,6 +24,8 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { NotificationBell } from '@/components/NotificationBell';
+import { SettingsButton } from '@/components/SettingsButton';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { SupportNotification } from '@/components/SupportNotification';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
@@ -311,64 +313,90 @@ export default function Dashboard() {
             <span className="font-display text-xl font-bold text-foreground">LEVI</span>
           </Link>
 
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <NotificationBell />
-            {isAdmin && (
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="text-muted-foreground hover:text-primary"
-                onClick={() => navigate('/admin')}
-                title="Painel Admin"
-              >
-                <Settings2 className="w-5 h-5" />
-              </Button>
-            )}
-            {shouldShowInstallPrompt() && (
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="text-muted-foreground hover:text-primary relative"
-                onClick={() => setShowInstallDialog(true)}
-                title="Instalar App"
-              >
-                <Download className="w-5 h-5" />
-                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-primary rounded-full" />
-              </Button>
-            )}
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="text-muted-foreground"
-              onClick={() => navigate('/my-schedules')}
-              title="Minhas Escalas"
-            >
-              <CalendarDays className="w-5 h-5" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="text-muted-foreground"
-              onClick={() => navigate('/security')}
-              title="Segurança"
-            >
-              <Shield className="w-5 h-5" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="text-muted-foreground"
-              onClick={handleSignOut}
-            >
-              <LogOut className="w-5 h-5" />
-            </Button>
-            <Avatar className="w-9 h-9 border-2 border-primary/20">
-              <AvatarFallback className="gradient-vibrant text-white text-sm font-medium">
-                {user.email?.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-          </div>
+          <TooltipProvider>
+            <div className="flex items-center gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div><ThemeToggle /></div>
+                </TooltipTrigger>
+                <TooltipContent>Alternar tema</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div><NotificationBell /></div>
+                </TooltipTrigger>
+                <TooltipContent>Notificações</TooltipContent>
+              </Tooltip>
+              {isAdmin && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="text-muted-foreground hover:text-primary"
+                      onClick={() => navigate('/admin')}
+                    >
+                      <Settings2 className="w-5 h-5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Painel Admin</TooltipContent>
+                </Tooltip>
+              )}
+              {shouldShowInstallPrompt() && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="text-muted-foreground hover:text-primary relative"
+                      onClick={() => setShowInstallDialog(true)}
+                    >
+                      <Download className="w-5 h-5" />
+                      <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-primary rounded-full" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Instalar App</TooltipContent>
+                </Tooltip>
+              )}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="text-muted-foreground"
+                    onClick={() => navigate('/my-schedules')}
+                  >
+                    <CalendarDays className="w-5 h-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Minhas Escalas</TooltipContent>
+              </Tooltip>
+              <SettingsButton />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="text-muted-foreground"
+                    onClick={handleSignOut}
+                  >
+                    <LogOut className="w-5 h-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Sair</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Avatar className="w-9 h-9 border-2 border-primary/20 cursor-default">
+                    <AvatarFallback className="gradient-vibrant text-white text-sm font-medium">
+                      {user.email?.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </TooltipTrigger>
+                <TooltipContent>{user.email}</TooltipContent>
+              </Tooltip>
+            </div>
+          </TooltipProvider>
         </div>
       </header>
 

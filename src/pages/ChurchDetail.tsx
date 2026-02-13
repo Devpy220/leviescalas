@@ -16,6 +16,8 @@ import {
   ImageIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { SettingsButton } from '@/components/SettingsButton';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -399,31 +401,51 @@ export default function ChurchDetail() {
       {/* Header */}
       <header className="sticky top-0 z-50 glass border-b border-border/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link 
-            to="/churches" 
-            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span>Voltar</span>
-          </Link>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link 
+                  to="/churches" 
+                  className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                  <span>Voltar</span>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>Voltar às Igrejas</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
 
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="icon"
-              onClick={() => setEditDialogOpen(true)}
-            >
-              <Edit2 className="w-4 h-4" />
-            </Button>
-            <Button 
-              variant="outline" 
-              size="icon"
-              className="text-destructive hover:text-destructive"
-              onClick={() => setShowDeleteDialog(true)}
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </div>
+          <TooltipProvider>
+            <div className="flex items-center gap-2">
+              <SettingsButton />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    onClick={() => setEditDialogOpen(true)}
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Editar igreja</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => setShowDeleteDialog(true)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Excluir igreja</TooltipContent>
+              </Tooltip>
+            </div>
+          </TooltipProvider>
         </div>
       </header>
 

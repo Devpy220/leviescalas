@@ -15,6 +15,8 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { SettingsButton } from '@/components/SettingsButton';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -458,11 +460,16 @@ export default function Department() {
                 />
               )}
               
-              <Link to="/dashboard">
-                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground click-scale shrink-0">
-                  <ArrowLeft className="w-5 h-5" />
-                </Button>
-              </Link>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link to="/dashboard">
+                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground click-scale shrink-0">
+                      <ArrowLeft className="w-5 h-5" />
+                    </Button>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent>Voltar</TooltipContent>
+              </Tooltip>
               <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                 <DepartmentAvatar
                   departmentId={department.id}
@@ -490,17 +497,28 @@ export default function Department() {
             </div>
 
             <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-              <ThemeToggle />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div><ThemeToggle /></div>
+                </TooltipTrigger>
+                <TooltipContent>Alternar tema</TooltipContent>
+              </Tooltip>
               {isLeader && (
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="text-muted-foreground click-scale"
-                  onClick={() => setShowSettings(true)}
-                >
-                  <Settings className="w-5 h-5" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="text-muted-foreground click-scale"
+                      onClick={() => setShowSettings(true)}
+                    >
+                      <Settings className="w-5 h-5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Configurações do departamento</TooltipContent>
+                </Tooltip>
               )}
+              <SettingsButton />
             </div>
           </div>
         </header>

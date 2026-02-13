@@ -22,6 +22,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { NotificationBell } from '@/components/NotificationBell';
+import { SettingsButton } from '@/components/SettingsButton';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { SupportNotification } from '@/components/SupportNotification';
 import { SwapRequestDialog } from '@/components/schedules/SwapRequestDialog';
 import { SwapResponseDialog } from '@/components/schedules/SwapResponseDialog';
@@ -380,19 +382,39 @@ export default function MySchedules() {
       <header className="sticky top-0 z-50 glass border-b border-border/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}>
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}>
+                    <ArrowLeft className="w-5 h-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Voltar</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             <div className="flex items-center gap-2">
               <LeviLogo />
               <span className="font-display text-xl font-bold text-foreground">Minhas Escalas</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <NotificationBell />
-          </div>
+          <TooltipProvider>
+            <div className="flex items-center gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div><ThemeToggle /></div>
+                </TooltipTrigger>
+                <TooltipContent>Alternar tema</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div><NotificationBell /></div>
+                </TooltipTrigger>
+                <TooltipContent>Notificações</TooltipContent>
+              </Tooltip>
+              <SettingsButton />
+            </div>
+          </TooltipProvider>
         </div>
       </header>
 
