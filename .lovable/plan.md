@@ -1,71 +1,82 @@
 
 
-# Simplificar Pagamento para Apenas PIX + Banner Rotativo "Apoie o Levi"
+# Integrar Notificacoes via Telegram no LEVI
 
-## Resumo
+## Passo a Passo para Voce (Usuario)
 
-1. Substituir o QR code atual pelo QR code real enviado pelo usuario
-2. Remover todas as formas de pagamento Stripe (edge functions: `create-support-checkout`, `create-checkout`, `customer-portal`, `check-subscription`, `complete-checkout`)
-3. Substituir o `SupportNotification` (modal popup) por um banner tipo "marquee" que percorre a tela a cada 2 dias com o texto "Apoie o Levi com qualquer valor, clique aqui" e ao clicar navega para `/apoio`
-4. Limpar referencias ao Stripe/checkout em `MySchedules.tsx` e outros componentes
+### 1. Criar o Bot no Telegram
 
-## Mudancas Detalhadas
+1. Abra o Telegram e procure por **@BotFather**
+2. Envie o comando `/newbot`
+3. Escolha um **nome** para o bot (ex: "LEVI Escalas")
+4. Escolha um **username** para o bot (ex: `levi_escalas_bot`) - deve terminar com `bot`
+5. O BotFather vai te enviar um **token** parecido com: `123456789:ABCdefGHIjklMNOpqrSTUvwxYZ`
+6. **Guarde esse token** - voce vai precisar cola-lo no proximo passo
 
-### 1. Substituir QR Code PIX
+### 2. Fornecer o Token ao Sistema
 
-Copiar a imagem enviada (`WhatsApp_Image_2026-02-10_at_11.42.02.jpeg`) para `src/assets/pix-qrcode-levi.jpg`, substituindo o placeholder atual.
+Apos criar o bot, eu vou pedir para voce colar o token do bot. Ele sera armazenado de forma segura como secret (`TELEGRAM_BOT_TOKEN`).
 
-### 2. Remover Edge Functions de Stripe
+---
 
-Deletar as seguintes edge functions que nao serao mais usadas:
-- `supabase/functions/create-support-checkout/` - checkout Stripe para apoio
-- `supabase/functions/create-checkout/` - checkout Stripe geral
-- `supabase/functions/customer-portal/` - portal do cliente Stripe
-- `supabase/functions/check-subscription/` - verificacao de assinatura
-- `supabase/functions/complete-checkout/` - finalizacao de checkout
+## O Que Sera Implementado (Tecnico)
 
-Atualizar `supabase/config.toml` para remover as entradas dessas funcoes.
+### 1. Tabela `telegram_links` no banco de dados
 
-### 3. Reescrever SupportNotification como Banner Marquee
+Armazena o vinculo entre usuario do LEVI e chat_id do Telegram:
 
-**Arquivo: `src/components/SupportNotification.tsx`**
+```
+telegram_links:
+  - id (uuid)
+  - user_id (uuid) -> referencia ao usuario
+  - chat_id (bigint) -> ID do chat Telegram
+  - username (text) -> username Telegram (opcional)
+  - linked_at (timestamptz)
+  - is_active (boolean)
+```
 
-Substituir o modal popup atual por um banner animado (marquee/ticker) que:
-- Aparece a cada 2 dias (verifica localStorage pela ultima vez que foi mostrado)
-- Exibe uma faixa na parte inferior da tela com texto animado deslizando: "Apoie o Levi com qualquer valor, clique aqui"
-- Ao clicar, navega para `/apoio` (pagina de pagamento PIX)
-- Pode ser fechado com X e registra no localStorage
-- Usa animacao CSS `@keyframes marquee` para o efeito de texto percorrendo
-- Remove toda dependencia do Stripe (`supabase.functions.invoke`, `SUPPORT_PRICE_ID`)
+Com RLS para usuarios verem/gerenciarem apenas seus proprios vinculos.
 
-### 4. Limpar MySchedules.tsx
+### 2. Edge Function `telegram-webhook`
 
-- Remover `handleSupportLevi` (usa `create-support-checkout`)
-- Remover `SupportPlan` interface e estado `supportPlan`
-- Remover import de `SUPPORT_PRICE_ID`
-- Substituir o botao "Apoiar Agora" (que chamava Stripe) por um link simples para `/apoio`
+Recebe mensagens do Telegram (webhook configurado automaticamente):
+- Quando usuario envia `/start CODIGO`, vincula a conta
+- Quando usuario envia `/parar`, desvincula
 
-### 5. Limpar constants.ts
+### 3. Edge Function `send-telegram-notification`
 
-- Remover `SUPPORT_PRICE_ID` de `src/lib/constants.ts`
+Envia mensagens via Telegram Bot API para usuarios vinculados. Sera chamada pelas funcoes existentes (`send-schedule-notification`, `send-scheduled-reminders`).
 
-### 6. Limpar DepartmentSettingsDialog.tsx
+### 4. Componente `TelegramLinkToggle`
 
-- Remover referencia a `customer-portal` edge function
+Similar ao `PushNotificationToggle`, permite ao usuario:
+- Gerar um codigo de vinculacao de 6 digitos (valido por 5 minutos)
+- Ver instrucoes: "Abra o Telegram, procure @levi_escalas_bot e envie: /start CODIGO"
+- Ver status: vinculado/desvinculado
+- Desvincular a conta
 
-## Arquivos a modificar/deletar
+### 5. Integrar nas notificacoes existentes
+
+Atualizar `send-schedule-notification` e `send-scheduled-reminders` para tambem enviar via Telegram (alem de email e push), quando o usuario tiver conta vinculada.
+
+### 6. Adicionar toggle na pagina de Seguranca/Configuracoes
+
+Colocar o `TelegramLinkToggle` junto ao `PushNotificationToggle` existente para o usuario gerenciar seus canais de notificacao.
+
+## Arquivos a criar/modificar
 
 | Arquivo | Acao |
 |---------|------|
-| `src/assets/pix-qrcode-levi.jpg` | Substituir pelo QR code real |
-| `src/components/SupportNotification.tsx` | Reescrever como banner marquee a cada 2 dias |
-| `src/pages/MySchedules.tsx` | Remover logica Stripe, simplificar botao apoio |
-| `src/lib/constants.ts` | Remover `SUPPORT_PRICE_ID` |
-| `src/components/department/DepartmentSettingsDialog.tsx` | Remover referencia ao customer-portal |
-| `supabase/functions/create-support-checkout/` | Deletar |
-| `supabase/functions/create-checkout/` | Deletar |
-| `supabase/functions/customer-portal/` | Deletar |
-| `supabase/functions/check-subscription/` | Deletar |
-| `supabase/functions/complete-checkout/` | Deletar |
-| `supabase/config.toml` | Remover entradas das funcoes deletadas |
+| Migracao SQL | Criar tabela `telegram_links` + RLS |
+| `supabase/functions/telegram-webhook/index.ts` | Criar - recebe mensagens do Telegram |
+| `supabase/functions/send-telegram-notification/index.ts` | Criar - envia mensagens via Telegram |
+| `supabase/config.toml` | Adicionar novas funcoes |
+| `src/components/TelegramLinkToggle.tsx` | Criar - UI para vincular Telegram |
+| `src/pages/Security.tsx` | Adicionar toggle do Telegram |
+| `supabase/functions/send-schedule-notification/index.ts` | Adicionar canal Telegram |
+| `supabase/functions/send-scheduled-reminders/index.ts` | Adicionar canal Telegram |
+
+## Primeiro Passo Necessario
+
+Antes de implementar, preciso que voce **crie o bot no Telegram** seguindo as instrucoes acima e me forneca o token. Sem o token, nao e possivel configurar o webhook nem enviar mensagens.
 
