@@ -75,6 +75,29 @@ const sendPushNotification = async (
   }
 };
 
+const sendTelegramNotification = async (
+  supabaseUrl: string,
+  serviceRoleKey: string,
+  userId: string,
+  message: string
+): Promise<boolean> => {
+  try {
+    const response = await fetch(`${supabaseUrl}/functions/v1/send-telegram-notification`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${serviceRoleKey}`
+      },
+      body: JSON.stringify({ userId, message })
+    });
+    const result = await response.json();
+    return result.sent > 0;
+  } catch (error) {
+    console.error('Error sending telegram:', error);
+    return false;
+  }
+};
+
 const handler = async (req: Request): Promise<Response> => {
   console.log("send-scheduled-reminders (multi-interval) called");
 
@@ -166,18 +189,25 @@ const handler = async (req: Request): Promise<Response> => {
           const title = window.titleFn(dept.name, time);
           const body = window.bodyFn(dept.name, time);
 
-          // Send push notification
-          const pushSent = await sendPushNotification(
-            supabaseUrl, serviceRoleKey,
-            schedule.user_id, title, body,
-            {
-              type: 'schedule_reminder',
-              reminder_type: window.type,
-              department_id: schedule.department_id,
-              date: schedule.date,
-              url: '/my-schedules'
-            }
-          );
+          // Send push + telegram in parallel
+          const telegramMsg = `${title}\n${body}`;
+          const [pushSent] = await Promise.all([
+            sendPushNotification(
+              supabaseUrl, serviceRoleKey,
+              schedule.user_id, title, body,
+              {
+                type: 'schedule_reminder',
+                reminder_type: window.type,
+                department_id: schedule.department_id,
+                date: schedule.date,
+                url: '/my-schedules'
+              }
+            ),
+            sendTelegramNotification(
+              supabaseUrl, serviceRoleKey,
+              schedule.user_id, telegramMsg
+            )
+          ]);
 
           // Record reminder as sent (even if push failed, to avoid spam)
           await supabaseAdmin
