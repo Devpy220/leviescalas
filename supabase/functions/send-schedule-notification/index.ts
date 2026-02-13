@@ -91,6 +91,30 @@ const sendPushNotification = async (
   }
 };
 
+// Send Telegram notification
+const sendTelegramNotification = async (
+  userId: string,
+  message: string
+): Promise<{ success: boolean; error?: string }> => {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+  try {
+    const response = await fetch(`${supabaseUrl}/functions/v1/send-telegram-notification`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""}`
+      },
+      body: JSON.stringify({ userId, message })
+    });
+    const result = await response.json();
+    return { success: result.sent > 0 };
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error sending telegram notification:', errorMessage);
+    return { success: false, error: errorMessage };
+  }
+};
+
 const handler = async (req: Request): Promise<Response> => {
   console.log("send-schedule-notification function called");
 
@@ -416,6 +440,18 @@ const handler = async (req: Request): Promise<Response> => {
         url: '/my-schedules'
       }).then((result: { success: boolean; error?: string }) => ({
         type: 'push',
+        ...result
+      }))
+    );
+
+    // Telegram notification
+    const telegramMsg = type === 'new_schedule'
+      ? `📅 *Nova Escala - ${department_name}*\n\n📆 ${formattedDate}\n⏰ ${formattedTimeStart} às ${formattedTimeEnd}${notes ? `\n📝 ${notes}` : ''}`
+      : `⚠️ *Escala Alterada - ${department_name}*\n\n📆 Nova data: ${formattedDate}\n⏰ ${formattedTimeStart} às ${formattedTimeEnd}`;
+
+    notificationPromises.push(
+      sendTelegramNotification(user_id, telegramMsg).then((result) => ({
+        type: 'telegram',
         ...result
       }))
     );

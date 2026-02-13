@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Footer from '@/components/Footer';
 import { ArrowLeft, Shield, ShieldOff, Loader2, AlertTriangle, Eye, EyeOff, Bell, BellOff } from 'lucide-react';
+import { TelegramLinkToggle } from '@/components/TelegramLinkToggle';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -303,6 +304,11 @@ export default function Security() {
             </p>
           </CardContent>
         </Card>
+
+        {/* Telegram Card */}
+        <div className="mt-6">
+          <TelegramLinkToggle />
+        </div>
 
         {/* Info Section */}
         <div className="mt-8 p-4 rounded-lg border border-border bg-card">
