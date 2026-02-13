@@ -1,91 +1,45 @@
 
-# Tooltips em Todos os Icones + Acesso a Seguranca em Todas as Paginas
 
-## Resumo
+# Melhorar Desbloqueio de Notificacoes Push e Contato Oculto
 
-Duas mudancas principais:
-1. Adicionar **tooltips** (dica ao passar o mouse) em todos os botoes com icone do sistema, para que o usuario saiba o que cada icone faz
-2. Adicionar os **botoes de acesso rapido a Seguranca** (2FA, Privacidade, Notificacoes Push, Telegram) em todas as paginas onde o usuario esta logado
+## Problema
 
----
+1. **Notificacoes Push bloqueadas**: Quando o usuario bloqueia as notificacoes no navegador, a pagina mostra apenas uma mensagem de aviso sem nenhum botao de acao para ajudar a desbloquear.
+2. **Contato oculto**: O Switch funciona nos dois sentidos, mas falta clareza visual -- nao ha um botao ou instrucao destacada para tornar o contato visivel novamente.
 
-## 1. Tooltips em todos os icones
+## Solucao
 
-Envolver cada botao de icone com o componente `Tooltip` do Radix (ja existe em `src/components/ui/tooltip.tsx`). O texto aparece ao passar o mouse ou ao segurar no mobile.
+### 1. Notificacoes Push - Estado "bloqueado"
 
-### Paginas afetadas:
+Quando a permissao esta como "denied":
+- Adicionar um botao "Como desbloquear" que expande instrucoes passo a passo com imagens/texto de como alterar nas configuracoes do navegador
+- Adicionar um botao "Tentar novamente" que tenta solicitar permissao novamente (alguns navegadores permitem re-solicitar)
+- Manter a mensagem de alerta atual mas com acoes visiveis
 
-| Pagina | Botoes que recebem tooltip |
-|--------|---------------------------|
-| Dashboard | ThemeToggle, NotificationBell, Admin, Instalar App, Minhas Escalas, Seguranca, Sair, Avatar |
-| MySchedules | Voltar, ThemeToggle, NotificationBell |
-| Department | Voltar, ThemeToggle, Configuracoes |
-| Churches | Voltar |
-| ChurchDetail | Voltar |
-| CreateDepartment | Voltar |
-| Security | Voltar |
+### 2. Privacidade de Contato - Melhorar visibilidade do toggle
 
-Exemplo de como cada icone ficara:
-```
-[Icone de engrenagem] --> ao passar o mouse: "Configuracoes"
-[Icone de sino] --> ao passar o mouse: "Notificacoes"
-[Icone de calendario] --> ao passar o mouse: "Minhas Escalas"
-```
-
----
-
-## 2. Botao de Configuracoes (engrenagem) em todas as paginas autenticadas
-
-Criar um componente reutilizavel `SettingsButton` que:
-- Exibe o icone de **engrenagem** (`Settings` do lucide-react)
-- Ja vem com **tooltip** "Configuracoes"
-- Ao clicar, navega para `/security`
-
-Este componente sera adicionado no header de todas as paginas autenticadas:
-- Dashboard (substituindo o icone de escudo atual)
-- MySchedules
-- Department
-- Churches
-- ChurchDetail
-- CreateDepartment
-
----
-
-## 3. Renomear pagina Security
-
-Mudar o titulo da pagina de "Seguranca" para "Configuracoes" ja que ela contem configuracoes de privacidade, notificacoes e Telegram alem de seguranca.
-
----
+- Adicionar um botao explicito abaixo do Switch quando o contato esta oculto: "Tornar visivel"
+- Quando o contato esta visivel, mostrar botao "Ocultar contato"
+- Isso complementa o Switch, tornando a acao mais obvia para usuarios menos tecnicos
 
 ## Detalhes Tecnicos
 
-### Arquivo novo: `src/components/SettingsButton.tsx`
-- Componente que renderiza um `Button` com icone `Settings` dentro de um `Tooltip`
-- Navega para `/security` ao clicar
+### Arquivo modificado: `src/pages/Security.tsx`
 
-### Arquivos modificados:
+**Push Notifications (linhas 277-288)**:
+- No estado `denied`, adicionar dois botoes:
+  - "Tentar novamente" -- chama `subscribePush()` que internamente faz `Notification.requestPermission()`
+  - Instrucoes expandiveis com passo a passo de como desbloquear no Chrome, Firefox e Safari
+- Atualizar o hook `usePushNotifications` para re-verificar o estado da permissao apos tentativa
 
-1. **`src/pages/Dashboard.tsx`**
-   - Envolver todos os botoes de icone do header com `Tooltip`
-   - Substituir botao Shield pelo `SettingsButton`
-   - Adicionar `TooltipProvider` ao redor do header
+### Arquivo modificado: `src/hooks/usePushNotifications.tsx`
 
-2. **`src/pages/MySchedules.tsx`**
-   - Adicionar `SettingsButton` no header
-   - Adicionar tooltips nos botoes existentes
+- Adicionar funcao `recheckPermission` que atualiza o estado `permission` ao chamar `Notification.permission`
+- Chamar `recheckPermission` quando o usuario volta a aba (evento `visibilitychange`), para detectar se ele mudou a permissao nas configuracoes do navegador
 
-3. **`src/pages/Department.tsx`**
-   - Adicionar `SettingsButton` no header
-   - Adicionar tooltips nos botoes existentes
+**Privacidade de Contato (linhas 222-238)**:
+- Adicionar um botao de acao abaixo do toggle com texto dinamico:
+  - Contato oculto: botao "Compartilhar meu contato" (estilo primario)
+  - Contato visivel: botao "Ocultar meu contato" (estilo outline)
+- O botao chama a mesma funcao `handlePrivacyToggle` que o Switch
 
-4. **`src/pages/Churches.tsx`**
-   - Adicionar `SettingsButton` no header
-
-5. **`src/pages/ChurchDetail.tsx`**
-   - Adicionar `SettingsButton` no header
-
-6. **`src/pages/CreateDepartment.tsx`**
-   - Adicionar `SettingsButton` no header
-
-7. **`src/pages/Security.tsx`**
-   - Renomear titulo de "Seguranca" para "Configuracoes"
