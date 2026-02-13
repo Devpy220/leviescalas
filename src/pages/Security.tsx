@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Footer from '@/components/Footer';
-import { ArrowLeft, Shield, ShieldOff, Loader2, AlertTriangle, Eye, EyeOff, Bell, BellOff } from 'lucide-react';
+import { ArrowLeft, Shield, ShieldOff, Loader2, AlertTriangle, Eye, EyeOff, Bell, BellOff, ChevronDown, ChevronUp } from 'lucide-react';
 import { TelegramLinkToggle } from '@/components/TelegramLinkToggle';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
@@ -28,7 +28,7 @@ export default function Security() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { isEnabled, isLoading: mfaLoading, checkFactors, disable2FA } = useTwoFactor();
-  const { isSupported: pushSupported, isSubscribed: pushSubscribed, permission: pushPermission, loading: pushLoading, subscribe: subscribePush, unsubscribe: unsubscribePush } = usePushNotifications();
+  const { isSupported: pushSupported, isSubscribed: pushSubscribed, permission: pushPermission, loading: pushLoading, subscribe: subscribePush, unsubscribe: unsubscribePush, recheckPermission } = usePushNotifications();
   const { toast } = useToast();
   
   const [showSetup, setShowSetup] = useState(false);
@@ -36,6 +36,7 @@ export default function Security() {
   const [isDisabling, setIsDisabling] = useState(false);
   const [shareContact, setShareContact] = useState(false);
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
+  const [showUnblockInstructions, setShowUnblockInstructions] = useState(false);
 
   // Fetch current privacy setting
   useEffect(() => {
@@ -241,6 +242,28 @@ export default function Security() {
               Essa configuração afeta apenas a visibilidade para outros membros dos seus departamentos. 
               Líderes de departamento sempre podem ver informações de contato para fins de coordenação.
             </p>
+
+            <div className="flex justify-end">
+              <Button
+                variant={shareContact ? "outline" : "default"}
+                size="sm"
+                onClick={() => handlePrivacyToggle(!shareContact)}
+                disabled={isUpdatingPrivacy}
+              >
+                {isUpdatingPrivacy && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                {shareContact ? (
+                  <>
+                    <EyeOff className="w-4 h-4 mr-2" />
+                    Ocultar meu contato
+                  </>
+                ) : (
+                  <>
+                    <Eye className="w-4 h-4 mr-2" />
+                    Compartilhar meu contato
+                  </>
+                )}
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
@@ -275,16 +298,70 @@ export default function Security() {
                 </div>
               </div>
             ) : pushPermission === 'denied' ? (
-              <div className="p-4 rounded-lg bg-destructive/10">
-                <div className="flex items-start gap-3">
-                  <AlertTriangle className="w-5 h-5 text-destructive mt-0.5" />
-                  <div>
-                    <p className="font-medium text-foreground">Permissão bloqueada</p>
-                    <p className="text-sm text-muted-foreground">
-                      Você bloqueou as notificações. Para ativar, clique no ícone de cadeado na barra de endereços e permita notificações.
-                    </p>
+              <div className="space-y-3">
+                <div className="p-4 rounded-lg bg-destructive/10">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-destructive mt-0.5" />
+                    <div>
+                      <p className="font-medium text-foreground">Permissão bloqueada</p>
+                      <p className="text-sm text-muted-foreground">
+                        Você bloqueou as notificações. Altere nas configurações do navegador e clique em "Tentar novamente".
+                      </p>
+                    </div>
                   </div>
                 </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      recheckPermission();
+                      subscribePush();
+                    }}
+                    disabled={pushLoading}
+                  >
+                    {pushLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Bell className="w-4 h-4 mr-2" />}
+                    Tentar novamente
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowUnblockInstructions(!showUnblockInstructions)}
+                  >
+                    {showUnblockInstructions ? <ChevronUp className="w-4 h-4 mr-2" /> : <ChevronDown className="w-4 h-4 mr-2" />}
+                    Como desbloquear
+                  </Button>
+                </div>
+                {showUnblockInstructions && (
+                  <div className="p-4 rounded-lg bg-muted/50 space-y-3 text-sm text-muted-foreground">
+                    <p className="font-medium text-foreground">Passo a passo:</p>
+                    <div>
+                      <p className="font-medium text-foreground">Chrome / Edge:</p>
+                      <ol className="list-decimal list-inside space-y-1 ml-2">
+                        <li>Clique no ícone de cadeado 🔒 na barra de endereços</li>
+                        <li>Encontre "Notificações"</li>
+                        <li>Altere para "Permitir"</li>
+                        <li>Recarregue a página</li>
+                      </ol>
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">Firefox:</p>
+                      <ol className="list-decimal list-inside space-y-1 ml-2">
+                        <li>Clique no ícone de cadeado 🔒 na barra de endereços</li>
+                        <li>Clique em "Limpar permissão" ao lado de Notificações</li>
+                        <li>Recarregue a página</li>
+                      </ol>
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">Safari (iPhone/Mac):</p>
+                      <ol className="list-decimal list-inside space-y-1 ml-2">
+                        <li>Vá em Ajustes &gt; Safari &gt; Notificações</li>
+                        <li>Encontre este site e ative as notificações</li>
+                        <li>Volte e recarregue a página</li>
+                      </ol>
+                    </div>
+                    <p className="text-xs">Após alterar a permissão, clique em "Tentar novamente" acima.</p>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">

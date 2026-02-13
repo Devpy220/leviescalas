@@ -48,6 +48,26 @@ export function usePushNotifications() {
     }
   }, []);
 
+  // Re-check permission when user returns to the tab
+  useEffect(() => {
+    if (!isSupported) return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        setPermission(Notification.permission);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [isSupported]);
+
+  const recheckPermission = useCallback(() => {
+    if (isSupported) {
+      setPermission(Notification.permission);
+    }
+  }, [isSupported]);
+
   // Check existing subscription when user logs in
   useEffect(() => {
     if (!user || !isSupported) return;
@@ -203,6 +223,7 @@ export function usePushNotifications() {
     permission,
     loading,
     subscribe,
-    unsubscribe
+    unsubscribe,
+    recheckPermission
   };
 }
