@@ -13,6 +13,8 @@ import {
   Heart
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { SettingsButton } from '@/components/SettingsButton';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -242,14 +244,24 @@ export default function CreateDepartment() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 glass border-b border-border/50">
-        <div className="container mx-auto px-4 h-16 flex items-center">
-          <Link 
-            to="/dashboard" 
-            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span>Voltar</span>
-          </Link>
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link 
+                  to="/dashboard" 
+                  className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                  <span>Voltar</span>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>Voltar ao Dashboard</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <SettingsButton />
+          </TooltipProvider>
         </div>
       </header>
 

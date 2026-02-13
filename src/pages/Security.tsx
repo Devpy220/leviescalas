@@ -4,6 +4,7 @@ import Footer from '@/components/Footer';
 import { ArrowLeft, Shield, ShieldOff, Loader2, AlertTriangle, Eye, EyeOff, Bell, BellOff } from 'lucide-react';
 import { TelegramLinkToggle } from '@/components/TelegramLinkToggle';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/hooks/useAuth';
@@ -115,16 +116,23 @@ export default function Security() {
       <div className="container max-w-2xl py-8 px-4 flex-1">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => navigate('/dashboard')}
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => navigate('/dashboard')}
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Voltar</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Segurança</h1>
-            <p className="text-muted-foreground">Gerencie as configurações de segurança da sua conta</p>
+            <h1 className="text-2xl font-bold text-foreground">Configurações</h1>
+            <p className="text-muted-foreground">Gerencie as configurações de segurança e privacidade da sua conta</p>
           </div>
         </div>
 
