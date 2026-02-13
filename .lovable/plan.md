@@ -1,82 +1,91 @@
 
+# Tooltips em Todos os Icones + Acesso a Seguranca em Todas as Paginas
 
-# Integrar Notificacoes via Telegram no LEVI
+## Resumo
 
-## Passo a Passo para Voce (Usuario)
-
-### 1. Criar o Bot no Telegram
-
-1. Abra o Telegram e procure por **@BotFather**
-2. Envie o comando `/newbot`
-3. Escolha um **nome** para o bot (ex: "LEVI Escalas")
-4. Escolha um **username** para o bot (ex: `levi_escalas_bot`) - deve terminar com `bot`
-5. O BotFather vai te enviar um **token** parecido com: `123456789:ABCdefGHIjklMNOpqrSTUvwxYZ`
-6. **Guarde esse token** - voce vai precisar cola-lo no proximo passo
-
-### 2. Fornecer o Token ao Sistema
-
-Apos criar o bot, eu vou pedir para voce colar o token do bot. Ele sera armazenado de forma segura como secret (`TELEGRAM_BOT_TOKEN`).
+Duas mudancas principais:
+1. Adicionar **tooltips** (dica ao passar o mouse) em todos os botoes com icone do sistema, para que o usuario saiba o que cada icone faz
+2. Adicionar os **botoes de acesso rapido a Seguranca** (2FA, Privacidade, Notificacoes Push, Telegram) em todas as paginas onde o usuario esta logado
 
 ---
 
-## O Que Sera Implementado (Tecnico)
+## 1. Tooltips em todos os icones
 
-### 1. Tabela `telegram_links` no banco de dados
+Envolver cada botao de icone com o componente `Tooltip` do Radix (ja existe em `src/components/ui/tooltip.tsx`). O texto aparece ao passar o mouse ou ao segurar no mobile.
 
-Armazena o vinculo entre usuario do LEVI e chat_id do Telegram:
+### Paginas afetadas:
 
+| Pagina | Botoes que recebem tooltip |
+|--------|---------------------------|
+| Dashboard | ThemeToggle, NotificationBell, Admin, Instalar App, Minhas Escalas, Seguranca, Sair, Avatar |
+| MySchedules | Voltar, ThemeToggle, NotificationBell |
+| Department | Voltar, ThemeToggle, Configuracoes |
+| Churches | Voltar |
+| ChurchDetail | Voltar |
+| CreateDepartment | Voltar |
+| Security | Voltar |
+
+Exemplo de como cada icone ficara:
 ```
-telegram_links:
-  - id (uuid)
-  - user_id (uuid) -> referencia ao usuario
-  - chat_id (bigint) -> ID do chat Telegram
-  - username (text) -> username Telegram (opcional)
-  - linked_at (timestamptz)
-  - is_active (boolean)
+[Icone de engrenagem] --> ao passar o mouse: "Configuracoes"
+[Icone de sino] --> ao passar o mouse: "Notificacoes"
+[Icone de calendario] --> ao passar o mouse: "Minhas Escalas"
 ```
 
-Com RLS para usuarios verem/gerenciarem apenas seus proprios vinculos.
+---
 
-### 2. Edge Function `telegram-webhook`
+## 2. Botao de Configuracoes (engrenagem) em todas as paginas autenticadas
 
-Recebe mensagens do Telegram (webhook configurado automaticamente):
-- Quando usuario envia `/start CODIGO`, vincula a conta
-- Quando usuario envia `/parar`, desvincula
+Criar um componente reutilizavel `SettingsButton` que:
+- Exibe o icone de **engrenagem** (`Settings` do lucide-react)
+- Ja vem com **tooltip** "Configuracoes"
+- Ao clicar, navega para `/security`
 
-### 3. Edge Function `send-telegram-notification`
+Este componente sera adicionado no header de todas as paginas autenticadas:
+- Dashboard (substituindo o icone de escudo atual)
+- MySchedules
+- Department
+- Churches
+- ChurchDetail
+- CreateDepartment
 
-Envia mensagens via Telegram Bot API para usuarios vinculados. Sera chamada pelas funcoes existentes (`send-schedule-notification`, `send-scheduled-reminders`).
+---
 
-### 4. Componente `TelegramLinkToggle`
+## 3. Renomear pagina Security
 
-Similar ao `PushNotificationToggle`, permite ao usuario:
-- Gerar um codigo de vinculacao de 6 digitos (valido por 5 minutos)
-- Ver instrucoes: "Abra o Telegram, procure @levi_escalas_bot e envie: /start CODIGO"
-- Ver status: vinculado/desvinculado
-- Desvincular a conta
+Mudar o titulo da pagina de "Seguranca" para "Configuracoes" ja que ela contem configuracoes de privacidade, notificacoes e Telegram alem de seguranca.
 
-### 5. Integrar nas notificacoes existentes
+---
 
-Atualizar `send-schedule-notification` e `send-scheduled-reminders` para tambem enviar via Telegram (alem de email e push), quando o usuario tiver conta vinculada.
+## Detalhes Tecnicos
 
-### 6. Adicionar toggle na pagina de Seguranca/Configuracoes
+### Arquivo novo: `src/components/SettingsButton.tsx`
+- Componente que renderiza um `Button` com icone `Settings` dentro de um `Tooltip`
+- Navega para `/security` ao clicar
 
-Colocar o `TelegramLinkToggle` junto ao `PushNotificationToggle` existente para o usuario gerenciar seus canais de notificacao.
+### Arquivos modificados:
 
-## Arquivos a criar/modificar
+1. **`src/pages/Dashboard.tsx`**
+   - Envolver todos os botoes de icone do header com `Tooltip`
+   - Substituir botao Shield pelo `SettingsButton`
+   - Adicionar `TooltipProvider` ao redor do header
 
-| Arquivo | Acao |
-|---------|------|
-| Migracao SQL | Criar tabela `telegram_links` + RLS |
-| `supabase/functions/telegram-webhook/index.ts` | Criar - recebe mensagens do Telegram |
-| `supabase/functions/send-telegram-notification/index.ts` | Criar - envia mensagens via Telegram |
-| `supabase/config.toml` | Adicionar novas funcoes |
-| `src/components/TelegramLinkToggle.tsx` | Criar - UI para vincular Telegram |
-| `src/pages/Security.tsx` | Adicionar toggle do Telegram |
-| `supabase/functions/send-schedule-notification/index.ts` | Adicionar canal Telegram |
-| `supabase/functions/send-scheduled-reminders/index.ts` | Adicionar canal Telegram |
+2. **`src/pages/MySchedules.tsx`**
+   - Adicionar `SettingsButton` no header
+   - Adicionar tooltips nos botoes existentes
 
-## Primeiro Passo Necessario
+3. **`src/pages/Department.tsx`**
+   - Adicionar `SettingsButton` no header
+   - Adicionar tooltips nos botoes existentes
 
-Antes de implementar, preciso que voce **crie o bot no Telegram** seguindo as instrucoes acima e me forneca o token. Sem o token, nao e possivel configurar o webhook nem enviar mensagens.
+4. **`src/pages/Churches.tsx`**
+   - Adicionar `SettingsButton` no header
 
+5. **`src/pages/ChurchDetail.tsx`**
+   - Adicionar `SettingsButton` no header
+
+6. **`src/pages/CreateDepartment.tsx`**
+   - Adicionar `SettingsButton` no header
+
+7. **`src/pages/Security.tsx`**
+   - Renomear titulo de "Seguranca" para "Configuracoes"
