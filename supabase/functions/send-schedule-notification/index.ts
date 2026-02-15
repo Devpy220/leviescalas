@@ -22,20 +22,32 @@ const notificationSchema = z.object({
   type: z.enum(['new_schedule', 'schedule_moved']),
   old_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   confirmation_token: z.string().optional(),
+  sector_name: z.string().max(100).optional(),
+  assignment_role_label: z.string().max(50).optional(),
 });
 
 type NotificationRequest = z.infer<typeof notificationSchema>;
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 
+const WEEKDAYS_PT = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+const MONTHS_SHORT_PT = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+
+const formatShortDate = (dateStr: string): string => {
+  const date = new Date(dateStr + 'T12:00:00');
+  const weekday = WEEKDAYS_PT[date.getDay()];
+  const day = date.getDate();
+  const month = MONTHS_SHORT_PT[date.getMonth()];
+  return `${weekday}, ${day}/${month}`;
+};
+
 const formatDate = (dateStr: string): string => {
-  const date = new Date(dateStr + 'T00:00:00');
-  return date.toLocaleDateString('pt-BR', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  });
+  return formatShortDate(dateStr);
+};
+
+const buildDetailsSuffix = (sectorName?: string, roleLabel?: string): string => {
+  const details = [sectorName, roleLabel].filter(Boolean).join(' - ');
+  return details ? ` | ${details}` : '';
 };
 
 const formatTime = (time: string): string => {
@@ -180,7 +192,8 @@ const handler = async (req: Request): Promise<Response> => {
     const requestData: NotificationRequest = validationResult.data;
     console.log("Request data validated:", requestData);
 
-    const { user_id, department_id, department_name, date, time_start, time_end, notes, type, old_date, confirmation_token } = requestData;
+    const { user_id, department_id, department_name, date, time_start, time_end, notes, type, old_date, confirmation_token, sector_name, assignment_role_label } = requestData;
+    const detailsSuffix = buildDetailsSuffix(sector_name, assignment_role_label);
 
     // AUTHORIZATION CHECK: Verify caller is the department leader
     const { data: department, error: deptError } = await supabaseAdmin
@@ -275,7 +288,7 @@ const handler = async (req: Request): Promise<Response> => {
       if (confirmUrl && declineUrl) {
         whatsappConfirmation = `\n\n✅ *Confirmar presença:*\n${confirmUrl}\n\n❌ *Não poderei:*\n${declineUrl}`;
       }
-      whatsappMessage = `📅 *Nova Escala - ${department_name}*\n\nOlá, ${profile.name}!\n\nVocê foi escalado para:\n📆 *Data:* ${formattedDate}\n⏰ *Horário:* ${formattedTimeStart} às ${formattedTimeEnd}${notes ? `\n📝 *Observações:* ${notes}` : ''}${whatsappConfirmation}\n\n_LEVI - Sistema de Escalas_`;
+      whatsappMessage = `📅 *Nova Escala - ${department_name}*\n\nOlá, ${profile.name}!\n\nVocê foi escalado para:\n📆 *Data:* ${formattedDate}\n⏰ *Horário:* ${formattedTimeStart} às ${formattedTimeEnd}${sector_name ? `\n📍 *Setor:* ${sector_name}` : ''}${assignment_role_label ? `\n👤 *Função:* ${assignment_role_label}` : ''}${notes ? `\n📝 *Observações:* ${notes}` : ''}${whatsappConfirmation}\n\n_LEVI - Sistema de Escalas_`;
       
       // HTML email with confirmation buttons
       const confirmationButtons = confirmUrl && declineUrl ? `
@@ -327,6 +340,18 @@ const handler = async (req: Request): Promise<Response> => {
                   <span class="info-icon">⏰</span>
                   <span class="info-text"><strong>Horário:</strong> ${formattedTimeStart} às ${formattedTimeEnd}</span>
                 </div>
+                ${sector_name ? `
+                <div class="info-row">
+                  <span class="info-icon">📍</span>
+                  <span class="info-text"><strong>Setor:</strong> ${escapeHtml(sector_name)}</span>
+                </div>
+                ` : ''}
+                ${assignment_role_label ? `
+                <div class="info-row">
+                  <span class="info-icon">👤</span>
+                  <span class="info-text"><strong>Função:</strong> ${escapeHtml(assignment_role_label)}</span>
+                </div>
+                ` : ''}
               </div>
               
               ${notes ? `
@@ -429,8 +454,8 @@ const handler = async (req: Request): Promise<Response> => {
     // Push notification (replaces WhatsApp)
     const pushTitle = type === 'new_schedule' ? `📅 Nova Escala` : `⚠️ Escala Alterada`;
     const pushBody = type === 'new_schedule' 
-      ? `${department_name}: ${formattedDate} às ${formattedTimeStart}`
-      : `${department_name}: alterada para ${formattedDate}`;
+      ? `${department_name}: ${formattedDate} às ${formattedTimeStart}${detailsSuffix}`
+      : `${department_name}: alterada para ${formattedDate} às ${formattedTimeStart}${detailsSuffix}`;
     
     notificationPromises.push(
       sendPushNotification(user_id, pushTitle, pushBody, {
@@ -446,8 +471,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Telegram notification
     const telegramMsg = type === 'new_schedule'
-      ? `📅 *Nova Escala - ${department_name}*\n\n📆 ${formattedDate}\n⏰ ${formattedTimeStart} às ${formattedTimeEnd}${notes ? `\n📝 ${notes}` : ''}`
-      : `⚠️ *Escala Alterada - ${department_name}*\n\n📆 Nova data: ${formattedDate}\n⏰ ${formattedTimeStart} às ${formattedTimeEnd}`;
+      ? `📅 *Nova Escala - ${department_name}*\n\n📆 ${formattedDate}\n⏰ ${formattedTimeStart} às ${formattedTimeEnd}${sector_name ? `\n📍 ${sector_name}` : ''}${assignment_role_label ? `\n👤 ${assignment_role_label}` : ''}${notes ? `\n📝 ${notes}` : ''}`
+      : `⚠️ *Escala Alterada - ${department_name}*\n\n📆 Nova data: ${formattedDate}\n⏰ ${formattedTimeStart} às ${formattedTimeEnd}${sector_name ? `\n📍 ${sector_name}` : ''}${assignment_role_label ? `\n👤 ${assignment_role_label}` : ''}`;
 
     notificationPromises.push(
       sendTelegramNotification(user_id, telegramMsg).then((result) => ({
@@ -464,8 +489,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Create notification record
     const notificationMessage = type === 'new_schedule' 
-      ? `Nova escala em ${department_name} para ${formattedDate}`
-      : `Escala alterada em ${department_name} para ${formattedDate}`;
+      ? `${department_name}: ${formattedDate} às ${formattedTimeStart}${detailsSuffix}`
+      : `Escala alterada: ${department_name} ${formattedDate} às ${formattedTimeStart}${detailsSuffix}`;
 
     const { error: notificationError } = await supabaseAdmin
       .from('notifications')

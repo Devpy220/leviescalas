@@ -235,12 +235,19 @@ export default function SmartScheduleDialog({
           const scheduleInfo = selectedSchedules.find(
             s => s.user_id === schedule.user_id && s.date === schedule.date
           );
+          const dateObj = new Date(schedule.date + 'T12:00:00');
+          const weekdays = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+          const monthsShort = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+          const shortDate = `${weekdays[dateObj.getDay()]}, ${dateObj.getDate()}/${monthsShort[dateObj.getMonth()]}`;
+          const sectorName = scheduleInfo?.sector_id ? sectors.find(s => s.id === scheduleInfo.sector_id)?.name : null;
+          const detailsParts = [sectorName].filter(Boolean).join(' - ');
+          const detailsSuffix = detailsParts ? ` | ${detailsParts}` : '';
           return {
             user_id: schedule.user_id,
             department_id: departmentId,
             schedule_id: schedule.id,
             type: 'schedule_assigned',
-            message: `Você foi escalado para ${format(new Date(schedule.date + 'T12:00:00'), "dd/MM (EEEE)", { locale: ptBR })} das ${schedule.time_start.slice(0, 5)} às ${schedule.time_end.slice(0, 5)}`,
+            message: `${shortDate} das ${schedule.time_start.slice(0, 5)} às ${schedule.time_end.slice(0, 5)}${detailsSuffix}`,
             status: 'pending' as const
           };
         });
