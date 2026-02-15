@@ -650,10 +650,7 @@
   @apply bg-primary/60;
 }
 
-/* Theme transition */
-* {
-  transition: background-color 0.3s ease, border-color 0.3s ease;
-}
+/* Theme transition - only for theme toggles, not all elements */
 
 /* Selection highlight */
 ::selection {
