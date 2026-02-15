@@ -8,11 +8,33 @@ const corsHeaders = {
 
 const formatTime = (time: string): string => time.slice(0, 5);
 
+const WEEKDAYS_PT = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+const MONTHS_SHORT_PT = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+
+const formatShortDate = (dateStr: string): string => {
+  const date = new Date(dateStr + 'T12:00:00');
+  const weekday = WEEKDAYS_PT[date.getDay()];
+  const day = date.getDate();
+  const month = MONTHS_SHORT_PT[date.getMonth()];
+  return `${weekday}, ${day}/${month}`;
+};
+
+const buildDetailsSuffix = (sectorName?: string | null, roleLabel?: string | null): string => {
+  const details = [sectorName, roleLabel].filter(Boolean).join(' - ');
+  return details ? ` | ${details}` : '';
+};
+
+// Map assignment role keys to labels
+const ROLE_LABELS: Record<string, string> = {
+  on_duty: 'Plantão',
+  participant: 'Culto',
+};
+
 interface ReminderWindow {
   type: string;
   hoursAhead: number;
-  titleFn: (dept: string, time: string) => string;
-  bodyFn: (dept: string, time: string) => string;
+  titleFn: (dept: string, time: string, dateSuffix: string) => string;
+  bodyFn: (dept: string, time: string, dateSuffix: string) => string;
 }
 
 const REMINDER_WINDOWS: ReminderWindow[] = [
@@ -20,25 +42,25 @@ const REMINDER_WINDOWS: ReminderWindow[] = [
     type: '72h',
     hoursAhead: 72,
     titleFn: () => '📅 Escala em 3 dias',
-    bodyFn: (dept, time) => `Você tem escala em 3 dias em ${dept} às ${time}`,
+    bodyFn: (dept, time, dateSuffix) => `Escala em 3 dias: ${dateSuffix} às ${time} - ${dept}`,
   },
   {
     type: '48h',
     hoursAhead: 48,
     titleFn: () => '📋 Escala em 2 dias',
-    bodyFn: (dept, time) => `Lembrete: escala em 2 dias em ${dept} às ${time}`,
+    bodyFn: (dept, time, dateSuffix) => `Escala em 2 dias: ${dateSuffix} às ${time} - ${dept}`,
   },
   {
     type: '12h',
     hoursAhead: 12,
     titleFn: () => '⏰ Escala amanhã!',
-    bodyFn: (dept, time) => `Sua escala é amanhã! ${dept} às ${time}`,
+    bodyFn: (dept, time, dateSuffix) => `Escala amanhã: ${dateSuffix} às ${time} - ${dept}`,
   },
   {
     type: '3h',
     hoursAhead: 3,
     titleFn: () => '🔔 Escala em 3 horas!',
-    bodyFn: (dept, time) => `Em 3 horas: ${dept} às ${time}`,
+    bodyFn: (dept, time, dateSuffix) => `Em 3 horas: ${dateSuffix} às ${time} - ${dept}`,
   },
 ];
 
@@ -130,7 +152,7 @@ const handler = async (req: Request): Promise<Response> => {
       // We need to combine date + time_start to check if it falls within our window
       let query = supabaseAdmin
         .from('schedules')
-        .select('id, date, time_start, time_end, user_id, department_id')
+        .select('id, date, time_start, time_end, user_id, department_id, sector_id, assignment_role, sector:sectors(name)')
         .gte('date', startDate)
         .lte('date', endDate);
 
@@ -186,8 +208,14 @@ const handler = async (req: Request): Promise<Response> => {
           if (!dept || !profile) continue;
 
           const time = formatTime(schedule.time_start);
-          const title = window.titleFn(dept.name, time);
-          const body = window.bodyFn(dept.name, time);
+          const shortDate = formatShortDate(schedule.date);
+          const sectorName = (schedule as any).sector?.name || null;
+          const roleLabel = schedule.assignment_role ? (ROLE_LABELS[schedule.assignment_role] || schedule.assignment_role) : null;
+          const detailsSuffix = buildDetailsSuffix(sectorName, roleLabel);
+          const dateSuffix = `${shortDate}${detailsSuffix}`;
+          
+          const title = window.titleFn(dept.name, time, dateSuffix);
+          const body = window.bodyFn(dept.name, time, dateSuffix);
 
           // Send push + telegram in parallel
           const telegramMsg = `${title}\n${body}`;
