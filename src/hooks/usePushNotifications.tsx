@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
 // VAPID public key - generated for this project
-const VAPID_PUBLIC_KEY = 'BELXRy8lGRPQ3-jKQPoskxMgfNmFXyTFGSuNKQUIw76PdnxMwK7jYQOwHp4haHhjZj54nreM_R64SUGkEwNFQ9s';
+const VAPID_PUBLIC_KEY = 'BGqRytN6XBP6JHe8egm8kflbrdCzMKHWK4C6VkvsKWkJ_uoi7T00huAf8QTCGyDcoPJSyNfGbhB8_MVPE7HFTpk';
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
