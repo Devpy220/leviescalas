@@ -3,6 +3,7 @@ import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-
 import {
   ApplicationServer,
   importVapidKeys,
+  type ExportedVapidKeys,
   PushSubscription as WebPushSubscription,
   Urgency,
 } from "jsr:@negrel/webpush@0.5.0";
@@ -25,25 +26,19 @@ async function getApplicationServer(): Promise<ApplicationServer> {
   const publicJwk = {
     kty: "EC",
     crv: "P-256",
-    alg: "ES256",
     x: vapidX,
     y: vapidY,
-    key_ops: ["verify"],
-    ext: true,
   };
 
   const privateJwk = {
     kty: "EC",
     crv: "P-256",
-    alg: "ES256",
     x: vapidX,
     y: vapidY,
     d: vapidD,
-    key_ops: ["sign"],
-    ext: true,
   };
 
-  const keys = await importVapidKeys(privateJwk, publicJwk);
+  const keys = await importVapidKeys({ privateKey: privateJwk, publicKey: publicJwk });
 
   return new ApplicationServer({
     contactInformation: "mailto:suporte@leviescalas.com",
