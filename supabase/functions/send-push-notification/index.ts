@@ -2,7 +2,6 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
   ApplicationServer,
-  generateVapidKeys,
   importVapidKeys,
   PushSubscription as WebPushSubscription,
   Urgency,
@@ -13,20 +12,38 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Load VAPID keys from environment
+// Build JWK objects from simple x, y, d values and import VAPID keys
 async function getApplicationServer(): Promise<ApplicationServer> {
-  const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY");
-  const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY");
+  const vapidX = Deno.env.get("VAPID_X");
+  const vapidY = Deno.env.get("VAPID_Y");
+  const vapidD = Deno.env.get("VAPID_D");
 
-  if (!vapidPublicKey || !vapidPrivateKey) {
-    throw new Error("VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY must be set");
+  if (!vapidX || !vapidY || !vapidD) {
+    throw new Error("VAPID_X, VAPID_Y, and VAPID_D must be set");
   }
 
-  // Import the keys from JWK format
-  const keys = await importVapidKeys(
-    JSON.parse(vapidPrivateKey),
-    JSON.parse(vapidPublicKey)
-  );
+  const publicJwk = {
+    kty: "EC",
+    crv: "P-256",
+    alg: "ES256",
+    x: vapidX,
+    y: vapidY,
+    key_ops: ["verify"],
+    ext: true,
+  };
+
+  const privateJwk = {
+    kty: "EC",
+    crv: "P-256",
+    alg: "ES256",
+    x: vapidX,
+    y: vapidY,
+    d: vapidD,
+    key_ops: ["sign"],
+    ext: true,
+  };
+
+  const keys = await importVapidKeys(privateJwk, publicJwk);
 
   return new ApplicationServer({
     contactInformation: "mailto:suporte@leviescalas.com",
@@ -78,7 +95,6 @@ async function sendPushToUser(
         },
       };
 
-      // Build and send the push request
       const httpReq = await appServer.pushMessage(
         pushSub,
         {
@@ -98,7 +114,6 @@ async function sendPushToUser(
         console.error(`Push failed (${response.status}):`, errorText);
         failed++;
 
-        // Remove invalid subscriptions (410 Gone or 404 Not Found)
         if (response.status === 410 || response.status === 404) {
           await supabaseAdmin
             .from("push_subscriptions")
