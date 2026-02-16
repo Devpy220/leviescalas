@@ -1,146 +1,22 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
-import {
-  ApplicationServer,
-  importVapidKeys,
-  type ExportedVapidKeys,
-  PushSubscription as WebPushSubscription,
-  Urgency,
-} from "jsr:@negrel/webpush@0.5.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Build JWK objects from simple x, y, d values and import VAPID keys
-async function getApplicationServer(): Promise<ApplicationServer> {
-  const vapidX = Deno.env.get("VAPID_X");
-  const vapidY = Deno.env.get("VAPID_Y");
-  const vapidD = Deno.env.get("VAPID_D");
-
-  if (!vapidX || !vapidY || !vapidD) {
-    throw new Error("VAPID_X, VAPID_Y, and VAPID_D must be set");
-  }
-
-  const publicJwk = {
-    kty: "EC",
-    crv: "P-256",
-    x: vapidX,
-    y: vapidY,
-  };
-
-  const privateJwk = {
-    kty: "EC",
-    crv: "P-256",
-    x: vapidX,
-    y: vapidY,
-    d: vapidD,
-  };
-
-  const keys = await importVapidKeys({ privateKey: privateJwk, publicKey: publicJwk });
-
-  return new ApplicationServer({
-    contactInformation: "mailto:suporte@leviescalas.com",
-    vapidKeys: keys,
-  });
-}
-
-// Send push to all subscriptions for a user
-async function sendPushToUser(
-  supabaseAdmin: SupabaseClient,
-  appServer: ApplicationServer,
-  userId: string,
-  notification: { title: string; body: string; data?: Record<string, unknown> }
-): Promise<{ sent: number; failed: number }> {
-  const { data: subscriptions, error } = await supabaseAdmin
-    .from("push_subscriptions")
-    .select("endpoint, p256dh, auth")
-    .eq("user_id", userId);
-
-  if (error) {
-    console.error("Error fetching subscriptions:", error);
-    return { sent: 0, failed: 0 };
-  }
-
-  if (!subscriptions || subscriptions.length === 0) {
-    console.log("No push subscriptions for user:", userId);
-    return { sent: 0, failed: 0 };
-  }
-
-  let sent = 0;
-  let failed = 0;
-
-  const payload = JSON.stringify({
-    title: notification.title,
-    body: notification.body,
-    icon: "/pwa-192x192.png",
-    badge: "/favicon.png",
-    tag: "levi-notification-" + Date.now(),
-    data: notification.data || {},
-  });
-
-  for (const sub of subscriptions) {
-    try {
-      const pushSub: WebPushSubscription = {
-        endpoint: sub.endpoint,
-        keys: {
-          p256dh: sub.p256dh,
-          auth: sub.auth,
-        },
-      };
-
-      const httpReq = await appServer.pushMessage(
-        pushSub,
-        {
-          urgency: Urgency.High,
-          ttl: 86400,
-        },
-        new TextEncoder().encode(payload)
-      );
-
-      const response = await fetch(httpReq);
-
-      if (response.ok) {
-        sent++;
-        console.log("Push sent to:", sub.endpoint.substring(0, 50));
-      } else {
-        const errorText = await response.text();
-        console.error(`Push failed (${response.status}):`, errorText);
-        failed++;
-
-        if (response.status === 410 || response.status === 404) {
-          await supabaseAdmin
-            .from("push_subscriptions")
-            .delete()
-            .eq("endpoint", sub.endpoint);
-          console.log("Removed expired subscription");
-        }
-      }
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      console.error("Error sending push:", errorMessage);
-      failed++;
-    }
-  }
-
-  return { sent, failed };
-}
-
 const handler = async (req: Request): Promise<Response> => {
-  console.log("send-push-notification function called");
+  console.log("send-push-notification (WonderPush) called");
 
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
-
-    const appServer = await getApplicationServer();
+    const accessToken = Deno.env.get("WONDERPUSH_ACCESS_TOKEN");
+    if (!accessToken) {
+      throw new Error("WONDERPUSH_ACCESS_TOKEN not configured");
+    }
 
     const reqBody = await req.json();
     const { userId, userIds, title, body: messageBody, data } = reqBody;
@@ -152,27 +28,48 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const notification = {
-      title,
-      body: messageBody,
-      data: data || {},
-    };
-
-    let totalSent = 0;
-    let totalFailed = 0;
-
     const targetUsers: string[] = userIds || (userId ? [userId] : []);
 
-    for (const uid of targetUsers) {
-      const result = await sendPushToUser(supabaseAdmin, appServer, uid, notification);
-      totalSent += result.sent;
-      totalFailed += result.failed;
+    if (targetUsers.length === 0) {
+      return new Response(
+        JSON.stringify({ success: true, sent: 0, failed: 0 }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
     }
 
-    console.log(`Push notifications - sent: ${totalSent}, failed: ${totalFailed}`);
+    // Send via WonderPush Management API
+    const response = await fetch(
+      `https://management-api.wonderpush.com/v1/deliveries?accessToken=${accessToken}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          targetUserIds: targetUsers,
+          notification: {
+            alert: {
+              title,
+              text: messageBody,
+            },
+            ...(data ? { targetUrl: data.url || undefined } : {}),
+          },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`WonderPush API error (${response.status}):`, errorText);
+      return new Response(
+        JSON.stringify({ success: false, sent: 0, failed: targetUsers.length, error: errorText }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const result = await response.json();
+    console.log("WonderPush delivery result:", JSON.stringify(result));
 
     return new Response(
-      JSON.stringify({ success: true, sent: totalSent, failed: totalFailed }),
+      JSON.stringify({ success: true, sent: targetUsers.length, failed: 0 }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   } catch (error: unknown) {
