@@ -16,17 +16,24 @@ serve(async (req) => {
   const vapidD = Deno.env.get("VAPID_D") || "NOT SET";
 
   let importResult = "not tested";
+  let frontendKey = "";
   try {
     const publicJwk = { kty: "EC", crv: "P-256", x: vapidX, y: vapidY };
     const privateJwk = { kty: "EC", crv: "P-256", x: vapidX, y: vapidY, d: vapidD };
     await importVapidKeys({ privateKey: privateJwk, publicKey: publicJwk });
     importResult = "SUCCESS";
+
+    // Derive raw public key for frontend
+    const cryptoKey = await crypto.subtle.importKey("jwk", publicJwk, { name: "ECDSA", namedCurve: "P-256" }, true, ["verify"]);
+    const rawKey = await crypto.subtle.exportKey("raw", cryptoKey);
+    frontendKey = btoa(String.fromCharCode(...new Uint8Array(rawKey)))
+      .replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
   } catch (e) {
     importResult = "FAILED: " + e.message;
   }
 
   return new Response(
-    JSON.stringify({ vapid_x: vapidX, vapid_y: vapidY, vapid_d_length: vapidD.length, import_result: importResult }, null, 2),
+    JSON.stringify({ vapid_x: vapidX, vapid_y: vapidY, vapid_d_length: vapidD.length, import_result: importResult, frontend_vapid_public_key: frontendKey }, null, 2),
     { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
   );
 });
