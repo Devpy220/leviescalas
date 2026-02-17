@@ -1,4 +1,4 @@
-import { Download, Clock, UserPlus, FileText, FileSpreadsheet, Calendar, Layers, Users, CalendarDays, BarChart2, Megaphone } from 'lucide-react';
+import { Download, Clock, UserPlus, FileText, FileSpreadsheet, Calendar, Layers, Users, CalendarDays, BarChart2, Megaphone, CalendarSync } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -22,6 +22,7 @@ interface ActionMenuContentProps {
   onOpenAvailability: () => void;
   onOpenInvite: () => void;
   onOpenScheduleCount: () => void;
+  onOpenCalendarSync: () => void;
   onClose: () => void;
 }
 
@@ -83,6 +84,12 @@ const actionItems = [
     label: 'Resumo da Equipe', 
     color: 'text-indigo-500 hover:text-indigo-400 hover:bg-indigo-500/10',
   },
+  { 
+    id: 'calendar-sync',
+    icon: CalendarSync, 
+    label: 'Sincronizar Calendário', 
+    color: 'text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10',
+  },
 ];
 
 export default function ActionMenuContent({
@@ -94,6 +101,7 @@ export default function ActionMenuContent({
   onOpenAvailability,
   onOpenInvite,
   onOpenScheduleCount,
+  onOpenCalendarSync,
   onClose,
 }: ActionMenuContentProps) {
 
@@ -118,6 +126,10 @@ export default function ActionMenuContent({
         break;
       case 'schedule-count':
         onOpenScheduleCount();
+        onClose();
+        break;
+      case 'calendar-sync':
+        onOpenCalendarSync();
         onClose();
         break;
     }

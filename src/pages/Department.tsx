@@ -10,7 +10,8 @@ import {
   Clock,
   Layers,
   UserCog,
-  Megaphone
+  Megaphone,
+  CalendarSync
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -40,6 +41,7 @@ import MyAvailabilitySheet from '@/components/department/MyAvailabilitySheet';
 import ActionMenuPopover from '@/components/department/ActionMenuPopover';
 import ScheduleCountDialog from '@/components/department/ScheduleCountDialog';
 import AnnouncementBoard from '@/components/department/AnnouncementBoard';
+import CalendarSyncDialog from '@/components/department/CalendarSyncDialog';
 import { exportToPDF, exportToExcel } from '@/lib/exportSchedules';
 import { SupportNotification } from '@/components/SupportNotification';
 import { format } from 'date-fns';
@@ -111,6 +113,7 @@ interface Schedule {
 export default function Department() {
   const [showAvailabilitySheet, setShowAvailabilitySheet] = useState(false);
   const [showScheduleCount, setShowScheduleCount] = useState(false);
+  const [showCalendarSync, setShowCalendarSync] = useState(false);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, session, loading: authLoading, ensureSession } = useAuth();
@@ -460,6 +463,7 @@ export default function Department() {
                   onOpenAvailability={() => setShowAvailabilitySheet(true)}
                   onOpenInvite={() => setShowInviteMember(true)}
                   onOpenScheduleCount={() => setShowScheduleCount(true)}
+                  onOpenCalendarSync={() => setShowCalendarSync(true)}
                 />
               )}
               
@@ -559,6 +563,14 @@ export default function Department() {
                   )}
                 </TabsTrigger>
               </TabsList>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground shrink-0" onClick={() => setShowCalendarSync(true)}>
+                    <CalendarSync className="w-5 h-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Sincronizar Calendário</TooltipContent>
+              </Tooltip>
             </div>
           )}
 
@@ -681,6 +693,12 @@ export default function Department() {
         onOpenChange={setShowScheduleCount}
         schedules={schedules}
         members={members}
+      />
+
+      {/* Calendar Sync Dialog */}
+      <CalendarSyncDialog
+        open={showCalendarSync}
+        onOpenChange={setShowCalendarSync}
       />
     </div>
     </TooltipProvider>
