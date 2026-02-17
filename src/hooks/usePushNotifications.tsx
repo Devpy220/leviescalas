@@ -8,12 +8,22 @@ declare global {
   }
 }
 
-function waitForWonderPush(): Promise<any> {
+function wonderPushReady(): Promise<void> {
   return new Promise((resolve) => {
     window.WonderPush = window.WonderPush || [];
-    window.WonderPush.push(['on', 'ready', () => {
-      resolve(window.WonderPush);
-    }]);
+    window.WonderPush.push(function() {
+      resolve();
+    });
+  });
+}
+
+async function wpIsSubscribed(): Promise<boolean> {
+  return new Promise((resolve) => {
+    window.WonderPush.push(function() {
+      window.WonderPush.isSubscribedToNotifications()
+        .then((val: boolean) => resolve(val))
+        .catch(() => resolve(false));
+    });
   });
 }
 
@@ -24,7 +34,6 @@ export function usePushNotifications() {
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
 
-  // Check support
   useEffect(() => {
     const supported = 'serviceWorker' in navigator && 
                       'PushManager' in window && 
@@ -35,7 +44,6 @@ export function usePushNotifications() {
     }
   }, []);
 
-  // Re-check permission on tab focus
   useEffect(() => {
     if (!isSupported) return;
     const handleVisibilityChange = () => {
@@ -53,19 +61,19 @@ export function usePushNotifications() {
     }
   }, [isSupported]);
 
-  // Set WonderPush userId when user logs in, and check subscription status
+  // Sync WonderPush userId and auto-subscribe on login
   useEffect(() => {
     if (!user || !isSupported) return;
 
     const syncWonderPush = async () => {
       try {
-        const wp = await waitForWonderPush();
+        await wonderPushReady();
 
-        // Set the user ID so backend can target by Supabase user ID
-        await wp.setUserId(user.id);
+        // Set user ID via command queue
+        window.WonderPush.push(['setUserId', user.id]);
 
-        // Check if already subscribed
-        const subscribed = await wp.isSubscribedToNotifications();
+        // Check subscription status
+        const subscribed = await wpIsSubscribed();
         setIsSubscribed(subscribed);
         setPermission(Notification.permission);
         console.log('[Push] WonderPush synced, subscribed:', subscribed);
@@ -73,11 +81,14 @@ export function usePushNotifications() {
         // Auto-subscribe if not yet subscribed and permission not denied
         if (!subscribed && Notification.permission !== 'denied') {
           console.log('[Push] Auto-subscribing user...');
-          await wp.subscribeToNotifications();
-          const nowSubscribed = await wp.isSubscribedToNotifications();
-          setIsSubscribed(nowSubscribed);
-          setPermission(Notification.permission);
-          console.log('[Push] Auto-subscribe result:', nowSubscribed);
+          window.WonderPush.push(['subscribeToNotifications']);
+          // Wait a moment then re-check
+          setTimeout(async () => {
+            const nowSubscribed = await wpIsSubscribed();
+            setIsSubscribed(nowSubscribed);
+            setPermission(Notification.permission);
+            console.log('[Push] Auto-subscribe result:', nowSubscribed);
+          }, 2000);
         }
       } catch (error) {
         console.error('[Push] Error syncing WonderPush:', error);
@@ -99,12 +110,15 @@ export function usePushNotifications() {
 
     setLoading(true);
     try {
-      const wp = await waitForWonderPush();
+      await wonderPushReady();
 
-      await wp.setUserId(user.id);
-      await wp.subscribeToNotifications();
+      window.WonderPush.push(['setUserId', user.id]);
+      window.WonderPush.push(['subscribeToNotifications']);
 
-      const subscribed = await wp.isSubscribedToNotifications();
+      // Wait for subscription to process
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      const subscribed = await wpIsSubscribed();
       setIsSubscribed(subscribed);
       setPermission(Notification.permission);
 
@@ -128,8 +142,8 @@ export function usePushNotifications() {
     if (!user) return false;
     setLoading(true);
     try {
-      const wp = await waitForWonderPush();
-      await wp.unsubscribeFromNotifications();
+      await wonderPushReady();
+      window.WonderPush.push(['unsubscribeFromNotifications']);
       setIsSubscribed(false);
       toast.success('Notificações desativadas');
       return true;
