@@ -10,14 +10,38 @@ declare global {
 
 function wonderPushReady(timeoutMs = 10000): Promise<void> {
   return new Promise((resolve, reject) => {
+    // Debug: check if SDK script tag exists and loaded
+    const sdkScript = document.querySelector('script[src*="wonderpush"]');
+    console.log('[Push] SDK script element:', sdkScript ? 'found' : 'NOT FOUND');
+    console.log('[Push] window.WonderPush type:', typeof window.WonderPush, Array.isArray(window.WonderPush) ? '(array/queue)' : '(initialized)');
+    console.log('[Push] Current hostname:', window.location.hostname);
+    console.log('[Push] Service workers supported:', 'serviceWorker' in navigator);
+    
+    // Check if SDK already initialized (not an array anymore)
+    if (window.WonderPush && typeof window.WonderPush.isSubscribedToNotifications === 'function') {
+      console.log('[Push] SDK already initialized!');
+      resolve();
+      return;
+    }
+
     const timer = setTimeout(() => {
-      console.warn('[Push] WonderPush SDK did not load within timeout');
-      reject(new Error('WonderPush SDK não carregou. Verifique sua conexão.'));
+      // More diagnostic info on timeout
+      console.error('[Push] WonderPush SDK timeout after', timeoutMs, 'ms');
+      console.error('[Push] window.WonderPush is still:', typeof window.WonderPush, Array.isArray(window.WonderPush) ? `array with ${window.WonderPush.length} items` : '');
+      
+      // Check if script loaded but SDK failed to init
+      const scripts = document.querySelectorAll('script[src*="wonderpush"]');
+      scripts.forEach((s: any) => {
+        console.error('[Push] Script src:', s.src, 'loaded:', s.readyState || 'unknown');
+      });
+      
+      reject(new Error('WonderPush SDK não carregou. Verifique se o domínio está autorizado no painel WonderPush.'));
     }, timeoutMs);
     
     window.WonderPush = window.WonderPush || [];
     window.WonderPush.push(function() {
       clearTimeout(timer);
+      console.log('[Push] WonderPush SDK initialized successfully!');
       resolve();
     });
   });
