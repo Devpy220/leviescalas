@@ -69,6 +69,16 @@ export function usePushNotifications() {
         setIsSubscribed(subscribed);
         setPermission(Notification.permission);
         console.log('[Push] WonderPush synced, subscribed:', subscribed);
+
+        // Auto-subscribe if not yet subscribed and permission not denied
+        if (!subscribed && Notification.permission !== 'denied') {
+          console.log('[Push] Auto-subscribing user...');
+          await wp.subscribeToNotifications();
+          const nowSubscribed = await wp.isSubscribedToNotifications();
+          setIsSubscribed(nowSubscribed);
+          setPermission(Notification.permission);
+          console.log('[Push] Auto-subscribe result:', nowSubscribed);
+        }
       } catch (error) {
         console.error('[Push] Error syncing WonderPush:', error);
       }
