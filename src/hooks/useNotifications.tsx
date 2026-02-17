@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { playNotificationSound } from '@/lib/notificationSound';
 
 interface Notification {
   id: string;
@@ -159,6 +160,7 @@ export function useNotifications() {
           setNotifications(prev => [newNotif, ...prev].slice(0, 20));
           if (!newNotif.read_at) {
             setUnreadCount(prev => prev + 1);
+            playNotificationSound();
           }
         }
       )
