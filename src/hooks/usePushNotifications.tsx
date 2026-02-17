@@ -4,13 +4,17 @@ import { toast } from 'sonner';
 
 declare global {
   interface Window {
-    WonderPush?: any[];
+    WonderPush?: any;
   }
 }
 
-function getWonderPushInstance(): any | null {
-  if (typeof window === 'undefined') return null;
-  return (window as any).WonderPushSDK || null;
+function waitForWonderPush(): Promise<any> {
+  return new Promise((resolve) => {
+    window.WonderPush = window.WonderPush || [];
+    window.WonderPush.push(['on', 'ready', () => {
+      resolve(window.WonderPush);
+    }]);
+  });
 }
 
 export function usePushNotifications() {
@@ -55,14 +59,7 @@ export function usePushNotifications() {
 
     const syncWonderPush = async () => {
       try {
-        // Wait for WonderPush SDK to be ready
-        await new Promise<void>((resolve) => {
-          window.WonderPush = window.WonderPush || [];
-          window.WonderPush.push(['on', 'ready', () => resolve()]);
-        });
-
-        const wp = getWonderPushInstance();
-        if (!wp) return;
+        const wp = await waitForWonderPush();
 
         // Set the user ID so backend can target by Supabase user ID
         await wp.setUserId(user.id);
@@ -71,8 +68,9 @@ export function usePushNotifications() {
         const subscribed = await wp.isSubscribedToNotifications();
         setIsSubscribed(subscribed);
         setPermission(Notification.permission);
+        console.log('[Push] WonderPush synced, subscribed:', subscribed);
       } catch (error) {
-        console.error('Error syncing WonderPush:', error);
+        console.error('[Push] Error syncing WonderPush:', error);
       }
     };
 
@@ -91,15 +89,7 @@ export function usePushNotifications() {
 
     setLoading(true);
     try {
-      window.WonderPush = window.WonderPush || [];
-
-      // Wait for ready
-      await new Promise<void>((resolve) => {
-        window.WonderPush!.push(['on', 'ready', () => resolve()]);
-      });
-
-      const wp = getWonderPushInstance();
-      if (!wp) throw new Error('WonderPush SDK not available');
+      const wp = await waitForWonderPush();
 
       await wp.setUserId(user.id);
       await wp.subscribeToNotifications();
@@ -116,7 +106,7 @@ export function usePushNotifications() {
         return false;
       }
     } catch (error: any) {
-      console.error('Error subscribing to push:', error);
+      console.error('[Push] Error subscribing:', error);
       toast.error('Erro ao ativar notificações: ' + error.message);
       return false;
     } finally {
@@ -128,15 +118,13 @@ export function usePushNotifications() {
     if (!user) return false;
     setLoading(true);
     try {
-      const wp = getWonderPushInstance();
-      if (wp) {
-        await wp.unsubscribeFromNotifications();
-      }
+      const wp = await waitForWonderPush();
+      await wp.unsubscribeFromNotifications();
       setIsSubscribed(false);
       toast.success('Notificações desativadas');
       return true;
     } catch (error: any) {
-      console.error('Error unsubscribing:', error);
+      console.error('[Push] Error unsubscribing:', error);
       toast.error('Erro ao desativar notificações');
       return false;
     } finally {
