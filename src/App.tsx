@@ -29,6 +29,7 @@ import ChurchSetup from "./pages/ChurchSetup";
 import ChurchPublic from "./pages/ChurchPublic";
 import JoinChurch from "./pages/JoinChurch";
 import Tutorial from "./pages/Tutorial";
+import CompleteProfile from "./pages/CompleteProfile";
 import NotFound from "./pages/NotFound";
 
 import ConfirmSchedule from "./pages/ConfirmSchedule";
@@ -74,6 +75,11 @@ const App = () => (
                   <Route path="/igreja/:slug" element={<ChurchPublic />} />
                   <Route path="/confirm/:token" element={<ConfirmSchedule />} />
                   <Route path="/tutorial" element={<Tutorial />} />
+                  <Route path="/complete-profile" element={
+                    <ProtectedRoute>
+                      <CompleteProfile />
+                    </ProtectedRoute>
+                  } />
 
                   {/* Protected routes - wrapped with ProtectedRoute to centralize auth checks */}
                   <Route path="/dashboard" element={

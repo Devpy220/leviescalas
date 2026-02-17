@@ -273,7 +273,20 @@ export default function Auth() {
         return;
       }
       
-      // PRIORITY 3: Smart redirect based on department count
+      // PRIORITY 3: Check if profile is incomplete (OAuth users)
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('name, whatsapp')
+        .eq('id', session.user.id)
+        .maybeSingle();
+      
+      if (profile && (!profile.name || !profile.whatsapp || profile.name.trim() === '' || profile.whatsapp.trim() === '')) {
+        console.log('[Auth] Profile incomplete, redirecting to complete-profile');
+        navigate('/complete-profile', { replace: true });
+        return;
+      }
+      
+      // PRIORITY 4: Smart redirect based on department count
       const destination = await getSmartRedirectDestination(session.user.id);
       console.log('[Auth] Already authenticated, smart redirecting to:', destination);
       navigate(destination, { replace: true });
@@ -884,8 +897,21 @@ export default function Auth() {
         return;
       }
       
-      // OAuth successful - session is already set by lovable.auth
-      // Navigate to dashboard
+      // OAuth successful - check if profile is complete
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (currentUser) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('name, whatsapp')
+          .eq('id', currentUser.id)
+          .maybeSingle();
+        
+        if (profile && (!profile.name || !profile.whatsapp || profile.name.trim() === '' || profile.whatsapp.trim() === '')) {
+          navigate('/complete-profile', { replace: true });
+          return;
+        }
+      }
+      
       navigate('/dashboard', { replace: true });
     } catch (error) {
       toast({
