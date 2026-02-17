@@ -40,7 +40,9 @@ export function usePushNotifications() {
                       'Notification' in window;
     setIsSupported(supported);
     if (supported) {
-      setPermission(Notification.permission);
+      // In iframes (like preview), permission is always 'denied' — treat as 'default'
+      const isIframe = window.self !== window.top;
+      setPermission(isIframe ? 'default' : Notification.permission);
     }
   }, []);
 

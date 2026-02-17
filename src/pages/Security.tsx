@@ -297,7 +297,7 @@ export default function Security() {
                   </div>
                 </div>
               </div>
-            ) : pushPermission === 'denied' ? (
+            ) : pushPermission === 'denied' && window.self === window.top ? (
               <div className="space-y-3">
                 <div className="p-4 rounded-lg bg-destructive/10">
                   <div className="flex items-start gap-3">
