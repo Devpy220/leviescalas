@@ -50,13 +50,14 @@ const loginSchema = z.object({
 // Schema for regular members (church code required)
 const registerSchema = z.object({
   churchCode: z.string().max(20, 'Código muito longo').optional(),
-  name: z.string().min(2, 'Nome deve ter no mínimo 2 caracteres').max(100, 'Nome muito longo'),
-  email: z.string().email('Email inválido').max(255, 'Email muito longo'),
+  name: z.string().trim().min(2, 'Nome deve ter no mínimo 2 caracteres').max(100, 'Nome muito longo'),
+  email: z.string().trim().email('Email inválido').max(255, 'Email muito longo'),
   whatsapp: z.string()
+    .min(1, 'WhatsApp é obrigatório')
     .regex(/^\d{11}$/, 'WhatsApp deve ter 11 dígitos (DDD + número)')
     .transform(val => val.replace(/\D/g, '')),
   password: passwordSchema,
-  confirmPassword: z.string(),
+  confirmPassword: z.string().min(1, 'Confirmação de senha é obrigatória'),
   isAdminSignup: z.boolean().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'As senhas não coincidem',
