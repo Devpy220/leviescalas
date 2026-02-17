@@ -365,15 +365,18 @@ export default function Security() {
               </div>
             ) : (
               <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
-                <div className="flex-1">
-                  <p className="font-medium text-foreground">
-                    {pushSubscribed ? 'Notificações ativas' : 'Notificações desativadas'}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {pushSubscribed 
-                      ? 'Você receberá alertas sobre novas escalas, lembretes e trocas.'
-                      : 'Ative para receber notificações no seu celular ou computador.'}
-                  </p>
+                <div className="flex items-start gap-3 flex-1">
+                  <div className={`w-2 h-2 rounded-full mt-2 ${pushSubscribed ? 'bg-green-500' : 'bg-destructive'}`} />
+                  <div>
+                    <p className="font-medium text-foreground">
+                      {pushSubscribed ? '✅ Notificações ativas' : '❌ Notificações desativadas'}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {pushSubscribed 
+                        ? 'Você receberá alertas sobre novas escalas, lembretes e trocas.'
+                        : 'Ative o botão ao lado para receber alertas no seu dispositivo.'}
+                    </p>
+                  </div>
                 </div>
                 <Switch
                   checked={pushSubscribed}
