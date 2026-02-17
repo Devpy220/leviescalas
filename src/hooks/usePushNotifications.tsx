@@ -8,43 +8,66 @@ declare global {
   }
 }
 
-function wonderPushReady(timeoutMs = 15000): Promise<void> {
+function isSDKReady(): boolean {
+  return !!(window.WonderPush && typeof window.WonderPush.isSubscribedToNotifications === 'function');
+}
+
+function wonderPushReady(timeoutMs = 20000): Promise<void> {
   return new Promise((resolve, reject) => {
-    console.log('[Push] Waiting for WonderPush SDK...');
-    console.log('[Push] Hostname:', window.location.hostname);
+    console.log('[Push] Waiting for WonderPush SDK... hostname:', window.location.hostname);
     
-    // Check if already initialized
-    if (window.WonderPush && typeof window.WonderPush.isSubscribedToNotifications === 'function') {
+    if (isSDKReady()) {
       console.log('[Push] SDK already initialized');
       resolve();
       return;
     }
 
-    // Use polling approach instead of queue callback (more reliable with VitePWA)
     const startTime = Date.now();
+    
+    // Strategy 1: Queue callback (official WonderPush way)
+    window.WonderPush = window.WonderPush || [];
+    let resolved = false;
+    
+    window.WonderPush.push(function() {
+      if (!resolved) {
+        resolved = true;
+        console.log('[Push] SDK ready via queue callback after', Date.now() - startTime, 'ms');
+        resolve();
+      }
+    });
+
+    // Strategy 2: Polling fallback
     const interval = setInterval(() => {
-      // Check if SDK has replaced the array with the real object
-      if (window.WonderPush && typeof window.WonderPush.isSubscribedToNotifications === 'function') {
+      if (resolved) {
         clearInterval(interval);
-        console.log('[Push] SDK initialized via polling after', Date.now() - startTime, 'ms');
+        return;
+      }
+      
+      if (isSDKReady()) {
+        resolved = true;
+        clearInterval(interval);
+        console.log('[Push] SDK ready via polling after', Date.now() - startTime, 'ms');
         resolve();
         return;
       }
       
       if (Date.now() - startTime > timeoutMs) {
         clearInterval(interval);
-        console.error('[Push] SDK timeout. WonderPush type:', typeof window.WonderPush, 
-          'isArray:', Array.isArray(window.WonderPush));
-        // Try the queue approach as last resort
-        window.WonderPush = window.WonderPush || [];
-        const lastChanceTimer = setTimeout(() => {
-          reject(new Error('WonderPush SDK não carregou. Verifique se o domínio está autorizado no painel WonderPush.'));
-        }, 3000);
-        window.WonderPush.push(function() {
-          clearTimeout(lastChanceTimer);
-          console.log('[Push] SDK initialized via queue fallback');
-          resolve();
-        });
+        if (!resolved) {
+          resolved = true;
+          // Log diagnostic info
+          const wpType = typeof window.WonderPush;
+          const isArr = Array.isArray(window.WonderPush);
+          const scriptEl = document.querySelector('script[src*="wonderpush"]') as HTMLScriptElement | null;
+          console.error('[Push] SDK timeout.', { wpType, isArr, scriptLoaded: !!scriptEl, scriptSrc: scriptEl?.src });
+          
+          // Check if script even loaded
+          if (!scriptEl) {
+            reject(new Error('Script do WonderPush não carregou. Verifique sua conexão.'));
+          } else {
+            reject(new Error('WonderPush SDK não inicializou. O domínio pode não estar autorizado.'));
+          }
+        }
       }
     }, 500);
   });
