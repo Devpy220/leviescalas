@@ -56,11 +56,15 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        globIgnores: ["**/wonderpush*"],
+        navigateFallbackDenylist: [/^\/wonderpush/],
         clientsClaim: true,
         skipWaiting: false, // Let user control when to update
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         // More aggressive cache invalidation
         cleanupOutdatedCaches: true,
+        // Import WonderPush into the PWA service worker
+        importScripts: ["/wonderpush-worker-loader.min.js"],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
