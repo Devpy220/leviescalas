@@ -1,54 +1,88 @@
 
 
-# Corrigir Notificações Push - API WonderPush
+# Mural de Avisos do Lider
 
-## Problema Identificado
+## O que sera implementado
+O lider do departamento podera publicar avisos/comunicados que todos os membros do grupo verao ao acessar a pagina do departamento. Os avisos aparecerao em destaque, com data de publicacao e opcao de fixar avisos importantes.
 
-O codigo atual chama metodos diretamente no objeto `window.WonderPush` (ex: `wp.setUserId(...)`, `wp.subscribeToNotifications()`), mas o WonderPush SDK usa um **sistema de fila de comandos**. O `window.WonderPush` e um array, nao o SDK em si. Por isso os metodos nao existem e o botao nao funciona.
+## Como vai funcionar
 
-A API correta usa `WonderPush.push(...)` para enviar comandos:
-- `WonderPush.push(['setUserId', 'id'])` 
-- `WonderPush.push(['subscribeToNotifications'])`
-- Para valores de retorno: `WonderPush.push(function() { WonderPush.isSubscribedToNotifications().then(...) })`
+**Para o lider:**
+- Nova aba "Mural" no menu de acoes (ActionMenuContent)
+- Tela para criar aviso com titulo, mensagem e opcao de fixar
+- Poder editar ou excluir avisos existentes
 
-## Solucao
+**Para os membros:**
+- Nova aba "Mural" nas tabs de navegacao (ao lado de Escalas e Disponibilidade)
+- Lista de avisos do departamento, ordenados por fixados primeiro e depois por data
+- Badge com contagem de avisos nao lidos
 
-Reescrever `src/hooks/usePushNotifications.tsx` para usar a API correta do WonderPush.
+---
 
-### Mudancas
+## Detalhes Tecnicos
 
-**Arquivo: `src/hooks/usePushNotifications.tsx`**
+### 1. Banco de Dados
 
-1. Substituir a funcao `waitForWonderPush` por uma que resolva com o SDK real (via callback dentro do `push`)
-2. Usar a API de fila correta:
-   - `WonderPush.push(['setUserId', user.id])` em vez de `wp.setUserId(user.id)`
-   - `WonderPush.push(['subscribeToNotifications'])` em vez de `wp.subscribeToNotifications()`
-   - Para leitura de status, usar callback: `WonderPush.push(function() { ... })`
-3. Manter a logica de auto-subscribe no login
-4. Manter a logica de subscribe/unsubscribe manual no toggle
+Nova tabela `department_announcements`:
 
-### Detalhes Tecnicos
+```sql
+CREATE TABLE public.department_announcements (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  department_id UUID NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
+  author_id UUID NOT NULL,
+  title TEXT NOT NULL,
+  content TEXT NOT NULL,
+  is_pinned BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 
-A funcao helper ficara assim:
-
-```text
-function wonderPushReady(): Promise<void> {
-  return new Promise((resolve) => {
-    window.WonderPush = window.WonderPush || [];
-    window.WonderPush.push(function() {
-      resolve();
-    });
-  });
-}
+ALTER TABLE public.department_announcements ENABLE ROW LEVEL SECURITY;
 ```
 
-Apos `wonderPushReady()`, o SDK esta carregado e podemos chamar metodos diretamente em `window.WonderPush` (que nesse ponto ja foi substituido pelo SDK real). Portanto:
+Tabela para rastrear leitura:
 
-```text
-await wonderPushReady();
-window.WonderPush.push(['setUserId', user.id]);
-const subscribed = await window.WonderPush.isSubscribedToNotifications();
+```sql
+CREATE TABLE public.announcement_reads (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  announcement_id UUID NOT NULL REFERENCES department_announcements(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL,
+  read_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(announcement_id, user_id)
+);
+
+ALTER TABLE public.announcement_reads ENABLE ROW LEVEL SECURITY;
 ```
 
-Isso corrige o problema do botao nao funcionar e garante que a auto-inscricao ocorra corretamente no login.
+**Politicas RLS:**
+- Membros do departamento podem ler avisos (SELECT)
+- Lideres podem criar, editar e excluir avisos (ALL)
+- Usuarios podem marcar seus proprios avisos como lidos (INSERT na reads)
+- Usuarios podem ver suas proprias leituras (SELECT na reads)
+
+### 2. Novos Componentes
+
+- `src/components/department/AnnouncementBoard.tsx` - Componente principal com lista de avisos
+- `src/components/department/CreateAnnouncementDialog.tsx` - Dialog para criar/editar aviso
+
+### 3. Alteracoes em Arquivos Existentes
+
+- `src/pages/Department.tsx` - Adicionar tab "Mural" e estado para controle
+- `src/components/department/ActionMenuContent.tsx` - Adicionar botao "Mural" no menu do lider
+- Membros verao a tab "Mural" na barra de tabs junto com Escalas e Disponibilidade
+
+### 4. Fluxo de Uso
+
+1. Lider acessa o menu de acoes e vai para a aba "Mural"
+2. Clica em "Novo Aviso" e preenche titulo + mensagem
+3. Opcionalmente marca como fixado (destaque permanente no topo)
+4. Membros veem o aviso na aba "Mural" com badge de nao lido
+5. Ao visualizar, o aviso e marcado como lido automaticamente
+
+### 5. Interface
+
+- Cards com titulo em destaque, conteudo e data de publicacao
+- Avisos fixados com icone de pin e fundo diferenciado
+- Badge numerico na tab "Mural" mostrando avisos nao lidos
+- Botao de criar aviso flutuante (FAB) para lideres
 
