@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -24,9 +24,12 @@ type ProfileForm = z.infer<typeof profileSchema>;
 
 export default function CompleteProfile() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+
+  const redirectParam = searchParams.get('redirect');
 
   const form = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
@@ -63,7 +66,10 @@ export default function CompleteProfile() {
       if (error) throw error;
 
       toast({ title: 'Perfil completo!', description: 'Suas informações foram salvas.' });
-      navigate('/dashboard', { replace: true });
+      
+      // Redirect to pending invite link or dashboard
+      const destination = redirectParam || '/dashboard';
+      navigate(destination, { replace: true });
     } catch (error: any) {
       toast({
         variant: 'destructive',

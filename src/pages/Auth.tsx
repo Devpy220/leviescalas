@@ -282,7 +282,8 @@ export default function Auth() {
       
       if (profile && (!profile.name || !profile.whatsapp || profile.name.trim() === '' || profile.whatsapp.trim() === '')) {
         console.log('[Auth] Profile incomplete, redirecting to complete-profile');
-        navigate('/complete-profile', { replace: true });
+        const completeProfileUrl = redirectParam ? `/complete-profile?redirect=${encodeURIComponent(redirectParam)}` : '/complete-profile';
+        navigate(completeProfileUrl, { replace: true });
         return;
       }
       
@@ -907,12 +908,13 @@ export default function Auth() {
           .maybeSingle();
         
         if (profile && (!profile.name || !profile.whatsapp || profile.name.trim() === '' || profile.whatsapp.trim() === '')) {
-          navigate('/complete-profile', { replace: true });
+          const completeUrl = redirectParam ? `/complete-profile?redirect=${encodeURIComponent(redirectParam)}` : '/complete-profile';
+          navigate(completeUrl, { replace: true });
           return;
         }
       }
       
-      navigate('/dashboard', { replace: true });
+      navigate(redirectParam || '/dashboard', { replace: true });
     } catch (error) {
       toast({
         variant: 'destructive',
