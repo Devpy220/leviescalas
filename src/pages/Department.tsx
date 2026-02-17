@@ -9,7 +9,8 @@ import {
   Loader2,
   Clock,
   Layers,
-  UserCog
+  UserCog,
+  Megaphone
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -38,6 +39,7 @@ import UnifiedScheduleView from '@/components/department/UnifiedScheduleView';
 import MyAvailabilitySheet from '@/components/department/MyAvailabilitySheet';
 import ActionMenuPopover from '@/components/department/ActionMenuPopover';
 import ScheduleCountDialog from '@/components/department/ScheduleCountDialog';
+import AnnouncementBoard from '@/components/department/AnnouncementBoard';
 import { exportToPDF, exportToExcel } from '@/lib/exportSchedules';
 import { SupportNotification } from '@/components/SupportNotification';
 import { format } from 'date-fns';
@@ -131,6 +133,7 @@ export default function Department() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   // Removed sidebar state - now using popover
   const [activeTab, setActiveTab] = useState('schedules');
+  const [unreadAnnouncements, setUnreadAnnouncements] = useState(0);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -543,6 +546,18 @@ export default function Department() {
                   <Clock className="w-4 h-4" />
                   <span className="hidden xs:inline">Disponibilidade</span>
                 </TabsTrigger>
+                <TabsTrigger 
+                  value="announcements" 
+                  className="gap-2 click-scale selection-glow data-[state=active]:gradient-vibrant data-[state=active]:text-white data-[state=active]:shadow-glow-sm transition-all relative"
+                >
+                  <Megaphone className="w-4 h-4" />
+                  <span className="hidden xs:inline">Mural</span>
+                  {unreadAnnouncements > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                      {unreadAnnouncements}
+                    </span>
+                  )}
+                </TabsTrigger>
               </TabsList>
             </div>
           )}
@@ -608,6 +623,15 @@ export default function Department() {
               departmentId={id!}
               onMemberRemoved={handleMemberRemoved}
               onInviteMember={() => setShowInviteMember(true)}
+            />
+          </TabsContent>
+
+          <TabsContent value="announcements" className="mt-6 animate-fade-in">
+            <AnnouncementBoard
+              departmentId={id!}
+              isLeader={isLeader}
+              currentUserId={currentUser?.id || ''}
+              onUnreadCountChange={setUnreadAnnouncements}
             />
           </TabsContent>
         </Tabs>

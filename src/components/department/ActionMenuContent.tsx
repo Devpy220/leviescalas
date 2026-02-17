@@ -1,4 +1,4 @@
-import { Download, Clock, UserPlus, FileText, FileSpreadsheet, Calendar, Layers, Users, CalendarDays, BarChart2 } from 'lucide-react';
+import { Download, Clock, UserPlus, FileText, FileSpreadsheet, Calendar, Layers, Users, CalendarDays, BarChart2, Megaphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -43,6 +43,12 @@ const navigationItems = [
     icon: Users, 
     labelSuffix: 'Membros', 
     color: 'text-cyan-500 hover:text-cyan-400 hover:bg-cyan-500/10',
+  },
+  { 
+    id: 'announcements',
+    icon: Megaphone, 
+    labelSuffix: 'Mural', 
+    color: 'text-rose-500 hover:text-rose-400 hover:bg-rose-500/10',
   },
 ];
 
@@ -120,7 +126,7 @@ export default function ActionMenuContent({
   return (
     <div className="p-3 space-y-3">
       {/* Navigation section */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-4 gap-2">
         {navigationItems.map((item) => {
           const label = `${departmentName} - ${item.labelSuffix}`;
           const isActive = currentTab === item.id;
