@@ -8,10 +8,16 @@ declare global {
   }
 }
 
-function wonderPushReady(): Promise<void> {
-  return new Promise((resolve) => {
+function wonderPushReady(timeoutMs = 10000): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      console.warn('[Push] WonderPush SDK did not load within timeout');
+      reject(new Error('WonderPush SDK não carregou. Verifique sua conexão.'));
+    }, timeoutMs);
+    
     window.WonderPush = window.WonderPush || [];
     window.WonderPush.push(function() {
+      clearTimeout(timer);
       resolve();
     });
   });
@@ -112,7 +118,9 @@ export function usePushNotifications() {
 
     setLoading(true);
     try {
-      await wonderPushReady();
+      console.log('[Push] Starting subscribe...');
+      await wonderPushReady(15000);
+      console.log('[Push] WonderPush ready, setting userId and subscribing...');
 
       window.WonderPush.push(['setUserId', user.id]);
       window.WonderPush.push(['subscribeToNotifications']);
@@ -123,17 +131,22 @@ export function usePushNotifications() {
       const subscribed = await wpIsSubscribed();
       setIsSubscribed(subscribed);
       setPermission(Notification.permission);
+      console.log('[Push] Subscribe result:', subscribed, 'Permission:', Notification.permission);
 
       if (subscribed) {
         toast.success('Notificações ativadas com sucesso!');
         return true;
       } else {
-        toast.error('Permissão para notificações foi negada');
+        if (Notification.permission === 'denied') {
+          toast.error('Permissão para notificações foi negada. Verifique as configurações do navegador.');
+        } else {
+          toast.error('Não foi possível ativar notificações. Tente novamente.');
+        }
         return false;
       }
     } catch (error: any) {
       console.error('[Push] Error subscribing:', error);
-      toast.error('Erro ao ativar notificações: ' + error.message);
+      toast.error(error?.message || 'Erro ao ativar notificações');
       return false;
     } finally {
       setLoading(false);
