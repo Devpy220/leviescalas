@@ -64,7 +64,7 @@ export default defineConfig(({ mode }) => ({
         // More aggressive cache invalidation
         cleanupOutdatedCaches: true,
         // Import WonderPush into the PWA service worker
-        importScripts: ["/wonderpush-worker-loader.min.js"],
+        importScripts: ["/wonderpush-worker-loader.min.js", "/push-handlers.js"],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
