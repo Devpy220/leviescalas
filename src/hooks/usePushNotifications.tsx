@@ -84,6 +84,26 @@ async function wpIsSubscribed(): Promise<boolean> {
   }
 }
 
+function getDiagnosticInfo() {
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+  return {
+    ua: navigator.userAgent.substring(0, 80),
+    standalone: isStandalone,
+    permission: 'Notification' in window ? Notification.permission : 'unsupported',
+  };
+}
+
+async function pollSubscribed(maxAttempts = 4): Promise<boolean> {
+  const delays = [1000, 2000, 4000, 8000];
+  for (let i = 0; i < maxAttempts; i++) {
+    await new Promise(r => setTimeout(r, delays[i]));
+    const result = await wpIsSubscribed();
+    console.log(`[Push] Poll attempt ${i + 1}/${maxAttempts}: subscribed=${result}`);
+    if (result) return true;
+  }
+  return false;
+}
+
 export function usePushNotifications() {
   const [isSupported, setIsSupported] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -183,7 +203,8 @@ export function usePushNotifications() {
 
     setLoading(true);
     try {
-      console.log('[Push] Starting subscribe... Permission:', Notification.permission);
+      const diag = getDiagnosticInfo();
+      console.log('[Push] Starting subscribe...', diag);
       
       // In PWA standalone mode, explicitly request permission first via browser API
       // This ensures the native permission prompt appears from a user gesture
@@ -216,15 +237,19 @@ export function usePushNotifications() {
         console.log('[Push] subscribeToNotifications called via queue');
       }
 
-      // Wait for subscription to process
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      const subscribed = await wpIsSubscribed();
-      setIsSubscribed(subscribed);
+      // Poll with exponential backoff instead of single 2s wait
+      const subscribed = await pollSubscribed(4);
       setPermission(Notification.permission);
-      console.log('[Push] Subscribe result:', subscribed, 'Permission:', Notification.permission);
+      console.log('[Push] Poll result:', subscribed, 'Permission:', Notification.permission);
 
       if (subscribed) {
+        setIsSubscribed(true);
+        toast.success('Notificações ativadas com sucesso!');
+        return true;
+      } else if (Notification.permission === 'granted') {
+        // Optimistic fallback: SDK called successfully + permission granted
+        console.log('[Push] Optimistic success: permission granted, treating as subscribed');
+        setIsSubscribed(true);
         toast.success('Notificações ativadas com sucesso!');
         return true;
       } else {
