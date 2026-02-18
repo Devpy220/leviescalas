@@ -1,38 +1,53 @@
 
 
-## Fix: Push notifications not activating on mobile browsers (Android Chrome/Firefox)
+## Rastreamento de Logins no Painel Admin
 
-### Problem
-Push notifications work on desktop but fail to activate on mobile browsers (Chrome and Firefox on Android), even when notification permission is already granted. The toggle doesn't turn on after clicking.
+### O que sera feito
+Adicionar ao painel administrativo um novo grafico e contadores mostrando:
+- Quem logou no sistema
+- Em quais horarios
+- Quantas vezes por dia, semana e mes
+- Lista dos ultimos logins com nome, email e horario
 
-### Root Cause Analysis
-The likely cause is a **timing issue on mobile**: after calling `subscribeToNotifications()`, the hook waits only 2 seconds before checking `wpIsSubscribed()`. On mobile browsers with slower processing, the WonderPush SDK may not have finished registering the push subscription in that window, causing the check to return `false` and showing the error toast.
+### Etapas
 
-Additionally, Firefox for Android has known quirks with the WonderPush SDK's internal subscription check.
+**1. Criar tabela `login_logs` no banco de dados**
+- Colunas: `id`, `user_id`, `logged_in_at`, `user_agent`
+- RLS: inserção pelo proprio usuario, leitura apenas por admins
+- Sem foreign key para auth.users (seguindo o padrao do projeto)
 
-### Solution
-Three changes to `src/hooks/usePushNotifications.tsx`:
+**2. Registrar logins automaticamente**
+- No hook `useAuth.tsx`, ao detectar evento `SIGNED_IN` no `onAuthStateChange`, inserir um registro na tabela `login_logs`
+- Registro silencioso (nao bloqueia o fluxo do usuario)
 
-**1. Retry subscription check with exponential backoff**
-Instead of a single 2-second wait, poll `wpIsSubscribed()` multiple times (e.g., at 1s, 2s, 4s, 6s) up to ~8 seconds. This accommodates slower mobile processing.
+**3. Atualizar a Edge Function `get-analytics`**
+- Buscar dados da tabela `login_logs` dos ultimos 30 dias
+- Agrupar por dia para gerar grafico
+- Calcular totais: logins hoje, esta semana, este mes
+- Retornar lista dos ultimos 50 logins com nome do usuario (via join com profiles)
 
-**2. Trust permission as success fallback**
-If after all retries `wpIsSubscribed()` still returns false BUT `Notification.permission === 'granted'` and we successfully called `subscribeToNotifications()` without errors, treat it as success. The subscription is likely active but the SDK's internal state hasn't synced yet. Update `isSubscribed` to `true` optimistically.
+**4. Adicionar secao de Analytics de Login no Admin**
+- Novos contadores: "Logins Hoje", "Logins Esta Semana", "Logins Este Mes"
+- Grafico de area mostrando logins por dia (ultimos 30 dias)
+- Tabela com os ultimos logins mostrando: Nome, Email, Horario, Dispositivo
 
-**3. Add diagnostic logging for mobile debugging**
-Log the user agent, display mode (standalone vs browser), and SDK state at key points so future mobile issues can be diagnosed from console screenshots.
+### Secao Tecnica
 
-### Technical Details
-
+Estrutura da tabela:
+```text
+login_logs
+  - id: uuid (PK, default gen_random_uuid())
+  - user_id: uuid (NOT NULL)
+  - logged_in_at: timestamptz (default now())
+  - user_agent: text (nullable)
 ```
-subscribe() flow (updated):
-  1. Check/request permission (existing)
-  2. Wait for SDK ready (existing)
-  3. Set userId (existing)
-  4. Call subscribeToNotifications (existing)
-  5. NEW: Poll wpIsSubscribed() up to 4 times (1s, 2s, 4s, 8s intervals)
-  6. NEW: If still false but permission=granted, set isSubscribed=true optimistically
-  7. Show success toast
-```
 
-Changes are limited to `src/hooks/usePushNotifications.tsx` only -- no other files affected.
+RLS policies:
+- INSERT: `auth.uid() = user_id` (usuario insere seu proprio log)
+- SELECT: apenas admins via `has_role(auth.uid(), 'admin')`
+
+Arquivos alterados:
+- Nova migration SQL (tabela + RLS)
+- `src/hooks/useAuth.tsx` - inserir log no SIGNED_IN
+- `supabase/functions/get-analytics/index.ts` - buscar e retornar dados de login
+- `src/pages/Admin.tsx` - novos graficos e tabela de logins
