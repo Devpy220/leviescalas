@@ -104,12 +104,21 @@ async function pollSubscribed(maxAttempts = 4): Promise<boolean> {
   return false;
 }
 
+const PUSH_SUBSCRIBED_KEY = 'levi_push_subscribed';
+
 export function usePushNotifications() {
   const [isSupported, setIsSupported] = useState(false);
-  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(() => {
+    return localStorage.getItem(PUSH_SUBSCRIBED_KEY) === 'true';
+  });
   const [permission, setPermission] = useState<NotificationPermission>('default');
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
+
+  const setIsSubscribedPersisted = useCallback((value: boolean) => {
+    setIsSubscribed(value);
+    localStorage.setItem(PUSH_SUBSCRIBED_KEY, String(value));
+  }, []);
 
   useEffect(() => {
     const supported = 'serviceWorker' in navigator && 
@@ -161,7 +170,7 @@ export function usePushNotifications() {
 
         // Check subscription status
         const subscribed = await wpIsSubscribed();
-        setIsSubscribed(subscribed);
+        setIsSubscribedPersisted(subscribed);
         setPermission(Notification.permission);
         console.log('[Push] WonderPush synced, subscribed:', subscribed);
 
@@ -177,7 +186,7 @@ export function usePushNotifications() {
           }
           setTimeout(async () => {
             const nowSubscribed = await wpIsSubscribed();
-            setIsSubscribed(nowSubscribed);
+            setIsSubscribedPersisted(nowSubscribed);
             console.log('[Push] Auto-subscribe result:', nowSubscribed);
           }, 2000);
         } else if (!subscribed) {
@@ -222,7 +231,7 @@ export function usePushNotifications() {
 
       // Step 2: Permission is granted — activate the toggle immediately
       // WonderPush sync happens in background and should not block UI
-      setIsSubscribed(true);
+      setIsSubscribedPersisted(true);
       setPermission('granted');
       toast.success('Notificações ativadas com sucesso!');
 
@@ -273,7 +282,7 @@ export function usePushNotifications() {
       } else {
         wp.push(['unsubscribeFromNotifications']);
       }
-      setIsSubscribed(false);
+      setIsSubscribedPersisted(false);
       toast.success('Notificações desativadas');
       return true;
     } catch (error: any) {
