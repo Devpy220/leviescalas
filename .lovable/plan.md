@@ -1,53 +1,51 @@
+## Mural de Avisos como Popup Temporario
 
+### O que muda
 
-## Rastreamento de Logins no Painel Admin
+O mural de avisos deixa de ser uma aba fixa e passa a funcionar como uma janela popup que aparece automaticamente no centro da tela por 15 segundos quando o membro acessa a pagina do departamento. Cada aviso fica ativo por 3 horas desde a primeira vez que aparece para aquele usuario -- depois disso, nao aparece mais como popup (mas continua acessivel na aba de avisos).
 
-### O que sera feito
-Adicionar ao painel administrativo um novo grafico e contadores mostrando:
-- Quem logou no sistema
-- Em quais horarios
-- Quantas vezes por dia, semana e mes
-- Lista dos ultimos logins com nome, email e horario
+### Comportamento
 
-### Etapas
+1. Membro entra na pagina do departamento
+2. Sistema verifica se ha avisos criados nas ultimas 3 horas que o usuario ainda nao viu como popup
+3. Se houver, exibe um dialog/modal centralizado com o aviso (titulo, conteudo, autor, horario)
+4. O popup fecha automaticamente apos 15 segundos, ou o usuario pode fechar manualmente
+5. Se houver mais de um aviso pendente, exibe um por vez (ou lista todos no popup)
+6. Apos exibido, registra no localStorage a hora da primeira exibicao -- nao mostra novamente apos 3 horas
+7. colocar blur uma borda que pisca
 
-**1. Criar tabela `login_logs` no banco de dados**
-- Colunas: `id`, `user_id`, `logged_in_at`, `user_agent`
-- RLS: inserção pelo proprio usuario, leitura apenas por admins
-- Sem foreign key para auth.users (seguindo o padrao do projeto)
+### O que permanece igual
 
-**2. Registrar logins automaticamente**
-- No hook `useAuth.tsx`, ao detectar evento `SIGNED_IN` no `onAuthStateChange`, inserir um registro na tabela `login_logs`
-- Registro silencioso (nao bloqueia o fluxo do usuario)
-
-**3. Atualizar a Edge Function `get-analytics`**
-- Buscar dados da tabela `login_logs` dos ultimos 30 dias
-- Agrupar por dia para gerar grafico
-- Calcular totais: logins hoje, esta semana, este mes
-- Retornar lista dos ultimos 50 logins com nome do usuario (via join com profiles)
-
-**4. Adicionar secao de Analytics de Login no Admin**
-- Novos contadores: "Logins Hoje", "Logins Esta Semana", "Logins Este Mes"
-- Grafico de area mostrando logins por dia (ultimos 30 dias)
-- Tabela com os ultimos logins mostrando: Nome, Email, Horario, Dispositivo
+- A aba "Avisos" no departamento continua existindo com a lista completa
+- Lideres continuam criando/editando/excluindo avisos normalmente
+- O sistema de "lido/nao lido" no banco continua funcionando
 
 ### Secao Tecnica
 
-Estrutura da tabela:
-```text
-login_logs
-  - id: uuid (PK, default gen_random_uuid())
-  - user_id: uuid (NOT NULL)
-  - logged_in_at: timestamptz (default now())
-  - user_agent: text (nullable)
-```
+**Novo componente: `AnnouncementPopup.tsx**`
 
-RLS policies:
-- INSERT: `auth.uid() = user_id` (usuario insere seu proprio log)
-- SELECT: apenas admins via `has_role(auth.uid(), 'admin')`
+- Recebe `departmentId` e `currentUserId`
+- Ao montar, busca avisos do departamento criados nas ultimas 3 horas
+- Filtra avisos ja exibidos usando localStorage (chave: `announcement_popup_{announcementId}_{userId}` com timestamp)
+- Se criado ha mais de 3 horas, ignora
+- Exibe em um Dialog centralizado com animacao de entrada
+- Timer de 15 segundos com barra de progresso visual
+- Ao fechar (manual ou auto), salva no localStorage o timestamp da exibicao
 
-Arquivos alterados:
-- Nova migration SQL (tabela + RLS)
-- `src/hooks/useAuth.tsx` - inserir log no SIGNED_IN
-- `supabase/functions/get-analytics/index.ts` - buscar e retornar dados de login
-- `src/pages/Admin.tsx` - novos graficos e tabela de logins
+**Armazenamento local (localStorage)**
+
+- Chave: `levi_popup_seen_{announcementId}`
+- Valor: timestamp ISO da primeira exibicao
+- Na verificacao: se `now() - timestamp > 3h`, nao exibe mais
+
+**Integracao na pagina Department.tsx**
+
+- Renderizar `AnnouncementPopup` dentro da pagina do departamento (fora das tabs)
+- Props: `departmentId`, `currentUserId`
+
+**Arquivos alterados:**
+
+- Novo: `src/components/department/AnnouncementPopup.tsx`
+- Editado: `src/pages/Department.tsx` (adicionar o componente popup)
+
+Nenhuma alteracao no banco de dados e necessaria -- toda a logica de "3 horas ativo" e controlada pelo `created_at` do aviso + localStorage.
