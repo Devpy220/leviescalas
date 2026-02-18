@@ -642,6 +642,7 @@ export default function Department() {
           <TabsContent value="announcements" className="mt-6 animate-fade-in">
             <AnnouncementBoard
               departmentId={id!}
+              departmentName={department?.name}
               isLeader={isLeader}
               currentUserId={currentUser?.id || ''}
               onUnreadCountChange={setUnreadAnnouncements}

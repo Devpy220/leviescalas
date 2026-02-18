@@ -9,6 +9,15 @@ import { Pin, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+interface CreateAnnouncementDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  departmentId: string;
+  departmentName?: string;
+  editingAnnouncement?: { id: string; title: string; content: string; is_pinned: boolean } | null;
+  onSuccess: () => void;
+}
+
 interface Announcement {
   id: string;
   title: string;
@@ -28,6 +37,7 @@ export default function CreateAnnouncementDialog({
   open,
   onOpenChange,
   departmentId,
+  departmentName,
   editingAnnouncement,
   onSuccess,
 }: CreateAnnouncementDialogProps) {
@@ -79,6 +89,17 @@ export default function CreateAnnouncementDialog({
           } as any);
         if (error) throw error;
         toast({ title: 'Aviso publicado!' });
+
+        // Send push + in-app notifications to members
+        if (departmentName) {
+          supabase.functions.invoke('send-announcement-notification', {
+            body: {
+              department_id: departmentId,
+              department_name: departmentName,
+              announcement_title: title.trim(),
+            },
+          }).catch((err) => console.error('Notification error:', err));
+        }
       }
 
       onSuccess();

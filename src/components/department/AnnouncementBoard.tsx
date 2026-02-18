@@ -34,6 +34,7 @@ interface Announcement {
 
 interface AnnouncementBoardProps {
   departmentId: string;
+  departmentName?: string;
   isLeader: boolean;
   currentUserId: string;
   onUnreadCountChange?: (count: number) => void;
@@ -41,6 +42,7 @@ interface AnnouncementBoardProps {
 
 export default function AnnouncementBoard({
   departmentId,
+  departmentName,
   isLeader,
   currentUserId,
   onUnreadCountChange,
@@ -222,6 +224,7 @@ export default function AnnouncementBoard({
         open={showCreate}
         onOpenChange={setShowCreate}
         departmentId={departmentId}
+        departmentName={departmentName}
         editingAnnouncement={editingAnnouncement}
         onSuccess={fetchAnnouncements}
       />
