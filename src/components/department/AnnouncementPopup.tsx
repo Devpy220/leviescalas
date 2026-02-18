@@ -204,16 +204,8 @@ export default function AnnouncementPopup({ departmentId, currentUserId }: Annou
 
       <style>{`
         .announcement-popup-glow {
-          animation: popup-border-pulse 2s ease-in-out infinite;
+          box-shadow: 0 0 0 2px hsl(var(--primary) / 0.4), 0 0 20px 4px hsl(var(--primary) / 0.15);
           backdrop-filter: blur(8px);
-        }
-        @keyframes popup-border-pulse {
-          0%, 100% {
-            box-shadow: 0 0 0 2px hsl(var(--primary) / 0.3), 0 0 20px 4px hsl(var(--primary) / 0.1);
-          }
-          50% {
-            box-shadow: 0 0 0 3px hsl(var(--primary) / 0.6), 0 0 30px 8px hsl(var(--primary) / 0.2);
-          }
         }
       `}</style>
     </Dialog>
