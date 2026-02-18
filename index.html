@@ -39,16 +39,6 @@
   <meta name="twitter:title" content="LEVI - Logistica de Escalas de Voluntários da Igreja">
   <meta property="og:description" content="Gerencie escalas de departamentos de forma simples e eficiente">
   <meta name="twitter:description" content="Gerencie escalas de departamentos de forma simples e eficiente">
-    <!-- Pre-register SW so WonderPush can find it -->
-    <script>
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js', { scope: '/' }).then(function(reg) {
-          console.log('[SW] Pre-registered from index.html');
-        }).catch(function(err) {
-          console.error('[SW] Pre-registration failed:', err);
-        });
-      }
-    </script>
     <!-- WonderPush SDK -->
     <script src="https://cdn.by.wonderpush.com/sdk/1.1/wonderpush-loader.min.js" async></script>
     <script>
