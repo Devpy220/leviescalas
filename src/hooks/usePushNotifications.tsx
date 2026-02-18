@@ -145,23 +145,23 @@ export function usePushNotifications() {
         setPermission(Notification.permission);
         console.log('[Push] WonderPush synced, subscribed:', subscribed);
 
-        // Auto-subscribe if not yet subscribed and permission not denied
-        if (!subscribed && Notification.permission !== 'denied') {
-          console.log('[Push] Auto-subscribing user...');
+        // Auto-subscribe ONLY if permission was already granted (e.g. from previous session)
+        // In PWA standalone mode, calling subscribeToNotifications() without a user gesture
+        // is blocked by some browsers. Only auto-subscribe when permission is already 'granted'.
+        if (!subscribed && Notification.permission === 'granted') {
+          console.log('[Push] Permission already granted, auto-subscribing...');
           if (typeof wp.subscribeToNotifications === 'function') {
             await wp.subscribeToNotifications();
-            console.log('[Push] subscribeToNotifications called directly');
           } else {
             wp.push(['subscribeToNotifications']);
-            console.log('[Push] subscribeToNotifications called via queue');
           }
-          // Wait a moment then re-check
           setTimeout(async () => {
             const nowSubscribed = await wpIsSubscribed();
             setIsSubscribed(nowSubscribed);
-            setPermission(Notification.permission);
             console.log('[Push] Auto-subscribe result:', nowSubscribed);
           }, 2000);
+        } else if (!subscribed) {
+          console.log('[Push] Permission not yet granted (' + Notification.permission + '), waiting for user gesture');
         }
       } catch (error) {
         console.error('[Push] Error syncing WonderPush:', error);
@@ -183,10 +183,24 @@ export function usePushNotifications() {
 
     setLoading(true);
     try {
-      console.log('[Push] Starting subscribe...');
+      console.log('[Push] Starting subscribe... Permission:', Notification.permission);
+      
+      // In PWA standalone mode, explicitly request permission first via browser API
+      // This ensures the native permission prompt appears from a user gesture
+      if (Notification.permission === 'default') {
+        console.log('[Push] Requesting notification permission via browser API...');
+        const result = await Notification.requestPermission();
+        console.log('[Push] Browser permission result:', result);
+        setPermission(result);
+        if (result === 'denied') {
+          toast.error('Permissão para notificações foi negada. Verifique as configurações do navegador.');
+          return false;
+        }
+      }
+      
       await wonderPushReady(15000);
       const wp = window.WonderPush;
-      console.log('[Push] WonderPush ready, setting consent, userId and subscribing...');
+      console.log('[Push] WonderPush ready, setting userId and subscribing...');
 
       if (typeof wp.setUserId === 'function') {
         await wp.setUserId(user.id);
