@@ -3,6 +3,7 @@ import { Megaphone, X, Pin } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -14,17 +15,19 @@ interface Announcement {
   author_id: string;
   is_pinned: boolean;
   created_at: string;
+  department_id: string;
+  department_name?: string;
   author_name?: string;
 }
 
 interface AnnouncementPopupProps {
-  departmentId: string;
+  departmentId?: string;
   currentUserId: string;
 }
 
 const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
 const POPUP_DURATION_MS = 15_000;
-const POPUP_INTERVAL_MS = 50; // update progress every 50ms
+const POPUP_INTERVAL_MS = 50;
 
 function getPopupKey(announcementId: string) {
   return `levi_popup_seen_${announcementId}`;
@@ -33,15 +36,12 @@ function getPopupKey(announcementId: string) {
 function shouldShowPopup(announcementId: string, createdAt: string): boolean {
   const now = Date.now();
   const createdTime = new Date(createdAt).getTime();
-
-  // Only show popups for announcements created within the last 3 hours
   if (now - createdTime > THREE_HOURS_MS) return false;
 
   const stored = localStorage.getItem(getPopupKey(announcementId));
-  if (!stored) return true; // Never seen
+  if (!stored) return true;
 
   const firstSeen = new Date(stored).getTime();
-  // Still within 3h window from first seen
   return now - firstSeen < THREE_HOURS_MS;
 }
 
@@ -62,12 +62,47 @@ export default function AnnouncementPopup({ departmentId, currentUserId }: Annou
 
   const fetchPendingAnnouncements = useCallback(async () => {
     try {
+      // Get department IDs to check
+      let departmentIds: string[] = [];
+      let departmentNames = new Map<string, string>();
+
+      if (departmentId) {
+        departmentIds = [departmentId];
+      } else {
+        // Fetch all departments where user is a member
+        const { data: memberDepts } = await supabase
+          .from('members')
+          .select('department_id')
+          .eq('user_id', currentUserId);
+
+        // Fetch departments where user is a leader
+        const { data: leaderDepts } = await supabase
+          .from('departments')
+          .select('id')
+          .eq('leader_id', currentUserId);
+
+        const allIds = new Set<string>();
+        (memberDepts || []).forEach(m => allIds.add(m.department_id));
+        (leaderDepts || []).forEach(d => allIds.add(d.id));
+        departmentIds = [...allIds];
+      }
+
+      if (departmentIds.length === 0) return;
+
+      // Fetch department names
+      const { data: deptData } = await supabase
+        .from('departments')
+        .select('id, name')
+        .in('id', departmentIds);
+
+      (deptData || []).forEach(d => departmentNames.set(d.id, d.name));
+
       const threeHoursAgo = new Date(Date.now() - THREE_HOURS_MS).toISOString();
 
       const { data, error } = await supabase
-        .from('department_announcements' as any)
+        .from('department_announcements')
         .select('*')
-        .eq('department_id', departmentId)
+        .in('department_id', departmentIds)
         .gte('created_at', threeHoursAgo)
         .order('created_at', { ascending: false });
 
@@ -87,6 +122,7 @@ export default function AnnouncementPopup({ departmentId, currentUserId }: Annou
         .filter((a: any) => shouldShowPopup(a.id, a.created_at))
         .map((a: any) => ({
           ...a,
+          department_name: departmentNames.get(a.department_id) || 'Departamento',
           author_name: authorNames.get(a.author_id) || 'Líder',
         }));
 
@@ -98,7 +134,7 @@ export default function AnnouncementPopup({ departmentId, currentUserId }: Annou
     } catch (error) {
       console.error('Error fetching popup announcements:', error);
     }
-  }, [departmentId]);
+  }, [departmentId, currentUserId]);
 
   useEffect(() => {
     fetchPendingAnnouncements();
@@ -137,7 +173,6 @@ export default function AnnouncementPopup({ departmentId, currentUserId }: Annou
 
     if (currentIndex < pendingAnnouncements.length - 1) {
       setCurrentIndex(prev => prev + 1);
-      // Timer will restart via useEffect
     } else {
       setOpen(false);
     }
@@ -147,6 +182,7 @@ export default function AnnouncementPopup({ departmentId, currentUserId }: Annou
 
   const announcement = pendingAnnouncements[currentIndex];
   const hasMultiple = pendingAnnouncements.length > 1;
+  const showDeptName = !departmentId; // Show department name when global
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
@@ -162,6 +198,11 @@ export default function AnnouncementPopup({ departmentId, currentUserId }: Annou
               {announcement.title}
             </DialogTitle>
           </div>
+          {showDeptName && announcement.department_name && (
+            <Badge variant="secondary" className="w-fit text-xs mt-1">
+              {announcement.department_name}
+            </Badge>
+          )}
           {hasMultiple && (
             <p className="text-xs text-muted-foreground mt-1">
               Aviso {currentIndex + 1} de {pendingAnnouncements.length}
@@ -190,7 +231,6 @@ export default function AnnouncementPopup({ departmentId, currentUserId }: Annou
           </div>
         </div>
 
-        {/* Progress bar */}
         <Progress value={progress} className="h-1 mt-2" />
 
         {hasMultiple && (
