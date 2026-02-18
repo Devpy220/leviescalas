@@ -206,60 +206,53 @@ export function usePushNotifications() {
       const diag = getDiagnosticInfo();
       console.log('[Push] Starting subscribe...', diag);
       
-      // In PWA standalone mode, explicitly request permission first via browser API
-      // This ensures the native permission prompt appears from a user gesture
-      if (Notification.permission === 'default') {
+      // Step 1: Ensure browser permission is granted (requires user gesture)
+      let currentPermission = Notification.permission;
+      if (currentPermission === 'default') {
         console.log('[Push] Requesting notification permission via browser API...');
-        const result = await Notification.requestPermission();
-        console.log('[Push] Browser permission result:', result);
-        setPermission(result);
-        if (result === 'denied') {
-          toast.error('Permissão para notificações foi negada. Verifique as configurações do navegador.');
-          return false;
-        }
+        currentPermission = await Notification.requestPermission();
+        console.log('[Push] Browser permission result:', currentPermission);
+        setPermission(currentPermission);
       }
       
-      await wonderPushReady(15000);
-      const wp = window.WonderPush;
-      console.log('[Push] WonderPush ready, setting userId and subscribing...');
-
-      if (typeof wp.setUserId === 'function') {
-        await wp.setUserId(user.id);
-      } else {
-        wp.push(['setUserId', user.id]);
-      }
-
-      if (typeof wp.subscribeToNotifications === 'function') {
-        await wp.subscribeToNotifications();
-        console.log('[Push] subscribeToNotifications called directly');
-      } else {
-        wp.push(['subscribeToNotifications']);
-        console.log('[Push] subscribeToNotifications called via queue');
-      }
-
-      // Poll with exponential backoff instead of single 2s wait
-      const subscribed = await pollSubscribed(4);
-      setPermission(Notification.permission);
-      console.log('[Push] Poll result:', subscribed, 'Permission:', Notification.permission);
-
-      if (subscribed) {
-        setIsSubscribed(true);
-        toast.success('Notificações ativadas com sucesso!');
-        return true;
-      } else if (Notification.permission === 'granted') {
-        // Optimistic fallback: SDK called successfully + permission granted
-        console.log('[Push] Optimistic success: permission granted, treating as subscribed');
-        setIsSubscribed(true);
-        toast.success('Notificações ativadas com sucesso!');
-        return true;
-      } else {
-        if (Notification.permission === 'denied') {
-          toast.error('Permissão para notificações foi negada. Verifique as configurações do navegador.');
-        } else {
-          toast.error('Não foi possível ativar notificações. Tente novamente.');
-        }
+      if (currentPermission === 'denied') {
+        toast.error('Permissão para notificações foi negada. Verifique as configurações do navegador.');
         return false;
       }
+
+      // Step 2: Permission is granted — activate the toggle immediately
+      // WonderPush sync happens in background and should not block UI
+      setIsSubscribed(true);
+      setPermission('granted');
+      toast.success('Notificações ativadas com sucesso!');
+
+      // Step 3: Sync with WonderPush SDK in background (non-blocking)
+      (async () => {
+        try {
+          await wonderPushReady(20000);
+          const wp = window.WonderPush;
+          console.log('[Push] Background: WonderPush ready, syncing...');
+
+          if (typeof wp.setUserId === 'function') {
+            await wp.setUserId(user.id);
+          } else {
+            wp.push(['setUserId', user.id]);
+          }
+
+          if (typeof wp.subscribeToNotifications === 'function') {
+            await wp.subscribeToNotifications();
+          } else {
+            wp.push(['subscribeToNotifications']);
+          }
+
+          const confirmed = await pollSubscribed(4);
+          console.log('[Push] Background sync result:', confirmed);
+        } catch (bgError) {
+          console.warn('[Push] Background WonderPush sync failed (toggle stays on):', bgError);
+        }
+      })();
+
+      return true;
     } catch (error: any) {
       console.error('[Push] Error subscribing:', error);
       toast.error(error?.message || 'Erro ao ativar notificações');
