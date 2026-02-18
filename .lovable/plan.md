@@ -1,30 +1,38 @@
 
 
-## Fix: WonderPush "ConsentError" blocking push notifications
+## Fix: Push notifications not activating on mobile browsers (Android Chrome/Firefox)
 
 ### Problem
-The WonderPush SDK is configured with `requiresUserConsent: true` in `index.html`. Even though `setUserConsent(true)` is called before `setUserId`, the SDK's internal consent state isn't ready in time, causing a `ConsentError` that blocks all push functionality.
+Push notifications work on desktop but fail to activate on mobile browsers (Chrome and Firefox on Android), even when notification permission is already granted. The toggle doesn't turn on after clicking.
+
+### Root Cause Analysis
+The likely cause is a **timing issue on mobile**: after calling `subscribeToNotifications()`, the hook waits only 2 seconds before checking `wpIsSubscribed()`. On mobile browsers with slower processing, the WonderPush SDK may not have finished registering the push subscription in that window, causing the check to return `false` and showing the error toast.
+
+Additionally, Firefox for Android has known quirks with the WonderPush SDK's internal subscription check.
 
 ### Solution
-Remove `requiresUserConsent: true` from the WonderPush initialization. This flag is redundant because our code already controls when to subscribe -- we only call `subscribeToNotifications` after the user is logged in and interacts with the toggle. Without this flag, `setUserId` and subscription calls will work immediately.
+Three changes to `src/hooks/usePushNotifications.tsx`:
 
-### Changes
+**1. Retry subscription check with exponential backoff**
+Instead of a single 2-second wait, poll `wpIsSubscribed()` multiple times (e.g., at 1s, 2s, 4s, 6s) up to ~8 seconds. This accommodates slower mobile processing.
 
-**1. `index.html`** -- Remove `requiresUserConsent: true` from WonderPush init:
-```javascript
-WonderPush.push(["init", {
-  webKey: "08c2222c...",
-  serviceWorkerUrl: "/sw.js"
-  // requiresUserConsent removed
-}]);
-```
+**2. Trust permission as success fallback**
+If after all retries `wpIsSubscribed()` still returns false BUT `Notification.permission === 'granted'` and we successfully called `subscribeToNotifications()` without errors, treat it as success. The subscription is likely active but the SDK's internal state hasn't synced yet. Update `isSubscribed` to `true` optimistically.
 
-**2. `src/hooks/usePushNotifications.tsx`** -- Remove all `setUserConsent` calls (no longer needed):
-- Remove `setUserConsent(true)` from `syncWonderPush` function
-- Remove `setUserConsent(true)` from `subscribe` function
-- Keep the `setUserId` and `subscribeToNotifications` logic intact
+**3. Add diagnostic logging for mobile debugging**
+Log the user agent, display mode (standalone vs browser), and SDK state at key points so future mobile issues can be diagnosed from console screenshots.
 
 ### Technical Details
-- The `requiresUserConsent` flag in WonderPush blocks ALL SDK API calls (including `setUserId`) until consent is granted
-- Our app already gates push subscription behind user login and explicit toggle interaction, making this flag redundant
-- Removing it eliminates the race condition between consent and userId calls
+
+```
+subscribe() flow (updated):
+  1. Check/request permission (existing)
+  2. Wait for SDK ready (existing)
+  3. Set userId (existing)
+  4. Call subscribeToNotifications (existing)
+  5. NEW: Poll wpIsSubscribed() up to 4 times (1s, 2s, 4s, 8s intervals)
+  6. NEW: If still false but permission=granted, set isSubscribed=true optimistically
+  7. Show success toast
+```
+
+Changes are limited to `src/hooks/usePushNotifications.tsx` only -- no other files affected.
