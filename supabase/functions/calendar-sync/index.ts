@@ -84,6 +84,15 @@ Deno.serve(async (req) => {
       roleMap.set(r.id, r.name);
     }
 
+    // Build iCal output
+    const ical: string[] = [];
+    ical.push('BEGIN:VCALENDAR');
+    ical.push('VERSION:2.0');
+    ical.push('PRODID:-//LeviEscalas//Calendar//PT');
+    ical.push('CALSCALE:GREGORIAN');
+    ical.push('METHOD:PUBLISH');
+    ical.push(`X-WR-CALNAME:Escalas - ${profile?.name || 'Levi'}`);
+
     // Day names in Portuguese
     const dayNames = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
     const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
