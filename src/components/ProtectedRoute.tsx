@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import AnnouncementPopup from '@/components/department/AnnouncementPopup';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -81,5 +82,12 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {currentUser && (
+        <AnnouncementPopup currentUserId={currentUser.id} />
+      )}
+      {children}
+    </>
+  );
 }
