@@ -128,8 +128,16 @@ export function usePushNotifications() {
       try {
         await wonderPushReady();
 
-        // Set user ID via command queue
-        window.WonderPush.push(['setUserId', user.id]);
+        const wp = window.WonderPush;
+
+        // Set user ID - use direct method if available, fallback to queue
+        if (typeof wp.setUserId === 'function') {
+          await wp.setUserId(user.id);
+          console.log('[Push] setUserId called directly');
+        } else {
+          wp.push(['setUserId', user.id]);
+          console.log('[Push] setUserId called via queue');
+        }
 
         // Check subscription status
         const subscribed = await wpIsSubscribed();
@@ -140,7 +148,13 @@ export function usePushNotifications() {
         // Auto-subscribe if not yet subscribed and permission not denied
         if (!subscribed && Notification.permission !== 'denied') {
           console.log('[Push] Auto-subscribing user...');
-          window.WonderPush.push(['subscribeToNotifications']);
+          if (typeof wp.subscribeToNotifications === 'function') {
+            await wp.subscribeToNotifications();
+            console.log('[Push] subscribeToNotifications called directly');
+          } else {
+            wp.push(['subscribeToNotifications']);
+            console.log('[Push] subscribeToNotifications called via queue');
+          }
           // Wait a moment then re-check
           setTimeout(async () => {
             const nowSubscribed = await wpIsSubscribed();
@@ -171,10 +185,22 @@ export function usePushNotifications() {
     try {
       console.log('[Push] Starting subscribe...');
       await wonderPushReady(15000);
+      const wp = window.WonderPush;
       console.log('[Push] WonderPush ready, setting userId and subscribing...');
 
-      window.WonderPush.push(['setUserId', user.id]);
-      window.WonderPush.push(['subscribeToNotifications']);
+      if (typeof wp.setUserId === 'function') {
+        await wp.setUserId(user.id);
+      } else {
+        wp.push(['setUserId', user.id]);
+      }
+
+      if (typeof wp.subscribeToNotifications === 'function') {
+        await wp.subscribeToNotifications();
+        console.log('[Push] subscribeToNotifications called directly');
+      } else {
+        wp.push(['subscribeToNotifications']);
+        console.log('[Push] subscribeToNotifications called via queue');
+      }
 
       // Wait for subscription to process
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -209,7 +235,12 @@ export function usePushNotifications() {
     setLoading(true);
     try {
       await wonderPushReady();
-      window.WonderPush.push(['unsubscribeFromNotifications']);
+      const wp = window.WonderPush;
+      if (typeof wp.unsubscribeFromNotifications === 'function') {
+        await wp.unsubscribeFromNotifications();
+      } else {
+        wp.push(['unsubscribeFromNotifications']);
+      }
       setIsSubscribed(false);
       toast.success('Notificações desativadas');
       return true;
