@@ -130,14 +130,6 @@ export function usePushNotifications() {
 
         const wp = window.WonderPush;
 
-        // Grant user consent first (required because requiresUserConsent: true)
-        if (typeof wp.setUserConsent === 'function') {
-          await wp.setUserConsent(true);
-          console.log('[Push] setUserConsent(true) called');
-        } else {
-          wp.push(['setUserConsent', true]);
-        }
-
         // Set user ID - use direct method if available, fallback to queue
         if (typeof wp.setUserId === 'function') {
           await wp.setUserId(user.id);
@@ -195,13 +187,6 @@ export function usePushNotifications() {
       await wonderPushReady(15000);
       const wp = window.WonderPush;
       console.log('[Push] WonderPush ready, setting consent, userId and subscribing...');
-
-      // Grant consent first
-      if (typeof wp.setUserConsent === 'function') {
-        await wp.setUserConsent(true);
-      } else {
-        wp.push(['setUserConsent', true]);
-      }
 
       if (typeof wp.setUserId === 'function') {
         await wp.setUserId(user.id);
