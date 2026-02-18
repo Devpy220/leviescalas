@@ -41,6 +41,7 @@ import MyAvailabilitySheet from '@/components/department/MyAvailabilitySheet';
 import ActionMenuPopover from '@/components/department/ActionMenuPopover';
 import ScheduleCountDialog from '@/components/department/ScheduleCountDialog';
 import AnnouncementBoard from '@/components/department/AnnouncementBoard';
+import AnnouncementPopup from '@/components/department/AnnouncementPopup';
 import CalendarSyncDialog from '@/components/department/CalendarSyncDialog';
 import { exportToPDF, exportToExcel } from '@/lib/exportSchedules';
 import { SupportNotification } from '@/components/SupportNotification';
@@ -448,6 +449,13 @@ export default function Department() {
     <TooltipProvider>
       <div className="min-h-screen bg-background">
         <SupportNotification />
+        {/* Announcement Popup - auto-shows recent announcements */}
+        {currentUser && (
+          <AnnouncementPopup
+            departmentId={department.id}
+            currentUserId={currentUser.id}
+          />
+        )}
         {/* Header */}
         <header className="sticky top-0 z-50 glass border-b border-border/50">
           <div className="container mx-auto px-2 sm:px-4 h-14 sm:h-16 flex items-center justify-between max-w-7xl">
