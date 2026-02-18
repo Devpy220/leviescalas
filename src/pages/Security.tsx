@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Footer from '@/components/Footer';
-import { ArrowLeft, Shield, ShieldOff, Loader2, AlertTriangle, Eye, EyeOff, Bell, BellOff, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Shield, ShieldOff, Loader2, AlertTriangle, Eye, EyeOff, Bell, BellOff, ChevronDown, ChevronUp, CalendarSync } from 'lucide-react';
 import { TelegramLinkToggle } from '@/components/TelegramLinkToggle';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
@@ -13,6 +13,7 @@ import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { TwoFactorSetup } from '@/components/auth/TwoFactorSetup';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import CalendarSyncDialog from '@/components/department/CalendarSyncDialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,6 +38,7 @@ export default function Security() {
   const [shareContact, setShareContact] = useState(false);
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
   const [showUnblockInstructions, setShowUnblockInstructions] = useState(false);
+  const [showCalendarSync, setShowCalendarSync] = useState(false);
 
   // Fetch current privacy setting
   useEffect(() => {
@@ -398,6 +400,34 @@ export default function Security() {
           <TelegramLinkToggle />
         </div>
 
+        {/* Calendar Sync Card */}
+        <Card className="mt-6">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-emerald-500/10 text-emerald-500">
+                <CalendarSync className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <CardTitle className="text-lg">Sincronizar Calendário</CardTitle>
+                <CardDescription>
+                  Sincronize suas escalas com Google Calendar ou Apple Calendar
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="p-4 rounded-lg bg-muted/50">
+              <p className="text-sm text-muted-foreground mb-3">
+                Gere um link de assinatura para manter suas escalas sempre atualizadas no seu calendário favorito.
+              </p>
+              <Button onClick={() => setShowCalendarSync(true)} className="gap-2">
+                <CalendarSync className="w-4 h-4" />
+                Configurar sincronização
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Info Section */}
         <div className="mt-8 p-4 rounded-lg border border-border bg-card">
           <h3 className="font-medium text-foreground mb-2">Como funciona o 2FA?</h3>
@@ -425,6 +455,12 @@ export default function Security() {
         open={showSetup}
         onOpenChange={setShowSetup}
         onComplete={checkFactors}
+      />
+
+      {/* Calendar Sync Dialog */}
+      <CalendarSyncDialog
+        open={showCalendarSync}
+        onOpenChange={setShowCalendarSync}
       />
 
       {/* Disable Confirmation Dialog */}
