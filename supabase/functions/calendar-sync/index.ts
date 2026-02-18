@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
 
     const { data: schedules, error: schedulesError } = await supabase
       .from('schedules')
-      .select('id, date, time_start, time_end, notes, department_id, departments(name)')
+      .select('id, date, time_start, time_end, notes, department_id, sector_id, assignment_role, departments(name), sectors(name)')
       .eq('user_id', userId)
       .gte('date', dateFilter)
       .order('date', { ascending: true });
@@ -70,30 +70,61 @@ Deno.serve(async (req) => {
       return new Response('Error fetching schedules', { status: 500, headers: corsHeaders });
     }
 
-    // Build iCal
-    const calName = `Escalas - ${profile?.name || 'Levi'}`;
-    let ical = [
-      'BEGIN:VCALENDAR',
-      'VERSION:2.0',
-      'PRODID:-//Levi Escalas//Calendar Sync//PT',
-      `X-WR-CALNAME:${escapeICalText(calName)}`,
-      'CALSCALE:GREGORIAN',
-      'METHOD:PUBLISH',
-    ];
+    // Fetch assignment roles for all departments the user has schedules in
+    const deptIds = [...new Set((schedules || []).map((s: any) => s.department_id))];
+    const { data: assignmentRoles } = deptIds.length > 0
+      ? await supabase
+          .from('assignment_roles')
+          .select('id, name, department_id')
+          .in('department_id', deptIds)
+      : { data: [] };
+
+    const roleMap = new Map<string, string>();
+    for (const r of (assignmentRoles || [])) {
+      roleMap.set(r.id, r.name);
+    }
+
+    // Day names in Portuguese
+    const dayNames = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+    const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
     for (const s of (schedules || [])) {
       const deptName = (s as any).departments?.name || 'Departamento';
+      const sectorName = (s as any).sectors?.name || null;
+      const roleName = s.assignment_role ? (roleMap.get(s.assignment_role) || s.assignment_role) : null;
+      
       const dtStart = formatICalDate(s.date, s.time_start);
       const dtEnd = formatICalDate(s.date, s.time_end);
-      const summary = `Escala: ${deptName}`;
-      const description = s.notes ? escapeICalText(s.notes) : '';
+
+      // Format: "Dia, DD/Mês às HH:mm | Setor - Função" (same as push/telegram)
+      const dateObj = new Date(s.date + 'T12:00:00');
+      const dayName = dayNames[dateObj.getDay()];
+      const day = dateObj.getDate().toString().padStart(2, '0');
+      const month = monthNames[dateObj.getMonth()];
+      const timeFormatted = s.time_start.substring(0, 5);
+
+      let summary = `📅 ${deptName} | ${dayName}, ${day}/${month} às ${timeFormatted}`;
+      const details: string[] = [];
+      if (sectorName) details.push(sectorName);
+      if (roleName) details.push(roleName);
+      if (details.length > 0) {
+        summary += ` | ${details.join(' - ')}`;
+      }
+
+      const descParts: string[] = [];
+      descParts.push(`Departamento: ${deptName}`);
+      if (sectorName) descParts.push(`Setor: ${sectorName}`);
+      if (roleName) descParts.push(`Função: ${roleName}`);
+      descParts.push(`Horário: ${s.time_start.substring(0, 5)} - ${s.time_end.substring(0, 5)}`);
+      if (s.notes) descParts.push(`Obs: ${s.notes}`);
+      const description = escapeICalText(descParts.join('\\n'));
 
       ical.push('BEGIN:VEVENT');
       ical.push(`UID:${s.id}@leviescalas.lovable.app`);
       ical.push(`DTSTART:${dtStart}`);
       ical.push(`DTEND:${dtEnd}`);
       ical.push(`SUMMARY:${escapeICalText(summary)}`);
-      if (description) ical.push(`DESCRIPTION:${description}`);
+      ical.push(`DESCRIPTION:${description}`);
       ical.push(`DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`);
       ical.push('END:VEVENT');
     }
