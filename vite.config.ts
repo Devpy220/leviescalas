@@ -57,7 +57,7 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         globIgnores: ["**/wonderpush*"],
-        navigateFallbackDenylist: [/^\/wonderpush/],
+        navigateFallbackDenylist: [/^\/wonderpush/, /^\/~oauth/, /^\/auth/],
         clientsClaim: true,
         skipWaiting: false, // Let user control when to update
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
