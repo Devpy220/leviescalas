@@ -296,6 +296,27 @@ export type Database = {
           },
         ]
       }
+      login_logs: {
+        Row: {
+          id: string
+          logged_in_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          logged_in_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          logged_in_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       member_availability: {
         Row: {
           created_at: string

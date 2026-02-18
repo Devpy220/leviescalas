@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Trash2, Users, Building2, ChevronDown, ChevronUp, Shield, LogOut, Church, Plus, Copy, Link as LinkIcon, Mail, ExternalLink, ChevronRight, Pencil, Upload, X, TrendingUp, Eye } from 'lucide-react';
+import { Loader2, Trash2, Users, Building2, ChevronDown, ChevronUp, Shield, LogOut, Church, Plus, Copy, Link as LinkIcon, Mail, ExternalLink, ChevronRight, Pencil, Upload, X, TrendingUp, Eye, Clock, CalendarDays, CalendarRange, Monitor } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -70,6 +70,20 @@ interface AnalyticsData {
   pageviews: number;
 }
 
+interface LoginDailyData {
+  date: string;
+  logins: number;
+}
+
+interface RecentLogin {
+  id: string;
+  user_id: string;
+  logged_in_at: string;
+  user_agent: string | null;
+  user_name: string;
+  user_email: string;
+}
+
 // Admin access is controlled by server-side has_role() function via useAdmin hook
 
 export default function Admin() {
@@ -110,6 +124,13 @@ export default function Admin() {
   const [totalVisitors, setTotalVisitors] = useState(0);
   const [totalPageviews, setTotalPageviews] = useState(0);
   const [loadingAnalytics, setLoadingAnalytics] = useState(true);
+  
+  // Login analytics state
+  const [loginsToday, setLoginsToday] = useState(0);
+  const [loginsWeek, setLoginsWeek] = useState(0);
+  const [loginsMonth, setLoginsMonth] = useState(0);
+  const [dailyLoginData, setDailyLoginData] = useState<LoginDailyData[]>([]);
+  const [recentLogins, setRecentLogins] = useState<RecentLogin[]>([]);
 
   useEffect(() => {
     if (authLoading || adminLoading) return;
@@ -161,6 +182,11 @@ export default function Admin() {
         setAnalyticsData(data.dailyData || []);
         setTotalVisitors(data.totalVisitors || 0);
         setTotalPageviews(data.totalPageviews || 0);
+        setLoginsToday(data.loginsToday || 0);
+        setLoginsWeek(data.loginsWeek || 0);
+        setLoginsMonth(data.loginsMonth || 0);
+        setDailyLoginData(data.dailyLoginData || []);
+        setRecentLogins(data.recentLogins || []);
       }
     } catch (error) {
       console.error('Error fetching analytics:', error);
@@ -765,7 +791,149 @@ export default function Admin() {
           </CardContent>
         </Card>
 
-        {/* Churches Section */}
+        {/* Login Analytics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Logins Hoje</CardDescription>
+              <CardTitle className="text-3xl flex items-center gap-2">
+                <Clock className="w-6 h-6 text-primary" />
+                {loginsToday}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Logins Esta Semana</CardDescription>
+              <CardTitle className="text-3xl flex items-center gap-2">
+                <CalendarDays className="w-6 h-6 text-primary" />
+                {loginsWeek}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Logins Este Mês</CardDescription>
+              <CardTitle className="text-3xl flex items-center gap-2">
+                <CalendarRange className="w-6 h-6 text-primary" />
+                {loginsMonth}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+        </div>
+
+        {/* Login Chart */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Monitor className="w-5 h-5" />
+              Logins por Dia
+            </CardTitle>
+            <CardDescription>Quantidade de logins nos últimos 30 dias</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loadingAnalytics ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            ) : dailyLoginData.length === 0 ? (
+              <p className="text-center text-muted-foreground py-12">
+                Nenhum dado de login disponível.
+              </p>
+            ) : (
+              <div className="h-[250px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={dailyLoginData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorLogins" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis 
+                      dataKey="date" 
+                      tickFormatter={(value) => format(new Date(value), 'dd/MM', { locale: ptBR })}
+                      className="text-xs fill-muted-foreground"
+                      tick={{ fontSize: 11 }}
+                    />
+                    <YAxis className="text-xs fill-muted-foreground" tick={{ fontSize: 11 }} allowDecimals={false} />
+                    <Tooltip 
+                      labelFormatter={(value) => format(new Date(value), "dd 'de' MMMM", { locale: ptBR })}
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--card))', 
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                      }}
+                      formatter={(value: number) => [value, 'Logins']}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="logins" 
+                      stroke="hsl(var(--primary))" 
+                      fillOpacity={1} 
+                      fill="url(#colorLogins)" 
+                      strokeWidth={2}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recent Logins Table */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              Últimos Logins
+            </CardTitle>
+            <CardDescription>Os 50 acessos mais recentes</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loadingAnalytics ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            ) : recentLogins.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">Nenhum login registrado.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Horário</TableHead>
+                      <TableHead>Dispositivo</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {recentLogins.map((login) => {
+                      const isMobile = login.user_agent?.toLowerCase().includes('mobile') || login.user_agent?.toLowerCase().includes('android') || login.user_agent?.toLowerCase().includes('iphone');
+                      return (
+                        <TableRow key={login.id}>
+                          <TableCell className="font-medium">{login.user_name}</TableCell>
+                          <TableCell className="text-muted-foreground text-sm">{login.user_email}</TableCell>
+                          <TableCell className="text-sm">
+                            {format(new Date(login.logged_in_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">
+                              {isMobile ? '📱 Mobile' : '💻 Desktop'}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         <Card className="mb-6">
           <CardHeader>
             <div className="flex items-center justify-between">

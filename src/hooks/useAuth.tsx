@@ -440,8 +440,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(currentSession?.user ?? null);
         setLoading(false);
 
-        // Debounced bootstrap - only run ONCE per user, not on every auth event
+        // Log login event silently
         if (currentSession?.user && event === 'SIGNED_IN') {
+          try {
+            supabase.from('login_logs').insert({
+              user_id: currentSession.user.id,
+              user_agent: navigator.userAgent,
+            }).then(() => {});
+          } catch {}
+
+          // Debounced bootstrap - only run ONCE per user, not on every auth event
           // Clear any pending bootstrap
           if (guard.bootstrapTimeout) {
             window.clearTimeout(guard.bootstrapTimeout);
