@@ -62,10 +62,10 @@ export function usePWAUpdate() {
           });
         });
 
-        // Check for updates every 10 seconds for faster icon/asset delivery
+        // Check for updates every 60 seconds (reduced from 10s to avoid excessive SW errors)
         checkIntervalRef.current = setInterval(() => {
-          reg.update().catch(console.error);
-        }, 10 * 1000);
+          reg.update().catch(() => {});
+        }, 60 * 1000);
 
         // Also check immediately on page focus (user returns to app)
         const onFocus = () => reg.update().catch(console.error);
