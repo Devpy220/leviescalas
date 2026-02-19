@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { playNotificationSound } from '@/lib/notificationSound';
+import { toast } from 'sonner';
 
 interface Notification {
   id: string;
@@ -161,6 +162,14 @@ export function useNotifications() {
           if (!newNotif.read_at) {
             setUnreadCount(prev => prev + 1);
             playNotificationSound();
+            // Show in-app banner for announcements
+            if (newNotif.type === 'announcement') {
+              toast(newNotif.message, {
+                duration: 8000,
+                icon: '📢',
+                position: 'top-center',
+              });
+            }
           }
         }
       )
