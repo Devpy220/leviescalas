@@ -27,6 +27,29 @@ const sendPushNotification = async (
   }
 };
 
+const sendTelegramNotification = async (
+  supabaseUrl: string,
+  serviceRoleKey: string,
+  userId: string,
+  message: string
+): Promise<boolean> => {
+  try {
+    const res = await fetch(`${supabaseUrl}/functions/v1/send-telegram-notification`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${serviceRoleKey}`,
+      },
+      body: JSON.stringify({ userId, message }),
+    });
+    const data = await res.json();
+    return data.sent === 1;
+  } catch (e) {
+    console.error("Telegram error for user", userId, e);
+    return false;
+  }
+};
+
 serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -120,7 +143,22 @@ serve(async (req: Request): Promise<Response> => {
       url: "/my-schedules",
     });
 
-    console.log(`Announcement notification sent to ${memberIds.length} members`);
+    // Send Telegram notifications in parallel
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    const telegramMessage = `📢 *Aviso - ${department_name}*\n\n${announcement_title}`;
+
+    const telegramResults = await Promise.allSettled(
+      memberIds.map((userId: string) =>
+        sendTelegramNotification(supabaseUrl, serviceRoleKey, userId, telegramMessage)
+      )
+    );
+
+    const telegramSent = telegramResults.filter(
+      (r) => r.status === "fulfilled" && r.value === true
+    ).length;
+
+    console.log(`Announcement notification sent to ${memberIds.length} members (push), ${telegramSent} via Telegram`);
 
     return new Response(
       JSON.stringify({ success: true, notified: memberIds.length }),
