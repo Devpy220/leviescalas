@@ -1,49 +1,43 @@
 
 
-## Manter Notificacoes Push Ativas entre Logins
+## Enviar Avisos do Mural via Telegram + Verificar Push
 
-### Problema
-Toda vez que voce faz login, o toggle de notificacoes push aparece como desativado porque o sistema depende do SDK do WonderPush carregar para verificar o estado. Se o SDK demora, o toggle mostra "desativado" mesmo que as notificacoes ja estejam ativas.
+### O que sera feito
 
-### Solucao
-Salvar o estado de inscricao no localStorage do navegador. Quando voce fizer login, o sistema vai:
-1. Ler o estado salvo localmente e mostrar o toggle correto imediatamente
-2. Confirmar com o SDK em segundo plano (sem bloquear a interface)
-3. Se a permissao ja estiver concedida, reinscrever automaticamente sem precisar de acao manual
+**1. Adicionar Telegram aos avisos do mural**
+
+Quando um lider publica um aviso, alem da notificacao in-app e push (que ja existem), o sistema tambem enviara a mensagem via Telegram para cada membro que tiver o bot vinculado.
+
+**2. Verificar push notifications**
+
+Os logs mostram que a funcao `send-announcement-notification` nunca foi chamada ainda. Isso significa que nenhum aviso foi publicado desde que a funcao foi criada. Apos a implementacao, podemos testar publicando um aviso e verificando os logs.
 
 ### Comportamento esperado
-- Login -> toggle ja aparece ativo (se estava ativo antes)
-- Nenhuma acao manual necessaria
-- Se por algum motivo a inscricao foi perdida no servidor, o sistema reinscreve sozinho em segundo plano
+
+Ao publicar um aviso no mural:
+- Notificacao in-app (ja funciona)
+- Push via WonderPush (ja funciona)
+- **Telegram** para membros com bot vinculado (novo)
+
+Membros sem Telegram vinculado simplesmente nao recebem por esse canal -- sem erro.
 
 ### Secao Tecnica
 
-**Arquivo: `src/hooks/usePushNotifications.tsx`**
+**Arquivo: `supabase/functions/send-announcement-notification/index.ts`**
 
-1. Adicionar constante `PUSH_SUBSCRIBED_KEY = 'levi_push_subscribed'`
+Adicionar uma funcao `sendTelegramNotification` que, para cada membro, chama a edge function `send-telegram-notification` ja existente. A mensagem no Telegram seguira o formato:
 
-2. No estado inicial de `isSubscribed`, ler do localStorage:
-   ```text
-   const [isSubscribed, setIsSubscribed] = useState(() => {
-     return localStorage.getItem(PUSH_SUBSCRIBED_KEY) === 'true';
-   });
-   ```
+```text
+📢 *Aviso - [Nome do Departamento]*
 
-3. Criar wrapper `setIsSubscribedPersisted` que salva no localStorage ao alterar:
-   ```text
-   const setIsSubscribedPersisted = (value: boolean) => {
-     setIsSubscribed(value);
-     localStorage.setItem(PUSH_SUBSCRIBED_KEY, String(value));
-   };
-   ```
+[Titulo do aviso]
+```
 
-4. Substituir todas as chamadas `setIsSubscribed(...)` por `setIsSubscribedPersisted(...)` em:
-   - `syncWonderPush` (efeito de sync com login)
-   - `subscribe` (funcao de ativar)
-   - `unsubscribe` (funcao de desativar)
-
-5. No efeito `syncWonderPush`, quando `Notification.permission === 'granted'` e o localStorage indica inscrito, forcar resubscribe silencioso mesmo que `wpIsSubscribed()` retorne `false` (reconecta automaticamente).
+Alteracoes especificas:
+1. Criar funcao helper `sendTelegramNotification(supabaseUrl, serviceRoleKey, userId, message)` que chama `send-telegram-notification`
+2. Apos o envio de push, iterar sobre `memberIds` e chamar a funcao de Telegram para cada um (em paralelo com `Promise.allSettled`)
+3. Logar quantos foram enviados com sucesso
 
 **Arquivos alterados:**
-- `src/hooks/usePushNotifications.tsx`
+- `supabase/functions/send-announcement-notification/index.ts`
 
