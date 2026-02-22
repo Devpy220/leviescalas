@@ -882,57 +882,68 @@ export default function Admin() {
           </CardContent>
         </Card>
 
-        {/* Recent Logins Table */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              Últimos Logins
-            </CardTitle>
-            <CardDescription>Os 50 acessos mais recentes</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loadingAnalytics ? (
-              <div className="flex justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
-              </div>
-            ) : recentLogins.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">Nenhum login registrado.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Horário</TableHead>
-                      <TableHead>Dispositivo</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {recentLogins.map((login) => {
-                      const isMobile = login.user_agent?.toLowerCase().includes('mobile') || login.user_agent?.toLowerCase().includes('android') || login.user_agent?.toLowerCase().includes('iphone');
-                      return (
-                        <TableRow key={login.id}>
-                          <TableCell className="font-medium">{login.user_name}</TableCell>
-                          <TableCell className="text-muted-foreground text-sm">{login.user_email}</TableCell>
-                          <TableCell className="text-sm">
-                            {format(new Date(login.logged_in_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="text-xs">
-                              {isMobile ? '📱 Mobile' : '💻 Desktop'}
-                            </Badge>
-                          </TableCell>
+        {/* Recent Logins - Collapsible */}
+        <Collapsible className="mb-6">
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="w-5 h-5" />
+                      Últimos Logins
+                    </CardTitle>
+                    <CardDescription>Os 50 acessos mais recentes</CardDescription>
+                  </div>
+                  <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                </div>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent>
+                {loadingAnalytics ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  </div>
+                ) : recentLogins.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">Nenhum login registrado.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Nome</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Horário</TableHead>
+                          <TableHead>Dispositivo</TableHead>
                         </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                      </TableHeader>
+                      <TableBody>
+                        {recentLogins.map((login) => {
+                          const isMobile = login.user_agent?.toLowerCase().includes('mobile') || login.user_agent?.toLowerCase().includes('android') || login.user_agent?.toLowerCase().includes('iphone');
+                          return (
+                            <TableRow key={login.id}>
+                              <TableCell className="font-medium">{login.user_name}</TableCell>
+                              <TableCell className="text-muted-foreground text-sm">{login.user_email}</TableCell>
+                              <TableCell className="text-sm">
+                                {format(new Date(login.logged_in_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="text-xs">
+                                  {isMobile ? '📱 Mobile' : '💻 Desktop'}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
 
         <Card className="mb-6">
           <CardHeader>
