@@ -1,110 +1,93 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 declare global {
   interface Window {
-    WonderPush?: any;
+    PushAlertCo?: any;
+    pushalertbyiabor498?: any;
   }
 }
 
-function isSDKReady(): boolean {
-  return !!(window.WonderPush && typeof window.WonderPush.isSubscribedToNotifications === 'function');
+function isPushAlertReady(): boolean {
+  return !!(window.PushAlertCo && typeof window.PushAlertCo.getSubsInfo === 'function');
 }
 
-function wonderPushReady(timeoutMs = 20000): Promise<void> {
+function pushAlertReady(timeoutMs = 20000): Promise<void> {
   return new Promise((resolve, reject) => {
-    console.log('[Push] Waiting for WonderPush SDK... hostname:', window.location.hostname);
-    
-    if (isSDKReady()) {
+    console.log('[Push] Waiting for PushAlert SDK...');
+
+    if (isPushAlertReady()) {
       console.log('[Push] SDK already initialized');
       resolve();
       return;
     }
 
     const startTime = Date.now();
-    
-    // Strategy 1: Queue callback (official WonderPush way)
-    window.WonderPush = window.WonderPush || [];
-    let resolved = false;
-    
-    window.WonderPush.push(function() {
-      if (!resolved) {
-        resolved = true;
-        console.log('[Push] SDK ready via queue callback after', Date.now() - startTime, 'ms');
-        resolve();
-      }
-    });
-
-    // Strategy 2: Polling fallback
     const interval = setInterval(() => {
-      if (resolved) {
+      if (isPushAlertReady()) {
         clearInterval(interval);
-        return;
-      }
-      
-      if (isSDKReady()) {
-        resolved = true;
-        clearInterval(interval);
-        console.log('[Push] SDK ready via polling after', Date.now() - startTime, 'ms');
+        console.log('[Push] SDK ready after', Date.now() - startTime, 'ms');
         resolve();
         return;
       }
-      
+
       if (Date.now() - startTime > timeoutMs) {
         clearInterval(interval);
-        if (!resolved) {
-          resolved = true;
-          // Log diagnostic info
-          const wpType = typeof window.WonderPush;
-          const isArr = Array.isArray(window.WonderPush);
-          const scriptEl = document.querySelector('script[src*="wonderpush"]') as HTMLScriptElement | null;
-          console.error('[Push] SDK timeout.', { wpType, isArr, scriptLoaded: !!scriptEl, scriptSrc: scriptEl?.src });
-          
-          // Check if script even loaded
-          if (!scriptEl) {
-            reject(new Error('Script do WonderPush não carregou. Verifique sua conexão.'));
-          } else {
-            reject(new Error('WonderPush SDK não inicializou. O domínio pode não estar autorizado.'));
-          }
-        }
+        const scriptEl = document.querySelector('script[src*="pushalert"]');
+        console.error('[Push] SDK timeout.', { scriptLoaded: !!scriptEl });
+        reject(new Error(scriptEl
+          ? 'PushAlert SDK não inicializou. O domínio pode não estar autorizado.'
+          : 'Script do PushAlert não carregou. Verifique sua conexão.'));
       }
     }, 500);
   });
 }
 
-async function wpIsSubscribed(): Promise<boolean> {
+function getSubscriberId(): string | null {
   try {
-    if (window.WonderPush && typeof window.WonderPush.isSubscribedToNotifications === 'function') {
-      return await window.WonderPush.isSubscribedToNotifications();
+    if (window.PushAlertCo && window.PushAlertCo.subs_id) {
+      return window.PushAlertCo.subs_id;
     }
-    return false;
+    return null;
   } catch {
-    return false;
+    return null;
   }
 }
 
-function getDiagnosticInfo() {
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-  return {
-    ua: navigator.userAgent.substring(0, 80),
-    standalone: isStandalone,
-    permission: 'Notification' in window ? Notification.permission : 'unsupported',
-  };
-}
-
-async function pollSubscribed(maxAttempts = 4): Promise<boolean> {
-  const delays = [1000, 2000, 4000, 8000];
-  for (let i = 0; i < maxAttempts; i++) {
-    await new Promise(r => setTimeout(r, delays[i]));
-    const result = await wpIsSubscribed();
-    console.log(`[Push] Poll attempt ${i + 1}/${maxAttempts}: subscribed=${result}`);
-    if (result) return true;
-  }
-  return false;
+async function getSubsInfo(): Promise<{ status: string; subs_id: string } | null> {
+  return new Promise((resolve) => {
+    try {
+      if (window.PushAlertCo && typeof window.PushAlertCo.getSubsInfo === 'function') {
+        window.PushAlertCo.getSubsInfo(function (status: string, subsId: string) {
+          resolve({ status, subs_id: subsId });
+        });
+      } else {
+        resolve(null);
+      }
+    } catch {
+      resolve(null);
+    }
+  });
 }
 
 const PUSH_SUBSCRIBED_KEY = 'levi_push_subscribed';
+
+async function saveSubscriberMapping(userId: string, subscriberId: string) {
+  try {
+    const { error } = await supabase
+      .from('pushalert_subscribers')
+      .upsert(
+        { user_id: userId, subscriber_id: subscriberId, updated_at: new Date().toISOString() },
+        { onConflict: 'user_id' }
+      );
+    if (error) console.error('[Push] Error saving subscriber mapping:', error);
+    else console.log('[Push] Subscriber mapping saved');
+  } catch (e) {
+    console.error('[Push] Error saving subscriber mapping:', e);
+  }
+}
 
 export function usePushNotifications() {
   const [isSupported, setIsSupported] = useState(false);
@@ -121,12 +104,11 @@ export function usePushNotifications() {
   }, []);
 
   useEffect(() => {
-    const supported = 'serviceWorker' in navigator && 
-                      'PushManager' in window && 
-                      'Notification' in window;
+    const supported = 'serviceWorker' in navigator &&
+      'PushManager' in window &&
+      'Notification' in window;
     setIsSupported(supported);
     if (supported) {
-      // In iframes (like preview), permission is always 'denied' — treat as 'default'
       const isIframe = window.self !== window.top;
       setPermission(isIframe ? 'default' : Notification.permission);
     }
@@ -149,55 +131,45 @@ export function usePushNotifications() {
     }
   }, [isSupported]);
 
-  // Sync WonderPush userId and auto-subscribe on login
+  // Sync PushAlert subscriber ID on login
   useEffect(() => {
     if (!user || !isSupported) return;
 
-    const syncWonderPush = async () => {
+    const syncPushAlert = async () => {
       try {
-        await wonderPushReady();
+        await pushAlertReady();
+        const info = await getSubsInfo();
+        console.log('[Push] PushAlert info:', info);
 
-        const wp = window.WonderPush;
-
-        // Set user ID - use direct method if available, fallback to queue
-        if (typeof wp.setUserId === 'function') {
-          await wp.setUserId(user.id);
-          console.log('[Push] setUserId called directly');
+        if (info && info.status === 'subscribed' && info.subs_id) {
+          setIsSubscribedPersisted(true);
+          setPermission('granted');
+          await saveSubscriberMapping(user.id, info.subs_id);
         } else {
-          wp.push(['setUserId', user.id]);
-          console.log('[Push] setUserId called via queue');
-        }
-
-        // Check subscription status
-        const subscribed = await wpIsSubscribed();
-        setIsSubscribedPersisted(subscribed);
-        setPermission(Notification.permission);
-        console.log('[Push] WonderPush synced, subscribed:', subscribed);
-
-        // Auto-subscribe ONLY if permission was already granted (e.g. from previous session)
-        // In PWA standalone mode, calling subscribeToNotifications() without a user gesture
-        // is blocked by some browsers. Only auto-subscribe when permission is already 'granted'.
-        if (!subscribed && Notification.permission === 'granted') {
-          console.log('[Push] Permission already granted, auto-subscribing...');
-          if (typeof wp.subscribeToNotifications === 'function') {
-            await wp.subscribeToNotifications();
+          // Check if permission was already granted and auto-subscribe
+          if (Notification.permission === 'granted') {
+            console.log('[Push] Permission already granted, triggering subscribe...');
+            if (typeof window.PushAlertCo?.forceSubscribe === 'function') {
+              window.PushAlertCo.forceSubscribe();
+            }
+            // Poll for subscriber ID
+            setTimeout(async () => {
+              const subsId = getSubscriberId();
+              if (subsId) {
+                setIsSubscribedPersisted(true);
+                await saveSubscriberMapping(user.id, subsId);
+              }
+            }, 3000);
           } else {
-            wp.push(['subscribeToNotifications']);
+            setIsSubscribedPersisted(false);
           }
-          setTimeout(async () => {
-            const nowSubscribed = await wpIsSubscribed();
-            setIsSubscribedPersisted(nowSubscribed);
-            console.log('[Push] Auto-subscribe result:', nowSubscribed);
-          }, 2000);
-        } else if (!subscribed) {
-          console.log('[Push] Permission not yet granted (' + Notification.permission + '), waiting for user gesture');
         }
       } catch (error) {
-        console.error('[Push] Error syncing WonderPush:', error);
+        console.error('[Push] Error syncing PushAlert:', error);
       }
     };
 
-    syncWonderPush();
+    syncPushAlert();
   }, [user, isSupported]);
 
   const subscribe = useCallback(async () => {
@@ -212,52 +184,45 @@ export function usePushNotifications() {
 
     setLoading(true);
     try {
-      const diag = getDiagnosticInfo();
-      console.log('[Push] Starting subscribe...', diag);
-      
-      // Step 1: Ensure browser permission is granted (requires user gesture)
+      // Step 1: Request permission
       let currentPermission = Notification.permission;
       if (currentPermission === 'default') {
-        console.log('[Push] Requesting notification permission via browser API...');
         currentPermission = await Notification.requestPermission();
-        console.log('[Push] Browser permission result:', currentPermission);
         setPermission(currentPermission);
       }
-      
+
       if (currentPermission === 'denied') {
         toast.error('Permissão para notificações foi negada. Verifique as configurações do navegador.');
         return false;
       }
 
-      // Step 2: Permission is granted — activate the toggle immediately
-      // WonderPush sync happens in background and should not block UI
+      // Step 2: Activate toggle immediately
       setIsSubscribedPersisted(true);
       setPermission('granted');
       toast.success('Notificações ativadas com sucesso!');
 
-      // Step 3: Sync with WonderPush SDK in background (non-blocking)
+      // Step 3: Sync with PushAlert in background
       (async () => {
         try {
-          await wonderPushReady(20000);
-          const wp = window.WonderPush;
-          console.log('[Push] Background: WonderPush ready, syncing...');
+          await pushAlertReady(20000);
 
-          if (typeof wp.setUserId === 'function') {
-            await wp.setUserId(user.id);
-          } else {
-            wp.push(['setUserId', user.id]);
+          if (typeof window.PushAlertCo?.forceSubscribe === 'function') {
+            window.PushAlertCo.forceSubscribe();
           }
 
-          if (typeof wp.subscribeToNotifications === 'function') {
-            await wp.subscribeToNotifications();
-          } else {
-            wp.push(['subscribeToNotifications']);
+          // Poll for subscriber ID
+          const delays = [1000, 2000, 4000, 8000];
+          for (const delay of delays) {
+            await new Promise(r => setTimeout(r, delay));
+            const subsId = getSubscriberId();
+            if (subsId) {
+              await saveSubscriberMapping(user.id, subsId);
+              console.log('[Push] Subscriber mapped:', subsId);
+              break;
+            }
           }
-
-          const confirmed = await pollSubscribed(4);
-          console.log('[Push] Background sync result:', confirmed);
         } catch (bgError) {
-          console.warn('[Push] Background WonderPush sync failed (toggle stays on):', bgError);
+          console.warn('[Push] Background PushAlert sync failed:', bgError);
         }
       })();
 
@@ -275,14 +240,18 @@ export function usePushNotifications() {
     if (!user) return false;
     setLoading(true);
     try {
-      await wonderPushReady();
-      const wp = window.WonderPush;
-      if (typeof wp.unsubscribeFromNotifications === 'function') {
-        await wp.unsubscribeFromNotifications();
-      } else {
-        wp.push(['unsubscribeFromNotifications']);
+      await pushAlertReady();
+      if (typeof window.PushAlertCo?.unsubscribe === 'function') {
+        window.PushAlertCo.unsubscribe();
       }
       setIsSubscribedPersisted(false);
+
+      // Remove mapping from DB
+      await supabase
+        .from('pushalert_subscribers')
+        .delete()
+        .eq('user_id', user.id);
+
       toast.success('Notificações desativadas');
       return true;
     } catch (error: any) {
