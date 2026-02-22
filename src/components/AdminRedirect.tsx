@@ -24,8 +24,11 @@ export function AdminRedirect({ children }: AdminRedirectProps) {
     // If user is admin and not already in admin pages, redirect to /admin
     if (user && isAdmin) {
       const isInAdminArea = location.pathname.startsWith('/admin');
+      const isInJoinArea = location.pathname.startsWith('/join');
+      const isInPublicArea = location.pathname.startsWith('/igreja');
+      const isExempt = isInAdminArea || isInJoinArea || isInPublicArea;
       
-      if (!isInAdminArea) {
+      if (!isExempt) {
         navigate('/admin', { replace: true });
       }
     }
@@ -39,8 +42,11 @@ export function AdminRedirect({ children }: AdminRedirectProps) {
   // If user is admin and not in admin area, don't render anything (redirect happening)
   if (user && isAdmin) {
     const isInAdminArea = location.pathname.startsWith('/admin');
+    const isInJoinArea = location.pathname.startsWith('/join');
+    const isInPublicArea = location.pathname.startsWith('/igreja');
+    const isExempt = isInAdminArea || isInJoinArea || isInPublicArea;
     
-    if (!isInAdminArea) {
+    if (!isExempt) {
       return null;
     }
   }
