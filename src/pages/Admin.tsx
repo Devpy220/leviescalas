@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Trash2, Users, Building2, ChevronDown, ChevronUp, Shield, LogOut, Church, Plus, Copy, Link as LinkIcon, Mail, ExternalLink, ChevronRight, Pencil, Upload, X, TrendingUp, Eye, Clock, CalendarDays, CalendarRange, Monitor } from 'lucide-react';
+import { Loader2, Trash2, Users, Building2, ChevronDown, ChevronUp, Shield, LogOut, Church, Plus, Copy, Link as LinkIcon, Mail, ExternalLink, ChevronRight, Pencil, Upload, X, TrendingUp, Eye, Clock, CalendarDays, CalendarRange, Monitor, Megaphone, Send } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
@@ -131,6 +133,16 @@ export default function Admin() {
   const [loginsMonth, setLoginsMonth] = useState(0);
   const [dailyLoginData, setDailyLoginData] = useState<LoginDailyData[]>([]);
   const [recentLogins, setRecentLogins] = useState<RecentLogin[]>([]);
+
+  // Broadcast state
+  const [broadcastTitle, setBroadcastTitle] = useState('');
+  const [broadcastMessage, setBroadcastMessage] = useState('');
+  const [broadcastChannels, setBroadcastChannels] = useState<string[]>(['inapp', 'email', 'push', 'telegram']);
+  const [sendingBroadcast, setSendingBroadcast] = useState(false);
+  const [showBroadcastConfirm, setShowBroadcastConfirm] = useState(false);
+  const [broadcastHistory, setBroadcastHistory] = useState<any[]>([]);
+  const [loadingBroadcasts, setLoadingBroadcasts] = useState(false);
+  const [broadcastsExpanded, setBroadcastsExpanded] = useState(false);
 
   useEffect(() => {
     if (authLoading || adminLoading) return;
@@ -600,6 +612,68 @@ export default function Admin() {
     window.location.href = '/admin-login';
   };
 
+  const fetchBroadcastHistory = async () => {
+    setLoadingBroadcasts(true);
+    try {
+      const { data, error } = await supabase
+        .from('admin_broadcasts')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      setBroadcastHistory(data || []);
+    } catch (error) {
+      console.error('Error fetching broadcasts:', error);
+    } finally {
+      setLoadingBroadcasts(false);
+    }
+  };
+
+  const handleSendBroadcast = async () => {
+    setShowBroadcastConfirm(false);
+    setSendingBroadcast(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('Sessão inválida');
+
+      const { data, error } = await supabase.functions.invoke('send-admin-broadcast', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: {
+          title: broadcastTitle.trim(),
+          message: broadcastMessage.trim(),
+          channels: broadcastChannels,
+        },
+      });
+
+      if (error) throw error;
+
+      const summary = [
+        `${data.recipients} in-app`,
+        broadcastChannels.includes('email') ? `${data.email_sent} e-mail` : null,
+        broadcastChannels.includes('push') ? `${data.push_sent} push` : null,
+        broadcastChannels.includes('telegram') ? `${data.telegram_sent} Telegram` : null,
+      ].filter(Boolean).join(', ');
+
+      toast({
+        title: '📢 Comunicado enviado!',
+        description: `Enviado para ${data.recipients} usuários: ${summary}`,
+      });
+
+      setBroadcastTitle('');
+      setBroadcastMessage('');
+      fetchBroadcastHistory();
+    } catch (error: any) {
+      console.error('Error sending broadcast:', error);
+      toast({
+        title: 'Erro',
+        description: error?.message || 'Não foi possível enviar o comunicado.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSendingBroadcast(false);
+    }
+  };
+
   if (authLoading || adminLoading || loadingDepts) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -653,6 +727,161 @@ export default function Admin() {
               </Button>
             </div>
           </CardHeader>
+        </Card>
+
+        {/* Comunicados LEVI */}
+        <Card className="mb-6">
+          <Collapsible>
+            <CollapsibleTrigger className="w-full">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Megaphone className="w-5 h-5 text-primary" />
+                    Comunicados LEVI
+                  </CardTitle>
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <CardDescription>Envie mensagens para todos os usuários do sistema</CardDescription>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="broadcast-title">Título</Label>
+                  <Input
+                    id="broadcast-title"
+                    placeholder="Ex: Atualização importante do sistema"
+                    value={broadcastTitle}
+                    onChange={(e) => setBroadcastTitle(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="broadcast-message">Mensagem</Label>
+                  <Textarea
+                    id="broadcast-message"
+                    placeholder="Digite o conteúdo do comunicado..."
+                    rows={4}
+                    value={broadcastMessage}
+                    onChange={(e) => setBroadcastMessage(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Canais de envio</Label>
+                  <div className="flex flex-wrap gap-4">
+                    {[
+                      { id: 'inapp', label: '📱 In-app' },
+                      { id: 'email', label: '📧 E-mail' },
+                      { id: 'push', label: '🔔 Push' },
+                      { id: 'telegram', label: '✈️ Telegram' },
+                    ].map((ch) => (
+                      <div key={ch.id} className="flex items-center gap-2">
+                        <Checkbox
+                          id={`ch-${ch.id}`}
+                          checked={broadcastChannels.includes(ch.id)}
+                          onCheckedChange={(checked) => {
+                            setBroadcastChannels(prev =>
+                              checked ? [...prev, ch.id] : prev.filter(c => c !== ch.id)
+                            );
+                          }}
+                        />
+                        <Label htmlFor={`ch-${ch.id}`} className="cursor-pointer text-sm">{ch.label}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <AlertDialog open={showBroadcastConfirm} onOpenChange={setShowBroadcastConfirm}>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      disabled={!broadcastTitle.trim() || !broadcastMessage.trim() || broadcastChannels.length === 0 || sendingBroadcast}
+                      className="gap-2"
+                      onClick={() => setShowBroadcastConfirm(true)}
+                    >
+                      {sendingBroadcast ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                      {sendingBroadcast ? 'Enviando...' : 'Enviar para todos'}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Confirmar envio do comunicado</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Você está prestes a enviar o comunicado <strong>"{broadcastTitle}"</strong> para <strong>{allProfiles.length} usuários</strong> pelos canais: {broadcastChannels.map(c => ({
+                          inapp: 'In-app',
+                          email: 'E-mail',
+                          push: 'Push',
+                          telegram: 'Telegram',
+                        }[c])).join(', ')}.
+                        <br /><br />
+                        Esta ação não pode ser desfeita.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleSendBroadcast}>
+                        Confirmar envio
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+
+                {/* Histórico */}
+                <div className="pt-4 border-t border-border">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-2 mb-2"
+                    onClick={() => {
+                      if (!broadcastsExpanded) fetchBroadcastHistory();
+                      setBroadcastsExpanded(!broadcastsExpanded);
+                    }}
+                  >
+                    {broadcastsExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    Histórico de comunicados
+                  </Button>
+                  {broadcastsExpanded && (
+                    loadingBroadcasts ? (
+                      <div className="flex justify-center py-4">
+                        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : broadcastHistory.length === 0 ? (
+                      <p className="text-sm text-muted-foreground py-2">Nenhum comunicado enviado ainda.</p>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Data</TableHead>
+                            <TableHead>Título</TableHead>
+                            <TableHead>Canais</TableHead>
+                            <TableHead>Destinatários</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {broadcastHistory.map((b) => (
+                            <TableRow key={b.id}>
+                              <TableCell className="text-sm">
+                                {format(new Date(b.created_at), "dd/MM/yy HH:mm", { locale: ptBR })}
+                              </TableCell>
+                              <TableCell className="text-sm font-medium">{b.title}</TableCell>
+                              <TableCell>
+                                <div className="flex gap-1 flex-wrap">
+                                  {(b.channels_used || []).map((ch: string) => (
+                                    <Badge key={ch} variant="secondary" className="text-xs">{ch}</Badge>
+                                  ))}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-sm">
+                                {b.recipients_count} | ✉️{b.email_sent} 🔔{b.push_sent} ✈️{b.telegram_sent}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )
+                  )}
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
         </Card>
 
         {/* Stats */}

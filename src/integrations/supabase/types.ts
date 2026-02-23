@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_broadcasts: {
+        Row: {
+          admin_user_id: string
+          channels_used: string[]
+          created_at: string
+          email_sent: number
+          id: string
+          message: string
+          push_sent: number
+          recipients_count: number
+          telegram_sent: number
+          title: string
+        }
+        Insert: {
+          admin_user_id: string
+          channels_used?: string[]
+          created_at?: string
+          email_sent?: number
+          id?: string
+          message: string
+          push_sent?: number
+          recipients_count?: number
+          telegram_sent?: number
+          title: string
+        }
+        Update: {
+          admin_user_id?: string
+          channels_used?: string[]
+          created_at?: string
+          email_sent?: number
+          id?: string
+          message?: string
+          push_sent?: number
+          recipients_count?: number
+          telegram_sent?: number
+          title?: string
+        }
+        Relationships: []
+      }
       announcement_reads: {
         Row: {
           announcement_id: string

@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.calendar-sync]
 verify_jwt = false
+
+[functions.send-admin-broadcast]
+verify_jwt = false
