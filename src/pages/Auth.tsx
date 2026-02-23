@@ -801,24 +801,36 @@ export default function Auth() {
     setIsLoading(true);
 
     try {
-      // Sem uma sessão de recuperação válida, updateUser vai falhar (e parece que “não redefiniu”).
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) {
+      console.log('[PasswordReset] Starting password reset flow...');
+
+      // Use refreshSession() instead of getSession() to ensure a fresh, valid token
+      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+      
+      console.log('[PasswordReset] refreshSession result:', {
+        hasSession: !!refreshData?.session,
+        hasUser: !!refreshData?.session?.user,
+        error: refreshError?.message,
+      });
+
+      if (refreshError || !refreshData?.session) {
+        console.error('[PasswordReset] No valid session after refresh:', refreshError);
         toast({
           variant: 'destructive',
           title: 'Sessão de recuperação ausente',
-          description: 'Abra novamente o link de recuperação do email e tente de novo.',
+          description: 'O link de recuperação expirou ou já foi usado. Solicite um novo link de recuperação.',
         });
+        setActiveTab('recovery');
         return;
       }
 
+      console.log('[PasswordReset] Session valid, calling updateUser...');
       const { error } = await supabase.auth.updateUser({
         password,
       });
 
       if (error) {
-        console.error('Reset password error:', error);
-        let friendly = 'Não foi possível redefinir sua senha. Tente novamente.';
+        console.error('[PasswordReset] updateUser error:', error);
+        let friendly = 'Não foi possível redefinir sua senha. Solicite um novo link de recuperação.';
 
         if (error.message.includes('expired')) {
           friendly = 'Link de recuperação expirado. Solicite um novo.';
@@ -836,29 +848,34 @@ export default function Auth() {
         return;
       }
 
+      console.log('[PasswordReset] Password updated successfully!');
+
       toast({
         title: 'Senha redefinida!',
         description: 'Sua senha foi alterada com sucesso.',
       });
 
-      // Clear the hash and redirect
       window.location.hash = '';
       setPendingPasswordReset(null);
       setActiveTab('login');
 
-      // Sign out to force fresh login with new password
-      await supabase.auth.signOut();
+      // Small delay to allow password update propagation
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Use scope: 'local' to avoid triggering TOKEN_REFRESHED redirect
+      console.log('[PasswordReset] Signing out locally...');
+      await supabase.auth.signOut({ scope: 'local' });
 
       toast({
         title: 'Faça login novamente',
         description: 'Use sua nova senha para entrar.',
       });
     } catch (err) {
-      console.error('Unexpected error:', err);
+      console.error('[PasswordReset] Unexpected error:', err);
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: 'Ocorreu um erro inesperado. Tente novamente.',
+        description: 'Ocorreu um erro inesperado. Solicite um novo link de recuperação.',
       });
     } finally {
       setIsLoading(false);
