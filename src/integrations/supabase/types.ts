@@ -24,6 +24,7 @@ export type Database = {
           message: string
           push_sent: number
           recipients_count: number
+          sms_sent: number
           telegram_sent: number
           title: string
         }
@@ -36,6 +37,7 @@ export type Database = {
           message: string
           push_sent?: number
           recipients_count?: number
+          sms_sent?: number
           telegram_sent?: number
           title: string
         }
@@ -48,6 +50,7 @@ export type Database = {
           message?: string
           push_sent?: number
           recipients_count?: number
+          sms_sent?: number
           telegram_sent?: number
           title?: string
         }

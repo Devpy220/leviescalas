@@ -6,6 +6,40 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const sendSms = async (apiKey: string, number: string, msg: string): Promise<boolean> => {
+  try {
+    // Clean number: remove non-digits
+    const cleanNumber = number.replace(/\D/g, '');
+    if (cleanNumber.length < 10) return false;
+
+    // Ensure country code
+    const fullNumber = cleanNumber.startsWith('55') ? cleanNumber : `55${cleanNumber}`;
+
+    const res = await fetch("https://api.smsdev.com.br/v1/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        key: apiKey,
+        type: 1,
+        number: fullNumber,
+        msg: msg.substring(0, 160),
+      }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      console.log(`SMS to ${fullNumber}:`, data);
+      return data.situacao === "OK" || data.codigo === "1";
+    } else {
+      console.error(`SMS error for ${fullNumber}:`, await res.text());
+      return false;
+    }
+  } catch (e) {
+    console.error(`SMS exception:`, e);
+    return false;
+  }
+};
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -15,6 +49,7 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const resendApiKey = Deno.env.get("RESEND_API_KEY") ?? "";
+    const smsdevApiKey = Deno.env.get("SMSDEV_API_KEY") ?? "";
 
     // Auth check
     const authHeader = req.headers.get("Authorization");
@@ -67,7 +102,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Fetch all profiles
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
-      .select("id, email, name");
+      .select("id, email, name, whatsapp");
 
     if (profilesError) throw profilesError;
 
@@ -77,6 +112,7 @@ const handler = async (req: Request): Promise<Response> => {
     let emailSent = 0;
     let pushSent = 0;
     let telegramSent = 0;
+    let smsSent = 0;
 
     // 1. In-app notifications
     if (channels.includes("inapp")) {
@@ -88,7 +124,6 @@ const handler = async (req: Request): Promise<Response> => {
         sent_at: new Date().toISOString(),
       }));
 
-      // Insert in batches of 100
       for (let i = 0; i < notifications.length; i += 100) {
         const batch = notifications.slice(i, i + 100);
         await supabase.from("notifications").insert(batch);
@@ -203,6 +238,18 @@ const handler = async (req: Request): Promise<Response> => {
       console.log(`Telegram: ${telegramSent} sent`);
     }
 
+    // 5. SMS via SMSDev
+    if (channels.includes("sms") && smsdevApiKey) {
+      const smsRecipients = recipients.filter((p) => p.whatsapp);
+      const smsMsg = `LEVI: ${title} - ${message}`.substring(0, 160);
+
+      for (const profile of smsRecipients) {
+        const sent = await sendSms(smsdevApiKey, profile.whatsapp, smsMsg);
+        if (sent) smsSent++;
+      }
+      console.log(`SMS: ${smsSent}/${smsRecipients.length} sent`);
+    }
+
     // Save broadcast record
     await supabase.from("admin_broadcasts").insert({
       admin_user_id: adminUserId,
@@ -213,6 +260,7 @@ const handler = async (req: Request): Promise<Response> => {
       email_sent: emailSent,
       push_sent: pushSent,
       telegram_sent: telegramSent,
+      sms_sent: smsSent,
     });
 
     return new Response(
@@ -222,6 +270,7 @@ const handler = async (req: Request): Promise<Response> => {
         email_sent: emailSent,
         push_sent: pushSent,
         telegram_sent: telegramSent,
+        sms_sent: smsSent,
       }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
