@@ -1,104 +1,62 @@
 
 
-## Comunicação Global do Admin (LEVI) com Todos os Usuários
+## Redesign Premium dos E-mails e Paginas HTML do LEVI
 
-### Visão Geral
+Aplicar o design dark/premium que voce compartilhou em todos os templates HTML do sistema: e-mails de notificacao de escala, e-mails de broadcast, e a pagina de confirmacao de escala.
 
-Criar uma seção no painel Admin que permita enviar mensagens para **todos os usuários cadastrados** simultaneamente, usando o nome **LEVI** como remetente. Os canais de envio serão:
+### Arquivos a Modificar
 
-1. **In-app** -- notificação dentro do app (sino de notificações)
-2. **E-mail** -- via Resend API (já configurada)
-3. **Telegram** -- para usuários vinculados (já configurado)
-4. **Push** -- notificação push via PushAlert (já configurado)
+**1. `supabase/functions/send-schedule-notification/index.ts`**
+- Redesign do template de **nova escala** (linhas 304-372): card dark com header gradiente indigo-violeta-rosa, secao de avatar com nome do membro, grid 2x2 com dia/dia da semana/mes/ano, linhas de departamento/setor/funcao com icones coloridos, botoes de confirmacao estilizados, footer dark
+- Redesign do template de **escala alterada** (linhas 378-419): mesmo estilo dark com header em gradiente amber/laranja, mostrando data antiga vs nova no grid
 
-**Nota sobre WhatsApp:** O sistema não utiliza mais WhatsApp para notificações (foi substituído por push nativo). SMS via Zenvia aguarda credenciais. Portanto, WhatsApp não será incluído neste momento.
+**2. `supabase/functions/send-admin-broadcast/index.ts`**
+- Redesign do template de e-mail de broadcast (linhas 150-163): card dark com header gradiente, badge "Comunicado Oficial", titulo e mensagem estilizados, footer LEVI
 
-### O que será criado
+**3. `supabase/functions/confirm-schedule/index.ts`**
+- Redesign da funcao `generateHtmlResponse` (linhas 173-266): pagina de resposta dark com o mesmo estilo de card, header gradiente dinamico por tipo (success/declined/error/warning/info), layout premium
 
-**1. Nova Edge Function: `send-admin-broadcast`**
+### Detalhes do Design
 
-Uma função backend que:
-- Valida que o chamador possui role `admin`
-- Busca todos os perfis com e-mail
-- Insere notificações in-app para cada usuário
-- Envia e-mail em lote via Resend (remetente: "LEVI")
-- Dispara push notifications para todos
-- Envia Telegram para usuários vinculados
-- Retorna contadores de sucesso por canal
+O design segue o modelo compartilhado, adaptado para compatibilidade com clientes de e-mail:
+- **Background**: escuro (#0f0f13 para body, #16161e para card)
+- **Header**: gradiente 135deg de #4f46e5 (indigo) para #7c3aed (violeta) para #db2777 (rosa) -- variando por contexto
+- **Badge**: pill com fundo translucido, texto uppercase com dot animado (apenas na pagina HTML, sem animacao no e-mail)
+- **Avatar**: circulo gradiente com inicial do nome do usuario
+- **Info Grid**: 2 colunas com icones, labels uppercase cinza (#5a5a7a), valores claros (#c8c8e0), destaques em roxo (#a78bfa)
+- **Info Rows**: icone em caixa colorida (roxo/rosa/azul) + label + valor
+- **Footer**: fundo mais escuro (#12121a), texto cinza, branding LEVI
+- **Botoes**: gradiente indigo-violeta, border-radius 10px
+- **Fontes**: system fonts (Apple, Segoe UI, Roboto) -- Google Fonts nao e confiavel em e-mail
 
-**2. Nova tabela: `admin_broadcasts`**
+### Adaptacoes para E-mail
 
-Para manter histórico das mensagens enviadas:
-- `id`, `admin_user_id`, `title`, `message`, `channels_used` (array), `recipients_count`, `created_at`
+Como clientes de e-mail (Gmail, Outlook) nao suportam CSS moderno:
+- Todo CSS sera **inline** (atributos style)
+- Layout com **tabelas** em vez de flexbox/grid
+- Sem `animation`, `backdrop-filter`, `box-shadow` complexo
+- Cores solidas em vez de gradientes onde necessario (fallback)
+- `background-color` como fallback para `background: linear-gradient`
 
-**3. UI no painel Admin (Admin.tsx)**
+### Para a Pagina HTML (confirm-schedule)
 
-Uma nova seção colapsável "Comunicados LEVI" com:
-- Campo de título da mensagem
-- Campo de corpo da mensagem (textarea)
-- Checkboxes para selecionar canais (In-app, E-mail, Push, Telegram)
-- Botão "Enviar para todos"
-- Confirmação via AlertDialog antes do envio
-- Histórico dos últimos comunicados enviados
+Como e uma pagina web completa (nao e-mail), o design completo sera aplicado:
+- Animacao slideIn do card
+- Badge com dot pulsante
+- Hover effects nas celulas de info
+- Box-shadow completo
+- Google Fonts (DM Sans, Playfair Display)
 
-### Detalhes Técnicos
+### Contextos de Cor por Tipo
 
-**Tabela `admin_broadcasts` (migration SQL):**
+| Contexto | Header Gradiente | Uso |
+|---|---|---|
+| Nova escala | indigo -> violeta -> rosa | E-mail de nova escala |
+| Escala alterada | amber -> laranja | E-mail de alteracao |
+| Broadcast | indigo -> violeta -> rosa | E-mail de comunicado |
+| Confirmado | emerald -> teal | Pagina de confirmacao |
+| Recusado | amber -> laranja | Pagina de recusa |
+| Erro | red -> rose | Pagina de erro |
+| Aviso | amber -> yellow | Pagina de aviso |
+| Info | blue -> indigo | Pagina de info |
 
-```text
-CREATE TABLE public.admin_broadcasts (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  admin_user_id uuid NOT NULL,
-  title text NOT NULL,
-  message text NOT NULL,
-  channels_used text[] NOT NULL DEFAULT '{}',
-  recipients_count integer NOT NULL DEFAULT 0,
-  email_sent integer NOT NULL DEFAULT 0,
-  push_sent integer NOT NULL DEFAULT 0,
-  telegram_sent integer NOT NULL DEFAULT 0,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-
-ALTER TABLE public.admin_broadcasts ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Admins can manage broadcasts"
-  ON public.admin_broadcasts FOR ALL
-  USING (public.has_role(auth.uid(), 'admin'));
-```
-
-**Edge Function `send-admin-broadcast/index.ts`:**
-
-- Recebe: `{ title, message, channels: string[] }` (ex: `["inapp", "email", "push", "telegram"]`)
-- Valida admin via `has_role` RPC
-- Busca todos os profiles (id, email, name) usando service role
-- Para cada canal selecionado:
-  - **inapp**: Insert em `notifications` com `type: 'admin_broadcast'`, `message: "LEVI: {title}"`, sem `department_id`
-  - **email**: POST para Resend API com `from: "LEVI <onboarding@resend.dev>"`, HTML formatado
-  - **push**: Chama `send-push-notification` com todos os user IDs, título "📢 LEVI" 
-  - **telegram**: Chama `send-telegram-notification` para cada usuário vinculado
-- Insere registro em `admin_broadcasts` com contadores
-- Retorna `{ success, recipients, email_sent, push_sent, telegram_sent }`
-
-**Config (supabase/config.toml):**
-
-```text
-[functions.send-admin-broadcast]
-verify_jwt = false
-```
-(Validação de admin feita no código)
-
-**UI no Admin.tsx:**
-
-- Seção colapsável com ícone de megafone
-- Formulário com campos de título e mensagem
-- 4 checkboxes (In-app, E-mail, Push, Telegram) -- todos marcados por padrão
-- AlertDialog de confirmação mostrando contagem de usuários e canais selecionados
-- Após envio, toast de sucesso com resumo (ex: "Enviado para 45 usuários: 45 in-app, 40 e-mail, 12 push, 8 Telegram")
-- Tabela colapsável com histórico de broadcasts anteriores
-
-### Arquivos a Modificar/Criar
-
-1. **Criar** `supabase/functions/send-admin-broadcast/index.ts`
-2. **Modificar** `supabase/config.toml` -- adicionar config da nova function
-3. **Modificar** `src/pages/Admin.tsx` -- adicionar seção de comunicados
-4. **Migration SQL** -- criar tabela `admin_broadcasts`
