@@ -175,15 +175,14 @@ function generateHtmlResponse(
   message: string,
   type: "success" | "declined" | "error" | "warning" | "info"
 ): Response {
-  const colors = {
-    success: { bg: "#10B981", icon: "✅", gradient: "from-emerald-500 to-teal-600" },
-    declined: { bg: "#F59E0B", icon: "📋", gradient: "from-amber-500 to-orange-600" },
-    error: { bg: "#EF4444", icon: "❌", gradient: "from-red-500 to-rose-600" },
-    warning: { bg: "#F59E0B", icon: "⚠️", gradient: "from-amber-500 to-yellow-600" },
-    info: { bg: "#3B82F6", icon: "ℹ️", gradient: "from-blue-500 to-indigo-600" },
+  const themes = {
+    success:  { gradient: "linear-gradient(135deg, #10b981 0%, #14b8a6 100%)", bg: "#10b981", icon: "✅", badge: "CONFIRMADO" },
+    declined: { gradient: "linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)", bg: "#f59e0b", icon: "📋", badge: "REGISTRADO" },
+    error:    { gradient: "linear-gradient(135deg, #ef4444 0%, #e11d48 100%)", bg: "#ef4444", icon: "❌", badge: "ERRO" },
+    warning:  { gradient: "linear-gradient(135deg, #f59e0b 0%, #eab308 100%)", bg: "#f59e0b", icon: "⚠️", badge: "AVISO" },
+    info:     { gradient: "linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)", bg: "#3b82f6", icon: "ℹ️", badge: "INFO" },
   };
-
-  const color = colors[type];
+  const t = themes[type];
 
   const html = `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -191,67 +190,45 @@ function generateHtmlResponse(
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${title} - LEVI Escalas</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      padding: 20px;
-    }
-    .card {
-      background: white;
-      border-radius: 24px;
-      padding: 40px;
-      max-width: 420px;
-      width: 100%;
-      text-align: center;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    }
-    .icon {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      background: ${color.bg};
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 24px;
-      font-size: 40px;
-    }
-    h1 {
-      color: #1F2937;
-      font-size: 24px;
-      margin-bottom: 16px;
-      font-weight: 700;
-    }
-    p {
-      color: #6B7280;
-      font-size: 16px;
-      line-height: 1.6;
-      margin-bottom: 24px;
-    }
-    .logo {
-      font-size: 14px;
-      color: #9CA3AF;
-      margin-top: 24px;
-      padding-top: 24px;
-      border-top: 1px solid #E5E7EB;
-    }
-    .logo strong {
-      color: #6366F1;
-    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{min-height:100vh;background:#0f0f13;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding:40px 20px}
+    .card{width:420px;background:#16161e;border:1px solid #2a2a38;border-radius:20px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,0.6),0 0 0 1px rgba(255,255,255,0.04);animation:slideIn .6s cubic-bezier(.16,1,.3,1) both}
+    @keyframes slideIn{from{opacity:0;transform:translateY(30px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+    .card-header{background:${t.bg};background:${t.gradient};padding:28px 28px 22px;position:relative;overflow:hidden}
+    .card-header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.08)}
+    .badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.18);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.25);border-radius:30px;padding:5px 14px;font-size:11px;font-weight:600;color:#fff;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:18px}
+    .badge .dot{width:7px;height:7px;border-radius:50%;background:#86efac;animation:pulse 1.5s ease-in-out infinite}
+    @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
+    .htitle{font-family:'Playfair Display',serif;font-size:26px;color:#fff;line-height:1.2;margin-bottom:4px}
+    .hsub{font-size:13px;color:rgba(255,255,255,0.65);font-weight:300}
+    .icon-row{display:flex;align-items:center;justify-content:center;padding:32px 28px 8px}
+    .icon-circle{width:72px;height:72px;border-radius:50%;background:${t.bg};background:${t.gradient};display:flex;align-items:center;justify-content:center;font-size:36px;border:3px solid #2a2a38}
+    .msg-area{padding:20px 28px 28px;text-align:center}
+    .msg-area h1{font-family:'Playfair Display',serif;font-size:22px;color:#e8e8f0;margin-bottom:12px}
+    .msg-area p{font-size:14px;color:#8a8aa0;line-height:1.6}
+    .card-footer{padding:16px 28px;display:flex;align-items:center;justify-content:space-between;background:#12121a}
+    .footer-text{font-size:11px;color:#3a3a5a}
+    .footer-brand{color:#6366f1;font-weight:600}
   </style>
 </head>
 <body>
   <div class="card">
-    <div class="icon">${color.icon}</div>
-    <h1>${title}</h1>
-    <p>${message}</p>
-    <div class="logo">Powered by <strong>LEVI</strong> - Sistema de Escalas</div>
+    <div class="card-header">
+      <div class="badge"><span class="dot"></span> ${t.badge}</div>
+      <div class="htitle">${title}</div>
+      <div class="hsub">LEVI — Sistema de Escalas</div>
+    </div>
+    <div class="icon-row"><div class="icon-circle">${t.icon}</div></div>
+    <div class="msg-area">
+      <h1>${title}</h1>
+      <p>${message}</p>
+    </div>
+    <div class="card-footer">
+      <span class="footer-text">Powered by <span class="footer-brand">LEVI</span></span>
+      <span class="footer-text">Sistema de Escalas</span>
+    </div>
   </div>
 </body>
 </html>`;

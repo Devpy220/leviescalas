@@ -301,72 +301,145 @@ const handler = async (req: Request): Promise<Response> => {
               </div>
       ` : '';
 
+      // Parse date parts for grid
+      const dateObj = new Date(date + 'T00:00:00');
+      const dayNum = dateObj.getDate().toString();
+      const weekday = dateObj.toLocaleDateString('pt-BR', { weekday: 'long' });
+      const monthName = dateObj.toLocaleDateString('pt-BR', { month: 'long' });
+      const yearNum = dateObj.getFullYear().toString();
+      const initial = profile.name ? profile.name.charAt(0).toUpperCase() : '?';
+
+      const confirmBtnsHtml = confirmUrl && declineUrl ? `
+        <tr><td style="padding: 24px 28px 8px; text-align: center;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center"><tr>
+            <td style="padding-right:8px;">
+              <a href="${confirmUrl}" style="display:inline-block;background-color:#22c55e;color:#fff;text-decoration:none;padding:12px 24px;border-radius:10px;font-weight:600;font-size:14px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">✅ Confirmar</a>
+            </td>
+            <td style="padding-left:8px;">
+              <a href="${declineUrl}" style="display:inline-block;background-color:#f59e0b;color:#fff;text-decoration:none;padding:12px 24px;border-radius:10px;font-weight:600;font-size:14px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">❌ Não Poderei</a>
+            </td>
+          </tr></table>
+        </td></tr>
+      ` : '';
+
       htmlContent = `
         <!DOCTYPE html>
         <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f4f5; margin: 0; padding: 20px; }
-            .container { max-width: 500px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-            .header { background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); color: white; padding: 24px; text-align: center; }
-            .header h1 { margin: 0; font-size: 24px; }
-            .content { padding: 24px; }
-            .greeting { font-size: 18px; color: #18181b; margin-bottom: 16px; }
-            .info-card { background: #f4f4f5; border-radius: 12px; padding: 16px; margin: 16px 0; }
-            .info-row { display: flex; align-items: center; margin: 8px 0; }
-            .info-icon { font-size: 20px; margin-right: 12px; }
-            .info-text { color: #3f3f46; }
-            .notes { background: #fef3c7; border-radius: 8px; padding: 12px; margin-top: 16px; }
-            .notes-title { font-weight: 600; color: #92400e; margin-bottom: 4px; }
-            .footer { text-align: center; padding: 16px; color: #71717a; font-size: 14px; border-top: 1px solid #e4e4e7; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>📅 Nova Escala</h1>
-            </div>
-            <div class="content">
-              <p class="greeting">Olá, <strong>${escapeHtml(profile.name)}</strong>!</p>
-              <p style="color: #52525b;">Você foi escalado para o departamento <strong>${escapeHtml(department_name)}</strong>:</p>
-              
-              <div class="info-card">
-                <div class="info-row">
-                  <span class="info-icon">📆</span>
-                  <span class="info-text"><strong>Data:</strong> ${formattedDate}</span>
-                </div>
-                <div class="info-row">
-                  <span class="info-icon">⏰</span>
-                  <span class="info-text"><strong>Horário:</strong> ${formattedTimeStart} às ${formattedTimeEnd}</span>
-                </div>
-                ${sector_name ? `
-                <div class="info-row">
-                  <span class="info-icon">📍</span>
-                  <span class="info-text"><strong>Setor:</strong> ${escapeHtml(sector_name)}</span>
-                </div>
-                ` : ''}
-                ${assignment_role_label ? `
-                <div class="info-row">
-                  <span class="info-icon">👤</span>
-                  <span class="info-text"><strong>Função:</strong> ${escapeHtml(assignment_role_label)}</span>
-                </div>
-                ` : ''}
-              </div>
-              
-              ${notes ? `
-              <div class="notes">
-                <div class="notes-title">📝 Observações:</div>
-                <p style="margin: 0; color: #78350f;">${escapeHtml(notes)}</p>
-              </div>
+        <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+        <body style="margin:0;padding:20px;background-color:#0f0f13;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td align="center">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="420" style="max-width:420px;background-color:#16161e;border:1px solid #2a2a38;border-radius:20px;overflow:hidden;">
+              <!-- Header -->
+              <tr><td style="background-color:#4f46e5;background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 50%,#db2777 100%);padding:28px 28px 22px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td>
+                  <span style="display:inline-block;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.25);border-radius:30px;padding:5px 14px;font-size:11px;font-weight:600;color:#fff;letter-spacing:1.2px;text-transform:uppercase;">📅 NOVA ESCALA</span>
+                </td></tr><tr><td style="padding-top:14px;">
+                  <span style="font-size:24px;color:#fff;font-weight:700;line-height:1.2;">${escapeHtml(department_name)}</span><br/>
+                  <span style="font-size:13px;color:rgba(255,255,255,0.65);font-weight:300;">Você foi escalado para servir</span>
+                </td></tr></table>
+              </td></tr>
+              <!-- Avatar -->
+              <tr><td style="padding:24px 28px 16px;border-bottom:1px solid #22222e;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+                  <td style="width:50px;height:50px;border-radius:50%;background-color:#4f46e5;background:linear-gradient(135deg,#4f46e5,#db2777);text-align:center;vertical-align:middle;border:2px solid #2a2a38;">
+                    <span style="color:#fff;font-size:20px;font-weight:700;line-height:50px;">${initial}</span>
+                  </td>
+                  <td style="padding-left:16px;">
+                    <span style="display:block;font-size:10px;color:#5a5a7a;letter-spacing:1.2px;text-transform:uppercase;font-weight:600;">VOLUNTÁRIO</span>
+                    <span style="display:block;font-size:17px;font-weight:600;color:#e8e8f0;">${escapeHtml(profile.name)}</span>
+                  </td>
+                </tr></table>
+              </td></tr>
+              <!-- Info Grid -->
+              <tr><td style="padding:0;">
+                <table role="presentation" cellpadding="0" cellspacing="1" border="0" width="100%" style="background-color:#22222e;">
+                  <tr>
+                    <td width="50%" style="background-color:#16161e;padding:18px 22px;">
+                      <span style="font-size:18px;display:block;margin-bottom:6px;">📅</span>
+                      <span style="font-size:9px;letter-spacing:1.4px;text-transform:uppercase;font-weight:700;color:#5a5a7a;display:block;margin-bottom:4px;">DIA</span>
+                      <span style="font-size:14px;font-weight:600;color:#a78bfa;">${dayNum}</span>
+                    </td>
+                    <td width="50%" style="background-color:#16161e;padding:18px 22px;">
+                      <span style="font-size:18px;display:block;margin-bottom:6px;">📆</span>
+                      <span style="font-size:9px;letter-spacing:1.4px;text-transform:uppercase;font-weight:700;color:#5a5a7a;display:block;margin-bottom:4px;">DIA DA SEMANA</span>
+                      <span style="font-size:14px;font-weight:500;color:#c8c8e0;">${weekday}</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td width="50%" style="background-color:#16161e;padding:18px 22px;">
+                      <span style="font-size:18px;display:block;margin-bottom:6px;">🗓️</span>
+                      <span style="font-size:9px;letter-spacing:1.4px;text-transform:uppercase;font-weight:700;color:#5a5a7a;display:block;margin-bottom:4px;">MÊS</span>
+                      <span style="font-size:14px;font-weight:500;color:#c8c8e0;">${monthName}</span>
+                    </td>
+                    <td width="50%" style="background-color:#16161e;padding:18px 22px;">
+                      <span style="font-size:18px;display:block;margin-bottom:6px;">⏰</span>
+                      <span style="font-size:9px;letter-spacing:1.4px;text-transform:uppercase;font-weight:700;color:#5a5a7a;display:block;margin-bottom:4px;">HORÁRIO</span>
+                      <span style="font-size:14px;font-weight:600;color:#a78bfa;">${formattedTimeStart} - ${formattedTimeEnd}</span>
+                    </td>
+                  </tr>
+                </table>
+              </td></tr>
+              <!-- Department -->
+              <tr><td style="padding:18px 22px;border-bottom:1px solid #22222e;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+                  <td style="width:40px;height:40px;border-radius:10px;background-color:rgba(139,92,246,0.15);text-align:center;vertical-align:middle;">
+                    <span style="font-size:18px;line-height:40px;">🏢</span>
+                  </td>
+                  <td style="padding-left:14px;">
+                    <span style="display:block;font-size:9px;letter-spacing:1.4px;text-transform:uppercase;font-weight:700;color:#5a5a7a;margin-bottom:3px;">DEPARTAMENTO</span>
+                    <span style="font-size:14px;font-weight:500;color:#c8c8e0;">${escapeHtml(department_name)}</span>
+                  </td>
+                </tr></table>
+              </td></tr>
+              ${sector_name ? `
+              <tr><td style="padding:18px 22px;border-bottom:1px solid #22222e;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+                  <td style="width:40px;height:40px;border-radius:10px;background-color:rgba(59,130,246,0.15);text-align:center;vertical-align:middle;">
+                    <span style="font-size:18px;line-height:40px;">📌</span>
+                  </td>
+                  <td style="padding-left:14px;">
+                    <span style="display:block;font-size:9px;letter-spacing:1.4px;text-transform:uppercase;font-weight:700;color:#5a5a7a;margin-bottom:3px;">SETOR</span>
+                    <span style="font-size:14px;font-weight:500;color:#c8c8e0;">${escapeHtml(sector_name)}</span>
+                  </td>
+                </tr></table>
+              </td></tr>
               ` : ''}
-
-              ${confirmationButtons}
-            </div>
-            <div class="footer">
-              Enviado pelo LEVI - Sistema de Escalas
-            </div>
-          </div>
+              ${assignment_role_label ? `
+              <tr><td style="padding:18px 22px;border-bottom:1px solid #22222e;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+                  <td style="width:40px;height:40px;border-radius:10px;background-color:rgba(219,39,119,0.15);text-align:center;vertical-align:middle;">
+                    <span style="font-size:18px;line-height:40px;">💼</span>
+                  </td>
+                  <td style="padding-left:14px;">
+                    <span style="display:block;font-size:9px;letter-spacing:1.4px;text-transform:uppercase;font-weight:700;color:#5a5a7a;margin-bottom:3px;">FUNÇÃO</span>
+                    <span style="font-size:14px;font-weight:500;color:#c8c8e0;">${escapeHtml(assignment_role_label)}</span>
+                  </td>
+                </tr></table>
+              </td></tr>
+              ` : ''}
+              ${notes ? `
+              <tr><td style="padding:18px 22px;border-bottom:1px solid #22222e;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+                  <td style="width:40px;height:40px;border-radius:10px;background-color:rgba(251,191,36,0.15);text-align:center;vertical-align:middle;">
+                    <span style="font-size:18px;line-height:40px;">📝</span>
+                  </td>
+                  <td style="padding-left:14px;">
+                    <span style="display:block;font-size:9px;letter-spacing:1.4px;text-transform:uppercase;font-weight:700;color:#5a5a7a;margin-bottom:3px;">OBSERVAÇÕES</span>
+                    <span style="font-size:14px;font-weight:500;color:#c8c8e0;">${escapeHtml(notes)}</span>
+                  </td>
+                </tr></table>
+              </td></tr>
+              ` : ''}
+              ${confirmBtnsHtml}
+              <!-- Footer -->
+              <tr><td style="padding:16px 28px;background-color:#12121a;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>
+                  <td style="font-size:11px;color:#3a3a5a;">Powered by <span style="color:#6366f1;font-weight:600;">LEVI</span></td>
+                  <td align="right" style="font-size:11px;color:#3a3a5a;">Sistema de Escalas</td>
+                </tr></table>
+              </td></tr>
+            </table>
+          </td></tr></table>
         </body>
         </html>
       `;
@@ -375,45 +448,76 @@ const handler = async (req: Request): Promise<Response> => {
       const formattedOldDate = old_date ? formatDate(old_date) : '';
       subject = `⚠️ Alteração de Escala - ${department_name}`;
       whatsappMessage = `⚠️ *Alteração de Escala - ${department_name}*\n\nOlá, ${profile.name}!\n\nSua escala foi alterada:\n❌ *De:* ${formattedOldDate}\n✅ *Para:* ${formattedDate}\n⏰ *Horário:* ${formattedTimeStart} às ${formattedTimeEnd}\n\n_LEVI - Sistema de Escalas_`;
+      const oldDateObj = old_date ? new Date(old_date + 'T00:00:00') : null;
+      const newDateObj = new Date(date + 'T00:00:00');
+      const initial = profile.name ? profile.name.charAt(0).toUpperCase() : '?';
+
       htmlContent = `
         <!DOCTYPE html>
         <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f4f5; margin: 0; padding: 20px; }
-            .container { max-width: 500px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-            .header { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 24px; text-align: center; }
-            .header h1 { margin: 0; font-size: 24px; }
-            .content { padding: 24px; }
-            .greeting { font-size: 18px; color: #18181b; margin-bottom: 16px; }
-            .change-card { background: #fef3c7; border-radius: 12px; padding: 16px; margin: 16px 0; }
-            .old-date { text-decoration: line-through; color: #dc2626; }
-            .new-date { color: #16a34a; font-weight: 600; }
-            .arrow { font-size: 24px; margin: 8px 0; text-align: center; }
-            .footer { text-align: center; padding: 16px; color: #71717a; font-size: 14px; border-top: 1px solid #e4e4e7; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>⚠️ Alteração de Escala</h1>
-            </div>
-            <div class="content">
-              <p class="greeting">Olá, <strong>${escapeHtml(profile.name)}</strong>!</p>
-              <p style="color: #52525b;">Sua escala no departamento <strong>${escapeHtml(department_name)}</strong> foi alterada:</p>
-              
-              <div class="change-card">
-                <p class="old-date">❌ De: ${formattedOldDate}</p>
-                <div class="arrow">⬇️</div>
-                <p class="new-date">✅ Para: ${formattedDate}</p>
-                <p style="margin-top: 12px; color: #78350f;">⏰ Horário: ${formattedTimeStart} às ${formattedTimeEnd}</p>
-              </div>
-            </div>
-            <div class="footer">
-              Enviado pelo LEVI - Sistema de Escalas
-            </div>
-          </div>
+        <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+        <body style="margin:0;padding:20px;background-color:#0f0f13;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td align="center">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="420" style="max-width:420px;background-color:#16161e;border:1px solid #2a2a38;border-radius:20px;overflow:hidden;">
+              <!-- Header amber -->
+              <tr><td style="background-color:#f59e0b;background:linear-gradient(135deg,#f59e0b 0%,#ea580c 100%);padding:28px 28px 22px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td>
+                  <span style="display:inline-block;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.25);border-radius:30px;padding:5px 14px;font-size:11px;font-weight:600;color:#fff;letter-spacing:1.2px;text-transform:uppercase;">⚠️ ALTERAÇÃO</span>
+                </td></tr><tr><td style="padding-top:14px;">
+                  <span style="font-size:24px;color:#fff;font-weight:700;line-height:1.2;">Escala Alterada</span><br/>
+                  <span style="font-size:13px;color:rgba(255,255,255,0.65);font-weight:300;">${escapeHtml(department_name)}</span>
+                </td></tr></table>
+              </td></tr>
+              <!-- Avatar -->
+              <tr><td style="padding:24px 28px 16px;border-bottom:1px solid #22222e;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+                  <td style="width:50px;height:50px;border-radius:50%;background-color:#f59e0b;text-align:center;vertical-align:middle;border:2px solid #2a2a38;">
+                    <span style="color:#fff;font-size:20px;font-weight:700;line-height:50px;">${initial}</span>
+                  </td>
+                  <td style="padding-left:16px;">
+                    <span style="display:block;font-size:10px;color:#5a5a7a;letter-spacing:1.2px;text-transform:uppercase;font-weight:600;">VOLUNTÁRIO</span>
+                    <span style="display:block;font-size:17px;font-weight:600;color:#e8e8f0;">${escapeHtml(profile.name)}</span>
+                  </td>
+                </tr></table>
+              </td></tr>
+              <!-- Old vs New -->
+              <tr><td style="padding:0;">
+                <table role="presentation" cellpadding="0" cellspacing="1" border="0" width="100%" style="background-color:#22222e;">
+                  <tr>
+                    <td width="50%" style="background-color:#16161e;padding:18px 22px;">
+                      <span style="font-size:18px;display:block;margin-bottom:6px;">❌</span>
+                      <span style="font-size:9px;letter-spacing:1.4px;text-transform:uppercase;font-weight:700;color:#5a5a7a;display:block;margin-bottom:4px;">DATA ANTERIOR</span>
+                      <span style="font-size:14px;font-weight:500;color:#ef4444;text-decoration:line-through;">${formattedOldDate}</span>
+                    </td>
+                    <td width="50%" style="background-color:#16161e;padding:18px 22px;">
+                      <span style="font-size:18px;display:block;margin-bottom:6px;">✅</span>
+                      <span style="font-size:9px;letter-spacing:1.4px;text-transform:uppercase;font-weight:700;color:#5a5a7a;display:block;margin-bottom:4px;">NOVA DATA</span>
+                      <span style="font-size:14px;font-weight:600;color:#22c55e;">${formattedDate}</span>
+                    </td>
+                  </tr>
+                </table>
+              </td></tr>
+              <!-- Horário -->
+              <tr><td style="padding:18px 22px;border-bottom:1px solid #22222e;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+                  <td style="width:40px;height:40px;border-radius:10px;background-color:rgba(139,92,246,0.15);text-align:center;vertical-align:middle;">
+                    <span style="font-size:18px;line-height:40px;">⏰</span>
+                  </td>
+                  <td style="padding-left:14px;">
+                    <span style="display:block;font-size:9px;letter-spacing:1.4px;text-transform:uppercase;font-weight:700;color:#5a5a7a;margin-bottom:3px;">HORÁRIO</span>
+                    <span style="font-size:14px;font-weight:600;color:#a78bfa;">${formattedTimeStart} às ${formattedTimeEnd}</span>
+                  </td>
+                </tr></table>
+              </td></tr>
+              <!-- Footer -->
+              <tr><td style="padding:16px 28px;background-color:#12121a;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>
+                  <td style="font-size:11px;color:#3a3a5a;">Powered by <span style="color:#6366f1;font-weight:600;">LEVI</span></td>
+                  <td align="right" style="font-size:11px;color:#3a3a5a;">Sistema de Escalas</td>
+                </tr></table>
+              </td></tr>
+            </table>
+          </td></tr></table>
         </body>
         </html>
       `;

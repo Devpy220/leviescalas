@@ -148,18 +148,38 @@ const handler = async (req: Request): Promise<Response> => {
               to: [profile.email],
               subject: `📢 LEVI: ${title}`,
               html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                  <div style="background: #7c3aed; color: white; padding: 16px 24px; border-radius: 8px 8px 0 0;">
-                    <h1 style="margin: 0; font-size: 20px;">📢 Comunicado LEVI</h1>
-                  </div>
-                  <div style="background: #f9fafb; padding: 24px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
-                    <p style="color: #374151; margin: 0 0 8px;">Olá, <strong>${profile.name || "voluntário"}</strong>!</p>
-                    <h2 style="color: #1f2937; margin: 16px 0 8px;">${title}</h2>
-                    <p style="color: #4b5563; white-space: pre-line;">${message}</p>
-                    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
-                    <p style="color: #9ca3af; font-size: 12px; margin: 0;">Este é um comunicado oficial do sistema LEVI Escalas.</p>
-                  </div>
-                </div>
+                <!DOCTYPE html>
+                <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+                <body style="margin:0;padding:20px;background-color:#0f0f13;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td align="center">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="420" style="max-width:420px;background-color:#16161e;border:1px solid #2a2a38;border-radius:20px;overflow:hidden;">
+                      <tr><td style="background-color:#4f46e5;background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 50%,#db2777 100%);padding:28px 28px 22px;">
+                        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td>
+                          <span style="display:inline-block;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.25);border-radius:30px;padding:5px 14px;font-size:11px;font-weight:600;color:#fff;letter-spacing:1.2px;text-transform:uppercase;">📢 COMUNICADO OFICIAL</span>
+                        </td></tr><tr><td style="padding-top:14px;">
+                          <span style="font-size:24px;color:#fff;font-weight:700;line-height:1.2;">LEVI Escalas</span><br/>
+                          <span style="font-size:13px;color:rgba(255,255,255,0.65);font-weight:300;">Mensagem importante para você</span>
+                        </td></tr></table>
+                      </td></tr>
+                      <tr><td style="padding:24px 28px 16px;border-bottom:1px solid #22222e;">
+                        <span style="display:block;font-size:10px;color:#5a5a7a;letter-spacing:1.2px;text-transform:uppercase;font-weight:600;margin-bottom:4px;">DESTINATÁRIO</span>
+                        <span style="font-size:17px;font-weight:600;color:#e8e8f0;">${profile.name || "Voluntário"}</span>
+                      </td></tr>
+                      <tr><td style="padding:22px 28px;">
+                        <span style="display:block;font-size:9px;letter-spacing:1.4px;text-transform:uppercase;font-weight:700;color:#5a5a7a;margin-bottom:8px;">ASSUNTO</span>
+                        <span style="display:block;font-size:18px;font-weight:700;color:#e8e8f0;margin-bottom:16px;">${title}</span>
+                        <span style="display:block;font-size:9px;letter-spacing:1.4px;text-transform:uppercase;font-weight:700;color:#5a5a7a;margin-bottom:8px;">MENSAGEM</span>
+                        <span style="display:block;font-size:14px;font-weight:400;color:#c8c8e0;line-height:1.6;white-space:pre-line;">${message}</span>
+                      </td></tr>
+                      <tr><td style="padding:16px 28px;background-color:#12121a;">
+                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>
+                          <td style="font-size:11px;color:#3a3a5a;">Powered by <span style="color:#6366f1;font-weight:600;">LEVI</span></td>
+                          <td align="right" style="font-size:11px;color:#3a3a5a;">Sistema de Escalas</td>
+                        </tr></table>
+                      </td></tr>
+                    </table>
+                  </td></tr></table>
+                </body></html>
               `,
             }),
           });
