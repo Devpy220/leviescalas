@@ -143,6 +143,9 @@ export default function Admin() {
   const [broadcastHistory, setBroadcastHistory] = useState<any[]>([]);
   const [loadingBroadcasts, setLoadingBroadcasts] = useState(false);
   const [broadcastsExpanded, setBroadcastsExpanded] = useState(false);
+  const [broadcastMode, setBroadcastMode] = useState<'all' | 'individual'>('all');
+  const [selectedRecipients, setSelectedRecipients] = useState<string[]>([]);
+  const [recipientSearch, setRecipientSearch] = useState('');
 
   useEffect(() => {
     if (authLoading || adminLoading) return;
@@ -636,13 +639,19 @@ export default function Admin() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) throw new Error('Sessão inválida');
 
+      const body: any = {
+        title: broadcastTitle.trim(),
+        message: broadcastMessage.trim(),
+        channels: broadcastChannels,
+      };
+
+      if (broadcastMode === 'individual' && selectedRecipients.length > 0) {
+        body.recipientIds = selectedRecipients;
+      }
+
       const { data, error } = await supabase.functions.invoke('send-admin-broadcast', {
         headers: { Authorization: `Bearer ${session.access_token}` },
-        body: {
-          title: broadcastTitle.trim(),
-          message: broadcastMessage.trim(),
-          channels: broadcastChannels,
-        },
+        body,
       });
 
       if (error) throw error;
@@ -663,6 +672,8 @@ export default function Admin() {
 
       setBroadcastTitle('');
       setBroadcastMessage('');
+      setSelectedRecipients([]);
+      setRecipientSearch('');
       fetchBroadcastHistory();
     } catch (error: any) {
       console.error('Error sending broadcast:', error);
@@ -748,6 +759,77 @@ export default function Admin() {
             </CollapsibleTrigger>
             <CollapsibleContent>
               <CardContent className="space-y-4">
+                {/* Mode Toggle */}
+                <div className="space-y-2">
+                  <Label>Destinatários</Label>
+                  <div className="flex gap-2">
+                    <Button
+                      variant={broadcastMode === 'all' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => { setBroadcastMode('all'); setSelectedRecipients([]); setRecipientSearch(''); }}
+                    >
+                      <Users className="w-4 h-4 mr-1" />
+                      Todos ({allProfiles.length})
+                    </Button>
+                    <Button
+                      variant={broadcastMode === 'individual' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setBroadcastMode('individual')}
+                    >
+                      <Send className="w-4 h-4 mr-1" />
+                      Individual
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Individual recipient selector */}
+                {broadcastMode === 'individual' && (
+                  <div className="space-y-2">
+                    <Label>Selecionar destinatários</Label>
+                    <Input
+                      placeholder="Buscar por nome, email ou whatsapp..."
+                      value={recipientSearch}
+                      onChange={(e) => setRecipientSearch(e.target.value)}
+                    />
+                    {selectedRecipients.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {selectedRecipients.map(id => {
+                          const p = allProfiles.find(pr => pr.id === id);
+                          return p ? (
+                            <Badge key={id} variant="secondary" className="gap-1 cursor-pointer" onClick={() => setSelectedRecipients(prev => prev.filter(r => r !== id))}>
+                              {p.name}
+                              <X className="w-3 h-3" />
+                            </Badge>
+                          ) : null;
+                        })}
+                      </div>
+                    )}
+                    <div className="max-h-40 overflow-y-auto border border-border rounded-md">
+                      {allProfiles
+                        .filter(p => {
+                          if (!recipientSearch.trim()) return !selectedRecipients.includes(p.id);
+                          const q = recipientSearch.toLowerCase();
+                          return !selectedRecipients.includes(p.id) && (
+                            p.name.toLowerCase().includes(q) ||
+                            p.email.toLowerCase().includes(q) ||
+                            p.whatsapp?.includes(q)
+                          );
+                        })
+                        .slice(0, 20)
+                        .map(p => (
+                          <button
+                            key={p.id}
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-accent border-b border-border last:border-b-0 flex justify-between items-center"
+                            onClick={() => setSelectedRecipients(prev => [...prev, p.id])}
+                          >
+                            <span className="font-medium">{p.name}</span>
+                            <span className="text-muted-foreground text-xs">{p.whatsapp || p.email}</span>
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <Label htmlFor="broadcast-title">Título</Label>
                   <Input
@@ -797,19 +879,19 @@ export default function Admin() {
                 <AlertDialog open={showBroadcastConfirm} onOpenChange={setShowBroadcastConfirm}>
                   <AlertDialogTrigger asChild>
                     <Button
-                      disabled={!broadcastTitle.trim() || !broadcastMessage.trim() || broadcastChannels.length === 0 || sendingBroadcast}
+                      disabled={!broadcastTitle.trim() || !broadcastMessage.trim() || broadcastChannels.length === 0 || sendingBroadcast || (broadcastMode === 'individual' && selectedRecipients.length === 0)}
                       className="gap-2"
                       onClick={() => setShowBroadcastConfirm(true)}
                     >
                       {sendingBroadcast ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                      {sendingBroadcast ? 'Enviando...' : 'Enviar para todos'}
+                      {sendingBroadcast ? 'Enviando...' : broadcastMode === 'all' ? 'Enviar para todos' : `Enviar para ${selectedRecipients.length} selecionado(s)`}
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
                       <AlertDialogTitle>Confirmar envio do comunicado</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Você está prestes a enviar o comunicado <strong>"{broadcastTitle}"</strong> para <strong>{allProfiles.length} usuários</strong> pelos canais: {broadcastChannels.map(c => ({
+                        Você está prestes a enviar o comunicado <strong>"{broadcastTitle}"</strong> para <strong>{broadcastMode === 'all' ? `${allProfiles.length} usuários` : `${selectedRecipients.length} usuário(s) selecionado(s)`}</strong> pelos canais: {broadcastChannels.map(c => ({
                           inapp: 'In-app',
                           email: 'E-mail',
                           push: 'Push',
