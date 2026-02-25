@@ -198,11 +198,8 @@ const handler = async (req: Request): Promise<Response> => {
       const brEnd = toBrazilParts(windowEnd);
       const startDate = brStart.date;
       const endDate = brEnd.date;
-      const startTimeStr = brStart.time;
-      const endTimeStr = brEnd.time;
 
       // Fetch schedules in this window
-      // We need to combine date + time_start to check if it falls within our window
       let query = supabaseAdmin
         .from('schedules')
         .select('id, date, time_start, time_end, user_id, department_id, sector_id, assignment_role, sector:sectors(name)')
@@ -219,13 +216,10 @@ const handler = async (req: Request): Promise<Response> => {
       if (!schedules || schedules.length === 0) continue;
 
       // Filter schedules whose actual datetime (in Brazil TZ) falls within our window
-      // Schedule dates/times are stored as Brazil local time, so we compare directly
+      const wStartStr = `${brStart.date}T${brStart.time}`;
+      const wEndStr = `${brEnd.date}T${brEnd.time}`;
       const matchingSchedules = schedules.filter(s => {
-        const brNow = toBrazilParts(windowStart);
-        const brEnd2 = toBrazilParts(windowEnd);
         const sDateTime = `${s.date}T${s.time_start}`;
-        const wStartStr = `${brNow.date}T${brNow.time}`;
-        const wEndStr = `${brEnd2.date}T${brEnd2.time}`;
         return sDateTime >= wStartStr && sDateTime <= wEndStr;
       });
 
