@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import pixQrCode from "@/assets/pix-qrcode-levi.jpg";
 import Footer from "@/components/Footer";
 
-const PIX_KEY = "b8bb0848-844b-467b-8422-382720b1e980";
+const PIX_KEY = "suport@leviescalas.com.br";
 const SUPPORT_EMAIL = "leviescalas@gmail.com";
 const SUGGESTED_VALUE = "R$ 10,00";
 
@@ -95,7 +95,7 @@ const Payment = () => {
               
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground text-center font-medium">
-                  Chave PIX (UUID):
+                  Chave PIX (E-mail):
                 </p>
                 <div className="bg-muted/50 p-3 rounded-lg text-center">
                   <code className="text-xs break-all">{PIX_KEY}</code>
