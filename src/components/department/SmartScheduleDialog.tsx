@@ -81,6 +81,9 @@ export default function SmartScheduleDialog({
   const [slotMembers, setSlotMembers] = useState<Record<string, number>>(() => 
     FIXED_SLOTS.reduce((acc, slot) => ({ ...acc, [slot.id]: slot.defaultMembers }), {})
   );
+  const [slotEnabled, setSlotEnabled] = useState<Record<string, boolean>>(() =>
+    FIXED_SLOTS.reduce((acc, slot) => ({ ...acc, [slot.id]: true }), {})
+  );
   const [sectorId, setSectorId] = useState<string>('all');
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [sendNotificationsOnConfirm, setSendNotificationsOnConfirm] = useState(true);
@@ -136,10 +139,22 @@ export default function SmartScheduleDialog({
       }
       
       // Build fixed slots with configured member counts
-      const configuredSlots = FIXED_SLOTS.map(slot => ({
-        ...slot,
-        membersCount: slotMembers[slot.id] || slot.defaultMembers
-      }));
+      const configuredSlots = FIXED_SLOTS
+        .filter(slot => slotEnabled[slot.id] !== false)
+        .map(slot => ({
+          ...slot,
+          membersCount: slotMembers[slot.id] || slot.defaultMembers
+        }));
+      
+      if (configuredSlots.length === 0) {
+        toast({
+          variant: 'destructive',
+          title: 'Nenhum horário ativado',
+          description: 'Ative pelo menos um horário para gerar escalas.',
+        });
+        setLoading(false);
+        return;
+      }
       
       const { data, error } = await supabase.functions.invoke('generate-smart-schedule', {
         body: {
@@ -393,40 +408,49 @@ export default function SmartScheduleDialog({
             <div className="space-y-3">
               <Label>Membros por horário</Label>
               <div className="space-y-2">
-                {FIXED_SLOTS.map(slot => (
-                  <div key={slot.id} className="flex items-center justify-between gap-3 p-2 rounded-lg bg-muted/30">
-                    <div className="flex-1">
-                      <span className="text-sm font-medium">{slot.label}</span>
+                {FIXED_SLOTS.map(slot => {
+                  const enabled = slotEnabled[slot.id] !== false;
+                  return (
+                    <div key={slot.id} className={`flex items-center justify-between gap-3 p-2 rounded-lg transition-opacity ${enabled ? 'bg-muted/30' : 'bg-muted/10 opacity-50'}`}>
+                      <div className="flex items-center gap-2 flex-1">
+                        <Switch
+                          checked={enabled}
+                          onCheckedChange={(checked) => setSlotEnabled(prev => ({ ...prev, [slot.id]: checked }))}
+                        />
+                        <span className={`text-sm font-medium ${!enabled ? 'line-through text-muted-foreground' : ''}`}>{slot.label}</span>
+                      </div>
+                      {enabled && (
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setSlotMembers(prev => ({
+                              ...prev,
+                              [slot.id]: Math.max(1, (prev[slot.id] ?? slot.defaultMembers) - 1)
+                            }))}
+                          >
+                            <Minus className="w-3 h-3" />
+                          </Button>
+                          <span className="w-8 text-center font-medium text-sm">
+                            {slotMembers[slot.id] ?? slot.defaultMembers}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setSlotMembers(prev => ({
+                              ...prev,
+                              [slot.id]: Math.min(20, (prev[slot.id] ?? slot.defaultMembers) + 1)
+                            }))}
+                          >
+                            <Plus className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => setSlotMembers(prev => ({
-                          ...prev,
-                          [slot.id]: Math.max(1, (prev[slot.id] ?? slot.defaultMembers) - 1)
-                        }))}
-                      >
-                        <Minus className="w-3 h-3" />
-                      </Button>
-                      <span className="w-8 text-center font-medium text-sm">
-                        {slotMembers[slot.id] ?? slot.defaultMembers}
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => setSlotMembers(prev => ({
-                          ...prev,
-                          [slot.id]: Math.min(20, (prev[slot.id] ?? slot.defaultMembers) + 1)
-                        }))}
-                      >
-                        <Plus className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               <p className="text-xs text-muted-foreground">
                 Domingo Manhã e Quarta: 3 pessoas | Domingo Noite: 5 pessoas (padrão)
