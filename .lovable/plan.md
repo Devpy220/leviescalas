@@ -1,24 +1,67 @@
 
 
-## Permitir selecionar ambos os turnos de domingo na disponibilidade
+## Adicionar foto de avatar para voluntarios
 
-### Situacao atual
-Quando um membro marca "Domingo de Manha" como disponivel, o sistema automaticamente desmarca "Domingo de Noite" (e vice-versa). Isso impede que o membro sinalize que esta disponivel nos dois turnos.
+### Resumo
+Atualmente, o avatar dos voluntarios mostra apenas a primeira letra do email. Vamos adicionar a funcionalidade de upload de foto de perfil para todos os usuarios, permitindo que cada voluntario selecione e recorte uma foto pessoal.
 
-### O que vai mudar
-- **Disponibilidade**: O membro podera marcar ambos os turnos de domingo (manha e noite) livremente, sem bloqueio mutuo.
-- **Escalas (manual e automatica)**: A regra de exclusividade continua valendo -- se o membro for escalado de manha, nao podera ser escalado a noite no mesmo domingo, e vice-versa.
+### Onde o usuario vai alterar a foto
+- **Pagina de Configuracoes** (`/security`): Adicionar uma secao no topo com o avatar clicavel para upload de foto
+- **Dashboard**: O avatar no header passara a mostrar a foto do usuario (se tiver)
+- **Lista de membros**: Os avatares dos membros ja exibirao as fotos quando disponoveis
 
-### Mudanca necessaria
+### Mudancas necessarias
 
-**Arquivo**: `src/components/department/SlotAvailability.tsx`
+#### 1. Criar bucket de storage para avatares de usuarios
+- Criar bucket `user-avatars` (publico) via migracao SQL
+- Criar politicas RLS para que cada usuario so possa fazer upload/deletar seus proprios arquivos
 
-Remover o bloco de codigo (linhas 129-152) que faz a exclusividade mutua na marcacao de disponibilidade. Esse bloco detecta quando um slot de domingo e ativado e automaticamente deleta o turno oposto do banco de dados. Ao remover esse trecho, o toggle de cada turno de domingo funcionara de forma independente.
+#### 2. Criar componente `ProfileAvatarUpload`
+- Novo componente em `src/components/ProfileAvatarUpload.tsx`
+- Avatar clicavel que abre seletor de arquivo
+- Reutiliza o `ImageCropDialog` existente para recorte circular
+- Faz upload para o bucket `user-avatars` com path `{user_id}/avatar.jpg`
+- Atualiza campo `avatar_url` na tabela `profiles`
+- Mostra icone de camera e indicador de carregamento
 
-A mensagem de toast tambem sera simplificada, removendo a referencia ao turno oposto desmarcado.
+#### 3. Atualizar pagina de Configuracoes (`Security.tsx`)
+- Adicionar secao "Meu Perfil" no topo com o componente `ProfileAvatarUpload`
+- Mostrar nome e email do usuario ao lado do avatar
 
-### O que ja esta funcionando e nao precisa mudar
-- **Escala manual** (`AddScheduleDialog.tsx`): Ja verifica conflitos de domingo e bloqueia membros escalados no turno oposto (linhas 200-243).
-- **Escala automatica** (`generate-smart-schedule/index.ts`): Ja filtra sugestoes duplicadas de domingo no pos-processamento do servidor.
-- **Trigger do banco** (`check_sunday_slot_exclusivity`): Impede insercao de escalas conflitantes no nivel do banco de dados.
+#### 4. Atualizar Dashboard (`Dashboard.tsx`)
+- Buscar `avatar_url` do perfil junto com o nome
+- Exibir foto no avatar do header (usando `AvatarImage` do Radix) em vez de apenas a inicial
 
+#### 5. Atualizar lista de membros (`MemberList.tsx`)
+- Ja recebe `avatar_url` no perfil do membro -- garantir que exibe a imagem quando disponivel
+
+### Detalhes tecnicos
+
+**Migracao SQL:**
+```sql
+INSERT INTO storage.buckets (id, name, public) VALUES ('user-avatars', 'user-avatars', true);
+
+CREATE POLICY "Users can upload own avatar"
+ON storage.objects FOR INSERT TO authenticated
+WITH CHECK (bucket_id = 'user-avatars' AND (storage.foldername(name))[1] = auth.uid()::text);
+
+CREATE POLICY "Users can update own avatar"
+ON storage.objects FOR UPDATE TO authenticated
+USING (bucket_id = 'user-avatars' AND (storage.foldername(name))[1] = auth.uid()::text);
+
+CREATE POLICY "Users can delete own avatar"
+ON storage.objects FOR DELETE TO authenticated
+USING (bucket_id = 'user-avatars' AND (storage.foldername(name))[1] = auth.uid()::text);
+
+CREATE POLICY "Anyone can view avatars"
+ON storage.objects FOR SELECT TO public
+USING (bucket_id = 'user-avatars');
+```
+
+**Fluxo do upload:**
+1. Usuario clica no avatar
+2. Seleciona imagem (validacao: tipo imagem, max 10MB)
+3. Abre dialogo de recorte (reuso do `ImageCropDialog`)
+4. Imagem recortada e enviada ao bucket
+5. URL publica salva em `profiles.avatar_url`
+6. Avatar atualizado em tempo real na tela
