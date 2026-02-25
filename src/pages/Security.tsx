@@ -420,9 +420,16 @@ export default function Security() {
             )}
             
             <p className="text-xs text-muted-foreground">
-              As notificações push substituem o WhatsApp. Você receberá alertas de: novas escalas, 
+              Você receberá alertas de: novas escalas, 
               lembretes 48h e 2h antes, e atualizações de trocas de escala.
             </p>
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+              <AlertTriangle className="w-4 h-4 text-yellow-500 shrink-0" />
+              <p className="text-xs text-muted-foreground">
+                <span className="font-medium text-yellow-600 dark:text-yellow-400">Notificações via WhatsApp em desenvolvimento.</span>{' '}
+                Por enquanto, ative as notificações push ou conecte seu Telegram para receber alertas.
+              </p>
+            </div>
           </CardContent>
         </Card>
 
