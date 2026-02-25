@@ -27,6 +27,7 @@ export type Database = {
           sms_sent: number
           telegram_sent: number
           title: string
+          whatsapp_sent: number
         }
         Insert: {
           admin_user_id: string
@@ -40,6 +41,7 @@ export type Database = {
           sms_sent?: number
           telegram_sent?: number
           title: string
+          whatsapp_sent?: number
         }
         Update: {
           admin_user_id?: string
@@ -53,6 +55,7 @@ export type Database = {
           sms_sent?: number
           telegram_sent?: number
           title?: string
+          whatsapp_sent?: number
         }
         Relationships: []
       }

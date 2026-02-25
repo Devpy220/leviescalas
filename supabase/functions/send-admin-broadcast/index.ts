@@ -113,6 +113,7 @@ const handler = async (req: Request): Promise<Response> => {
     let pushSent = 0;
     let telegramSent = 0;
     let smsSent = 0;
+    let whatsappSent = 0;
 
     // 1. In-app notifications
     if (channels.includes("inapp")) {
@@ -270,6 +271,35 @@ const handler = async (req: Request): Promise<Response> => {
       console.log(`SMS: ${smsSent}/${smsRecipients.length} sent`);
     }
 
+    // 6. WhatsApp via Z-API
+    if (channels.includes("whatsapp")) {
+      const whatsappRecipients = recipients.filter((p) => p.whatsapp);
+      const whatsappMsg = `📢 *Comunicado LEVI*\n\n*${title}*\n\n${message}`;
+
+      for (const profile of whatsappRecipients) {
+        try {
+          const wpRes = await fetch(`${supabaseUrl}/functions/v1/send-whatsapp-notification`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${serviceRoleKey}`,
+            },
+            body: JSON.stringify({
+              phone: profile.whatsapp,
+              message: whatsappMsg,
+            }),
+          });
+          if (wpRes.ok) {
+            const wpResult = await wpRes.json();
+            if (wpResult.sent) whatsappSent++;
+          }
+        } catch (e) {
+          console.error("WhatsApp error:", e);
+        }
+      }
+      console.log(`WhatsApp: ${whatsappSent}/${whatsappRecipients.length} sent`);
+    }
+
     // Save broadcast record
     await supabase.from("admin_broadcasts").insert({
       admin_user_id: adminUserId,
@@ -281,6 +311,7 @@ const handler = async (req: Request): Promise<Response> => {
       push_sent: pushSent,
       telegram_sent: telegramSent,
       sms_sent: smsSent,
+      whatsapp_sent: whatsappSent,
     });
 
     return new Response(
@@ -291,6 +322,7 @@ const handler = async (req: Request): Promise<Response> => {
         push_sent: pushSent,
         telegram_sent: telegramSent,
         sms_sent: smsSent,
+        whatsapp_sent: whatsappSent,
       }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
