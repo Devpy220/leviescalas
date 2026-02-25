@@ -137,7 +137,7 @@ export default function Admin() {
   // Broadcast state
   const [broadcastTitle, setBroadcastTitle] = useState('');
   const [broadcastMessage, setBroadcastMessage] = useState('');
-  const [broadcastChannels, setBroadcastChannels] = useState<string[]>(['inapp', 'email', 'push', 'telegram', 'sms', 'whatsapp']);
+  const [broadcastChannels, setBroadcastChannels] = useState<string[]>(['inapp', 'email', 'push', 'telegram', 'whatsapp']);
   const [sendingBroadcast, setSendingBroadcast] = useState(false);
   const [showBroadcastConfirm, setShowBroadcastConfirm] = useState(false);
   const [broadcastHistory, setBroadcastHistory] = useState<any[]>([]);
@@ -661,7 +661,6 @@ export default function Admin() {
         broadcastChannels.includes('email') ? `${data.email_sent} e-mail` : null,
         broadcastChannels.includes('push') ? `${data.push_sent} push` : null,
         broadcastChannels.includes('telegram') ? `${data.telegram_sent} Telegram` : null,
-        broadcastChannels.includes('sms') ? `${data.sms_sent} SMS` : null,
         broadcastChannels.includes('whatsapp') ? `${data.whatsapp_sent} WhatsApp` : null,
       ].filter(Boolean).join(', ');
 
@@ -857,7 +856,6 @@ export default function Admin() {
                       { id: 'email', label: '📧 E-mail' },
                       { id: 'push', label: '🔔 Push' },
                       { id: 'telegram', label: '✈️ Telegram' },
-                      { id: 'sms', label: '💬 SMS' },
                       { id: 'whatsapp', label: '📲 WhatsApp' },
                     ].map((ch) => (
                       <div key={ch.id} className="flex items-center gap-2">
@@ -896,7 +894,6 @@ export default function Admin() {
                           email: 'E-mail',
                           push: 'Push',
                           telegram: 'Telegram',
-                          sms: 'SMS',
                           whatsapp: 'WhatsApp',
                         }[c])).join(', ')}.
                         <br /><br />
