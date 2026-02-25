@@ -24,7 +24,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, Calendar, Users, Check, X, AlertCircle, Send, Bell } from 'lucide-react';
+import { Loader2, Sparkles, Calendar, Users, Check, X, AlertCircle, Send, Bell, Minus, Plus } from 'lucide-react';
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { createExtendedMemberColorMap, getMemberBackgroundStyle } from '@/lib/memberColors';
@@ -337,7 +337,7 @@ export default function SmartScheduleDialog({
         </DialogHeader>
 
         {step === 'config' ? (
-          <div className="space-y-4 py-4">
+          <div className="flex-1 overflow-y-auto space-y-4 py-4 -mx-6 px-6">
             {/* Period Type Selection */}
             <div className="space-y-2">
               <Label>Período</Label>
@@ -398,19 +398,32 @@ export default function SmartScheduleDialog({
                     <div className="flex-1">
                       <span className="text-sm font-medium">{slot.label}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        min={1}
-                        max={10}
-                        value={slotMembers[slot.id] || slot.defaultMembers}
-                        onChange={(e) => setSlotMembers(prev => ({
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => setSlotMembers(prev => ({
                           ...prev,
-                          [slot.id]: parseInt(e.target.value) || slot.defaultMembers
+                          [slot.id]: Math.max(1, (prev[slot.id] ?? slot.defaultMembers) - 1)
                         }))}
-                        className="w-16 text-center"
-                      />
-                      <Users className="w-4 h-4 text-muted-foreground" />
+                      >
+                        <Minus className="w-3 h-3" />
+                      </Button>
+                      <span className="w-8 text-center font-medium text-sm">
+                        {slotMembers[slot.id] ?? slot.defaultMembers}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => setSlotMembers(prev => ({
+                          ...prev,
+                          [slot.id]: Math.min(20, (prev[slot.id] ?? slot.defaultMembers) + 1)
+                        }))}
+                      >
+                        <Plus className="w-3 h-3" />
+                      </Button>
                     </div>
                   </div>
                 ))}
