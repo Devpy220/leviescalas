@@ -1510,7 +1510,7 @@ export default function Auth() {
                 <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
                   <Bell className="w-5 h-5" />
                 </div>
-                <span>Notificações automáticas via Email</span>
+                <span>Notificações automáticas via Email, Push e Telegram (WhatsApp em breve)</span>
               </div>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
