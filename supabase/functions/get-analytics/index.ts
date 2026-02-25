@@ -6,6 +6,23 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const getUserIdFromJwt = (token: string): string | null => {
+  try {
+    const parts = token.split(".");
+    if (parts.length < 2) return null;
+
+    const payload = parts[1]
+      .replace(/-/g, "+")
+      .replace(/_/g, "/")
+      .padEnd(Math.ceil(parts[1].length / 4) * 4, "=");
+
+    const decoded = JSON.parse(atob(payload));
+    return typeof decoded?.sub === "string" ? decoded.sub : null;
+  } catch {
+    return null;
+  }
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -26,21 +43,14 @@ serve(async (req) => {
 
     const token = authHeader.replace("Bearer ", "");
 
-    const supabaseAuth = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
-      global: { headers: { Authorization: authHeader } },
-    });
+    const userId = getUserIdFromJwt(token);
 
-    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
-
-    if (claimsError || !claimsData?.claims?.sub) {
-      console.error("Claims validation failed:", claimsError);
+    if (!userId) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    const userId = claimsData.claims.sub as string;
 
     const { data: isAdmin } = await supabase.rpc("has_role", {
       _user_id: userId,
