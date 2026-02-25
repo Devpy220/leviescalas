@@ -1,62 +1,90 @@
 
+## Integracao WhatsApp via Z-API
 
-## Redesign Premium dos E-mails e Paginas HTML do LEVI
+Adicionar o canal **WhatsApp** via Z-API em todos os pontos de notificacao do sistema: comunicados admin (broadcast), lembretes automaticos de escala e notificacoes individuais de nova escala/alteracao.
 
-Aplicar o design dark/premium que voce compartilhou em todos os templates HTML do sistema: e-mails de notificacao de escala, e-mails de broadcast, e a pagina de confirmacao de escala.
+---
 
-### Arquivos a Modificar
+### Segredos Necessarios
 
-**1. `supabase/functions/send-schedule-notification/index.ts`**
-- Redesign do template de **nova escala** (linhas 304-372): card dark com header gradiente indigo-violeta-rosa, secao de avatar com nome do membro, grid 2x2 com dia/dia da semana/mes/ano, linhas de departamento/setor/funcao com icones coloridos, botoes de confirmacao estilizados, footer dark
-- Redesign do template de **escala alterada** (linhas 378-419): mesmo estilo dark com header em gradiente amber/laranja, mostrando data antiga vs nova no grid
+Configurar 3 secrets no backend:
+- `ZAPI_INSTANCE_ID` - ID da instancia Z-API
+- `ZAPI_TOKEN` - Token da instancia
+- `ZAPI_CLIENT_TOKEN` - Token de seguranca da conta
 
-**2. `supabase/functions/send-admin-broadcast/index.ts`**
-- Redesign do template de e-mail de broadcast (linhas 150-163): card dark com header gradiente, badge "Comunicado Oficial", titulo e mensagem estilizados, footer LEVI
+---
 
-**3. `supabase/functions/confirm-schedule/index.ts`**
-- Redesign da funcao `generateHtmlResponse` (linhas 173-266): pagina de resposta dark com o mesmo estilo de card, header gradiente dinamico por tipo (success/declined/error/warning/info), layout premium
+### Nova Edge Function
 
-### Detalhes do Design
+**`supabase/functions/send-whatsapp-notification/index.ts`**
 
-O design segue o modelo compartilhado, adaptado para compatibilidade com clientes de e-mail:
-- **Background**: escuro (#0f0f13 para body, #16161e para card)
-- **Header**: gradiente 135deg de #4f46e5 (indigo) para #7c3aed (violeta) para #db2777 (rosa) -- variando por contexto
-- **Badge**: pill com fundo translucido, texto uppercase com dot animado (apenas na pagina HTML, sem animacao no e-mail)
-- **Avatar**: circulo gradiente com inicial do nome do usuario
-- **Info Grid**: 2 colunas com icones, labels uppercase cinza (#5a5a7a), valores claros (#c8c8e0), destaques em roxo (#a78bfa)
-- **Info Rows**: icone em caixa colorida (roxo/rosa/azul) + label + valor
-- **Footer**: fundo mais escuro (#12121a), texto cinza, branding LEVI
-- **Botoes**: gradiente indigo-violeta, border-radius 10px
-- **Fontes**: system fonts (Apple, Segoe UI, Roboto) -- Google Fonts nao e confiavel em e-mail
+Funcao centralizada para envio de WhatsApp que sera chamada pelas demais funcoes. Responsabilidades:
+- Receber `phone` (numero) e `message` (texto)
+- Limpar numero, garantir formato `55XXXXXXXXXXX`
+- Chamar `POST https://api.z-api.io/instances/{INSTANCE}/token/{TOKEN}/send-text` com header `Client-Token`
+- Body: `{ phone, message }`
+- Retornar `{ sent: true/false }`
 
-### Adaptacoes para E-mail
+---
 
-Como clientes de e-mail (Gmail, Outlook) nao suportam CSS moderno:
-- Todo CSS sera **inline** (atributos style)
-- Layout com **tabelas** em vez de flexbox/grid
-- Sem `animation`, `backdrop-filter`, `box-shadow` complexo
-- Cores solidas em vez de gradientes onde necessario (fallback)
-- `background-color` como fallback para `background: linear-gradient`
+### Alteracoes em Edge Functions Existentes
 
-### Para a Pagina HTML (confirm-schedule)
+**1. `send-schedule-notification/index.ts`**
+- Adicionar chamada paralela ao `send-whatsapp-notification` junto com push, email e telegram
+- Enviar a mensagem `whatsappMessage` (ja existente no codigo) via Z-API em vez de apenas Telegram
+- O numero vem do campo `profile.whatsapp`
 
-Como e uma pagina web completa (nao e-mail), o design completo sera aplicado:
-- Animacao slideIn do card
-- Badge com dot pulsante
-- Hover effects nas celulas de info
-- Box-shadow completo
-- Google Fonts (DM Sans, Playfair Display)
+**2. `send-admin-broadcast/index.ts`**
+- Adicionar canal `"whatsapp"` na logica de canais
+- Iterar sobre destinatarios que possuem `whatsapp` preenchido
+- Chamar `send-whatsapp-notification` para cada um
+- Adicionar contador `whatsappSent` e salvar na tabela `admin_broadcasts`
 
-### Contextos de Cor por Tipo
+**3. `send-scheduled-reminders/index.ts`**
+- Adicionar chamada ao `send-whatsapp-notification` em paralelo com push, telegram e SMS
+- Usar o numero do perfil (`profile.whatsapp`)
 
-| Contexto | Header Gradiente | Uso |
-|---|---|---|
-| Nova escala | indigo -> violeta -> rosa | E-mail de nova escala |
-| Escala alterada | amber -> laranja | E-mail de alteracao |
-| Broadcast | indigo -> violeta -> rosa | E-mail de comunicado |
-| Confirmado | emerald -> teal | Pagina de confirmacao |
-| Recusado | amber -> laranja | Pagina de recusa |
-| Erro | red -> rose | Pagina de erro |
-| Aviso | amber -> yellow | Pagina de aviso |
-| Info | blue -> indigo | Pagina de info |
+**4. `send-announcement-notification/index.ts`**
+- Adicionar envio WhatsApp para membros do departamento que possuem numero cadastrado
 
+---
+
+### Migracoes de Banco
+
+- Adicionar coluna `whatsapp_sent integer default 0` na tabela `admin_broadcasts` para rastrear envios por WhatsApp
+
+---
+
+### Frontend (Admin.tsx)
+
+- Adicionar checkbox **"📲 WhatsApp"** na lista de canais de broadcast (ao lado de SMS, Telegram, etc.)
+- Incluir `whatsapp` no array default de `broadcastChannels`
+- Atualizar o mapeamento de labels no dialog de confirmacao e no toast de sucesso
+- Mostrar `whatsapp_sent` no resumo de envio
+
+---
+
+### Configuracao do config.toml
+
+Adicionar entrada para a nova funcao:
+```text
+[functions.send-whatsapp-notification]
+verify_jwt = false
+```
+
+---
+
+### Detalhes Tecnicos
+
+**Endpoint Z-API:**
+```text
+POST https://api.z-api.io/instances/{ZAPI_INSTANCE_ID}/token/{ZAPI_TOKEN}/send-text
+Header: Client-Token: {ZAPI_CLIENT_TOKEN}
+Body: { "phone": "5511999999999", "message": "texto" }
+```
+
+**Formato do numero:** O campo `profiles.whatsapp` ja armazena numeros BR. A funcao limpa caracteres nao-numericos e garante prefixo `55`.
+
+**Sem limite de caracteres:** Diferente do SMS (160 chars), WhatsApp permite mensagens longas com formatacao (*negrito*, _italico_).
+
+**Ordem de execucao:** WhatsApp sera enviado em paralelo com os demais canais (push, email, telegram, sms) usando `Promise.all` / `Promise.allSettled`.
