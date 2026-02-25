@@ -51,6 +51,8 @@ const handler = async (req: Request): Promise<Response> => {
     const resendApiKey = Deno.env.get("RESEND_API_KEY") ?? "";
     const smsdevApiKey = Deno.env.get("SMSDEV_API_KEY") ?? "";
 
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
+
     // Auth check
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
@@ -60,8 +62,10 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
+    const supabaseAuthClient = createClient(supabaseUrl, serviceRoleKey);
     const token = authHeader.replace("Bearer ", "");
-    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
+    const { data: { user: authUser }, error: authError } = await supabaseAuthClient.auth.getUser(token);
+
     if (authError || !authUser) {
       console.error("Auth error:", authError);
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -73,8 +77,7 @@ const handler = async (req: Request): Promise<Response> => {
     const adminUserId = authUser.id;
 
     // Verify admin role
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
-    const { data: isAdmin } = await supabase.rpc("has_role", {
+    const { data: isAdmin } = await supabaseAuthClient.rpc("has_role", {
       _user_id: adminUserId,
       _role: "admin",
     });
