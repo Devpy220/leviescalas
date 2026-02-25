@@ -1,6 +1,20 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const getUserIdFromJwt = (token: string): string | null => {
+  try {
+    const parts = token.split(".");
+    if (parts.length < 2) return null;
+    const payload = parts[1]
+      .replace(/-/g, "+")
+      .replace(/_/g, "/")
+      .padEnd(Math.ceil(parts[1].length / 4) * 4, "=");
+    const decoded = JSON.parse(atob(payload));
+    return typeof decoded?.sub === "string" ? decoded.sub : null;
+  } catch {
+    return null;
+  }
+};
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -62,22 +76,19 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    const supabaseAuthClient = createClient(supabaseUrl, serviceRoleKey);
     const token = authHeader.replace("Bearer ", "");
-    const { data: { user: authUser }, error: authError } = await supabaseAuthClient.auth.getUser(token);
+    const adminUserId = getUserIdFromJwt(token);
 
-    if (authError || !authUser) {
-      console.error("Auth error:", authError);
+    if (!adminUserId) {
+      console.error("Auth error: invalid JWT token");
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
-    const adminUserId = authUser.id;
-
     // Verify admin role
-    const { data: isAdmin } = await supabaseAuthClient.rpc("has_role", {
+    const { data: isAdmin } = await supabase.rpc("has_role", {
       _user_id: adminUserId,
       _role: "admin",
     });
