@@ -90,7 +90,7 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    const { title, message, channels } = await req.json();
+    const { title, message, channels, recipientIds } = await req.json();
 
     if (!title || !message || !channels || !Array.isArray(channels) || channels.length === 0) {
       return new Response(
@@ -99,10 +99,14 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Fetch all profiles
-    const { data: profiles, error: profilesError } = await supabase
-      .from("profiles")
-      .select("id, email, name, whatsapp");
+    // Fetch profiles - all or specific recipients
+    let query = supabase.from("profiles").select("id, email, name, whatsapp");
+    
+    if (recipientIds && Array.isArray(recipientIds) && recipientIds.length > 0) {
+      query = query.in("id", recipientIds);
+    }
+
+    const { data: profiles, error: profilesError } = await query;
 
     if (profilesError) throw profilesError;
 
