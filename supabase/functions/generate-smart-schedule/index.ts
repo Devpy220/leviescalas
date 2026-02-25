@@ -414,7 +414,7 @@ Retorne APENAS um JSON válido no formato:
     }
 
     // Format the suggested schedules
-    const suggestedSchedules: SuggestedSchedule[] = (result.schedules || []).map((s: any) => ({
+    const rawSchedules: SuggestedSchedule[] = (result.schedules || []).map((s: any) => ({
       date: s.date,
       user_id: s.user_id,
       name: s.name,
@@ -423,7 +423,45 @@ Retorne APENAS um JSON válido no formato:
       sector_id
     }));
 
-    console.log('Generated', suggestedSchedules.length, 'schedules');
+    // Enforce Sunday exclusivity: a member cannot be scheduled for both morning and night on the same Sunday
+    const sundayMorningSlots = fixed_slots.filter(s => s.dayOfWeek === 0 && s.timeStart < '12:00');
+    const sundayNightSlots = fixed_slots.filter(s => s.dayOfWeek === 0 && s.timeStart >= '12:00');
+    const sundayMorningTimes = new Set(sundayMorningSlots.map(s => s.timeStart));
+    const sundayNightTimes = new Set(sundayNightSlots.map(s => s.timeStart));
+
+    const suggestedSchedules: SuggestedSchedule[] = [];
+    // Track who is already scheduled per Sunday date and shift
+    const sundayAssignments: Record<string, { morning: Set<string>; night: Set<string> }> = {};
+
+    for (const schedule of rawSchedules) {
+      const dateObj = new Date(schedule.date + 'T12:00:00');
+      const dayOfWeek = dateObj.getDay();
+
+      if (dayOfWeek === 0) {
+        if (!sundayAssignments[schedule.date]) {
+          sundayAssignments[schedule.date] = { morning: new Set(), night: new Set() };
+        }
+        const assignment = sundayAssignments[schedule.date];
+        const isMorning = sundayMorningTimes.has(schedule.time_start);
+        const isNight = sundayNightTimes.has(schedule.time_start);
+
+        if (isMorning && assignment.night.has(schedule.user_id)) {
+          console.log(`Sunday exclusivity: removing ${schedule.name} from morning ${schedule.date} (already on night)`);
+          continue;
+        }
+        if (isNight && assignment.morning.has(schedule.user_id)) {
+          console.log(`Sunday exclusivity: removing ${schedule.name} from night ${schedule.date} (already on morning)`);
+          continue;
+        }
+
+        if (isMorning) assignment.morning.add(schedule.user_id);
+        if (isNight) assignment.night.add(schedule.user_id);
+      }
+
+      suggestedSchedules.push(schedule);
+    }
+
+    console.log('Generated', suggestedSchedules.length, 'schedules (from', rawSchedules.length, 'raw)');
 
     return new Response(JSON.stringify({
       success: true,
