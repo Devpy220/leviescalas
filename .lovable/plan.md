@@ -1,54 +1,24 @@
 
 
-## Problema Identificado
+## Permitir selecionar ambos os turnos de domingo na disponibilidade
 
-O campo de quantidade de voluntarios por horario ja existe no codigo, mas tem dois problemas:
+### Situacao atual
+Quando um membro marca "Domingo de Manha" como disponivel, o sistema automaticamente desmarca "Domingo de Noite" (e vice-versa). Isso impede que o membro sinalize que esta disponivel nos dois turnos.
 
-1. **Comportamento do input**: Quando o usuario tenta limpar o campo para digitar um novo numero, o valor volta imediatamente ao padrao por causa do operador `||` no `onChange` e no `value`. Isso impede a edicao.
+### O que vai mudar
+- **Disponibilidade**: O membro podera marcar ambos os turnos de domingo (manha e noite) livremente, sem bloqueio mutuo.
+- **Escalas (manual e automatica)**: A regra de exclusividade continua valendo -- se o membro for escalado de manha, nao podera ser escalado a noite no mesmo domingo, e vice-versa.
 
-2. **Scroll bloqueado**: O `DialogContent` tem `overflow-hidden`, entao se houver muitos slots (8 slots fixos), os inputs podem ficar fora da area visivel e inacessiveis.
+### Mudanca necessaria
 
-## Solucao
+**Arquivo**: `src/components/department/SlotAvailability.tsx`
 
-### 1. Corrigir o Input para permitir edicao livre
+Remover o bloco de codigo (linhas 129-152) que faz a exclusividade mutua na marcacao de disponibilidade. Esse bloco detecta quando um slot de domingo e ativado e automaticamente deleta o turno oposto do banco de dados. Ao remover esse trecho, o toggle de cada turno de domingo funcionara de forma independente.
 
-- Mudar o `onChange` para aceitar valores vazios temporariamente (armazenar string vazia como valor intermediario)
-- Usar `onBlur` para validar e aplicar o valor minimo quando o usuario sair do campo
-- Trocar `Input type="number"` por botoes de incremento/decremento (+/-) que sao mais faceis de usar no mobile
+A mensagem de toast tambem sera simplificada, removendo a referencia ao turno oposto desmarcado.
 
-### 2. Adicionar scroll na area de configuracao
-
-- Adicionar `ScrollArea` ao conteudo do step "config" para garantir que todos os slots sejam acessiveis
-
-### Detalhes Tecnicos
-
-**Arquivo**: `src/components/department/SmartScheduleDialog.tsx`
-
-**Mudancas**:
-
-1. Substituir o `Input type="number"` por um controle com botoes `-` e `+` ao lado do numero, que funciona melhor no mobile e nao tem problemas de edicao:
-
-```tsx
-<div className="flex items-center gap-1">
-  <Button variant="outline" size="icon" className="h-8 w-8"
-    onClick={() => setSlotMembers(prev => ({
-      ...prev, [slot.id]: Math.max(1, (prev[slot.id] || slot.defaultMembers) - 1)
-    }))}>
-    <Minus className="w-3 h-3" />
-  </Button>
-  <span className="w-8 text-center font-medium">
-    {slotMembers[slot.id] || slot.defaultMembers}
-  </span>
-  <Button variant="outline" size="icon" className="h-8 w-8"
-    onClick={() => setSlotMembers(prev => ({
-      ...prev, [slot.id]: Math.min(10, (prev[slot.id] || slot.defaultMembers) + 1)
-    }))}>
-    <Plus className="w-3 h-3" />
-  </Button>
-</div>
-```
-
-2. Envolver o conteudo do step "config" em `ScrollArea` para garantir acesso a todos os campos.
-
-3. Importar `Minus` e `Plus` de `lucide-react`.
+### O que ja esta funcionando e nao precisa mudar
+- **Escala manual** (`AddScheduleDialog.tsx`): Ja verifica conflitos de domingo e bloqueia membros escalados no turno oposto (linhas 200-243).
+- **Escala automatica** (`generate-smart-schedule/index.ts`): Ja filtra sugestoes duplicadas de domingo no pos-processamento do servidor.
+- **Trigger do banco** (`check_sunday_slot_exclusivity`): Impede insercao de escalas conflitantes no nivel do banco de dados.
 
