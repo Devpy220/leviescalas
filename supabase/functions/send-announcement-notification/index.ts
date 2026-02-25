@@ -158,7 +158,35 @@ serve(async (req: Request): Promise<Response> => {
       (r) => r.status === "fulfilled" && r.value === true
     ).length;
 
-    console.log(`Announcement notification sent to ${memberIds.length} members (push), ${telegramSent} via Telegram`);
+    // Send WhatsApp notifications in parallel
+    const whatsappMessage = `📢 *Aviso - ${department_name}*\n\n${announcement_title}`;
+
+    // Fetch profiles with whatsapp numbers for the members
+    const { data: memberProfiles } = await supabaseAdmin
+      .from("profiles")
+      .select("id, whatsapp")
+      .in("id", memberIds);
+
+    const whatsappResults = await Promise.allSettled(
+      (memberProfiles || [])
+        .filter((p: any) => p.whatsapp)
+        .map((p: any) =>
+          fetch(`${supabaseUrl}/functions/v1/send-whatsapp-notification`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${serviceRoleKey}`,
+            },
+            body: JSON.stringify({ phone: p.whatsapp, message: whatsappMessage }),
+          }).then(r => r.json()).then(d => d.sent === true).catch(() => false)
+        )
+    );
+
+    const whatsappSent = whatsappResults.filter(
+      (r) => r.status === "fulfilled" && r.value === true
+    ).length;
+
+    console.log(`Announcement notification sent to ${memberIds.length} members (push), ${telegramSent} via Telegram, ${whatsappSent} via WhatsApp`);
 
     return new Response(
       JSON.stringify({ success: true, notified: memberIds.length }),

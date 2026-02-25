@@ -251,9 +251,10 @@ const handler = async (req: Request): Promise<Response> => {
           const title = window.titleFn(dept.name, time, dateSuffix);
           const body = window.bodyFn(dept.name, time, dateSuffix);
 
-          // Send push + telegram + sms in parallel
+          // Send push + telegram + sms + whatsapp in parallel
           const telegramMsg = `${title}\n${body}`;
           const smsMsg = `${body}`.substring(0, 160);
+          const whatsappMsg = `${title}\n\n${body}`;
           const [pushSent] = await Promise.all([
             sendPushNotification(
               supabaseUrl, serviceRoleKey,
@@ -272,7 +273,20 @@ const handler = async (req: Request): Promise<Response> => {
             ),
             smsdevApiKey && (profile as any).whatsapp
               ? sendSmsNotification(smsdevApiKey, (profile as any).whatsapp, smsMsg)
-              : Promise.resolve(false)
+              : Promise.resolve(false),
+            (profile as any).whatsapp
+              ? fetch(`${supabaseUrl}/functions/v1/send-whatsapp-notification`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${serviceRoleKey}`,
+                  },
+                  body: JSON.stringify({
+                    phone: (profile as any).whatsapp,
+                    message: whatsappMsg,
+                  }),
+                }).then(r => r.json()).then(d => d.sent === true).catch(() => false)
+              : Promise.resolve(false),
           ]);
 
           // Record reminder as sent (even if push failed, to avoid spam)

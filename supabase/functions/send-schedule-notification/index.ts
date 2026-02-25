@@ -555,7 +555,7 @@ const handler = async (req: Request): Promise<Response> => {
       })
     );
 
-    // Push notification (replaces WhatsApp)
+    // Push notification
     const pushTitle = type === 'new_schedule' ? `📅 Nova Escala` : `⚠️ Escala Alterada`;
     const pushBody = type === 'new_schedule' 
       ? `${department_name}: ${formattedDate} às ${formattedTimeStart}${detailsSuffix}`
@@ -584,6 +584,29 @@ const handler = async (req: Request): Promise<Response> => {
         ...result
       }))
     );
+
+    // WhatsApp notification via Z-API
+    if (profile.whatsapp) {
+      notificationPromises.push(
+        fetch(`${SUPABASE_URL}/functions/v1/send-whatsapp-notification`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""}`
+          },
+          body: JSON.stringify({
+            phone: profile.whatsapp,
+            message: whatsappMessage,
+          })
+        }).then(async (res) => {
+          const data = await res.json();
+          return { type: 'whatsapp', success: data.sent === true };
+        }).catch((error) => {
+          console.error("WhatsApp error:", error);
+          return { type: 'whatsapp', success: false, error: error.message };
+        })
+      );
+    }
 
     const results = await Promise.all(notificationPromises);
     console.log("Notification results:", results);
