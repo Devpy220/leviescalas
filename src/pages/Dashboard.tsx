@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { LeviLogo } from '@/components/LeviLogo';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { NotificationBell } from '@/components/NotificationBell';
@@ -63,6 +63,7 @@ export default function Dashboard() {
   const [isFirstLogin, setIsFirstLogin] = useState(false);
   const [canCreateDepartment, setCanCreateDepartment] = useState(true);
   const [userName, setUserName] = useState<string>('');
+  const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
   const { user, session, loading: authLoading, authEvent, signOut } = useAuth();
   const { isAdmin } = useAdmin();
   const { isInstallable, install, isIOS, shouldShowInstallPrompt } = usePWAInstall();
@@ -106,12 +107,13 @@ export default function Dashboard() {
     if (!currentUser) return;
     const { data, error } = await supabase
       .from('profiles')
-      .select('name')
+      .select('name, avatar_url')
       .eq('id', currentUser.id)
       .maybeSingle();
     
     if (!error && data) {
       setUserName(data.name);
+      setUserAvatarUrl(data.avatar_url);
     }
   };
 
@@ -388,6 +390,7 @@ export default function Dashboard() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Avatar className="w-9 h-9 border-2 border-primary/20 cursor-default">
+                    {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={userName} />}
                     <AvatarFallback className="gradient-vibrant text-white text-sm font-medium">
                       {user.email?.charAt(0).toUpperCase()}
                     </AvatarFallback>

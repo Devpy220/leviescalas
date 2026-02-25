@@ -14,6 +14,7 @@ import { TwoFactorSetup } from '@/components/auth/TwoFactorSetup';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import CalendarSyncDialog from '@/components/department/CalendarSyncDialog';
+import ProfileAvatarUpload from '@/components/ProfileAvatarUpload';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,24 +40,29 @@ export default function Security() {
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
   const [showUnblockInstructions, setShowUnblockInstructions] = useState(false);
   const [showCalendarSync, setShowCalendarSync] = useState(false);
-
+  const [profileName, setProfileName] = useState('');
+  const [profileEmail, setProfileEmail] = useState('');
+  const [profileAvatarUrl, setProfileAvatarUrl] = useState<string | null>(null);
   // Fetch current privacy setting
   useEffect(() => {
-    const fetchPrivacySetting = async () => {
+    const fetchProfile = async () => {
       if (!user) return;
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('share_contact')
+        .select('share_contact, name, email, avatar_url')
         .eq('id', user.id)
         .maybeSingle();
       
       if (!error && data) {
         setShareContact(data.share_contact || false);
+        setProfileName(data.name || '');
+        setProfileEmail(data.email || '');
+        setProfileAvatarUrl(data.avatar_url || null);
       }
     };
     
-    fetchPrivacySetting();
+    fetchProfile();
   }, [user]);
 
   const handlePrivacyToggle = async (checked: boolean) => {
@@ -139,7 +145,32 @@ export default function Security() {
           </div>
         </div>
 
-        {/* 2FA Card */}
+        {/* Profile Card */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg">Meu Perfil</CardTitle>
+            <CardDescription>Altere sua foto de perfil</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-5">
+              {user && (
+                <ProfileAvatarUpload
+                  userId={user.id}
+                  currentAvatarUrl={profileAvatarUrl}
+                  userName={profileName || user.email || ''}
+                  size="lg"
+                  onAvatarUpdated={(url) => setProfileAvatarUrl(url)}
+                />
+              )}
+              <div>
+                <p className="font-medium text-foreground text-lg">{profileName || 'Sem nome'}</p>
+                <p className="text-sm text-muted-foreground">{profileEmail || user?.email}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">

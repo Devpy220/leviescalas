@@ -10,7 +10,7 @@ import {
   Lock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -226,6 +226,9 @@ export default function MemberList({
             >
               <div className="flex items-start gap-3">
                 <Avatar className="w-12 h-12 border-2" style={{ borderColor: `${getMemberColorObj(member.user_id).primary}40` }}>
+                  {member.profile.avatar_url && (
+                    <AvatarImage src={member.profile.avatar_url} alt={member.profile.name} />
+                  )}
                   <AvatarFallback 
                     className="text-white font-bold text-base"
                     style={getMemberBgStyle(member.user_id)}
