@@ -166,9 +166,26 @@ const handler = async (req: Request): Promise<Response> => {
     const smsdevApiKey = Deno.env.get("SMSDEV_API_KEY") ?? "";
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
+    // Use Brazil timezone (America/Sao_Paulo) as the reference for all time calculations
+    const BRAZIL_TZ = 'America/Sao_Paulo';
     const now = new Date();
     let totalSent = 0;
     let totalErrors = 0;
+
+    // Helper to get date/time parts in Brazil timezone
+    const toBrazilParts = (date: Date) => {
+      const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: BRAZIL_TZ,
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: false,
+      }).formatToParts(date);
+      const get = (type: string) => parts.find(p => p.type === type)?.value ?? '00';
+      return {
+        date: `${get('year')}-${get('month')}-${get('day')}`,
+        time: `${get('hour')}:${get('minute')}:${get('second')}`,
+      };
+    };
 
     for (const window of REMINDER_WINDOWS) {
       const targetTime = new Date(now.getTime() + window.hoursAhead * 60 * 60 * 1000);
@@ -176,11 +193,13 @@ const handler = async (req: Request): Promise<Response> => {
       const windowStart = new Date(targetTime.getTime() - marginMs);
       const windowEnd = new Date(targetTime.getTime() + marginMs);
 
-      // Extract date range - could span two days
-      const startDate = windowStart.toISOString().split('T')[0];
-      const endDate = windowEnd.toISOString().split('T')[0];
-      const startTimeStr = windowStart.toTimeString().slice(0, 8);
-      const endTimeStr = windowEnd.toTimeString().slice(0, 8);
+      // Extract date/time range in Brazil timezone
+      const brStart = toBrazilParts(windowStart);
+      const brEnd = toBrazilParts(windowEnd);
+      const startDate = brStart.date;
+      const endDate = brEnd.date;
+      const startTimeStr = brStart.time;
+      const endTimeStr = brEnd.time;
 
       // Fetch schedules in this window
       // We need to combine date + time_start to check if it falls within our window
@@ -199,10 +218,16 @@ const handler = async (req: Request): Promise<Response> => {
 
       if (!schedules || schedules.length === 0) continue;
 
-      // Filter schedules whose actual datetime falls within our window
+      // Filter schedules whose actual datetime (in Brazil TZ) falls within our window
+      // Schedule dates/times are stored as Brazil local time, so we compare directly
       const matchingSchedules = schedules.filter(s => {
-        const scheduleDateTime = new Date(`${s.date}T${s.time_start}`);
-        return scheduleDateTime >= windowStart && scheduleDateTime <= windowEnd;
+        const brNow = toBrazilParts(windowStart);
+        const brEnd2 = toBrazilParts(windowEnd);
+        const sDateTime = `${s.date}T${s.time_start}`;
+        const wStartStr = `${brNow.date}T${brNow.time}`;
+        const wEndStr = `${brEnd2.date}T${brEnd2.time}`;
+        return sDateTime >= wStartStr && sDateTime <= wEndStr;
+      });
       });
 
       if (matchingSchedules.length === 0) continue;
