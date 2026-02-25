@@ -120,39 +120,6 @@ const sendTelegramNotification = async (
   }
 };
 
-const sendSmsNotification = async (
-  apiKey: string,
-  number: string,
-  msg: string
-): Promise<boolean> => {
-  try {
-    const cleanNumber = number.replace(/\D/g, '');
-    if (cleanNumber.length < 10) return false;
-    const fullNumber = cleanNumber.startsWith('55') ? cleanNumber : `55${cleanNumber}`;
-
-    const res = await fetch("https://api.smsdev.com.br/v1/send", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        key: apiKey,
-        type: 1,
-        number: fullNumber,
-        msg: msg.substring(0, 160),
-      }),
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      return data.situacao === "OK" || data.codigo === "1";
-    }
-    console.error(`SMS error for ${fullNumber}:`, await res.text());
-    return false;
-  } catch (e) {
-    console.error('SMS exception:', e);
-    return false;
-  }
-};
-
 const handler = async (req: Request): Promise<Response> => {
   console.log("send-scheduled-reminders (multi-interval) called");
 
@@ -163,7 +130,6 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-    const smsdevApiKey = Deno.env.get("SMSDEV_API_KEY") ?? "";
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
     // Use Brazil timezone (America/Sao_Paulo) as the reference for all time calculations
@@ -269,9 +235,8 @@ const handler = async (req: Request): Promise<Response> => {
           const title = window.titleFn(dept.name, time, dateSuffix);
           const body = window.bodyFn(dept.name, time, dateSuffix);
 
-          // Send push + telegram + sms + whatsapp in parallel
+          // Send push + telegram + whatsapp in parallel
           const telegramMsg = `${title}\n${body}`;
-          const smsMsg = `${body}`.substring(0, 160);
           const whatsappMsg = `${title}\n\n${body}`;
           const [pushSent] = await Promise.all([
             sendPushNotification(
@@ -289,9 +254,6 @@ const handler = async (req: Request): Promise<Response> => {
               supabaseUrl, serviceRoleKey,
               schedule.user_id, telegramMsg
             ),
-            smsdevApiKey && (profile as any).whatsapp
-              ? sendSmsNotification(smsdevApiKey, (profile as any).whatsapp, smsMsg)
-              : Promise.resolve(false),
             (profile as any).whatsapp
               ? fetch(`${supabaseUrl}/functions/v1/send-whatsapp-notification`, {
                   method: 'POST',
