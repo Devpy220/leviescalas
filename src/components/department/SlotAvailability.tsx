@@ -126,32 +126,6 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
       const existingRecord = getSlotRecord(slot);
       const newValue = !isSlotAvailable(slot);
 
-      // Sunday exclusivity: if enabling a Sunday slot, first remove the opposite shift
-      let removedOppositeLabel: string | null = null;
-      if (newValue && slot.dayOfWeek === 0) {
-        const isMorning = normalizeTime(slot.timeStart) < '13:00';
-        const oppositeSlot = FIXED_SLOTS.find(s => 
-          s.dayOfWeek === 0 && (isMorning ? normalizeTime(s.timeStart) >= '13:00' : normalizeTime(s.timeStart) < '13:00')
-        );
-        if (oppositeSlot) {
-          const oppositeRecord = availability.find(a =>
-            a.day_of_week === 0 &&
-            normalizeTime(a.time_start) === normalizeTime(oppositeSlot.timeStart) &&
-            normalizeTime(a.time_end) === normalizeTime(oppositeSlot.timeEnd) &&
-            a.is_available
-          );
-          if (oppositeRecord) {
-            await supabase
-              .from('member_availability')
-              .delete()
-              .eq('id', oppositeRecord.id);
-            setAvailability(prev => prev.filter(a => a.id !== oppositeRecord.id));
-            removedOppositeLabel = oppositeSlot.label;
-          }
-        }
-      }
-
-      // Now toggle the target slot
       if (existingRecord) {
         if (newValue) {
           const { error } = await supabase
@@ -207,9 +181,7 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
 
       toast({
         title: newValue ? 'Disponibilidade marcada!' : 'Disponibilidade removida',
-        description: newValue && removedOppositeLabel
-          ? `${slot.label} (${removedOppositeLabel} foi desmarcado automaticamente)`
-          : slot.label,
+        description: slot.label,
       });
     } catch (error: unknown) {
       const err = error as { message?: string; details?: string; code?: string; hint?: string };
