@@ -1,90 +1,54 @@
 
-## Integracao WhatsApp via Z-API
 
-Adicionar o canal **WhatsApp** via Z-API em todos os pontos de notificacao do sistema: comunicados admin (broadcast), lembretes automaticos de escala e notificacoes individuais de nova escala/alteracao.
+## Problema Identificado
 
----
+O campo de quantidade de voluntarios por horario ja existe no codigo, mas tem dois problemas:
 
-### Segredos Necessarios
+1. **Comportamento do input**: Quando o usuario tenta limpar o campo para digitar um novo numero, o valor volta imediatamente ao padrao por causa do operador `||` no `onChange` e no `value`. Isso impede a edicao.
 
-Configurar 3 secrets no backend:
-- `ZAPI_INSTANCE_ID` - ID da instancia Z-API
-- `ZAPI_TOKEN` - Token da instancia
-- `ZAPI_CLIENT_TOKEN` - Token de seguranca da conta
+2. **Scroll bloqueado**: O `DialogContent` tem `overflow-hidden`, entao se houver muitos slots (8 slots fixos), os inputs podem ficar fora da area visivel e inacessiveis.
 
----
+## Solucao
 
-### Nova Edge Function
+### 1. Corrigir o Input para permitir edicao livre
 
-**`supabase/functions/send-whatsapp-notification/index.ts`**
+- Mudar o `onChange` para aceitar valores vazios temporariamente (armazenar string vazia como valor intermediario)
+- Usar `onBlur` para validar e aplicar o valor minimo quando o usuario sair do campo
+- Trocar `Input type="number"` por botoes de incremento/decremento (+/-) que sao mais faceis de usar no mobile
 
-Funcao centralizada para envio de WhatsApp que sera chamada pelas demais funcoes. Responsabilidades:
-- Receber `phone` (numero) e `message` (texto)
-- Limpar numero, garantir formato `55XXXXXXXXXXX`
-- Chamar `POST https://api.z-api.io/instances/{INSTANCE}/token/{TOKEN}/send-text` com header `Client-Token`
-- Body: `{ phone, message }`
-- Retornar `{ sent: true/false }`
+### 2. Adicionar scroll na area de configuracao
 
----
-
-### Alteracoes em Edge Functions Existentes
-
-**1. `send-schedule-notification/index.ts`**
-- Adicionar chamada paralela ao `send-whatsapp-notification` junto com push, email e telegram
-- Enviar a mensagem `whatsappMessage` (ja existente no codigo) via Z-API em vez de apenas Telegram
-- O numero vem do campo `profile.whatsapp`
-
-**2. `send-admin-broadcast/index.ts`**
-- Adicionar canal `"whatsapp"` na logica de canais
-- Iterar sobre destinatarios que possuem `whatsapp` preenchido
-- Chamar `send-whatsapp-notification` para cada um
-- Adicionar contador `whatsappSent` e salvar na tabela `admin_broadcasts`
-
-**3. `send-scheduled-reminders/index.ts`**
-- Adicionar chamada ao `send-whatsapp-notification` em paralelo com push, telegram e SMS
-- Usar o numero do perfil (`profile.whatsapp`)
-
-**4. `send-announcement-notification/index.ts`**
-- Adicionar envio WhatsApp para membros do departamento que possuem numero cadastrado
-
----
-
-### Migracoes de Banco
-
-- Adicionar coluna `whatsapp_sent integer default 0` na tabela `admin_broadcasts` para rastrear envios por WhatsApp
-
----
-
-### Frontend (Admin.tsx)
-
-- Adicionar checkbox **"📲 WhatsApp"** na lista de canais de broadcast (ao lado de SMS, Telegram, etc.)
-- Incluir `whatsapp` no array default de `broadcastChannels`
-- Atualizar o mapeamento de labels no dialog de confirmacao e no toast de sucesso
-- Mostrar `whatsapp_sent` no resumo de envio
-
----
-
-### Configuracao do config.toml
-
-Adicionar entrada para a nova funcao:
-```text
-[functions.send-whatsapp-notification]
-verify_jwt = false
-```
-
----
+- Adicionar `ScrollArea` ao conteudo do step "config" para garantir que todos os slots sejam acessiveis
 
 ### Detalhes Tecnicos
 
-**Endpoint Z-API:**
-```text
-POST https://api.z-api.io/instances/{ZAPI_INSTANCE_ID}/token/{ZAPI_TOKEN}/send-text
-Header: Client-Token: {ZAPI_CLIENT_TOKEN}
-Body: { "phone": "5511999999999", "message": "texto" }
+**Arquivo**: `src/components/department/SmartScheduleDialog.tsx`
+
+**Mudancas**:
+
+1. Substituir o `Input type="number"` por um controle com botoes `-` e `+` ao lado do numero, que funciona melhor no mobile e nao tem problemas de edicao:
+
+```tsx
+<div className="flex items-center gap-1">
+  <Button variant="outline" size="icon" className="h-8 w-8"
+    onClick={() => setSlotMembers(prev => ({
+      ...prev, [slot.id]: Math.max(1, (prev[slot.id] || slot.defaultMembers) - 1)
+    }))}>
+    <Minus className="w-3 h-3" />
+  </Button>
+  <span className="w-8 text-center font-medium">
+    {slotMembers[slot.id] || slot.defaultMembers}
+  </span>
+  <Button variant="outline" size="icon" className="h-8 w-8"
+    onClick={() => setSlotMembers(prev => ({
+      ...prev, [slot.id]: Math.min(10, (prev[slot.id] || slot.defaultMembers) + 1)
+    }))}>
+    <Plus className="w-3 h-3" />
+  </Button>
+</div>
 ```
 
-**Formato do numero:** O campo `profiles.whatsapp` ja armazena numeros BR. A funcao limpa caracteres nao-numericos e garante prefixo `55`.
+2. Envolver o conteudo do step "config" em `ScrollArea` para garantir acesso a todos os campos.
 
-**Sem limite de caracteres:** Diferente do SMS (160 chars), WhatsApp permite mensagens longas com formatacao (*negrito*, _italico_).
+3. Importar `Minus` e `Plus` de `lucide-react`.
 
-**Ordem de execucao:** WhatsApp sera enviado em paralelo com os demais canais (push, email, telegram, sms) usando `Promise.all` / `Promise.allSettled`.
