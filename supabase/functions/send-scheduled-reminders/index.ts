@@ -228,7 +228,6 @@ const handler = async (req: Request): Promise<Response> => {
         const wEndStr = `${brEnd2.date}T${brEnd2.time}`;
         return sDateTime >= wStartStr && sDateTime <= wEndStr;
       });
-      });
 
       if (matchingSchedules.length === 0) continue;
 
