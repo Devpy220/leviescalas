@@ -160,17 +160,9 @@ export default function Landing() {
         </div>
       </nav>
 
-      {/* Support Notice */}
-      <div className="fixed top-16 left-0 right-0 z-40 bg-amber-500/10 border-b border-amber-500/30 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-2 text-center">
-          <p className="text-sm text-amber-700 dark:text-amber-300">
-            <strong>Atenção:</strong> Para cadastrar sua igreja, <a href="mailto:suport@leviescalas.com.br" className="underline font-semibold hover:text-amber-800 dark:hover:text-amber-200">entre em contato</a> com o suporte.
-          </p>
-        </div>
-      </div>
 
       {/* Hero Section */}
-      <section className="relative pt-44 pb-20 lg:pt-52 lg:pb-32 overflow-hidden">
+      <section className="relative pt-36 pb-20 lg:pt-44 lg:pb-32 overflow-hidden">
         {/* Background decorations */}
         <div className="absolute inset-0 mesh-gradient mesh-gradient-animated" />
         <div className="absolute inset-0 gradient-radial opacity-60" />

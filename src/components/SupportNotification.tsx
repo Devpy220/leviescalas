@@ -35,7 +35,7 @@ export function SupportNotification() {
   if (!visible) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-primary text-primary-foreground overflow-hidden">
+    <div className="fixed top-16 left-0 right-0 z-50 bg-primary text-primary-foreground overflow-hidden">
       <div className="relative flex items-center h-10">
         <button
           onClick={handleClick}
