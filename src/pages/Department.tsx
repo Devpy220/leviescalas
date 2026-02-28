@@ -44,7 +44,7 @@ import AnnouncementBoard from '@/components/department/AnnouncementBoard';
 
 import CalendarSyncDialog from '@/components/department/CalendarSyncDialog';
 import { exportToPDF, exportToExcel } from '@/lib/exportSchedules';
-import { SupportNotification } from '@/components/SupportNotification';
+
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -448,7 +448,7 @@ export default function Department() {
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-background">
-        <SupportNotification />
+        
         {/* Header */}
         <header className="sticky top-0 z-50 glass border-b border-border/50">
           <div className="container mx-auto px-2 sm:px-4 h-14 sm:h-16 flex items-center justify-between max-w-7xl">
