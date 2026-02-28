@@ -30,13 +30,7 @@ import { ptBR } from 'date-fns/locale';
 import { createExtendedMemberColorMap, getMemberBackgroundStyle } from '@/lib/memberColors';
 import { SMART_SLOTS as FIXED_SLOTS } from '@/lib/fixedSlots';
 
-// Período especial pré-definido
-const SPECIAL_PERIOD = {
-  id: 'jan-5-15',
-  label: 'Semana Especial (5-15 Jan)',
-  startDate: '2026-01-05',
-  endDate: '2026-01-15'
-};
+// No more hardcoded special period
 
 interface SmartScheduleDialogProps {
   open: boolean;
@@ -73,7 +67,6 @@ export default function SmartScheduleDialog({
   const [step, setStep] = useState<'config' | 'preview'>('config');
   
   // Configuration
-  const [periodType, setPeriodType] = useState<'month' | 'special'>('special');
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const next = addMonths(new Date(), 1);
     return format(next, 'yyyy-MM');
@@ -124,19 +117,11 @@ export default function SmartScheduleDialog({
   const handleGenerate = async () => {
     setLoading(true);
     try {
-      let startDate: string;
-      let endDate: string;
-      
-      if (periodType === 'special') {
-        startDate = SPECIAL_PERIOD.startDate;
-        endDate = SPECIAL_PERIOD.endDate;
-      } else {
-        const [year, month] = selectedMonth.split('-').map(Number);
-        const start = startOfMonth(new Date(year, month - 1));
-        const end = endOfMonth(new Date(year, month - 1));
-        startDate = format(start, 'yyyy-MM-dd');
-        endDate = format(end, 'yyyy-MM-dd');
-      }
+      const [year, month] = selectedMonth.split('-').map(Number);
+      const start = startOfMonth(new Date(year, month - 1));
+      const end = endOfMonth(new Date(year, month - 1));
+      const startDate = format(start, 'yyyy-MM-dd');
+      const endDate = format(end, 'yyyy-MM-dd');
       
       // Build fixed slots with configured member counts
       const configuredSlots = FIXED_SLOTS
@@ -345,7 +330,7 @@ export default function SmartScheduleDialog({
           </DialogTitle>
           <DialogDescription>
             {step === 'config' 
-              ? 'Gere escalas para os horários fixos: Quarta (19:20-22:00), Domingo Manhã (8:00-11:30) e Noite (18:00-22:00).'
+              ? 'Selecione o mês e configure os horários para gerar escalas automaticamente.'
               : 'Revise e ajuste as escalas sugeridas antes de confirmar.'
             }
           </DialogDescription>
@@ -353,56 +338,22 @@ export default function SmartScheduleDialog({
 
         {step === 'config' ? (
           <div className="flex-1 overflow-y-auto space-y-4 py-4 -mx-6 px-6">
-            {/* Period Type Selection */}
+            {/* Month Selection */}
             <div className="space-y-2">
-              <Label>Período</Label>
-              <Select value={periodType} onValueChange={(v) => setPeriodType(v as 'month' | 'special')}>
+              <Label>Mês</Label>
+              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="special">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-amber-500" />
-                      {SPECIAL_PERIOD.label}
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="month">Escolher mês completo</SelectItem>
+                  {monthOptions.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value} className="capitalize">
+                      {opt.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
-
-            {periodType === 'month' && (
-              <div className="space-y-2">
-                <Label>Mês</Label>
-                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {monthOptions.map(opt => (
-                      <SelectItem key={opt.value} value={opt.value} className="capitalize">
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {periodType === 'special' && (
-              <Card className="p-3 bg-amber-500/10 border-amber-500/30">
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="w-4 h-4 text-amber-600" />
-                  <span className="font-medium text-amber-700 dark:text-amber-400">
-                    5 a 15 de Janeiro de 2026
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Período especial com horários fixos 19:20-22:00
-                </p>
-              </Card>
-            )}
 
             {/* Members per slot configuration */}
             <div className="space-y-3">
