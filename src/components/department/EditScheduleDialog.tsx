@@ -211,8 +211,16 @@ export default function EditScheduleDialog({
     setSaving(true);
     try {
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      
+      console.log('Saving schedule update:', {
+        id: schedule.id,
+        date: dateStr,
+        time_start: timeStart,
+        time_end: timeEnd,
+        user_id: selectedMemberId,
+      });
 
-      const { error } = await supabase
+      const { data, error, count } = await supabase
         .from('schedules')
         .update({
           date: dateStr,
@@ -220,9 +228,21 @@ export default function EditScheduleDialog({
           time_end: timeEnd,
           user_id: selectedMemberId,
         })
-        .eq('id', schedule.id);
+        .eq('id', schedule.id)
+        .select();
 
       if (error) throw error;
+
+      console.log('Schedule update result:', { data, count });
+
+      if (!data || data.length === 0) {
+        toast({
+          variant: 'destructive',
+          title: 'Erro ao atualizar',
+          description: 'Não foi possível atualizar a escala. Verifique suas permissões.',
+        });
+        return;
+      }
 
       toast({
         title: 'Escala atualizada',
@@ -237,7 +257,7 @@ export default function EditScheduleDialog({
       toast({
         variant: 'destructive',
         title: isConflict ? 'Conflito de horário' : 'Erro ao atualizar',
-        description: isConflict ? error.message : 'Não foi possível salvar as alterações.',
+        description: isConflict ? error.message : (error?.message || 'Não foi possível salvar as alterações.'),
       });
     } finally {
       setSaving(false);
