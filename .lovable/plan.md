@@ -1,56 +1,108 @@
 
 
-## Problema
+# Redesign LEVI - Nova Paleta Violeta + Ambar
 
-Atualmente, o sistema **nao bloqueia** membros que nao marcaram disponibilidade para um dia/horario especifico:
+## Resumo
 
-1. **EditScheduleDialog**: So verifica disponibilidade se o membro tem *algum* registro de disponibilidade. Se nao tem nenhum, considera disponivel (linha 175-182).
-2. **AddScheduleDialog**: **Nao consulta** a tabela `member_availability` de forma alguma -- so verifica blackout dates e conflitos entre departamentos.
+Transformar o design system do LEVI da paleta atual (preto + laranja) para uma paleta vibrante violeta + ambar dourado, com glassmorphism aprimorado no dark mode, gradientes nos headers, e um visual moderno e acolhedor.
 
-O comportamento correto e: se um membro **nao marcou** disponibilidade para aquele slot (dia + horario), ele deve aparecer como **indisponivel/bloqueado**.
+## Escopo das Mudancas
+
+### 1. Variaveis CSS (`src/index.css`)
+
+Atualizar todas as variaveis de cor em `:root` (light) e `.dark`:
+
+**Light Mode:**
+- `--background`: lavanda suave (#F5F0FF → `263 100% 97%`)
+- `--card`: branco puro com sombra roxa
+- `--primary`: violeta intenso (#7C3AED → `263 84% 58%`)
+- `--accent`: verde esmeralda (#10B981)
+- `--border`: #DDD6FE (violeta claro)
+- `--foreground`: #1E1B4B (indigo profundo)
+- `--muted-foreground`: #6B7280
+
+**Dark Mode:**
+- `--background`: roxo profundo (#0F0A1E → `260 53% 8%`)
+- `--card`: #1A1033
+- `--primary`: violeta claro (#A78BFA → `263 86% 76%`)
+- `--border`: #2E2057
+- `--foreground`: #F5F3FF
+- `--muted-foreground`: #A5B4FC
+
+Adicionar variaveis novas:
+- `--secondary`: ambar (#F59E0B light / #FCD34D dark)
+- `--success`, `--warning`, `--danger` mapeados para as novas cores
+
+Atualizar as paletas `--violet-*`, `--orange-*` → violeta real, e `--blue-*` para indigo/violeta.
+
+### 2. Classes Utilitarias (`src/index.css`)
+
+- `.gradient-primary`: violeta para ambar (135deg)
+- `.gradient-vibrant`: violeta intenso para violeta claro
+- `.gradient-hero`: lavanda → violeta sutil (light), roxo profundo → violeta escuro (dark)
+- `.mesh-gradient`: manchas violetas e ambares
+- `.text-gradient` / `.text-gradient-vibrant`: gradiente violeta
+- `.glass` / `.glass-strong`: aprimorar para dark mode com borda translucida violeta
+- Sombras: trocar glow laranja por glow violeta
+- `.shadow-glow`: violeta
+- `.hover-lift`, `.hover-glow`, `.press-effect`: sombras violetas
+
+### 3. ThemeToggle Animado (`src/components/ThemeToggle.tsx`)
+
+- Substituir simples icone por toggle animado com transicao sol/lua
+- Adicionar rotacao e escala na troca
+- Fundo com pill colorida indicando o estado
+
+### 4. Tailwind Config (`tailwind.config.ts`)
+
+- Atualizar `boxShadow` glow para usar violeta
+- Manter keyframes existentes (ja sao genericos)
+
+### 5. Componentes que serao afetados automaticamente
+
+Como os componentes usam variaveis CSS (`bg-primary`, `text-primary`, `gradient-vibrant`, etc.), a maioria sera atualizada automaticamente ao trocar as variaveis. Nao precisam de edição individual:
+- Dashboard cards, buttons, badges
+- Landing page hero, nav, CTAs
+- Department page tabs, dialogs
+- MySchedules cards
+
+### 6. Memory do projeto
+
+Atualizar a memoria de estilo para refletir a nova paleta violeta + ambar.
 
 ---
 
-## Plano de Implementacao
+## Arquivos a Editar
 
-### 1. Corrigir EditScheduleDialog
+1. **`src/index.css`** - Variaveis CSS (light + dark), classes utilitarias, gradientes, glass effects, sombras
+2. **`tailwind.config.ts`** - Box shadows com violeta
+3. **`src/components/ThemeToggle.tsx`** - Toggle animado sol/lua
 
-Alterar a logica de `isMemberAvailable` (linha 166-183) para:
-- Remover a condicao "se nao tem registros, considerar disponivel"
-- Se o membro nao tem o slot especifico marcado como disponivel, ele e **indisponivel**
-- Manter as verificacoes de blackout dates
+## Detalhes Tecnicos
 
-Logica corrigida:
-```
-Se esta em blackout -> indisponivel
-Se NAO tem registro de disponibilidade para dia+horario -> indisponivel
-Se tem registro marcado como disponivel -> disponivel
-```
+### Mapeamento de cores (hex → HSL)
 
-### 2. Adicionar verificacao de disponibilidade no AddScheduleDialog
+```text
+#F5F0FF → 263 100% 97%   (bg light)
+#7C3AED → 263 84% 58%    (primary light)
+#F59E0B → 38 92% 50%     (secondary/amber)
+#10B981 → 160 84% 39%    (accent/emerald)
+#1E1B4B → 244 46% 20%    (text primary light)
+#DDD6FE → 253 85% 92%    (border light)
 
-- Buscar dados de `member_availability` ao abrir o dialogo (junto com `fetchMemberBlackouts`)
-- Criar um `availabilityMap` similar ao do EditScheduleDialog
-- Adicionar membros sem disponibilidade ao conjunto de `blockedMembers`
-- Atualizar o `useMemo` de `blockedMembers` para incluir membros sem slot disponivel para o dia/horario selecionado
-
-### Detalhes tecnicos
-
-**EditScheduleDialog.tsx** -- alterar `isMemberAvailable`:
-```typescript
-const isMemberAvailable = (userId: string): boolean => {
-  if (!selectedDate || !timeStart) return true;
-  const dayOfWeek = getDay(selectedDate);
-  const dateStr = format(selectedDate, 'yyyy-MM-dd');
-  if (blackoutMap[userId]?.includes(dateStr)) return false;
-  const key = `${userId}-${dayOfWeek}-${normalizeTime(timeStart)}`;
-  return !!availabilityMap[key];
-};
+#0F0A1E → 260 53% 8%     (bg dark)
+#1A1033 → 261 52% 13%    (card dark)
+#A78BFA → 263 86% 76%    (primary dark)
+#FCD34D → 46 96% 65%     (secondary dark)
+#34D399 → 160 67% 52%    (accent dark)
+#F5F3FF → 263 100% 97%   (text dark)
+#A5B4FC → 229 94% 82%    (muted text dark)
+#2E2057 → 261 49% 23%    (border dark)
 ```
 
-**AddScheduleDialog.tsx** -- adicionar:
-1. State `slotAvailabilityMap` (Record de userId-day-time -> true)
-2. Fetch de `member_availability` no `fetchMemberBlackouts` (ou funcao separada)
-3. Atualizar `blockedMembers` para incluir membros sem disponibilidade no slot selecionado
-4. Exibir indicacao visual (icone de alerta) nos membros bloqueados por falta de disponibilidade
+### Gradientes principais
+
+- Header/sections: `linear-gradient(135deg, #7C3AED, #F59E0B)` (violeta → ambar)
+- CTA buttons: `linear-gradient(135deg, #7C3AED, #6D28D9, #8B5CF6)` (violeta range)
+- Dark glass: `backdrop-blur + rgba(26,16,51,0.7) + border rgba(46,32,87,0.4)`
 
