@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Footer from '@/components/Footer';
-import { ArrowLeft, Shield, ShieldOff, Loader2, AlertTriangle, Eye, EyeOff, Bell, BellOff, ChevronDown, ChevronUp, CalendarSync } from 'lucide-react';
+import { ArrowLeft, Shield, ShieldOff, Loader2, AlertTriangle, Eye, EyeOff, Bell, BellOff, ChevronDown, ChevronUp, CalendarSync, Pencil, Check, X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { TelegramLinkToggle } from '@/components/TelegramLinkToggle';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
@@ -42,7 +44,13 @@ export default function Security() {
   const [showCalendarSync, setShowCalendarSync] = useState(false);
   const [profileName, setProfileName] = useState('');
   const [profileEmail, setProfileEmail] = useState('');
+  const [profileWhatsapp, setProfileWhatsapp] = useState('');
   const [profileAvatarUrl, setProfileAvatarUrl] = useState<string | null>(null);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editWhatsapp, setEditWhatsapp] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
   // Fetch current privacy setting
   useEffect(() => {
     const fetchProfile = async () => {
@@ -50,7 +58,7 @@ export default function Security() {
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('share_contact, name, email, avatar_url')
+        .select('share_contact, name, email, avatar_url, whatsapp')
         .eq('id', user.id)
         .maybeSingle();
       
@@ -58,12 +66,66 @@ export default function Security() {
         setShareContact(data.share_contact || false);
         setProfileName(data.name || '');
         setProfileEmail(data.email || '');
+        setProfileWhatsapp(data.whatsapp || '');
         setProfileAvatarUrl(data.avatar_url || null);
       }
     };
     
     fetchProfile();
   }, [user]);
+
+  const startEditingProfile = () => {
+    setEditName(profileName);
+    setEditEmail(profileEmail);
+    setEditWhatsapp(profileWhatsapp);
+    setIsEditingProfile(true);
+  };
+
+  const cancelEditingProfile = () => {
+    setIsEditingProfile(false);
+  };
+
+  const saveProfile = async () => {
+    if (!user) return;
+    if (!editName.trim() || !editEmail.trim() || !editWhatsapp.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Campos obrigatórios',
+        description: 'Nome, email e WhatsApp não podem estar vazios.',
+      });
+      return;
+    }
+
+    setSavingProfile(true);
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        name: editName.trim(),
+        email: editEmail.trim(),
+        whatsapp: editWhatsapp.trim(),
+      })
+      .eq('id', user.id);
+
+    setSavingProfile(false);
+
+    if (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao salvar',
+        description: 'Não foi possível atualizar seu perfil.',
+      });
+      return;
+    }
+
+    setProfileName(editName.trim());
+    setProfileEmail(editEmail.trim());
+    setProfileWhatsapp(editWhatsapp.trim());
+    setIsEditingProfile(false);
+    toast({
+      title: 'Perfil atualizado',
+      description: 'Suas informações foram salvas com sucesso.',
+    });
+  };
 
   const handlePrivacyToggle = async (checked: boolean) => {
     setIsUpdatingPrivacy(true);
@@ -148,11 +210,31 @@ export default function Security() {
         {/* Profile Card */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-lg">Meu Perfil</CardTitle>
-            <CardDescription>Altere sua foto de perfil</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-lg">Meu Perfil</CardTitle>
+                <CardDescription>Gerencie sua foto e informações pessoais</CardDescription>
+              </div>
+              {!isEditingProfile ? (
+                <Button variant="outline" size="sm" onClick={startEditingProfile}>
+                  <Pencil className="w-4 h-4 mr-2" />
+                  Editar
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="sm" onClick={cancelEditingProfile} disabled={savingProfile}>
+                    <X className="w-4 h-4" />
+                  </Button>
+                  <Button size="sm" onClick={saveProfile} disabled={savingProfile}>
+                    {savingProfile ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4 mr-1" />}
+                    {savingProfile ? '' : 'Salvar'}
+                  </Button>
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center gap-5">
+            <div className="flex items-start gap-5">
               {user && (
                 <ProfileAvatarUpload
                   userId={user.id}
@@ -162,10 +244,43 @@ export default function Security() {
                   onAvatarUpdated={(url) => setProfileAvatarUrl(url)}
                 />
               )}
-              <div>
-                <p className="font-medium text-foreground text-lg">{profileName || 'Sem nome'}</p>
-                <p className="text-sm text-muted-foreground">{profileEmail || user?.email}</p>
-              </div>
+              {isEditingProfile ? (
+                <div className="flex-1 space-y-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Nome</Label>
+                    <Input
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      placeholder="Seu nome"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Email</Label>
+                    <Input
+                      type="email"
+                      value={editEmail}
+                      onChange={(e) => setEditEmail(e.target.value)}
+                      placeholder="seu@email.com"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">WhatsApp</Label>
+                    <Input
+                      value={editWhatsapp}
+                      onChange={(e) => setEditWhatsapp(e.target.value)}
+                      placeholder="11999999999"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1">
+                  <p className="font-medium text-foreground text-lg">{profileName || 'Sem nome'}</p>
+                  <p className="text-sm text-muted-foreground">{profileEmail || user?.email}</p>
+                  {profileWhatsapp && (
+                    <p className="text-sm text-muted-foreground mt-0.5">📱 {profileWhatsapp}</p>
+                  )}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
