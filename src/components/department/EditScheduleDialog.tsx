@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { format, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar as CalendarIcon, Clock, User, Pencil } from 'lucide-react';
-import { SIMPLE_SLOTS, getAvailableSlotsForDay } from '@/lib/fixedSlots';
+import { Calendar as CalendarIcon, Clock, User, Pencil, AlertTriangle } from 'lucide-react';
+import { SIMPLE_SLOTS, getAvailableSlotsForDay, normalizeTime } from '@/lib/fixedSlots';
 import {
   Dialog,
   DialogContent,
@@ -32,7 +32,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-
 interface Schedule {
   id: string;
   user_id: string;
@@ -82,6 +81,70 @@ export default function EditScheduleDialog({
   const [timeEnd, setTimeEnd] = useState('');
   const [selectedMemberId, setSelectedMemberId] = useState('');
   const [showCalendar, setShowCalendar] = useState(false);
+  const [availabilityMap, setAvailabilityMap] = useState<Record<string, boolean>>({});
+  const [blackoutMap, setBlackoutMap] = useState<Record<string, string[]>>({});
+  const [loadingAvailability, setLoadingAvailability] = useState(false);
+
+  // Fetch availability for all members in this department
+  useEffect(() => {
+    if (!open || !departmentId) return;
+    
+    const fetchAvailability = async () => {
+      setLoadingAvailability(true);
+      try {
+        const [availRes, prefsRes, dateAvailRes] = await Promise.all([
+          supabase
+            .from('member_availability')
+            .select('user_id, day_of_week, time_start, time_end, is_available')
+            .eq('department_id', departmentId)
+            .eq('is_available', true),
+          supabase
+            .from('member_preferences')
+            .select('user_id, blackout_dates')
+            .eq('department_id', departmentId),
+          supabase
+            .from('member_date_availability')
+            .select('user_id, date, is_available')
+            .eq('department_id', departmentId)
+            .eq('is_available', false),
+        ]);
+
+        // Build availability map: "userId-dayOfWeek-timeStart" -> true
+        const aMap: Record<string, boolean> = {};
+        if (availRes.data) {
+          for (const row of availRes.data) {
+            const key = `${row.user_id}-${row.day_of_week}-${normalizeTime(row.time_start)}`;
+            aMap[key] = true;
+          }
+        }
+        setAvailabilityMap(aMap);
+
+        // Build blackout map: userId -> [date strings]
+        const bMap: Record<string, string[]> = {};
+        if (prefsRes.data) {
+          for (const row of prefsRes.data) {
+            if (row.blackout_dates?.length) {
+              bMap[row.user_id] = row.blackout_dates;
+            }
+          }
+        }
+        // Also add date-specific unavailability
+        if (dateAvailRes.data) {
+          for (const row of dateAvailRes.data) {
+            if (!bMap[row.user_id]) bMap[row.user_id] = [];
+            bMap[row.user_id].push(row.date);
+          }
+        }
+        setBlackoutMap(bMap);
+      } catch (err) {
+        console.error('Error fetching availability:', err);
+      } finally {
+        setLoadingAvailability(false);
+      }
+    };
+
+    fetchAvailability();
+  }, [open, departmentId]);
 
   // Initialize form when schedule changes
   useEffect(() => {
@@ -98,6 +161,34 @@ export default function EditScheduleDialog({
     if (!selectedDate) return [];
     return getAvailableSlotsForDay(getDay(selectedDate));
   }, [selectedDate]);
+
+  // Check if a member is available for the selected day/time
+  const isMemberAvailable = (userId: string): boolean => {
+    if (!selectedDate || !timeStart) return true; // no filter if no date/time selected
+    const dayOfWeek = getDay(selectedDate);
+    const dateStr = format(selectedDate, 'yyyy-MM-dd');
+    
+    // Check blackout dates
+    if (blackoutMap[userId]?.includes(dateStr)) return false;
+    
+    // Check slot availability (if member has any availability records)
+    const hasAnyAvailability = Object.keys(availabilityMap).some(k => k.startsWith(`${userId}-`));
+    if (hasAnyAvailability) {
+      const key = `${userId}-${dayOfWeek}-${normalizeTime(timeStart)}`;
+      return !!availabilityMap[key];
+    }
+    
+    // If member has no availability records, consider them available
+    return true;
+  };
+
+  const availableMembers = useMemo(() => {
+    return members.filter(m => isMemberAvailable(m.user_id));
+  }, [members, selectedDate, timeStart, availabilityMap, blackoutMap]);
+
+  const unavailableMembers = useMemo(() => {
+    return members.filter(m => !isMemberAvailable(m.user_id));
+  }, [members, selectedDate, timeStart, availabilityMap, blackoutMap]);
 
   const handleSlotSelect = (slotLabel: string) => {
     const slot = availableSlots.find(s => s.label === slotLabel);
@@ -262,21 +353,59 @@ export default function EditScheduleDialog({
               </SelectTrigger>
               <SelectContent>
                 <ScrollArea className="max-h-[200px]">
-                  {members.map(member => (
-                    <SelectItem key={member.user_id} value={member.user_id}>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-5 w-5">
-                          <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
-                            {member.profile.name.substring(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span>{member.profile.name}</span>
+                  {availableMembers.length > 0 && (
+                    <>
+                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                        Disponíveis ({availableMembers.length})
                       </div>
-                    </SelectItem>
-                  ))}
+                      {availableMembers.map(member => (
+                        <SelectItem key={member.user_id} value={member.user_id}>
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-5 w-5">
+                              <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                                {member.profile.name.substring(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span>{member.profile.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </>
+                  )}
+                  {unavailableMembers.length > 0 && (
+                    <>
+                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground flex items-center gap-1 mt-1">
+                        <AlertTriangle className="w-3 h-3" />
+                        Indisponíveis ({unavailableMembers.length})
+                      </div>
+                      {unavailableMembers.map(member => (
+                        <SelectItem key={member.user_id} value={member.user_id}>
+                          <div className="flex items-center gap-2 opacity-50">
+                            <Avatar className="h-5 w-5">
+                              <AvatarFallback className="text-[10px] bg-destructive/10 text-destructive">
+                                {member.profile.name.substring(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span>{member.profile.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </>
+                  )}
+                  {availableMembers.length === 0 && unavailableMembers.length === 0 && (
+                    <div className="px-2 py-4 text-sm text-muted-foreground text-center">
+                      Nenhum membro encontrado
+                    </div>
+                  )}
                 </ScrollArea>
               </SelectContent>
             </Select>
+            {selectedMemberId && !isMemberAvailable(selectedMemberId) && (
+              <div className="flex items-center gap-1.5 text-xs text-destructive">
+                <AlertTriangle className="w-3 h-3" />
+                <span>Este membro está indisponível para este dia/horário</span>
+              </div>
+            )}
           </div>
         </div>
 
