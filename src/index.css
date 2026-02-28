@@ -2,87 +2,87 @@
 @tailwind components;
 @tailwind utilities;
 
-/* LEVI Design System - Black & Orange with Blur */
+/* LEVI Design System - Violet & Amber */
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
-    --foreground: 0 0% 9%;
+    --background: 263 100% 97%;
+    --foreground: 244 46% 20%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 9%;
+    --card-foreground: 244 46% 20%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 9%;
+    --popover-foreground: 244 46% 20%;
 
-    --primary: 25 95% 53%;
+    --primary: 263 84% 58%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 9%;
+    --secondary: 38 92% 50%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 0 0% 94%;
-    --muted-foreground: 0 0% 40%;
+    --muted: 253 85% 95%;
+    --muted-foreground: 220 9% 46%;
 
-    --accent: 30 100% 50%;
+    --accent: 160 84% 39%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 90%;
-    --input: 0 0% 92%;
-    --ring: 25 95% 53%;
+    --border: 253 85% 92%;
+    --input: 253 60% 94%;
+    --ring: 263 84% 58%;
 
     --radius: 0.75rem;
 
-    /* Orange Palette - Vibrant */
-    --orange-50: 33 100% 96%;
-    --orange-100: 34 100% 92%;
-    --orange-200: 32 98% 83%;
-    --orange-300: 31 97% 72%;
-    --orange-400: 27 96% 61%;
-    --orange-500: 25 95% 53%;
-    --orange-600: 21 90% 48%;
-    --orange-700: 17 88% 40%;
-    --orange-800: 15 79% 34%;
-    --orange-900: 15 75% 28%;
+    /* Violet Palette */
+    --violet-50: 263 100% 97%;
+    --violet-100: 263 95% 93%;
+    --violet-200: 263 90% 86%;
+    --violet-300: 263 87% 76%;
+    --violet-400: 263 86% 68%;
+    --violet-500: 263 84% 58%;
+    --violet-600: 263 80% 50%;
+    --violet-700: 263 76% 42%;
+    --violet-800: 263 72% 34%;
+    --violet-900: 263 68% 26%;
 
-    /* Gray Palette - Light */
-    --gray-50: 0 0% 98%;
-    --gray-100: 0 0% 96%;
-    --gray-200: 0 0% 92%;
-    --gray-300: 0 0% 87%;
-    --gray-400: 0 0% 64%;
-    --gray-500: 0 0% 45%;
-    --gray-600: 0 0% 32%;
-    --gray-700: 0 0% 20%;
-    --gray-800: 0 0% 12%;
-    --gray-900: 0 0% 6%;
+    /* Orange/Amber Palette */
+    --orange-50: 48 100% 96%;
+    --orange-100: 48 96% 89%;
+    --orange-200: 44 94% 78%;
+    --orange-300: 40 93% 66%;
+    --orange-400: 38 92% 56%;
+    --orange-500: 38 92% 50%;
+    --orange-600: 32 95% 44%;
+    --orange-700: 26 90% 37%;
+    --orange-800: 23 83% 31%;
+    --orange-900: 22 78% 26%;
 
-    /* Legacy vars mapped to orange for compatibility */
-    --violet-50: 33 100% 96%;
-    --violet-100: 34 100% 92%;
-    --violet-200: 32 98% 83%;
-    --violet-300: 31 97% 72%;
-    --violet-400: 27 96% 61%;
-    --violet-500: 25 95% 53%;
-    --violet-600: 21 90% 48%;
-    --violet-700: 17 88% 40%;
-    --violet-800: 15 79% 34%;
-    --violet-900: 15 75% 28%;
+    /* Gray Palette */
+    --gray-50: 260 25% 98%;
+    --gray-100: 260 20% 96%;
+    --gray-200: 258 15% 92%;
+    --gray-300: 256 12% 87%;
+    --gray-400: 250 8% 64%;
+    --gray-500: 248 6% 45%;
+    --gray-600: 246 8% 32%;
+    --gray-700: 244 10% 20%;
+    --gray-800: 244 12% 12%;
+    --gray-900: 244 15% 6%;
 
-    /* Blue Palette (legacy support) */
-    --blue-50: 33 100% 96%;
-    --blue-100: 34 100% 92%;
-    --blue-200: 32 98% 83%;
-    --blue-300: 31 97% 72%;
-    --blue-400: 27 96% 61%;
-    --blue-500: 25 95% 53%;
-    --blue-600: 21 90% 48%;
-    --blue-700: 17 88% 40%;
-    --blue-800: 15 79% 34%;
-    --blue-900: 15 75% 28%;
+    /* Blue/Indigo Palette */
+    --blue-50: 229 100% 97%;
+    --blue-100: 229 94% 93%;
+    --blue-200: 230 90% 86%;
+    --blue-300: 232 87% 76%;
+    --blue-400: 234 86% 68%;
+    --blue-500: 236 84% 58%;
+    --blue-600: 238 80% 50%;
+    --blue-700: 240 76% 42%;
+    --blue-800: 242 72% 34%;
+    --blue-900: 244 68% 26%;
 
     /* Red Accent Palette */
     --red-50: 0 86% 97%;
@@ -106,77 +106,77 @@
 
     --success: 160 84% 39%;
     --warning: 38 92% 50%;
-    --info: 25 95% 53%;
+    --info: 263 84% 58%;
     --danger: 0 84% 60%;
 
     /* Glass Effects - Light theme */
     --glass-bg: 0 0% 100% / 0.7;
-    --glass-border: 0 0% 80% / 0.4;
+    --glass-border: 253 60% 80% / 0.4;
 
-    /* Gradient Colors - Orange & White */
-    --gradient-start: 25 95% 53%;
-    --gradient-mid: 30 100% 50%;
-    --gradient-end: 0 0% 96%;
-    --gradient-accent: 15 90% 55%;
+    /* Gradient Colors - Violet & Amber */
+    --gradient-start: 263 84% 58%;
+    --gradient-mid: 263 86% 68%;
+    --gradient-end: 38 92% 50%;
+    --gradient-accent: 263 76% 42%;
 
     /* Shadows */
-    --shadow-color: 25 95% 53%;
+    --shadow-color: 263 84% 58%;
 
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 0 0% 9%;
-    --sidebar-primary: 25 95% 53%;
+    --sidebar-foreground: 244 46% 20%;
+    --sidebar-primary: 263 84% 58%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 96%;
-    --sidebar-accent-foreground: 0 0% 9%;
-    --sidebar-border: 0 0% 90%;
-    --sidebar-ring: 25 95% 53%;
+    --sidebar-accent: 253 85% 95%;
+    --sidebar-accent-foreground: 244 46% 20%;
+    --sidebar-border: 253 85% 92%;
+    --sidebar-ring: 263 84% 58%;
   }
 
   .dark {
-    --background: 0 0% 4%;
-    --foreground: 0 0% 98%;
+    --background: 260 53% 8%;
+    --foreground: 263 100% 97%;
 
-    --card: 0 0% 8%;
-    --card-foreground: 0 0% 98%;
+    --card: 261 52% 13%;
+    --card-foreground: 263 100% 97%;
 
-    --popover: 0 0% 6%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 261 52% 11%;
+    --popover-foreground: 263 100% 97%;
 
-    --primary: 25 95% 53%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 263 86% 76%;
+    --primary-foreground: 260 53% 8%;
 
-    --secondary: 0 0% 12%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 46 96% 65%;
+    --secondary-foreground: 260 53% 8%;
 
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 64%;
+    --muted: 261 40% 18%;
+    --muted-foreground: 229 94% 82%;
 
-    --accent: 30 100% 50%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 160 67% 52%;
+    --accent-foreground: 260 53% 8%;
 
-    --destructive: 0 63% 31%;
+    --destructive: 0 63% 45%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 18%;
-    --input: 0 0% 15%;
-    --ring: 25 95% 53%;
+    --border: 261 49% 23%;
+    --input: 261 40% 20%;
+    --ring: 263 86% 76%;
 
-    --glass-bg: 0 0% 6% / 0.7;
-    --glass-border: 0 0% 25% / 0.4;
+    --glass-bg: 261 52% 13% / 0.7;
+    --glass-border: 261 49% 30% / 0.4;
 
-    --gradient-start: 25 95% 53%;
-    --gradient-mid: 30 100% 50%;
-    --gradient-end: 0 0% 4%;
-    --gradient-accent: 15 90% 55%;
+    --gradient-start: 263 86% 76%;
+    --gradient-mid: 263 84% 58%;
+    --gradient-end: 46 96% 65%;
+    --gradient-accent: 263 76% 42%;
 
-    --sidebar-background: 0 0% 6%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 25 95% 53%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 12%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 0 0% 18%;
-    --sidebar-ring: 25 95% 53%;
+    --sidebar-background: 261 52% 11%;
+    --sidebar-foreground: 263 100% 97%;
+    --sidebar-primary: 263 86% 76%;
+    --sidebar-primary-foreground: 260 53% 8%;
+    --sidebar-accent: 261 40% 18%;
+    --sidebar-accent-foreground: 263 100% 97%;
+    --sidebar-border: 261 49% 23%;
+    --sidebar-ring: 263 86% 76%;
   }
 }
 
@@ -196,25 +196,27 @@
 }
 
 @layer utilities {
-  /* Glass effect utilities with HEAVY blur */
+  /* Glass effect utilities */
   .glass {
     @apply backdrop-blur-2xl border border-border/30;
     background: hsl(var(--glass-bg));
   }
 
   .glass-strong {
-    @apply backdrop-blur-3xl border border-border/20;
+    @apply backdrop-blur-3xl border;
     background: hsl(var(--card) / 0.85);
+    border-color: hsl(var(--glass-border));
   }
 
-  .glass-orange {
+  .glass-violet {
     @apply backdrop-blur-2xl border border-primary/30;
-    background: hsl(var(--primary) / 0.15);
+    background: hsl(var(--primary) / 0.1);
   }
 
   .glass-dark {
-    @apply backdrop-blur-3xl border border-border/20;
-    background: hsl(0 0% 0% / 0.6);
+    @apply backdrop-blur-3xl border;
+    background: hsl(261 52% 10% / 0.7);
+    border-color: hsl(261 49% 23% / 0.4);
   }
 
   .glass-subtle {
@@ -222,56 +224,56 @@
     background: hsl(var(--card) / 0.4);
   }
 
-  /* Gradient backgrounds - Orange & Black */
+  /* Gradient backgrounds - Violet & Amber */
   .gradient-primary {
-    background: linear-gradient(135deg, hsl(var(--orange-600)) 0%, hsl(var(--orange-500)) 50%, hsl(var(--orange-700)) 100%);
+    background: linear-gradient(135deg, hsl(var(--violet-600)) 0%, hsl(var(--violet-500)) 50%, hsl(var(--orange-500)) 100%);
   }
 
   .gradient-vibrant {
-    background: linear-gradient(135deg, hsl(var(--orange-500)) 0%, hsl(var(--orange-400)) 35%, hsl(var(--orange-600)) 70%, hsl(var(--orange-700)) 100%);
+    background: linear-gradient(135deg, hsl(var(--violet-600)) 0%, hsl(var(--violet-500)) 35%, hsl(var(--violet-700)) 70%, hsl(var(--violet-800)) 100%);
   }
 
   .gradient-hero {
-    background: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(0 0% 96%) 30%, hsl(var(--orange-100) / 0.5) 60%, hsl(var(--background)) 100%);
+    background: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--violet-50)) 30%, hsl(var(--violet-100) / 0.5) 60%, hsl(var(--background)) 100%);
   }
 
   .dark .gradient-hero {
-    background: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(0 0% 8%) 30%, hsl(var(--orange-900) / 0.4) 60%, hsl(var(--background)) 100%);
+    background: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(261 52% 11%) 30%, hsl(var(--violet-900) / 0.4) 60%, hsl(var(--background)) 100%);
   }
 
   .gradient-radial {
-    background: radial-gradient(ellipse at top, hsl(var(--orange-300) / 0.3) 0%, hsl(0 0% 98% / 0.8) 40%, transparent 70%);
+    background: radial-gradient(ellipse at top, hsl(var(--violet-300) / 0.3) 0%, hsl(263 100% 97% / 0.8) 40%, transparent 70%);
   }
 
   .dark .gradient-radial {
-    background: radial-gradient(ellipse at top, hsl(var(--orange-500) / 0.25) 0%, hsl(0 0% 6% / 0.9) 40%, transparent 70%);
+    background: radial-gradient(ellipse at top, hsl(var(--violet-500) / 0.25) 0%, hsl(260 53% 8% / 0.9) 40%, transparent 70%);
   }
 
   .gradient-glow {
-    background: radial-gradient(circle at 50% 50%, hsl(var(--orange-500) / 0.4) 0%, hsl(0 0% 8% / 0.3) 50%, transparent 70%);
+    background: radial-gradient(circle at 50% 50%, hsl(var(--violet-500) / 0.4) 0%, hsl(260 53% 8% / 0.3) 50%, transparent 70%);
   }
 
-  /* Mesh gradient backgrounds - Orange & White/Black with blur overlay */
+  /* Mesh gradient backgrounds - Violet & Amber */
   .mesh-gradient {
     background-color: hsl(var(--background));
     background-image: 
-      radial-gradient(at 40% 20%, hsl(var(--orange-200) / 0.5) 0px, transparent 50%),
-      radial-gradient(at 80% 0%, hsl(var(--orange-100) / 0.6) 0px, transparent 50%),
-      radial-gradient(at 0% 50%, hsl(var(--orange-300) / 0.3) 0px, transparent 50%),
-      radial-gradient(at 80% 50%, hsl(var(--orange-200) / 0.4) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, hsl(0 0% 96% / 0.8) 0px, transparent 50%),
+      radial-gradient(at 40% 20%, hsl(var(--violet-200) / 0.5) 0px, transparent 50%),
+      radial-gradient(at 80% 0%, hsl(var(--violet-100) / 0.6) 0px, transparent 50%),
+      radial-gradient(at 0% 50%, hsl(var(--orange-200) / 0.3) 0px, transparent 50%),
+      radial-gradient(at 80% 50%, hsl(var(--violet-200) / 0.4) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, hsl(var(--violet-50) / 0.8) 0px, transparent 50%),
       radial-gradient(at 80% 100%, hsl(var(--orange-100) / 0.5) 0px, transparent 50%);
   }
 
   .dark .mesh-gradient {
     background-color: hsl(var(--background));
     background-image: 
-      radial-gradient(at 40% 20%, hsl(var(--orange-600) / 0.35) 0px, transparent 50%),
-      radial-gradient(at 80% 0%, hsl(var(--orange-500) / 0.25) 0px, transparent 50%),
-      radial-gradient(at 0% 50%, hsl(var(--orange-700) / 0.2) 0px, transparent 50%),
-      radial-gradient(at 80% 50%, hsl(var(--orange-400) / 0.15) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, hsl(0 0% 8% / 0.9) 0px, transparent 50%),
-      radial-gradient(at 80% 100%, hsl(var(--orange-800) / 0.25) 0px, transparent 50%);
+      radial-gradient(at 40% 20%, hsl(var(--violet-800) / 0.35) 0px, transparent 50%),
+      radial-gradient(at 80% 0%, hsl(var(--violet-700) / 0.25) 0px, transparent 50%),
+      radial-gradient(at 0% 50%, hsl(var(--orange-700) / 0.15) 0px, transparent 50%),
+      radial-gradient(at 80% 50%, hsl(var(--violet-600) / 0.15) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, hsl(260 53% 10% / 0.9) 0px, transparent 50%),
+      radial-gradient(at 80% 100%, hsl(var(--violet-900) / 0.25) 0px, transparent 50%);
   }
 
   /* Animated mesh gradient */
@@ -280,18 +282,18 @@
     animation: meshMove 15s ease infinite;
   }
 
-  /* Text gradients - Orange */
+  /* Text gradients - Violet */
   .text-gradient {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(var(--orange-400)) 0%, hsl(var(--orange-500)) 50%, hsl(var(--orange-600)) 100%);
+    background-image: linear-gradient(135deg, hsl(var(--violet-400)) 0%, hsl(var(--violet-500)) 50%, hsl(var(--violet-600)) 100%);
   }
 
   .text-gradient-vibrant {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(var(--orange-300)) 0%, hsl(var(--orange-500)) 40%, hsl(var(--orange-600)) 80%, hsl(var(--orange-700)) 100%);
+    background-image: linear-gradient(135deg, hsl(var(--violet-300)) 0%, hsl(var(--violet-500)) 40%, hsl(var(--orange-500)) 100%);
   }
 
-  /* Shadow utilities with orange glow */
+  /* Shadow utilities with violet glow */
   .shadow-glow {
     box-shadow: 0 0 60px hsl(var(--primary) / 0.5);
   }
@@ -390,7 +392,7 @@
     box-shadow: 0 0 0 2px hsl(var(--primary) / 0.4), 0 6px 25px -4px hsl(var(--primary) / 0.5);
   }
 
-  /* Card glow effect - orange shadow on hover/focus */
+  /* Card glow effect - violet shadow on hover/focus */
   .card-glow {
     position: relative;
     transition: all 0.3s ease;
@@ -403,19 +405,19 @@
     background: linear-gradient(135deg, hsl(var(--gradient-start)) 0%, hsl(var(--gradient-mid)) 50%, hsl(var(--gradient-end)) 100%);
     border-radius: inherit;
     filter: blur(30px);
-    opacity: 0.2;
+    opacity: 0.15;
     z-index: -1;
     transition: opacity 0.3s ease, filter 0.3s ease;
   }
 
   .card-glow:hover::before,
   .card-glow:focus-within::before {
-    opacity: 0.45;
+    opacity: 0.35;
     filter: blur(35px);
   }
 
   .card-glow:active::before {
-    opacity: 0.6;
+    opacity: 0.5;
     filter: blur(25px);
   }
 
@@ -493,8 +495,8 @@
     @apply bg-primary/10 text-primary;
   }
   .icon-blue {
-    background: hsl(var(--primary) / 0.1);
-    color: hsl(var(--primary));
+    background: hsl(var(--blue-500) / 0.1);
+    color: hsl(var(--blue-500));
   }
   .icon-orange {
     background: hsl(var(--orange-500) / 0.15);
@@ -551,12 +553,16 @@
     pointer-events: none;
   }
 
+  .glow-orb-violet {
+    background: hsl(var(--violet-500));
+  }
+
   .glow-orb-orange {
     background: hsl(var(--orange-500));
   }
 
   .glow-orb-dark {
-    background: hsl(0 0% 20%);
+    background: hsl(261 40% 20%);
     filter: blur(100px);
   }
 }
@@ -632,7 +638,7 @@
   }
 }
 
-/* Custom scrollbar - Orange accent */
+/* Custom scrollbar - Violet accent */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -649,8 +655,6 @@
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-primary/60;
 }
-
-/* Theme transition - only for theme toggles, not all elements */
 
 /* Selection highlight */
 ::selection {

@@ -136,13 +136,13 @@ export default {
         'mega': '150px',
       },
       boxShadow: {
-        'glow': '0 0 60px hsl(var(--primary) / 0.5)',
-        'glow-lg': '0 0 100px hsl(var(--primary) / 0.6)',
-        'glow-sm': '0 0 30px hsl(var(--primary) / 0.35)',
+        'glow': '0 0 60px hsl(263 84% 58% / 0.5)',
+        'glow-lg': '0 0 100px hsl(263 84% 58% / 0.6)',
+        'glow-sm': '0 0 30px hsl(263 84% 58% / 0.35)',
         'soft': '0 2px 15px -3px hsl(var(--foreground) / 0.1), 0 10px 20px -2px hsl(var(--foreground) / 0.04)',
         'soft-lg': '0 10px 50px -10px hsl(var(--foreground) / 0.2)',
-        'colored': '0 10px 50px -10px hsl(var(--primary) / 0.5)',
-        'inner-glow': 'inset 0 0 30px hsl(var(--primary) / 0.2)',
+        'colored': '0 10px 50px -10px hsl(263 84% 58% / 0.5)',
+        'inner-glow': 'inset 0 0 30px hsl(263 84% 58% / 0.2)',
       },
       keyframes: {
         "accordion-down": {
