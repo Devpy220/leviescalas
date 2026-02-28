@@ -47,7 +47,7 @@ const features = [
   {
     icon: Bell,
     title: 'Notificações Automáticas',
-    description: 'Lembretes via Email, Push e Telegram: confirmação imediata, 48h e 2h antes da escala. WhatsApp em breve!',
+    description: 'Lembretes via Email, Push, Telegram e WhatsApp: confirmação imediata, 48h e 2h antes da escala.',
     color: 'icon-emerald',
   },
   {
@@ -74,7 +74,7 @@ const appFeatures = [
   '100% gratuito para usar',
   'Membros ilimitados',
   'Escalas ilimitadas',
-  'Notificações por Email, Push e Telegram (WhatsApp em breve)',
+  'Notificações por Email, Push, Telegram e WhatsApp',
   'Calendário drag-and-drop',
   'Exportação PDF/Excel',
   'Sincronização em tempo real',
