@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { BarChart2 } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { BarChart2, ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -14,10 +14,12 @@ import {
 } from '@/components/ui/drawer';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
+import { format, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface Member {
   id: string;
@@ -97,20 +99,52 @@ export default function ScheduleCountDialog({
 }: ScheduleCountDialogProps) {
   const isMobile = useIsMobile();
 
+  // Get available months from schedules
+  const availableMonths = useMemo(() => {
+    const monthSet = new Set<string>();
+    schedules.forEach(s => {
+      const monthKey = s.date.substring(0, 7); // 'YYYY-MM'
+      monthSet.add(monthKey);
+    });
+    const sorted = Array.from(monthSet).sort();
+    // Add "all" option
+    return ['all', ...sorted];
+  }, [schedules]);
+
+  const [selectedMonth, setSelectedMonth] = useState<string>('all');
+
+  // Find current index for navigation
+  const currentIndex = availableMonths.indexOf(selectedMonth);
+
+  const goToPrev = () => {
+    if (currentIndex > 0) {
+      setSelectedMonth(availableMonths[currentIndex - 1]);
+    }
+  };
+
+  const goToNext = () => {
+    if (currentIndex < availableMonths.length - 1) {
+      setSelectedMonth(availableMonths[currentIndex + 1]);
+    }
+  };
+
+  // Filter schedules by selected month
+  const filteredSchedules = useMemo(() => {
+    if (selectedMonth === 'all') return schedules;
+    return schedules.filter(s => s.date.startsWith(selectedMonth));
+  }, [schedules, selectedMonth]);
+
   const { memberCounts, average, maxCount } = useMemo(() => {
-    // Count schedules per user
     const countMap = new Map<string, number>();
-    schedules.forEach(schedule => {
+    filteredSchedules.forEach(schedule => {
       const current = countMap.get(schedule.user_id) || 0;
       countMap.set(schedule.user_id, current + 1);
     });
 
-    // Calculate average
-    const totalSchedules = schedules.length;
+    const totalSchedules = filteredSchedules.length;
     const totalMembers = members.length;
     const avg = totalMembers > 0 ? totalSchedules / totalMembers : 0;
 
-    // Build member count list
     const counts: MemberCount[] = members.map(member => {
       const count = countMap.get(member.user_id) || 0;
       return {
@@ -122,21 +156,55 @@ export default function ScheduleCountDialog({
       };
     });
 
-    // Sort by count descending
     counts.sort((a, b) => b.count - a.count);
-
     const max = counts.length > 0 ? Math.max(...counts.map(c => c.count), 1) : 1;
 
     return { memberCounts: counts, average: avg, maxCount: max };
-  }, [schedules, members]);
+  }, [filteredSchedules, members]);
+
+  const getMonthLabel = (month: string) => {
+    if (month === 'all') return 'Todos';
+    const date = parseISO(month + '-01');
+    return format(date, 'MMM yyyy', { locale: ptBR });
+  };
 
   const content = (
     <div className="space-y-4">
+      {/* Month navigation */}
+      {availableMonths.length > 1 && (
+        <div className="flex items-center justify-between gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={goToPrev}
+            disabled={currentIndex <= 0}
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <span className="text-sm font-medium capitalize">
+            {getMonthLabel(selectedMonth)}
+          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={goToNext}
+            disabled={currentIndex >= availableMonths.length - 1}
+          >
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+        </div>
+      )}
+
       {/* Average indicator */}
       <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border border-border/50">
         <BarChart2 className="w-5 h-5 text-primary" />
         <span className="text-sm text-muted-foreground">
           Média: <span className="font-semibold text-foreground">{average.toFixed(1)}</span> escalas por membro
+          {selectedMonth !== 'all' && (
+            <span className="text-xs ml-1 capitalize">({getMonthLabel(selectedMonth)})</span>
+          )}
         </span>
       </div>
 

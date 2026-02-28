@@ -5,6 +5,7 @@ import {
   Plus,
   Clock,
   Trash2,
+  Pencil,
   Users,
   Sparkles,
   Calendar as CalendarIcon,
@@ -35,6 +36,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import EditScheduleDialog from '@/components/department/EditScheduleDialog';
 import { createExtendedMemberColorMap, getMemberColor, getMemberBackgroundStyle } from '@/lib/memberColors';
 import {
   format,
@@ -111,6 +113,7 @@ export default function UnifiedScheduleView({
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showCalendarPicker, setShowCalendarPicker] = useState(false);
   const { toast } = useToast();
@@ -358,6 +361,10 @@ export default function UnifiedScheduleView({
               getMemberColorValue={getMemberColorValue}
               getMemberBgStyle={getMemberBgStyle}
               onAddSchedule={onAddSchedule}
+              onEdit={(schedule) => {
+                setSelectedSchedule(schedule);
+                setShowEditDialog(true);
+              }}
               onDelete={(schedule) => {
                 setSelectedSchedule(schedule);
                 setShowDeleteDialog(true);
@@ -437,6 +444,20 @@ export default function UnifiedScheduleView({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Edit Schedule Dialog */}
+      <EditScheduleDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        schedule={selectedSchedule}
+        members={members}
+        departmentId={departmentId}
+        onScheduleUpdated={() => {
+          setShowEditDialog(false);
+          setSelectedSchedule(null);
+          onDeleteSchedule(); // reuse the refresh callback
+        }}
+      />
     </div>
   );
 }
@@ -448,6 +469,7 @@ interface SlotCardProps {
   getMemberColorValue: (userId: string) => { bg: string; dot: string };
   getMemberBgStyle: (userId: string) => React.CSSProperties;
   onAddSchedule: (date?: Date) => void;
+  onEdit: (schedule: Schedule) => void;
   onDelete: (schedule: Schedule) => void;
 }
 
@@ -457,6 +479,7 @@ function SlotCard({
   getMemberColorValue,
   getMemberBgStyle,
   onAddSchedule,
+  onEdit,
   onDelete
 }: SlotCardProps) {
   const { date, slotInfo, schedules } = group;
@@ -508,6 +531,7 @@ function SlotCard({
               isLeader={isLeader}
               getMemberColorValue={getMemberColorValue}
               getMemberBgStyle={getMemberBgStyle}
+              onEdit={onEdit}
               onDelete={onDelete}
             />
           ))}
@@ -523,6 +547,7 @@ interface MemberRowProps {
   isLeader: boolean;
   getMemberColorValue: (userId: string) => { bg: string; dot: string };
   getMemberBgStyle: (userId: string) => React.CSSProperties;
+  onEdit: (schedule: Schedule) => void;
   onDelete: (schedule: Schedule) => void;
 }
 
@@ -531,6 +556,7 @@ function MemberRow({
   isLeader,
   getMemberColorValue,
   getMemberBgStyle,
+  onEdit,
   onDelete
 }: MemberRowProps) {
   const color = getMemberColorValue(schedule.user_id);
@@ -595,16 +621,26 @@ function MemberRow({
         </div>
       </div>
       
-      {/* Delete button */}
+      {/* Edit & Delete buttons */}
       {isLeader && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0"
-          onClick={() => onDelete(schedule)}
-        >
-          <Trash2 className="w-3 h-3" />
-        </Button>
+        <div className="flex items-center gap-0.5 shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 text-muted-foreground hover:text-primary hover:bg-primary/10"
+            onClick={() => onEdit(schedule)}
+          >
+            <Pencil className="w-3 h-3" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10"
+            onClick={() => onDelete(schedule)}
+          >
+            <Trash2 className="w-3 h-3" />
+          </Button>
+        </div>
       )}
     </div>
   );
