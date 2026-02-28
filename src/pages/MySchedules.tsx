@@ -24,7 +24,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { NotificationBell } from '@/components/NotificationBell';
 import { SettingsButton } from '@/components/SettingsButton';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import { SupportNotification } from '@/components/SupportNotification';
+
 import { SwapRequestDialog } from '@/components/schedules/SwapRequestDialog';
 import { SwapResponseDialog } from '@/components/schedules/SwapResponseDialog';
 import { PendingSwapBadge } from '@/components/schedules/PendingSwapBadge';
@@ -378,7 +378,7 @@ export default function MySchedules() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <SupportNotification />
+      
       <header className="sticky top-0 z-50 glass border-b border-border/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
