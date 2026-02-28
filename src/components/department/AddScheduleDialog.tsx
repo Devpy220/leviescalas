@@ -3,7 +3,7 @@ import { format, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Calendar as CalendarIcon, Clock, Users, FileText, Layers, UserCog, AlertTriangle, CheckSquare, X, Pencil } from 'lucide-react';
 import { ASSIGNMENT_ROLES, AssignmentRole } from '@/lib/constants';
-import { SIMPLE_SLOTS, getAvailableSlotsForDay } from '@/lib/fixedSlots';
+import { SIMPLE_SLOTS, getAvailableSlotsForDay, normalizeTime } from '@/lib/fixedSlots';
 import {
   Dialog,
   DialogContent,
@@ -88,6 +88,7 @@ export default function AddScheduleDialog({
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [memberBlackouts, setMemberBlackouts] = useState<Record<string, string[]>>({});
+  const [slotAvailabilityMap, setSlotAvailabilityMap] = useState<Record<string, boolean>>({});
   const [step, setStep] = useState<'select' | 'configure'>('select');
   const [showMemberPicker, setShowMemberPicker] = useState(false);
   
@@ -108,12 +109,27 @@ export default function AddScheduleDialog({
   const blockedMembers = useMemo(() => {
     if (!date) return new Set<string>();
     const dateStr = format(date, 'yyyy-MM-dd');
-    return new Set(
-      Object.entries(memberBlackouts)
-        .filter(([_, dates]) => dates.includes(dateStr))
-        .map(([userId]) => userId)
-    );
-  }, [date, memberBlackouts]);
+    const dayOfWeek = getDay(date);
+    const blocked = new Set<string>();
+    
+    // Check blackout dates
+    Object.entries(memberBlackouts)
+      .filter(([_, dates]) => dates.includes(dateStr))
+      .forEach(([userId]) => blocked.add(userId));
+    
+    // Check slot availability - member must have explicitly marked as available
+    if (timeStart) {
+      const normalizedTime = normalizeTime(timeStart);
+      members.forEach(m => {
+        const key = `${m.user_id}-${dayOfWeek}-${normalizedTime}`;
+        if (!slotAvailabilityMap[key]) {
+          blocked.add(m.user_id);
+        }
+      });
+    }
+    
+    return blocked;
+  }, [date, memberBlackouts, slotAvailabilityMap, timeStart, members]);
 
   // Available (non-blocked and non-conflicting) members
   const availableMembers = useMemo(() => 
@@ -259,20 +275,37 @@ export default function AddScheduleDialog({
 
   const fetchMemberBlackouts = async () => {
     try {
-      const { data, error } = await supabase
-        .from('member_preferences')
-        .select('user_id, blackout_dates')
-        .eq('department_id', departmentId);
+      const [prefsRes, availRes] = await Promise.all([
+        supabase
+          .from('member_preferences')
+          .select('user_id, blackout_dates')
+          .eq('department_id', departmentId),
+        supabase
+          .from('member_availability')
+          .select('user_id, day_of_week, time_start, is_available')
+          .eq('department_id', departmentId)
+          .eq('is_available', true),
+      ]);
 
-      if (error) throw error;
+      if (prefsRes.error) throw prefsRes.error;
       
       const blackouts: Record<string, string[]> = {};
-      (data || []).forEach(pref => {
+      (prefsRes.data || []).forEach(pref => {
         if (pref.blackout_dates && pref.blackout_dates.length > 0) {
           blackouts[pref.user_id] = pref.blackout_dates;
         }
       });
       setMemberBlackouts(blackouts);
+
+      // Build slot availability map
+      const aMap: Record<string, boolean> = {};
+      if (availRes.data) {
+        for (const row of availRes.data) {
+          const key = `${row.user_id}-${row.day_of_week}-${normalizeTime(row.time_start)}`;
+          aMap[key] = true;
+        }
+      }
+      setSlotAvailabilityMap(aMap);
     } catch (error) {
       console.error('Error fetching member blackouts:', error);
     }
