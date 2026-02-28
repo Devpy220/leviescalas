@@ -158,10 +158,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const name = (u.user_metadata?.name as string | undefined) ?? '';
       const whatsapp = (u.user_metadata?.whatsapp as string | undefined) ?? '';
 
+      // Only INSERT if profile doesn't exist yet.
+      // Never overwrite name/email/whatsapp — the user may have edited them.
       await retryWithDelay(() => 
         (
-          // Don't select back here; selecting can trigger extra RLS/permission checks
-          // and is not needed for bootstrap.
           supabase
             .from('profiles')
             .upsert(
@@ -172,7 +172,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 whatsapp,
                 updated_at: new Date().toISOString(),
               } as any,
-              { onConflict: 'id' }
+              { onConflict: 'id', ignoreDuplicates: true }
             )
         ) as unknown as PromiseLike<{ data: unknown; error: unknown }>
       );
