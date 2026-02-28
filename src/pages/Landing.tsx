@@ -64,8 +64,8 @@ const features = [
   },
   {
     icon: CheckCircle2,
-    title: 'Simples de Usar',
-    description: 'Interface intuitiva que qualquer pessoa pode usar. Sem treinamento necessário.',
+    title: 'Mural de Avisos',
+    description: 'Líderes publicam comunicados e notificam todo o departamento via Push, Telegram e WhatsApp automaticamente.',
     color: 'icon-rose',
   },
 ];
