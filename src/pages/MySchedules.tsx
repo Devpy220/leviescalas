@@ -553,8 +553,10 @@ export default function MySchedules() {
             {schedules.map((schedule) => {
               const swap = getSwapForSchedule(schedule.id);
               const dateObj = parseISO(schedule.date);
+              const dayOfWeekNum = getDay(dateObj);
               const dayOfWeek = format(dateObj, "EEE", { locale: ptBR }).toUpperCase();
               const dayMonth = format(dateObj, "dd/MM", { locale: ptBR });
+              const slotInfo = findSlotByDayAndTime(dayOfWeekNum, schedule.time_start);
               
               return (
                 <Card 
@@ -562,7 +564,7 @@ export default function MySchedules() {
                   className="relative overflow-hidden flex flex-col"
                 >
                   {/* Colored header */}
-                  <div className="px-4 py-3 border-b border-border/50 bg-primary/10">
+                  <div className={cn("px-4 py-3 border-b border-border/50", slotInfo?.bgColor || "bg-primary/10")}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-lg text-primary">{dayOfWeek}</span>
