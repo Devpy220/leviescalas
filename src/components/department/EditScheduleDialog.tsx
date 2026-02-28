@@ -171,15 +171,9 @@ export default function EditScheduleDialog({
     // Check blackout dates
     if (blackoutMap[userId]?.includes(dateStr)) return false;
     
-    // Check slot availability (if member has any availability records)
-    const hasAnyAvailability = Object.keys(availabilityMap).some(k => k.startsWith(`${userId}-`));
-    if (hasAnyAvailability) {
-      const key = `${userId}-${dayOfWeek}-${normalizeTime(timeStart)}`;
-      return !!availabilityMap[key];
-    }
-    
-    // If member has no availability records, consider them available
-    return true;
+    // Member must have explicitly marked this slot as available
+    const key = `${userId}-${dayOfWeek}-${normalizeTime(timeStart)}`;
+    return !!availabilityMap[key];
   };
 
   const availableMembers = useMemo(() => {
