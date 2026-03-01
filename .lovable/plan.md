@@ -1,79 +1,53 @@
-## Logo LEVI Esmeralda + Atualizacoes de Favicon e Sidebar
+
+
+## Fundo menos branco no tema claro + Datas mais visíveis nos cards de escalas
 
 ### Resumo
-
-Gerar uma versao do logo LEVI na cor verde esmeralda usando IA, aplicar em todas as paginas, remover o contorno amarelo do logo na sidebar, atualizar favicon e icones PWA, e garantir que o avatar do usuario apareca no lugar de "Dashboard". em todos os lugares nas paginas nos sibebar se ele estivar logado
+Ajustar o fundo do tema claro para um tom levemente lilás/lavanda (menos branco puro) e tornar as datas nos cards de escalas mais destacadas com cores e tamanhos maiores.
 
 ---
 
-### 1. Gerar logo LEVI em verde esmeralda
+### 1. Fundo e cards menos brancos (`src/index.css`)
 
-Usar a API de edicao de imagem (Gemini) para recolorir o logo atual (`levi-icon-new.png`) para verde esmeralda. Salvar como novo asset `levi-icon-emerald.png`.
+Alterar as variáveis CSS do tema claro:
+- `--background`: de `270 50% 98%` para `270 50% 96%` (tom lavanda mais perceptível)
+- `--card`: de `0 0% 100%` para `270 30% 99%` (leve toque lilás nos cards, não branco puro)
+- `--popover`: idem ao card
 
-Tambem gerar versoes para PWA:
+### 2. Datas mais aparentes nos cards de escala
 
-- `public/pwa-192x192.png` (192x192)
-- `public/pwa-512x512.png` (512x512)
-- `public/favicon.png`
+**`src/components/department/UnifiedScheduleView.tsx` (SlotCard, linhas 503-504):**
+- Trocar `text-xs text-muted-foreground` da data para `text-sm font-semibold text-foreground` — data maior e com cor forte
+- Trocar `text-xs text-muted-foreground` do horário para `text-xs font-medium text-foreground/70`
 
-### 2. Atualizar `LeviLogo.tsx`
+**`src/pages/MySchedules.tsx` — Cards pessoais (linhas 495-496):**
+- O `dayOfWeek` já está `font-bold text-lg text-primary` (bom)
+- O `dayMonth` está `text-foreground font-medium` — trocar para `text-primary font-bold text-lg` para igualar destaque
 
-Trocar a importacao de `levi-icon-new.png` para `levi-icon-emerald.png`.
-
-### 3. Remover contorno amarelo na sidebar (`DashboardSidebar.tsx`)
-
-**Antes (linha 68):**
-
-```html
-<div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center shadow-lg">
-```
-
-**Depois:**
-
-```html
-<div className="w-10 h-10 rounded-xl flex items-center justify-center">
-```
-
-Remover `bg-secondary` e `shadow-lg` para eliminar o fundo amarelo/ambar.
-
-### 4. Garantir avatar no lugar de "Dashboard"
-
-Na linha 100 do sidebar, o texto fallback e `userName || 'Dashboard'`. Trocar para mostrar apenas o nome ou "Meu Perfil":
-
-```tsx
-<span>{userName || 'Meu Perfil'}</span>
-```
-
-### 5. Atualizar Auth.tsx - Logo esmeralda
-
-Na pagina de login (linha 975), trocar `bg-secondary` por uma cor esmeralda:
-
-```html
-<div className="w-12 h-12 rounded-xl bg-emerald-500 flex items-center justify-center shadow-glow-sm">
-```
-
-E usar o `LeviLogo` em vez do icone Calendar.
-
-### 6. Atualizar PWA manifest
-
-No `vite.config.ts`, o `theme_color` e `background_color` mudam de `#DD640A` (ambar) para `#10B981` (esmeralda).
-
-No `index.html`, atualizar `meta[name="theme-color"]` e `meta[name="msapplication-TileColor"]` para `#10B981`.
+**`src/pages/MySchedules.tsx` — Cards de equipe (linhas 605-611):**
+- Data: trocar `text-xs text-muted-foreground` para `text-sm font-semibold text-foreground`
+- Horário: trocar `text-xs text-muted-foreground` para `text-xs font-medium text-foreground/70`
 
 ---
 
 ### Arquivos a editar
 
-1. **Gerar imagem** - Logo esmeralda via AI image editing (edge function ou inline)
-2. `**src/components/LeviLogo.tsx**` - Nova imagem
-3. `**src/components/DashboardSidebar.tsx**` - Remover bg-secondary do logo, fix fallback "Dashboard"
-4. `**src/pages/Auth.tsx**` - Logo esmeralda + usar LeviLogo
-5. `**vite.config.ts**` - theme_color esmeralda
-6. `**index.html**` - meta theme-color esmeralda
-7. `**public/favicon.png**`, `**public/pwa-192x192.png**`, `**public/pwa-512x512.png**` - Icones esmeralda
+1. `src/index.css` — variáveis `--background`, `--card`, `--popover` no tema claro
+2. `src/components/department/UnifiedScheduleView.tsx` — classes da data e horário no SlotCard
+3. `src/pages/MySchedules.tsx` — classes da data e horário nos cards pessoais e de equipe
 
-### Detalhes tecnicos
+### Detalhes técnicos
 
-**Geracao da imagem:** Chamar a API Lovable AI com o modelo `google/gemini-2.5-flash-image` passando o logo atual e instrucao para recolorir para verde esmeralda (`#10B981`). Converter o base64 resultante para arquivos PNG nos tamanhos necessarios.
+**Cores de fundo (antes/depois):**
+```text
+--background: 270 50% 98%  -->  270 50% 96%
+--card:       0 0% 100%    -->  270 30% 99%
+--popover:    0 0% 100%    -->  270 30% 99%
+```
 
-**Cor esmeralda:** `#10B981` (Tailwind emerald-500), usado consistentemente em theme-color, background PWA e container do logo.
+**Data nos cards (antes/depois):**
+```text
+Antes:  <p className="text-xs text-muted-foreground">13 de março</p>
+Depois: <p className="text-sm font-semibold text-foreground">13 de março</p>
+```
+
