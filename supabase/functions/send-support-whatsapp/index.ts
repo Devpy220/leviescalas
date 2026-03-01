@@ -6,18 +6,23 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const SUPPORT_MESSAGE = `❤️ *Apoie o Levi - Escalas Inteligentes* ❤️
+const SUPPORT_MESSAGE = `❤️ *Apoie o Levi – Escalas Inteligentes* ❤️
 
-Olá! Obrigado por usar o Levi para organizar suas escalas.
+Olá! 👋
+Obrigado por usar o *Levi* para organizar suas escalas.
 
-O Levi é gratuito e mantido com o apoio de pessoas como você. Se puder contribuir com qualquer valor, ajuda muito a manter o projeto no ar!
+O Levi é *gratuito* e mantido com o apoio de pessoas como você. Se puder contribuir com qualquer valor, ajuda muito a manter o projeto no ar! 🚀
+
+━━━━━━━━━━━━━━━
 
 💰 *Chave PIX (E-mail):*
 suport@leviescalas.com.br
 
 👤 *Titular:* EDUARDO LINO DA SILVA
 
-🔗 Veja mais em: https://leviescalas.lovable.app/apoio
+━━━━━━━━━━━━━━━
+
+🔗 *Saiba mais:* https://leviescalas.com.br/apoio
 
 Deus abençoe! 🙏`;
 
