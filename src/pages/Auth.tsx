@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Calendar, Eye, EyeOff, ArrowLeft, Loader2, Sparkles, Users, Bell } from 'lucide-react';
+import { LeviLogo } from '@/components/LeviLogo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -972,8 +973,8 @@ export default function Auth() {
 
           {/* Logo */}
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center shadow-glow-sm">
-              <Calendar className="w-6 h-6 text-white" />
+            <div className="w-12 h-12 rounded-xl bg-emerald-500 flex items-center justify-center shadow-glow-sm">
+              <LeviLogo className="w-8 h-8" />
             </div>
             <div>
               <span className="font-display text-2xl font-bold text-foreground">LEVI</span>
