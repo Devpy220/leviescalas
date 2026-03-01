@@ -1,108 +1,50 @@
 
 
-# Redesign LEVI - Nova Paleta Violeta + Ambar
+## Ajuste do Dark Mode - Menos Roxo, Mais Contraste
 
-## Resumo
+### Problema
+O modo escuro atual tem saturacao roxa demais em todas as superficies (background, cards, popover, muted, input, border, sidebar). Isso cria uma aparencia monocromatica e cansativa.
 
-Transformar o design system do LEVI da paleta atual (preto + laranja) para uma paleta vibrante violeta + ambar dourado, com glassmorphism aprimorado no dark mode, gradientes nos headers, e um visual moderno e acolhedor.
+### Solucao
+Reduzir drasticamente a saturacao roxa das superficies de fundo, mantendo o roxo apenas nos elementos interativos (primary, ring, gradients). O fundo e cards passam a ser quase preto com um toque sutil de roxo, criando contraste natural.
 
-## Escopo das Mudancas
+### Mudancas em `src/index.css` (bloco `.dark`)
 
-### 1. Variaveis CSS (`src/index.css`)
+**Superficies - de roxo saturado para quase-preto neutro:**
 
-Atualizar todas as variaveis de cor em `:root` (light) e `.dark`:
+| Variavel | Antes | Depois | Visual |
+|---|---|---|---|
+| `--background` | `260 53% 8%` | `250 20% 5%` | Preto com toque sutil de roxo |
+| `--card` | `261 52% 13%` | `252 15% 10%` | Cinza muito escuro, menos roxo |
+| `--popover` | `261 52% 11%` | `252 15% 8%` | Idem |
+| `--muted` | `261 40% 18%` | `255 12% 15%` | Cinza escuro dessaturado |
+| `--input` | `261 40% 20%` | `255 12% 14%` | Idem |
+| `--border` | `261 49% 23%` | `258 15% 18%` | Borda mais neutra |
 
-**Light Mode:**
-- `--background`: lavanda suave (#F5F0FF → `263 100% 97%`)
-- `--card`: branco puro com sombra roxa
-- `--primary`: violeta intenso (#7C3AED → `263 84% 58%`)
-- `--accent`: verde esmeralda (#10B981)
-- `--border`: #DDD6FE (violeta claro)
-- `--foreground`: #1E1B4B (indigo profundo)
-- `--muted-foreground`: #6B7280
+**Sidebar - mesma abordagem:**
 
-**Dark Mode:**
-- `--background`: roxo profundo (#0F0A1E → `260 53% 8%`)
-- `--card`: #1A1033
-- `--primary`: violeta claro (#A78BFA → `263 86% 76%`)
-- `--border`: #2E2057
-- `--foreground`: #F5F3FF
-- `--muted-foreground`: #A5B4FC
+| Variavel | Antes | Depois |
+|---|---|---|
+| `--sidebar-background` | `261 52% 11%` | `252 15% 7%` |
+| `--sidebar-accent` | `261 40% 18%` | `255 12% 15%` |
+| `--sidebar-border` | `261 49% 23%` | `258 15% 18%` |
 
-Adicionar variaveis novas:
-- `--secondary`: ambar (#F59E0B light / #FCD34D dark)
-- `--success`, `--warning`, `--danger` mapeados para as novas cores
+**Glass effects:**
 
-Atualizar as paletas `--violet-*`, `--orange-*` → violeta real, e `--blue-*` para indigo/violeta.
+| Variavel | Antes | Depois |
+|---|---|---|
+| `--glass-bg` | `261 52% 13% / 0.7` | `252 15% 10% / 0.75` |
+| `--glass-border` | `261 49% 30% / 0.4` | `258 20% 25% / 0.4` |
 
-### 2. Classes Utilitarias (`src/index.css`)
+**Manter inalterados** (elementos de destaque que continuam roxos):
+- `--primary`, `--ring`, `--gradient-start/mid`, `--sidebar-primary`, `--sidebar-ring`
+- `--secondary` (ambar), `--accent` (verde), `--destructive`
 
-- `.gradient-primary`: violeta para ambar (135deg)
-- `.gradient-vibrant`: violeta intenso para violeta claro
-- `.gradient-hero`: lavanda → violeta sutil (light), roxo profundo → violeta escuro (dark)
-- `.mesh-gradient`: manchas violetas e ambares
-- `.text-gradient` / `.text-gradient-vibrant`: gradiente violeta
-- `.glass` / `.glass-strong`: aprimorar para dark mode com borda translucida violeta
-- Sombras: trocar glow laranja por glow violeta
-- `.shadow-glow`: violeta
-- `.hover-lift`, `.hover-glow`, `.press-effect`: sombras violetas
+### Resultado esperado
+- Fundos e cards quase pretos, com apenas um toque sutil de roxo
+- Elementos interativos (botoes, links, badges) continuam vibrantes em violeta e ambar
+- Melhor contraste e legibilidade
+- Visual mais sofisticado e menos "monocromatico roxo"
 
-### 3. ThemeToggle Animado (`src/components/ThemeToggle.tsx`)
-
-- Substituir simples icone por toggle animado com transicao sol/lua
-- Adicionar rotacao e escala na troca
-- Fundo com pill colorida indicando o estado
-
-### 4. Tailwind Config (`tailwind.config.ts`)
-
-- Atualizar `boxShadow` glow para usar violeta
-- Manter keyframes existentes (ja sao genericos)
-
-### 5. Componentes que serao afetados automaticamente
-
-Como os componentes usam variaveis CSS (`bg-primary`, `text-primary`, `gradient-vibrant`, etc.), a maioria sera atualizada automaticamente ao trocar as variaveis. Nao precisam de edição individual:
-- Dashboard cards, buttons, badges
-- Landing page hero, nav, CTAs
-- Department page tabs, dialogs
-- MySchedules cards
-
-### 6. Memory do projeto
-
-Atualizar a memoria de estilo para refletir a nova paleta violeta + ambar.
-
----
-
-## Arquivos a Editar
-
-1. **`src/index.css`** - Variaveis CSS (light + dark), classes utilitarias, gradientes, glass effects, sombras
-2. **`tailwind.config.ts`** - Box shadows com violeta
-3. **`src/components/ThemeToggle.tsx`** - Toggle animado sol/lua
-
-## Detalhes Tecnicos
-
-### Mapeamento de cores (hex → HSL)
-
-```text
-#F5F0FF → 263 100% 97%   (bg light)
-#7C3AED → 263 84% 58%    (primary light)
-#F59E0B → 38 92% 50%     (secondary/amber)
-#10B981 → 160 84% 39%    (accent/emerald)
-#1E1B4B → 244 46% 20%    (text primary light)
-#DDD6FE → 253 85% 92%    (border light)
-
-#0F0A1E → 260 53% 8%     (bg dark)
-#1A1033 → 261 52% 13%    (card dark)
-#A78BFA → 263 86% 76%    (primary dark)
-#FCD34D → 46 96% 65%     (secondary dark)
-#34D399 → 160 67% 52%    (accent dark)
-#F5F3FF → 263 100% 97%   (text dark)
-#A5B4FC → 229 94% 82%    (muted text dark)
-#2E2057 → 261 49% 23%    (border dark)
-```
-
-### Gradientes principais
-
-- Header/sections: `linear-gradient(135deg, #7C3AED, #F59E0B)` (violeta → ambar)
-- CTA buttons: `linear-gradient(135deg, #7C3AED, #6D28D9, #8B5CF6)` (violeta range)
-- Dark glass: `backdrop-blur + rgba(26,16,51,0.7) + border rgba(46,32,87,0.4)`
-
+### Arquivo editado
+- `src/index.css` (somente o bloco `.dark`)
