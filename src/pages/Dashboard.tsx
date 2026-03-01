@@ -5,32 +5,25 @@ import {
   Plus, 
   Calendar, 
   Users, 
-  LogOut, 
-  Shield, 
   ChevronRight,
   Crown,
   User,
   Loader2,
   Sparkles,
-  CalendarDays,
-  Settings2,
-  Download,
-  Church,
-  Heart
+  Heart,
+  Church
 } from 'lucide-react';
-import { LeviLogo } from '@/components/LeviLogo';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import { NotificationBell } from '@/components/NotificationBell';
-import { SettingsButton } from '@/components/SettingsButton';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
+import { DashboardSidebar } from '@/components/DashboardSidebar';
 
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { slugify } from '@/lib/slugify';
@@ -67,6 +60,7 @@ export default function Dashboard() {
   const { user, session, loading: authLoading, authEvent, signOut } = useAuth();
   const { isAdmin } = useAdmin();
   const { isInstallable, install, isIOS, shouldShowInstallPrompt } = usePWAInstall();
+  const isMobile = useIsMobile();
   const [showInstallDialog, setShowInstallDialog] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -306,108 +300,19 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      
-      {/* Header */}
-      <header className="sticky top-0 z-50 glass border-b border-border/50">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <LeviLogo />
-            <span className="font-display text-xl font-bold text-foreground">LEVI</span>
-          </Link>
+      <DashboardSidebar 
+        isAdmin={isAdmin}
+        shouldShowInstallPrompt={shouldShowInstallPrompt()}
+        onInstallClick={() => setShowInstallDialog(true)}
+        onSignOut={handleSignOut}
+      />
 
-          <TooltipProvider>
-            <div className="flex items-center gap-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div><ThemeToggle /></div>
-                </TooltipTrigger>
-                <TooltipContent>Alternar tema</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div><NotificationBell /></div>
-                </TooltipTrigger>
-                <TooltipContent>Notificações</TooltipContent>
-              </Tooltip>
-              {isAdmin && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="text-muted-foreground hover:text-primary"
-                      onClick={() => navigate('/admin')}
-                    >
-                      <Settings2 className="w-5 h-5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Painel Admin</TooltipContent>
-                </Tooltip>
-              )}
-              {shouldShowInstallPrompt() && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="text-muted-foreground hover:text-primary relative"
-                      onClick={() => setShowInstallDialog(true)}
-                    >
-                      <Download className="w-5 h-5" />
-                      <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-primary rounded-full" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Instalar App</TooltipContent>
-                </Tooltip>
-              )}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="text-muted-foreground"
-                    onClick={() => navigate('/my-schedules')}
-                  >
-                    <CalendarDays className="w-5 h-5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Minhas Escalas</TooltipContent>
-              </Tooltip>
-              <SettingsButton />
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="text-muted-foreground"
-                    onClick={handleSignOut}
-                  >
-                    <LogOut className="w-5 h-5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Sair</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Avatar className="w-9 h-9 border-2 border-primary/20 cursor-default">
-                    {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={userName} />}
-                    <AvatarFallback className="gradient-vibrant text-white text-sm font-medium">
-                      {user.email?.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                </TooltipTrigger>
-                <TooltipContent>{user.email}</TooltipContent>
-              </Tooltip>
-            </div>
-          </TooltipProvider>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-8">
+      <div className={isMobile ? '' : 'ml-64'}>
+        <main className="container mx-auto px-4 py-8">
 
         {/* Welcome section - Centered */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/10 text-secondary text-sm font-medium mb-4">
             <Sparkles className="w-4 h-4" />
             <span>Dashboard</span>
           </div>
@@ -425,10 +330,10 @@ export default function Dashboard() {
           {canCreateDepartment ? (
             <Link to="/departments/new" className="block">
               <div className="relative group h-full">
-                <div className="absolute inset-0 gradient-vibrant rounded-2xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity" />
-                <div className="relative glass rounded-2xl p-6 border-2 border-dashed border-primary/30 hover:border-primary/50 transition-all hover-lift h-full flex items-center">
+                <div className="absolute inset-0 gradient-fresh rounded-2xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity" />
+                <div className="relative glass rounded-2xl p-6 border-2 border-dashed border-accent/30 hover:border-accent/50 transition-all hover-lift h-full flex items-center">
                   <div className="flex items-center gap-4 w-full">
-                    <div className="w-14 h-14 rounded-xl gradient-vibrant flex items-center justify-center shadow-glow-sm group-hover:shadow-glow transition-all">
+                    <div className="w-14 h-14 rounded-xl gradient-fresh flex items-center justify-center shadow-glow-sm group-hover:shadow-glow transition-all">
                       <Plus className="w-7 h-7 text-white" />
                     </div>
                     <div className="flex-1">
@@ -535,16 +440,17 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-      </main>
+        </main>
       
-      <Footer />
+        <Footer />
       
-      {/* PWA Install Prompt */}
-      <PWAInstallPrompt 
-        isFirstLogin={isFirstLogin} 
-        open={showInstallDialog} 
-        onOpenChange={setShowInstallDialog} 
-      />
+        {/* PWA Install Prompt */}
+        <PWAInstallPrompt 
+          isFirstLogin={isFirstLogin} 
+          open={showInstallDialog} 
+          onOpenChange={setShowInstallDialog} 
+        />
+      </div>
     </div>
   );
 }

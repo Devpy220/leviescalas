@@ -88,7 +88,7 @@ export default function Index() {
           <div className="relative">
             {/* Header */}
             <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6 border border-primary/20">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/10 text-secondary text-sm font-medium mb-6 border border-secondary/20">
                 <Sparkles className="w-4 h-4" />
                 <span>Gestão de Escalas para Voluntários</span>
               </div>
@@ -107,7 +107,7 @@ export default function Index() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="church-code" className="flex items-center gap-2">
-                    <Church className="w-4 h-4 text-primary" />
+                    <Church className="w-4 h-4 text-accent" />
                     Código da Igreja
                   </Label>
                   <Input
@@ -127,7 +127,7 @@ export default function Index() {
 
                 <Button 
                   type="submit" 
-                  className="w-full h-12 gradient-vibrant text-white shadow-glow-sm hover:shadow-glow transition-all"
+                  className="w-full h-12 bg-secondary text-secondary-foreground shadow-glow-sm hover:shadow-glow transition-all hover:brightness-110"
                   disabled={isLoading || !churchCode.trim()}
                 >
                   {isLoading ? (
