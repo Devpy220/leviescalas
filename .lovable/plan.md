@@ -1,53 +1,35 @@
 
 
-## Fundo menos branco no tema claro + Datas mais visíveis nos cards de escalas
+## Remover fundo branco do logo LEVI no sidebar
 
-### Resumo
-Ajustar o fundo do tema claro para um tom levemente lilás/lavanda (menos branco puro) e tornar as datas nos cards de escalas mais destacadas com cores e tamanhos maiores.
+### Problema
+O arquivo `levi-icon-emerald.png` ainda possui pixels brancos no fundo da imagem. Quando renderizado sobre o gradiente violeta da sidebar, o branco aparece como um quadrado visivel.
 
----
+### Solucao
 
-### 1. Fundo e cards menos brancos (`src/index.css`)
+**1. Regenerar a imagem com fundo transparente**
 
-Alterar as variáveis CSS do tema claro:
-- `--background`: de `270 50% 98%` para `270 50% 96%` (tom lavanda mais perceptível)
-- `--card`: de `0 0% 100%` para `270 30% 99%` (leve toque lilás nos cards, não branco puro)
-- `--popover`: idem ao card
+Usar a API de edicao de imagem para gerar novamente o `src/assets/levi-icon-emerald.png`, desta vez com instrucoes explicitas para remover completamente o fundo branco e manter apenas o icone esmeralda com transparencia total (canal alpha).
 
-### 2. Datas mais aparentes nos cards de escala
+**2. Adicionar CSS de seguranca no `LeviLogo.tsx`**
 
-**`src/components/department/UnifiedScheduleView.tsx` (SlotCard, linhas 503-504):**
-- Trocar `text-xs text-muted-foreground` da data para `text-sm font-semibold text-foreground` — data maior e com cor forte
-- Trocar `text-xs text-muted-foreground` do horário para `text-xs font-medium text-foreground/70`
-
-**`src/pages/MySchedules.tsx` — Cards pessoais (linhas 495-496):**
-- O `dayOfWeek` já está `font-bold text-lg text-primary` (bom)
-- O `dayMonth` está `text-foreground font-medium` — trocar para `text-primary font-bold text-lg` para igualar destaque
-
-**`src/pages/MySchedules.tsx` — Cards de equipe (linhas 605-611):**
-- Data: trocar `text-xs text-muted-foreground` para `text-sm font-semibold text-foreground`
-- Horário: trocar `text-xs text-muted-foreground` para `text-xs font-medium text-foreground/70`
-
----
+Como fallback visual, adicionar a classe `mix-blend-multiply` na tag `<img>` do componente `LeviLogo`. Isso faz com que qualquer pixel branco residual se torne transparente ao se misturar com o fundo colorido. No tema escuro, usar `dark:mix-blend-screen` para o efeito inverso.
 
 ### Arquivos a editar
 
-1. `src/index.css` — variáveis `--background`, `--card`, `--popover` no tema claro
-2. `src/components/department/UnifiedScheduleView.tsx` — classes da data e horário no SlotCard
-3. `src/pages/MySchedules.tsx` — classes da data e horário nos cards pessoais e de equipe
+1. `src/assets/levi-icon-emerald.png` -- Regenerar com fundo 100% transparente
+2. `src/components/LeviLogo.tsx` -- Adicionar `mix-blend-multiply dark:mix-blend-screen` como fallback
 
-### Detalhes técnicos
+### Detalhe tecnico
 
-**Cores de fundo (antes/depois):**
-```text
---background: 270 50% 98%  -->  270 50% 96%
---card:       0 0% 100%    -->  270 30% 99%
---popover:    0 0% 100%    -->  270 30% 99%
+```tsx
+// LeviLogo.tsx - adicionar mix-blend-mode
+<img 
+  src={leviIcon} 
+  alt="LEVI" 
+  className={`${sizeClasses[size]} mix-blend-multiply dark:mix-blend-screen ${className}`}
+/>
 ```
 
-**Data nos cards (antes/depois):**
-```text
-Antes:  <p className="text-xs text-muted-foreground">13 de março</p>
-Depois: <p className="text-sm font-semibold text-foreground">13 de março</p>
-```
+Isso garante que mesmo que a imagem tenha residuos brancos, eles nao aparecerao sobre fundos coloridos (sidebar violeta, cards, etc).
 
