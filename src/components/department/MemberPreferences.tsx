@@ -19,8 +19,8 @@ export default function MemberPreferences({ departmentId, userId }: MemberPrefer
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [maxSchedules, setMaxSchedules] = useState(4);
-  const [minDaysBetween, setMinDaysBetween] = useState(3);
+  const [maxSchedules, setMaxSchedules] = useState<number | string>(4);
+  const [minDaysBetween, setMinDaysBetween] = useState<number | string>(3);
   const [blackoutDates, setBlackoutDates] = useState<string[]>([]);
   const [newBlackoutDate, setNewBlackoutDate] = useState('');
 
@@ -77,8 +77,8 @@ export default function MemberPreferences({ departmentId, userId }: MemberPrefer
         .upsert({
           user_id: userId,
           department_id: departmentId,
-          max_schedules_per_month: maxSchedules,
-          min_days_between_schedules: minDaysBetween,
+          max_schedules_per_month: Number(maxSchedules) || 4,
+          min_days_between_schedules: Number(minDaysBetween) || 3,
           blackout_dates: blackoutDates
         }, {
           onConflict: 'user_id,department_id'
@@ -131,7 +131,7 @@ export default function MemberPreferences({ departmentId, userId }: MemberPrefer
               min={1}
               max={31}
               value={maxSchedules}
-              onChange={(e) => setMaxSchedules(parseInt(e.target.value) || 4)}
+              onChange={(e) => setMaxSchedules(e.target.value === '' ? '' : parseInt(e.target.value) || '')}
             />
             <p className="text-xs text-muted-foreground">
               Limite de quantas vezes você pode ser escalado por mês.
@@ -146,7 +146,7 @@ export default function MemberPreferences({ departmentId, userId }: MemberPrefer
               min={0}
               max={30}
               value={minDaysBetween}
-              onChange={(e) => setMinDaysBetween(parseInt(e.target.value) || 3)}
+              onChange={(e) => setMinDaysBetween(e.target.value === '' ? '' : parseInt(e.target.value) || '')}
             />
             <p className="text-xs text-muted-foreground">
               Intervalo mínimo entre uma escala e outra.
