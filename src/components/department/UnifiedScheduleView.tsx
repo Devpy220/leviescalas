@@ -500,10 +500,10 @@ function SlotCard({
             <p className="font-bold text-sm uppercase tracking-wide">
               {slotInfo.label}
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm font-semibold text-foreground">
               {format(date, "d 'de' MMMM", { locale: ptBR })}
             </p>
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
+            <p className="text-xs font-medium text-foreground/70 flex items-center gap-1">
               <Clock className="w-3 h-3" />
               {slotInfo.timeStart} - {slotInfo.timeEnd}
             </p>
