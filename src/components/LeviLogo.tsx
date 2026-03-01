@@ -16,7 +16,7 @@ export function LeviLogo({ size = 'md', className = '' }: LeviLogoProps) {
     <img 
       src={leviIcon} 
       alt="LEVI" 
-      className={`${sizeClasses[size]} mix-blend-multiply dark:mix-blend-screen ${className}`}
+      className={`${sizeClasses[size]} ${className}`}
     />
   );
 }

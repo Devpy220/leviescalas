@@ -65,7 +65,7 @@ function SidebarContent({
       {/* Logo + Subtitle */}
       <div className="p-5 pb-4">
         <Link to="/" className="flex items-center gap-3" onClick={onNavigate}>
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center">
             <LeviLogo className="w-8 h-8" />
           </div>
           <span className="font-display text-xl font-bold">LEVI</span>
