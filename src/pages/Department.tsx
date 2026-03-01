@@ -13,11 +13,12 @@ import {
   Megaphone,
   CalendarSync
 } from 'lucide-react';
+import { DashboardSidebar } from '@/components/DashboardSidebar';
+import { useAdmin } from '@/hooks/useAdmin';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import { SettingsButton } from '@/components/SettingsButton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -117,7 +118,9 @@ export default function Department() {
   const [showCalendarSync, setShowCalendarSync] = useState(false);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user, session, loading: authLoading, ensureSession } = useAuth();
+  const { user, session, loading: authLoading, ensureSession, signOut } = useAuth();
+  const { isAdmin } = useAdmin();
+  const { shouldShowInstallPrompt, install } = usePWAInstall();
   const { toast } = useToast();
   
   // Use session.user as fallback when user state hasn't updated yet
@@ -445,15 +448,26 @@ export default function Department() {
     });
   };
 
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
+
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-background">
+        <DashboardSidebar
+          isAdmin={isAdmin}
+          shouldShowInstallPrompt={shouldShowInstallPrompt()}
+          onInstallClick={install}
+          onSignOut={handleSignOut}
+        />
         
-        {/* Header */}
-        <header className="sticky top-0 z-50 glass border-b border-border/50">
-          <div className="container mx-auto px-2 sm:px-4 h-14 sm:h-16 flex items-center justify-between max-w-7xl">
-            <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
-              {/* Action menu popover for leaders */}
+        <div className={isMobile ? '' : 'ml-64'}>
+        {/* Sub-header with department info */}
+        <div className="border-b border-border/50 bg-card/50">
+          <div className="container mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 max-w-7xl py-3 flex items-center justify-between">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               {isLeader && (
                 <ActionMenuPopover
                   departmentName={department.name}
@@ -467,50 +481,31 @@ export default function Department() {
                   onOpenCalendarSync={() => setShowCalendarSync(true)}
                 />
               )}
-              
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Link to="/dashboard">
-                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground click-scale shrink-0">
-                      <ArrowLeft className="w-5 h-5" />
-                    </Button>
-                  </Link>
-                </TooltipTrigger>
-                <TooltipContent>Voltar</TooltipContent>
-              </Tooltip>
-              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                <DepartmentAvatar
-                  departmentId={department.id}
-                  avatarUrl={department.avatar_url}
-                  departmentName={department.name}
-                  isLeader={isLeader}
-                  onAvatarChange={handleAvatarChange}
-                />
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h1 className="font-display text-base sm:text-lg font-bold text-foreground truncate max-w-[120px] sm:max-w-[200px] md:max-w-none">
-                      {department.name}
-                    </h1>
-                    {isLeader && (
-                      <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full gradient-vibrant flex items-center justify-center shrink-0">
-                        <Crown className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {members.length} membros
-                  </p>
+              <DepartmentAvatar
+                departmentId={department.id}
+                avatarUrl={department.avatar_url}
+                departmentName={department.name}
+                isLeader={isLeader}
+                onAvatarChange={handleAvatarChange}
+              />
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h1 className="font-display text-base sm:text-lg font-bold text-foreground truncate max-w-[120px] sm:max-w-[200px] md:max-w-none">
+                    {department.name}
+                  </h1>
+                  {isLeader && (
+                    <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full gradient-vibrant flex items-center justify-center shrink-0">
+                      <Crown className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
+                    </div>
+                  )}
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  {members.length} membros
+                </p>
               </div>
             </div>
 
             <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div><ThemeToggle /></div>
-                </TooltipTrigger>
-                <TooltipContent>Alternar tema</TooltipContent>
-              </Tooltip>
               {isLeader && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -526,10 +521,9 @@ export default function Department() {
                   <TooltipContent>Configurações do departamento</TooltipContent>
                 </Tooltip>
               )}
-              <SettingsButton />
             </div>
           </div>
-        </header>
+        </div>
 
         <main className="container mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 max-w-7xl transition-all duration-200">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
@@ -702,6 +696,7 @@ export default function Department() {
         open={showCalendarSync}
         onOpenChange={setShowCalendarSync}
       />
+    </div>
     </div>
     </TooltipProvider>
   );

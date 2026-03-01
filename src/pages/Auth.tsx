@@ -972,7 +972,7 @@ export default function Auth() {
 
           {/* Logo */}
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 rounded-xl gradient-vibrant flex items-center justify-center shadow-glow-sm">
+            <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center shadow-glow-sm">
               <Calendar className="w-6 h-6 text-white" />
             </div>
             <div>
@@ -1069,7 +1069,7 @@ export default function Auth() {
 
               <Button 
                 type="submit" 
-                className="w-full h-12 gradient-vibrant text-white shadow-glow-sm hover:shadow-glow transition-all"
+                className="w-full h-12 bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-glow-sm transition-all"
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -1106,7 +1106,7 @@ export default function Auth() {
                   type="button"
                   variant="outline"
                   size="icon"
-                  className="h-12 w-12 rounded-xl"
+                  className="h-12 w-12 rounded-xl border-secondary/30 hover:border-secondary/50"
                   onClick={handleGoogleSignIn}
                   disabled={isLoading}
                   title="Continuar com Google"
@@ -1117,7 +1117,7 @@ export default function Auth() {
                   type="button"
                   variant="outline"
                   size="icon"
-                  className="h-12 w-12 rounded-xl"
+                  className="h-12 w-12 rounded-xl border-secondary/30 hover:border-secondary/50"
                   onClick={handleAppleSignIn}
                   disabled={isLoading}
                   title="Continuar com Apple"
@@ -1366,7 +1366,7 @@ export default function Auth() {
 
                   <Button 
                     type="submit" 
-                    className="w-full h-12 gradient-vibrant text-white shadow-glow-sm hover:shadow-glow transition-all"
+                    className="w-full h-12 gradient-fresh text-white shadow-glow-sm hover:shadow-glow transition-all"
                     disabled={isLoading}
                   >
                     {isLoading ? (
@@ -1443,7 +1443,7 @@ export default function Auth() {
 
               <Button 
                 type="submit" 
-                className="w-full h-12 gradient-vibrant text-white shadow-glow-sm hover:shadow-glow transition-all"
+                className="w-full h-12 gradient-warm text-white shadow-glow-sm hover:shadow-glow transition-all"
                 disabled={isLoading}
               >
                 {isLoading ? (

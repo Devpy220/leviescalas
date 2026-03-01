@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Calendar, 
-  ArrowLeft,
   Clock,
   Loader2,
   Heart,
@@ -13,17 +12,16 @@ import {
   CalendarPlus
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { LeviLogo } from '@/components/LeviLogo';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import { NotificationBell } from '@/components/NotificationBell';
-import { SettingsButton } from '@/components/SettingsButton';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { DashboardSidebar } from '@/components/DashboardSidebar';
+import { useAdmin } from '@/hooks/useAdmin';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 import { SwapRequestDialog } from '@/components/schedules/SwapRequestDialog';
 import { SwapResponseDialog } from '@/components/schedules/SwapResponseDialog';
@@ -87,9 +85,12 @@ export default function MySchedules() {
   const [memberProfiles, setMemberProfiles] = useState<Record<string, MemberProfile>>({});
   const [availabilitySheetOpen, setAvailabilitySheetOpen] = useState(false);
   const [leaderDepartments, setLeaderDepartments] = useState<{ id: string; name: string }[]>([]);
-  const { user, session, loading: authLoading } = useAuth();
+  const { user, session, loading: authLoading, signOut } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { isAdmin } = useAdmin();
+  const { shouldShowInstallPrompt, install } = usePWAInstall();
+  const isMobile = useIsMobile();
   
   // CRITICAL: Use fallback to prevent infinite loading when user state is delayed
   const currentUser = user ?? session?.user ?? null;
@@ -376,48 +377,21 @@ export default function MySchedules() {
     );
   }
 
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <DashboardSidebar
+        isAdmin={isAdmin}
+        shouldShowInstallPrompt={shouldShowInstallPrompt()}
+        onInstallClick={install}
+        onSignOut={handleSignOut}
+      />
       
-      <header className="sticky top-0 z-50 glass border-b border-border/50">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}>
-                    <ArrowLeft className="w-5 h-5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Voltar</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <div className="flex items-center gap-2">
-              <LeviLogo />
-              <span className="font-display text-xl font-bold text-foreground">Minhas Escalas</span>
-            </div>
-          </div>
-
-          <TooltipProvider>
-            <div className="flex items-center gap-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div><ThemeToggle /></div>
-                </TooltipTrigger>
-                <TooltipContent>Alternar tema</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div><NotificationBell /></div>
-                </TooltipTrigger>
-                <TooltipContent>Notificações</TooltipContent>
-              </Tooltip>
-              <SettingsButton />
-            </div>
-          </TooltipProvider>
-        </div>
-      </header>
-
+      <div className={isMobile ? 'flex-1 flex flex-col' : 'ml-64 flex-1 flex flex-col'}>
       <main className="container mx-auto px-4 py-8 flex-1">
         {/* View Mode Toggle */}
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
@@ -824,6 +798,7 @@ export default function MySchedules() {
       </main>
       
       <Footer />
+      </div>
 
       {/* Swap Request Dialog */}
       <SwapRequestDialog

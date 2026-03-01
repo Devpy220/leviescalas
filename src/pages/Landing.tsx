@@ -195,7 +195,7 @@ export default function Landing() {
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="w-full sm:w-auto text-lg px-8 border-2"
+                className="w-full sm:w-auto text-lg px-8 border-2 border-secondary/50 text-secondary hover:bg-secondary/10"
                 onClick={() => setShowDemo(true)}
               >
                 Ver demonstração
