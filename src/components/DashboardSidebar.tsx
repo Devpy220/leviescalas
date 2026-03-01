@@ -1,16 +1,16 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
-  Home, 
   CalendarDays, 
-  Settings2, 
   LogOut, 
   Download, 
   Shield,
   Menu,
-  Heart
+  Heart,
+  type LucideIcon
 } from 'lucide-react';
 import { LeviLogo } from '@/components/LeviLogo';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { NotificationBell } from '@/components/NotificationBell';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -22,20 +22,35 @@ interface DashboardSidebarProps {
   shouldShowInstallPrompt: boolean;
   onInstallClick: () => void;
   onSignOut: () => void;
+  userName?: string;
+  userAvatarUrl?: string | null;
+  extraMenuItems?: Array<{
+    icon: LucideIcon;
+    label: string;
+    onClick: () => void;
+    isActive?: boolean;
+    color?: string;
+  }>;
 }
 
 const menuItems = [
-  { icon: Home, label: 'Dashboard', path: '/dashboard', color: 'text-white' },
   { icon: CalendarDays, label: 'Minhas Escalas', path: '/my-schedules', color: 'text-white' },
   { icon: Heart, label: 'Apoie o LEVI', path: '/payment', color: 'text-white' },
 ];
+
+function getInitials(name: string) {
+  return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+}
 
 function SidebarContent({ 
   isAdmin, 
   shouldShowInstallPrompt, 
   onInstallClick, 
   onSignOut,
-  onNavigate 
+  onNavigate,
+  userName,
+  userAvatarUrl,
+  extraMenuItems
 }: DashboardSidebarProps & { onNavigate?: () => void }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -47,14 +62,17 @@ function SidebarContent({
 
   return (
     <div className="flex flex-col h-full gradient-sidebar text-white">
-      {/* Logo */}
-      <div className="p-5 pb-8">
+      {/* Logo + Subtitle */}
+      <div className="p-5 pb-4">
         <Link to="/" className="flex items-center gap-3" onClick={onNavigate}>
           <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center shadow-lg">
             <LeviLogo className="w-6 h-6" />
           </div>
           <span className="font-display text-xl font-bold">LEVI</span>
         </Link>
+        <p className="text-white/50 text-[10px] leading-tight mt-2 px-1">
+          Logística de Escalas para{'\n'}Voluntários da Igreja
+        </p>
       </div>
 
       {/* Menu */}
@@ -63,6 +81,26 @@ function SidebarContent({
           Principal
         </p>
         <ul className="space-y-1">
+          {/* Dashboard item with user avatar */}
+          <li>
+            <button
+              onClick={() => handleNav('/dashboard')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                location.pathname === '/dashboard'
+                  ? 'bg-secondary text-secondary-foreground shadow-lg'
+                  : 'text-white/80 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              <Avatar className="w-6 h-6">
+                {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={userName || 'Usuário'} />}
+                <AvatarFallback className="bg-secondary text-secondary-foreground text-[10px] font-bold">
+                  {userName ? getInitials(userName) : 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <span>{userName || 'Dashboard'}</span>
+            </button>
+          </li>
+
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
@@ -111,6 +149,32 @@ function SidebarContent({
             </li>
           )}
         </ul>
+
+        {/* Extra menu items (e.g. leader actions) */}
+        {extraMenuItems && extraMenuItems.length > 0 && (
+          <>
+            <p className="text-white/50 text-xs font-semibold uppercase tracking-wider px-3 mb-3 mt-6">
+              Ações
+            </p>
+            <ul className="space-y-1">
+              {extraMenuItems.map((item, idx) => (
+                <li key={idx}>
+                  <button
+                    onClick={() => { item.onClick(); onNavigate?.(); }}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                      item.isActive
+                        ? 'bg-secondary text-secondary-foreground shadow-lg'
+                        : 'text-white/80 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    <item.icon className="w-5 h-5" />
+                    <span>{item.label}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
       </nav>
 
       {/* Footer */}

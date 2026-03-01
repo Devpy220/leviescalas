@@ -389,85 +389,36 @@ export default function MySchedules() {
         shouldShowInstallPrompt={shouldShowInstallPrompt()}
         onInstallClick={install}
         onSignOut={handleSignOut}
+        extraMenuItems={[
+          ...(departmentIds.length > 0 ? [{
+            icon: Users,
+            label: viewMode === 'team' ? 'Minhas Escalas' : 'Escala da Equipe',
+            onClick: () => setViewMode(viewMode === 'team' ? 'mine' : 'team'),
+            isActive: viewMode === 'team',
+          }] : []),
+          ...(departmentIds.length > 0 ? [{
+            icon: Clock,
+            label: 'Minha Disponibilidade',
+            onClick: () => setAvailabilitySheetOpen(true),
+          }] : []),
+          ...(leaderDepartments.length === 1 ? [{
+            icon: CalendarPlus,
+            label: 'Criar Escala',
+            onClick: () => navigate(`/departments/${leaderDepartments[0].id}?action=add-schedule`),
+          }] : []),
+          ...(leaderDepartments.length > 1 ? leaderDepartments.map(dept => ({
+            icon: CalendarPlus,
+            label: `Criar em ${dept.name}`,
+            onClick: () => navigate(`/departments/${dept.id}?action=add-schedule`),
+          })) : []),
+        ]}
       />
       
       <div className={isMobile ? 'flex-1 flex flex-col' : 'ml-64 flex-1 flex flex-col'}>
       <main className="container mx-auto px-4 py-8 flex-1">
-        {/* View Mode Toggle */}
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
-          <div className="flex bg-muted rounded-lg p-1 gap-1">
-            <Button
-              size="sm"
-              variant={viewMode === 'mine' ? 'default' : 'ghost'}
-              onClick={() => setViewMode('mine')}
-              className="gap-1.5"
-            >
-              <User className="w-4 h-4" />
-              Minhas Escalas
-            </Button>
-            <Button
-              size="sm"
-              variant={viewMode === 'team' ? 'default' : 'ghost'}
-              onClick={() => setViewMode('team')}
-              className="gap-1.5"
-            >
-              <Users className="w-4 h-4" />
-              Escala da Equipe
-            </Button>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex items-center gap-2">
-            {/* Availability Button - for all users */}
-            {departmentIds.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setAvailabilitySheetOpen(true)}
-                className="gap-1.5"
-              >
-                <Clock className="w-4 h-4" />
-                <span className="hidden sm:inline">Minha Disponibilidade</span>
-                <span className="sm:hidden">Disponibilidade</span>
-              </Button>
-            )}
-
-            {/* Create Schedule Button - for leaders only */}
-            {leaderDepartments.length === 1 && (
-              <Button
-                size="sm"
-                onClick={() => navigate(`/departments/${leaderDepartments[0].id}?action=add-schedule`)}
-                className="gap-1.5"
-              >
-                <CalendarPlus className="w-4 h-4" />
-                <span className="hidden sm:inline">Criar Escala</span>
-                <span className="sm:hidden">Criar</span>
-              </Button>
-            )}
-
-            {leaderDepartments.length > 1 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="sm" className="gap-1.5">
-                    <CalendarPlus className="w-4 h-4" />
-                    <span className="hidden sm:inline">Criar Escala</span>
-                    <span className="sm:hidden">Criar</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {leaderDepartments.map(dept => (
-                    <DropdownMenuItem
-                      key={dept.id}
-                      onClick={() => navigate(`/departments/${dept.id}?action=add-schedule`)}
-                    >
-                      {dept.name}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
-        </div>
+        <h3 className="font-display text-xl font-semibold text-foreground mb-6">
+          {viewMode === 'team' ? 'Escala da Equipe' : 'Minhas Escalas'}
+        </h3>
 
         {/* Pending swap requests for me */}
         {pendingSwapsForMe.length > 0 && (
@@ -769,32 +720,6 @@ export default function MySchedules() {
           </div>
         )}
 
-        {/* Support LEVI Card */}
-        <Card className="mt-12 p-6 gradient-vibrant text-white cursor-pointer" onClick={() => navigate('/apoio')}>
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center">
-                <Heart className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <h3 className="font-display text-xl font-bold">Apoie o LEVI</h3>
-                <p className="text-white/80">
-                  Contribua com qualquer valor para manter a plataforma funcionando
-                </p>
-              </div>
-            </div>
-            <Button 
-              onClick={(e) => { e.stopPropagation(); navigate('/apoio'); }}
-              className="bg-white text-primary hover:bg-white/90 font-semibold"
-            >
-              <Heart className="w-4 h-4 mr-2" />
-              Apoiar Agora
-            </Button>
-          </div>
-          <p className="text-xs text-white/60 mt-4 text-center md:text-left">
-            * Esta contribuição é opcional e ajuda no desenvolvimento contínuo da plataforma.
-          </p>
-        </Card>
       </main>
       
       <Footer />

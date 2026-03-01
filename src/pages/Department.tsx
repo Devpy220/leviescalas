@@ -583,16 +583,7 @@ export default function Department() {
                 onOpenSmartSchedule={() => setShowSmartSchedule(true)}
               />
               
-              {/* Leader sees member availability below the calendar */}
-              {isLeader && (
-                <div className="border-t border-border/50 pt-6">
-                  <LeaderSlotAvailabilityView departmentId={id!} />
-                </div>
-              )}
-              
-              {isLeader && (
-                <LeaderBlackoutDatesView departmentId={id!} />
-              )}
+              {/* Leader availability views removed from default - accessible via ActionMenu */}
             </div>
           </TabsContent>
 
