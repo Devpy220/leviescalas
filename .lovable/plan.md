@@ -1,90 +1,71 @@
-
-## Redesign da Navegacao e Cores - Landing e Dashboard
+## Sidebar nas paginas internas + Cores nos botoes de login
 
 ### Resumo
-Adicionar mais variedade de cores nos menus e botoes, e remodelar a navegacao do Dashboard com um menu lateral vertical inspirado na imagem de referencia (gradiente roxo, item ativo com destaque ambar, icones brancos). No tema claro, o fundo tera um mix de roxo claro com branco.
 
-### 1. Fundo do Tema Claro (`src/index.css`)
+Aplicar o menu lateral (`DashboardSidebar`) nas paginas **Minhas Escalas**, **Departamento e Criar escala**, substituindo os headers horizontais atuais. Tambem adicionar cores variadas nos botoes da pagina de login/cadastro (`/auth`).
 
-Ajustar o `--background` para ser mais branco com toque lavanda:
-- `--background`: de `263 100% 97%` para `270 50% 98%` (quase branco com leve toque roxo)
-- `--card`: manter branco puro `0 0% 100%`
-- Adicionar variavel `--sidebar-gradient-start` e `--sidebar-gradient-end` para o gradiente do menu lateral
+---
 
-### 2. Menu Lateral no Dashboard (`src/pages/Dashboard.tsx`)
+### 1. Minhas Escalas (`src/pages/MySchedules.tsx`)
 
-Transformar o header horizontal em um layout com sidebar vertical no estilo da imagem:
+**Antes:** Header horizontal com botao voltar, logo, ThemeToggle, NotificationBell, SettingsButton.
 
-**Estrutura:**
-```text
-+------------------+----------------------------------+
-| SIDEBAR          |  CONTEUDO PRINCIPAL              |
-| (gradiente roxo) |                                  |
-|                  |                                  |
-| [Logo LEVI]      |  Ola, [nome]!                   |
-|                  |                                  |
-| PRINCIPAL        |  [Cards de departamentos]        |
-| > Dashboard (amb)|                                  |
-| > Escalas     (3)|                                  |
-| > Configuracoes  |                                  |
-|                  |                                  |
-| [Sair]           |                                  |
-+------------------+----------------------------------+
-```
+**Depois:** Usar `DashboardSidebar` igual ao Dashboard:
 
-- Sidebar com `gradient-vibrant` (roxo)
-- Logo LEVI no topo com fundo ambar arredondado
-- Label "PRINCIPAL" em branco/50 uppercase
-- Items do menu com icones brancos
-- Item ativo com pill ambar (bg-secondary, texto escuro)
-- Badge de notificacao em vermelho/coral
-- No mobile: sidebar vira um drawer/sheet
+- Remover o `<header>` inteiro (linhas 382-418)
+- Envolver o conteudo com `DashboardSidebar` + wrapper `ml-64` (desktop) / sem margin (mobile)
+- Importar `DashboardSidebar`, `useAdmin`, `usePWAInstall`, `useIsMobile`
+- Adicionar handlers para signOut e installClick
+- Mover ThemeToggle/NotificationBell/SettingsButton para dentro da sidebar (ja estao la)
 
-**Cores dos itens do menu:**
-- Dashboard: icone Home, ativo = pill ambar
-- Escalas: icone Calendar, badge vermelho com contagem
-- Configuracoes: icone Settings, cor neutra
-- Sair: icone LogOut, cor vermelha/rose
+### 2. Departamento (`src/pages/Department.tsx`)
 
-### 3. Botoes Menos Roxos (`src/pages/Landing.tsx` e `Dashboard.tsx`)
+**Antes:** Header horizontal com ActionMenuPopover, botao voltar, avatar, ThemeToggle, Settings.
 
-- Botao "Criar Conta" (Landing): manter gradiente vibrant (ja e o CTA principal)
-- Botao "Entrar" (Landing): trocar de `border-primary text-primary` para `border-secondary text-secondary` (ambar)
-- Botao "Ver demonstracao": adicionar borda ambar sutil
-- Botao "Acessar com Codigo" (Landing hero): trocar de `gradient-vibrant` para `bg-secondary text-secondary-foreground` (ambar dourado)
-- Botao "Apoie o LEVI": manter `gradient-warm` (rose) - ja esta bom
-- Botao "Criar Departamento" (Dashboard): trocar para gradiente ambar-verde em vez de `gradient-vibrant`
-- Botoes de acao do header: manter ghost/neutro
+**Depois:** Usar `DashboardSidebar`:
 
-### 4. Landing Page (`src/pages/Landing.tsx`) - Mais cores
+- Remover o `<header>` (linhas 453-532)
+- Adicionar `DashboardSidebar` com wrapper `ml-64`
+- Manter o ActionMenuPopover e controles do departamento como uma barra interna (sub-header) dentro do conteudo principal, nao no header global
+- O sub-header tera: avatar do departamento, nome, badge de lider, e botoes de acao (Settings, ActionMenu)
 
-- Nav: botao "Entrar" com cor ambar, "Criar Conta" com gradiente violeta-ambar
-- Hero badge: manter ambar (ja ajustado)
-- Botao principal do hero: ambar dourado (secundario) em vez de roxo
-- Secao Screenshots: badge "Veja como funciona" com cor emerald
-- Secao CTA final: botao com gradiente ambar
+### 3. Auth (`src/pages/Auth.tsx`) - Mais cores nos botoes
 
-### 5. Pagina Index (`src/pages/Index.tsx`) - Mais cores
+Atualmente todos os botoes de submit usam `gradient-vibrant` (roxo). Diversificar:
 
-- Badge "Gestao de Escalas": trocar para ambar
-- Icone Church: trocar para cor emerald
-- Botao "Continuar": trocar de `gradient-vibrant` para `bg-secondary` (ambar)
+- **Botao "Entrar"** (login): Trocar de `gradient-vibrant` para `bg-secondary text-secondary-foreground` (ambar dourado) - linha 1072
+- **Botao "Criar conta"** (register): Manter `gradient-vibrant` (roxo) - e o CTA principal
+- **Botao "Enviar link de recuperacao"**: Trocar para `gradient-fresh` (verde/emerald) - linha 1369
+- **Botao "Redefinir senha"**: Trocar para `gradient-warm` (rose/ambar) - linha 1446
+- **Logo icon** (linha 975): Trocar de `gradient-vibrant` para `bg-secondary` (ambar)
+- **Botoes sociais** (Google/Apple): Adicionar borda colorida sutil - `border-secondary/30 hover:border-secondary/50`
+
+### 4. Landing (`src/pages/Landing.tsx`) - Ajustes adicionais
+
+- **Botao "Criar Conta" no nav** (linha 154): Manter `gradient-vibrant`
+- **Botao "Ver demonstracao"** (linha 195): Adicionar `border-secondary/50 text-secondary hover:bg-secondary/10`
 
 ---
 
 ### Arquivos a editar
 
-1. **`src/index.css`** - Ajustar background light mais branco
-2. **`src/pages/Dashboard.tsx`** - Sidebar vertical com gradiente, itens coloridos, layout responsivo
-3. **`src/pages/Landing.tsx`** - Botoes com mais variedade de cores
-4. **`src/pages/Index.tsx`** - Botoes e badges com cores variadas
+1. `src/pages/MySchedules.tsx` - Substituir header por DashboardSidebar + layout ml-64
+2. `src/pages/Department.tsx` - Substituir header por DashboardSidebar + sub-header interno
+3. `src/pages/Auth.tsx` - Diversificar cores dos botoes de submit e social
+4. `src/pages/Landing.tsx` - Ajuste no botao "Ver demonstracao"
 
 ### Detalhes tecnicos
 
-**Sidebar (Desktop):** `w-64 fixed left-0 top-0 bottom-0` com gradiente roxo. Conteudo principal com `ml-64`.
+**Layout com sidebar (MySchedules e Department):**
 
-**Sidebar (Mobile):** Componente Sheet/Drawer que abre por botao hamburger no header.
+```text
+<div className="min-h-screen bg-background">
+  <DashboardSidebar ... />
+  <div className={isMobile ? '' : 'ml-64'}>
+    <main>...</main>
+  </div>
+</div>
+```
 
-**Gradiente da sidebar:** `linear-gradient(180deg, hsl(263 84% 58%) 0%, hsl(263 76% 42%) 100%)` - vertical de violeta claro para escuro.
-
-**Item ativo:** `bg-secondary text-secondary-foreground rounded-xl px-4 py-3` - pill ambar com texto escuro.
+**Sub-header do Departamento (dentro do conteudo):**
+Sera uma barra simples com avatar, nome do departamento, badge de lider, e botoes de acao - sem ser sticky, apenas no topo do conteudo.
