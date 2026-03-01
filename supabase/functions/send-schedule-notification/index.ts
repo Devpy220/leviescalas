@@ -283,12 +283,30 @@ const handler = async (req: Request): Promise<Response> => {
     if (type === 'new_schedule') {
       subject = `📅 Nova Escala - ${department_name}`;
       
-      // WhatsApp message with confirmation links
+      // WhatsApp message with card-style formatting
       let whatsappConfirmation = '';
       if (confirmUrl && declineUrl) {
-        whatsappConfirmation = `\n\n✅ *Confirmar presença:*\n${confirmUrl}\n\n❌ *Não poderei:*\n${declineUrl}`;
+        whatsappConfirmation = `\n\n━━━━━━━━━━━━━━━\n\n✅ *Confirmar presença:*\n${confirmUrl}\n\n❌ *Não poderei:*\n${declineUrl}`;
       }
-      whatsappMessage = `📅 *Nova Escala - ${department_name}*\n\nOlá, ${profile.name}!\n\nVocê foi escalado para:\n📆 *Data:* ${formattedDate}\n⏰ *Horário:* ${formattedTimeStart} às ${formattedTimeEnd}${sector_name ? `\n📍 *Setor:* ${sector_name}` : ''}${assignment_role_label ? `\n👤 *Função:* ${assignment_role_label}` : ''}${notes ? `\n📝 *Observações:* ${notes}` : ''}${whatsappConfirmation}\n\n_LEVI - Sistema de Escalas_`;
+
+      const dateObj2 = new Date(date + 'T00:00:00');
+      const dayNum = dateObj2.getDate();
+      const weekdayFull = dateObj2.toLocaleDateString('pt-BR', { weekday: 'long' });
+      const monthFull = dateObj2.toLocaleDateString('pt-BR', { month: 'long' });
+      const yearNum = dateObj2.getFullYear();
+
+      whatsappMessage = `📅 *Nova Escala — ${department_name}*\n\n` +
+        `Olá, *${profile.name}*! 👋\nVocê foi escalado(a).\n\n` +
+        `━━━━━━━━━━━━━━━\n\n` +
+        `📆 *Data:* ${weekdayFull}, ${dayNum} de ${monthFull} de ${yearNum}\n` +
+        `⏰ *Horário:* ${formattedTimeStart} às ${formattedTimeEnd}\n` +
+        `${sector_name ? `📍 *Setor:* ${sector_name}\n` : ''}` +
+        `${assignment_role_label ? `💼 *Função:* ${assignment_role_label}\n` : ''}` +
+        `${notes ? `📝 *Obs:* ${notes}\n` : ''}` +
+        `${whatsappConfirmation}\n\n` +
+        `━━━━━━━━━━━━━━━\n` +
+        `_LEVI — Escalas Inteligentes_\n` +
+        `🔗 leviescalas.com.br`;
       
       // HTML email with confirmation buttons
       const confirmationButtons = confirmUrl && declineUrl ? `
@@ -447,7 +465,22 @@ const handler = async (req: Request): Promise<Response> => {
       // schedule_moved
       const formattedOldDate = old_date ? formatDate(old_date) : '';
       subject = `⚠️ Alteração de Escala - ${department_name}`;
-      whatsappMessage = `⚠️ *Alteração de Escala - ${department_name}*\n\nOlá, ${profile.name}!\n\nSua escala foi alterada:\n❌ *De:* ${formattedOldDate}\n✅ *Para:* ${formattedDate}\n⏰ *Horário:* ${formattedTimeStart} às ${formattedTimeEnd}\n\n_LEVI - Sistema de Escalas_`;
+
+      const newDateObj2 = new Date(date + 'T00:00:00');
+      const newWeekday = newDateObj2.toLocaleDateString('pt-BR', { weekday: 'long' });
+      const newDay = newDateObj2.getDate();
+      const newMonth = newDateObj2.toLocaleDateString('pt-BR', { month: 'long' });
+      const newYear = newDateObj2.getFullYear();
+
+      whatsappMessage = `⚠️ *Alteração de Escala — ${department_name}*\n\n` +
+        `Olá, *${profile.name}*! 👋\nSua escala foi alterada.\n\n` +
+        `━━━━━━━━━━━━━━━\n\n` +
+        `❌ *De:* ${formattedOldDate}\n` +
+        `✅ *Para:* ${newWeekday}, ${newDay} de ${newMonth} de ${newYear}\n` +
+        `⏰ *Horário:* ${formattedTimeStart} às ${formattedTimeEnd}\n\n` +
+        `━━━━━━━━━━━━━━━\n` +
+        `_LEVI — Escalas Inteligentes_\n` +
+        `🔗 leviescalas.com.br`;
       const oldDateObj = old_date ? new Date(old_date + 'T00:00:00') : null;
       const newDateObj = new Date(date + 'T00:00:00');
       const initial = profile.name ? profile.name.charAt(0).toUpperCase() : '?';

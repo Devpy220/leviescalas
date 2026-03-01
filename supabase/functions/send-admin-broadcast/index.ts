@@ -242,7 +242,7 @@ const handler = async (req: Request): Promise<Response> => {
     // 5. WhatsApp via Z-API
     if (channels.includes("whatsapp")) {
       const whatsappRecipients = recipients.filter((p) => p.whatsapp);
-      const whatsappMsg = `📢 *Comunicado LEVI*\n\n*${title}*\n\n${message}`;
+      const whatsappMsg = `📢 *Comunicado LEVI*\n\n━━━━━━━━━━━━━━━\n\n*${title}*\n\n${message}\n\n━━━━━━━━━━━━━━━\n_LEVI — Escalas Inteligentes_\n🔗 leviescalas.com.br`;
 
       for (const profile of whatsappRecipients) {
         try {

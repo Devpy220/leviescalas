@@ -237,7 +237,7 @@ const handler = async (req: Request): Promise<Response> => {
 
           // Send push + telegram + whatsapp in parallel
           const telegramMsg = `${title}\n${body}`;
-          const whatsappMsg = `${title}\n\n${body}`;
+          const whatsappMsg = `${title}\n\n━━━━━━━━━━━━━━━\n\n${body}\n\n━━━━━━━━━━━━━━━\n_LEVI — Escalas Inteligentes_\n🔗 leviescalas.com.br`;
           const [pushSent] = await Promise.all([
             sendPushNotification(
               supabaseUrl, serviceRoleKey,
