@@ -1,55 +1,92 @@
 
 
-## Corrigir logo LEVI (cor azul/branco) e fundo do calendario
+## Simplificar Landing Page e Login/Cadastro como Modal
 
-### Problemas identificados
+### Resumo
+Transformar a landing page em uma tela unica sem rolagem, com conteudo lado a lado (info + features compactas), e converter o login/cadastro em um modal centralizado com fundo transparente/blur que aparece sobre a landing page.
 
-1. **Tema escuro - logo branco**: O `mix-blend-screen` faz pixels claros ficarem brancos no fundo escuro, apagando o logo
-2. **Tema claro - logo azul**: O `mix-blend-multiply` mistura o verde esmeralda com o fundo violeta da sidebar, resultando em azul
-3. **Calendario interno**: O fundo do calendario (DayPicker) herda o background geral em vez de ser branco
+---
 
-### Solucao
+### 1. Simplificar a Landing Page (`src/pages/Landing.tsx`)
 
-#### 1. Remover blend modes do `LeviLogo.tsx`
+Redesign completo para caber em uma unica tela (100vh):
 
-Os blend modes estao distorcendo as cores do logo. Em vez disso, remover `mix-blend-multiply` e `dark:mix-blend-screen`, e confiar na transparencia da imagem. Para garantir visibilidade em fundos coloridos (sidebar violeta), adicionar um fundo branco arredondado apenas quando usado sobre fundos escuros/coloridos.
+**Layout lado a lado:**
+- **Lado esquerdo**: Logo LEVI, titulo, subtitulo curto, contador de usuarios, botoes "Entrar" e "Criar Conta" (abrem o modal de auth)
+- **Lado direito**: 3-4 features compactas em grid (icone + titulo, sem descricao longa)
 
-```tsx
-<img 
-  src={leviIcon} 
-  alt="LEVI" 
-  className={`${sizeClasses[size]} ${className}`}
-/>
-```
+**Remover:**
+- Botao "Acessar com Codigo" (e o link para `/acessar`)
+- Secao de screenshots/carousel
+- Secao de recursos detalhados (6 cards)
+- Secao de apoio/doacao
+- Secao CTA final
+- Footer
+- Botao "Ver demonstracao"
 
-#### 2. Adicionar fundo branco ao logo na sidebar (`DashboardSidebar.tsx`)
+**Manter:**
+- Nav com logo, ThemeToggle, botao Instalar (PWA), botoes Entrar/Criar Conta
+- Contador de usuarios cadastrados
+- DemoTour e PWAInstallPrompt (componentes de dialog)
 
-O container do logo na sidebar (linha 68) precisa de um fundo branco para o logo ficar visivel sobre o gradiente violeta:
+### 2. Auth como Modal na Landing (`src/pages/Landing.tsx`)
 
-```tsx
-<div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center">
-```
+Em vez de navegar para `/auth`, abrir um Dialog/modal na propria landing page:
 
-#### 3. Adicionar fundo branco ao logo no Auth.tsx
+- Usar o componente `Dialog` do Radix com overlay `bg-black/40 backdrop-blur-sm` (fundo transparente com blur)
+- O conteudo do modal sera o formulario de login/cadastro (extraido/inline)
+- Modal centralizado, `max-w-md`, com bordas arredondadas e glass effect
+- Tabs Entrar/Criar Conta dentro do modal
+- Manter toda a logica de auth existente (signIn, signUp, Google, Apple, recovery, etc.)
 
-Trocar `bg-emerald-500` por `bg-white` na linha 976:
+### 3. Rota `/auth` continua funcionando
 
-```tsx
-<div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-glow-sm">
-```
+A pagina `/auth` existente continua funcionando normalmente para links diretos (recovery, convites, etc.). O modal na landing e uma forma alternativa de acessar.
 
-#### 4. Fundo branco no calendario (`calendar.tsx`)
-
-Adicionar `bg-white dark:bg-card` ao className do DayPicker para garantir fundo branco no tema claro:
-
-```tsx
-className={cn("p-3 bg-white dark:bg-card rounded-xl", className)}
-```
+---
 
 ### Arquivos a editar
 
-1. `src/components/LeviLogo.tsx` -- Remover mix-blend modes
-2. `src/components/DashboardSidebar.tsx` -- Fundo branco no container do logo
-3. `src/pages/Auth.tsx` -- Fundo branco no container do logo
-4. `src/components/ui/calendar.tsx` -- Fundo branco no calendario
+1. **`src/pages/Landing.tsx`** - Redesign completo: layout lado a lado em 100vh, sem scroll, modal de auth integrado
+2. **`src/pages/Auth.tsx`** - Sem alteracoes (continua funcionando para links diretos)
 
+### Detalhes tecnicos
+
+**Estrutura da nova Landing:**
+```text
++--------------------------------------------------+
+| Nav: Logo LEVI | ThemeToggle | Entrar | Criar     |
++--------------------------------------------------+
+|                                                    |
+|  [Lado Esquerdo]         [Lado Direito]           |
+|                                                    |
+|  Logo grande              Feature 1 (icone+titulo)|
+|  "Organize escalas        Feature 2               |
+|   com facilidade"          Feature 3               |
+|                            Feature 4               |
+|  123+ voluntarios                                  |
+|  cadastrados                                       |
+|                                                    |
+|  [Entrar]  [Criar Conta]                          |
+|                                                    |
++--------------------------------------------------+
+```
+
+**Modal de Auth (Dialog):**
+```tsx
+<Dialog open={showAuth} onOpenChange={setShowAuth}>
+  <DialogContent className="max-w-md bg-card/95 backdrop-blur-xl border-border/50 shadow-2xl">
+    {/* Tabs: Entrar / Criar Conta */}
+    {/* Formularios de login/registro */}
+    {/* Social login (Google/Apple) */}
+    {/* Link "Esqueceu senha?" */}
+  </DialogContent>
+</Dialog>
+```
+
+**Overlay transparente:**
+```tsx
+<DialogOverlay className="bg-black/40 backdrop-blur-sm" />
+```
+
+O modal inclui a logica completa de auth: login com email/senha, login social (Google, Apple), recuperacao de senha, e registro (quando tem contexto de igreja). Para registro sem codigo de igreja, redireciona para `/auth?tab=register` com contexto adequado.
