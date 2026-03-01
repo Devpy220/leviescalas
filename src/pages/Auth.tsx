@@ -973,7 +973,7 @@ export default function Auth() {
 
           {/* Logo */}
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 rounded-xl bg-emerald-500 flex items-center justify-center shadow-glow-sm">
+            <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-glow-sm">
               <LeviLogo className="w-8 h-8" />
             </div>
             <div>
