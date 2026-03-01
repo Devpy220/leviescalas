@@ -159,7 +159,7 @@ serve(async (req: Request): Promise<Response> => {
     ).length;
 
     // Send WhatsApp notifications in parallel
-    const whatsappMessage = `📢 *Aviso - ${department_name}*\n\n${announcement_title}`;
+    const whatsappMessage = `📢 *Aviso — ${department_name}*\n\n━━━━━━━━━━━━━━━\n\n${announcement_title}\n\n━━━━━━━━━━━━━━━\n_LEVI — Escalas Inteligentes_\n🔗 leviescalas.com.br`;
 
     // Fetch profiles with whatsapp numbers for the members
     const { data: memberProfiles } = await supabaseAdmin
