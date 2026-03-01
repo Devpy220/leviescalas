@@ -1,93 +1,79 @@
+## Logo LEVI Esmeralda + Atualizacoes de Favicon e Sidebar
 
+### Resumo
 
-## Melhorias no Sidebar, Remocao de Banners e Simplificacao do Departamento
+Gerar uma versao do logo LEVI na cor verde esmeralda usando IA, aplicar em todas as paginas, remover o contorno amarelo do logo na sidebar, atualizar favicon e icones PWA, e garantir que o avatar do usuario apareca no lugar de "Dashboard". em todos os lugares nas paginas nos sibebar se ele estivar logado
 
-### 1. Remover banner "Apoie o LEVI" das paginas
+---
 
-**Remover o `SupportNotification` global** do `src/App.tsx` (o banner animado que aparece no topo de todas as paginas). Manter apenas o banner animado dentro de Minhas Escalas.
+### 1. Gerar logo LEVI em verde esmeralda
 
-**Remover os cards fixos "Apoie o LEVI"** do fundo das paginas:
-- `src/pages/Dashboard.tsx`: remover o bloco "Support LEVI Section" (linhas 412-442)
-- `src/pages/MySchedules.tsx`: remover o card "Support LEVI Card" (linhas 772-797) - manter apenas o banner animado do `SupportNotification` dentro dessa pagina
+Usar a API de edicao de imagem (Gemini) para recolorir o logo atual (`levi-icon-new.png`) para verde esmeralda. Salvar como novo asset `levi-icon-emerald.png`.
 
-### 2. Sidebar: adicionar avatar do usuario em vez de "Dashboard" e subtitulo
+Tambem gerar versoes para PWA:
 
-**`src/components/DashboardSidebar.tsx`:**
-- Aceitar novas props: `userName`, `userAvatarUrl`
-- Logo abaixo do logo LEVI, adicionar texto: **"Logistica de Escalas para Voluntarios da Igreja"** em texto pequeno branco/50
-- No item "Dashboard", substituir o texto por um avatar do usuario com nome ao lado (em vez de icone Home + "Dashboard")
-- Manter os demais itens (Minhas Escalas, Apoie o LEVI)
+- `public/pwa-192x192.png` (192x192)
+- `public/pwa-512x512.png` (512x512)
+- `public/favicon.png`
 
-**`src/pages/Dashboard.tsx`:** Passar `userName` e `userAvatarUrl` como props para `DashboardSidebar`
+### 2. Atualizar `LeviLogo.tsx`
 
-**`src/pages/MySchedules.tsx`:** Buscar nome/avatar do usuario e passar para `DashboardSidebar`
+Trocar a importacao de `levi-icon-new.png` para `levi-icon-emerald.png`.
 
-**`src/pages/Department.tsx`:** Buscar nome/avatar do usuario e passar para `DashboardSidebar`
+### 3. Remover contorno amarelo na sidebar (`DashboardSidebar.tsx`)
 
-### 3. Sidebar para lideres: botoes de acao no menu lateral (MySchedules)
+**Antes (linha 68):**
 
-**`src/components/DashboardSidebar.tsx`:**
-- Aceitar props opcionais: `leaderActions` (array de acoes extras para o menu)
-- Para lideres em Minhas Escalas: adicionar ao sidebar os botoes:
-  - "Escala da Equipe" (toggle view mode)
-  - "Minha Disponibilidade" (abre sheet)
-  - "Criar Escala" (navega para departamento)
+```html
+<div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center shadow-lg">
+```
 
-**`src/pages/MySchedules.tsx`:**
-- Remover os botoes de acao (Escala da Equipe toggle, Minha Disponibilidade, Criar Escala) do conteudo principal
-- Passar essas acoes como `leaderActions` para o sidebar
+**Depois:**
 
-### 4. Simplificar informacoes no Departamento
+```html
+<div className="w-10 h-10 rounded-xl flex items-center justify-center">
+```
 
-**`src/pages/Department.tsx`:**
-- Na aba de escalas para lideres: remover `LeaderSlotAvailabilityView` (disponibilidade detalhada por horarios) e `LeaderBlackoutDatesView` (datas de bloqueio) da visualizacao padrao
-- Manter apenas o `UnifiedScheduleView` (calendario de escalas) como conteudo principal
-- A disponibilidade e datas de bloqueio continuam acessiveis pelo ActionMenu (ja existente)
+Remover `bg-secondary` e `shadow-lg` para eliminar o fundo amarelo/ambar.
 
-### 5. Remover botoes/menus soltos fora do sidebar
+### 4. Garantir avatar no lugar de "Dashboard"
 
-**`src/pages/MySchedules.tsx`:**
-- Remover toggle "Minhas Escalas / Escala da Equipe" do conteudo - mover para sidebar
-- Remover botoes "Minha Disponibilidade" e "Criar Escala" do conteudo - mover para sidebar
+Na linha 100 do sidebar, o texto fallback e `userName || 'Dashboard'`. Trocar para mostrar apenas o nome ou "Meu Perfil":
+
+```tsx
+<span>{userName || 'Meu Perfil'}</span>
+```
+
+### 5. Atualizar Auth.tsx - Logo esmeralda
+
+Na pagina de login (linha 975), trocar `bg-secondary` por uma cor esmeralda:
+
+```html
+<div className="w-12 h-12 rounded-xl bg-emerald-500 flex items-center justify-center shadow-glow-sm">
+```
+
+E usar o `LeviLogo` em vez do icone Calendar.
+
+### 6. Atualizar PWA manifest
+
+No `vite.config.ts`, o `theme_color` e `background_color` mudam de `#DD640A` (ambar) para `#10B981` (esmeralda).
+
+No `index.html`, atualizar `meta[name="theme-color"]` e `meta[name="msapplication-TileColor"]` para `#10B981`.
 
 ---
 
 ### Arquivos a editar
 
-1. `src/App.tsx` - Remover `SupportNotification` global
-2. `src/components/DashboardSidebar.tsx` - Avatar do usuario, subtitulo, acoes de lider
-3. `src/pages/Dashboard.tsx` - Remover card "Apoie o LEVI", passar props de avatar
-4. `src/pages/MySchedules.tsx` - Remover card "Apoie", remover botoes soltos, passar acoes para sidebar
-5. `src/pages/Department.tsx` - Remover `LeaderSlotAvailabilityView` e `LeaderBlackoutDatesView` da aba escalas, passar props de avatar
+1. **Gerar imagem** - Logo esmeralda via AI image editing (edge function ou inline)
+2. `**src/components/LeviLogo.tsx**` - Nova imagem
+3. `**src/components/DashboardSidebar.tsx**` - Remover bg-secondary do logo, fix fallback "Dashboard"
+4. `**src/pages/Auth.tsx**` - Logo esmeralda + usar LeviLogo
+5. `**vite.config.ts**` - theme_color esmeralda
+6. `**index.html**` - meta theme-color esmeralda
+7. `**public/favicon.png**`, `**public/pwa-192x192.png**`, `**public/pwa-512x512.png**` - Icones esmeralda
 
 ### Detalhes tecnicos
 
-**Novas props do DashboardSidebar:**
-```typescript
-interface DashboardSidebarProps {
-  isAdmin: boolean;
-  shouldShowInstallPrompt: boolean;
-  onInstallClick: () => void;
-  onSignOut: () => void;
-  userName?: string;
-  userAvatarUrl?: string | null;
-  extraMenuItems?: Array<{
-    icon: LucideIcon;
-    label: string;
-    onClick: () => void;
-    isActive?: boolean;
-    color?: string;
-  }>;
-}
-```
+**Geracao da imagem:** Chamar a API Lovable AI com o modelo `google/gemini-2.5-flash-image` passando o logo atual e instrucao para recolorir para verde esmeralda (`#10B981`). Converter o base64 resultante para arquivos PNG nos tamanhos necessarios.
 
-**Avatar no sidebar:** O item "Dashboard" sera substituido por um avatar circular com o nome do usuario. Se nao houver foto, mostra iniciais com fundo ambar.
-
-**Subtitulo abaixo do logo:**
-```text
-LEVI
-Logistica de Escalas para
-Voluntarios da Igreja
-```
-Em texto `text-white/50 text-[10px]` abaixo do logo.
-
+**Cor esmeralda:** `#10B981` (Tailwind emerald-500), usado consistentemente em theme-color, background PWA e container do logo.
