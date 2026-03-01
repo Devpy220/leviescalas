@@ -11,7 +11,6 @@ import { usePageTracking } from "@/hooks/usePageTracking";
 import { PWAAutoInstaller } from "@/components/PWAAutoInstaller";
 import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt";
 import { AuthRecoveryRedirect } from "@/components/AuthRecoveryRedirect";
-import { SupportNotification } from "@/components/SupportNotification";
 import Landing from "./pages/Landing";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -54,7 +53,6 @@ const App = () => (
           <PWAUpdatePrompt />
           <BrowserRouter>
             <AuthRecoveryRedirect />
-            <SupportNotification />
             <PageTracker>
               <AdminRedirect>
                 <Routes>
