@@ -493,7 +493,7 @@ export default function MySchedules() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-lg text-primary">{dayOfWeek}</span>
-                        <span className="text-foreground font-medium">{dayMonth}</span>
+                        <span className="text-primary font-bold text-lg">{dayMonth}</span>
                       </div>
                       {schedule.church_logo_url && (
                         <div className="w-7 h-7 rounded-full bg-background border-2 border-primary/20 overflow-hidden shadow-sm">
@@ -602,10 +602,10 @@ export default function MySchedules() {
                       <p className="font-bold text-sm uppercase tracking-wide">
                         {slotInfo.label}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-sm font-semibold text-foreground">
                         {format(date, "d 'de' MMMM", { locale: ptBR })}
                       </p>
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <p className="text-xs font-medium text-foreground/70 flex items-center gap-1">
                         <Clock className="w-3 h-3" />
                         {slotInfo.timeStart} - {slotInfo.timeEnd}
                       </p>
