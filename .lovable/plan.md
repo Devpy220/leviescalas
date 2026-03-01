@@ -1,71 +1,93 @@
-## Sidebar nas paginas internas + Cores nos botoes de login
 
-### Resumo
 
-Aplicar o menu lateral (`DashboardSidebar`) nas paginas **Minhas Escalas**, **Departamento e Criar escala**, substituindo os headers horizontais atuais. Tambem adicionar cores variadas nos botoes da pagina de login/cadastro (`/auth`).
+## Melhorias no Sidebar, Remocao de Banners e Simplificacao do Departamento
 
----
+### 1. Remover banner "Apoie o LEVI" das paginas
 
-### 1. Minhas Escalas (`src/pages/MySchedules.tsx`)
+**Remover o `SupportNotification` global** do `src/App.tsx` (o banner animado que aparece no topo de todas as paginas). Manter apenas o banner animado dentro de Minhas Escalas.
 
-**Antes:** Header horizontal com botao voltar, logo, ThemeToggle, NotificationBell, SettingsButton.
+**Remover os cards fixos "Apoie o LEVI"** do fundo das paginas:
+- `src/pages/Dashboard.tsx`: remover o bloco "Support LEVI Section" (linhas 412-442)
+- `src/pages/MySchedules.tsx`: remover o card "Support LEVI Card" (linhas 772-797) - manter apenas o banner animado do `SupportNotification` dentro dessa pagina
 
-**Depois:** Usar `DashboardSidebar` igual ao Dashboard:
+### 2. Sidebar: adicionar avatar do usuario em vez de "Dashboard" e subtitulo
 
-- Remover o `<header>` inteiro (linhas 382-418)
-- Envolver o conteudo com `DashboardSidebar` + wrapper `ml-64` (desktop) / sem margin (mobile)
-- Importar `DashboardSidebar`, `useAdmin`, `usePWAInstall`, `useIsMobile`
-- Adicionar handlers para signOut e installClick
-- Mover ThemeToggle/NotificationBell/SettingsButton para dentro da sidebar (ja estao la)
+**`src/components/DashboardSidebar.tsx`:**
+- Aceitar novas props: `userName`, `userAvatarUrl`
+- Logo abaixo do logo LEVI, adicionar texto: **"Logistica de Escalas para Voluntarios da Igreja"** em texto pequeno branco/50
+- No item "Dashboard", substituir o texto por um avatar do usuario com nome ao lado (em vez de icone Home + "Dashboard")
+- Manter os demais itens (Minhas Escalas, Apoie o LEVI)
 
-### 2. Departamento (`src/pages/Department.tsx`)
+**`src/pages/Dashboard.tsx`:** Passar `userName` e `userAvatarUrl` como props para `DashboardSidebar`
 
-**Antes:** Header horizontal com ActionMenuPopover, botao voltar, avatar, ThemeToggle, Settings.
+**`src/pages/MySchedules.tsx`:** Buscar nome/avatar do usuario e passar para `DashboardSidebar`
 
-**Depois:** Usar `DashboardSidebar`:
+**`src/pages/Department.tsx`:** Buscar nome/avatar do usuario e passar para `DashboardSidebar`
 
-- Remover o `<header>` (linhas 453-532)
-- Adicionar `DashboardSidebar` com wrapper `ml-64`
-- Manter o ActionMenuPopover e controles do departamento como uma barra interna (sub-header) dentro do conteudo principal, nao no header global
-- O sub-header tera: avatar do departamento, nome, badge de lider, e botoes de acao (Settings, ActionMenu)
+### 3. Sidebar para lideres: botoes de acao no menu lateral (MySchedules)
 
-### 3. Auth (`src/pages/Auth.tsx`) - Mais cores nos botoes
+**`src/components/DashboardSidebar.tsx`:**
+- Aceitar props opcionais: `leaderActions` (array de acoes extras para o menu)
+- Para lideres em Minhas Escalas: adicionar ao sidebar os botoes:
+  - "Escala da Equipe" (toggle view mode)
+  - "Minha Disponibilidade" (abre sheet)
+  - "Criar Escala" (navega para departamento)
 
-Atualmente todos os botoes de submit usam `gradient-vibrant` (roxo). Diversificar:
+**`src/pages/MySchedules.tsx`:**
+- Remover os botoes de acao (Escala da Equipe toggle, Minha Disponibilidade, Criar Escala) do conteudo principal
+- Passar essas acoes como `leaderActions` para o sidebar
 
-- **Botao "Entrar"** (login): Trocar de `gradient-vibrant` para `bg-secondary text-secondary-foreground` (ambar dourado) - linha 1072
-- **Botao "Criar conta"** (register): Manter `gradient-vibrant` (roxo) - e o CTA principal
-- **Botao "Enviar link de recuperacao"**: Trocar para `gradient-fresh` (verde/emerald) - linha 1369
-- **Botao "Redefinir senha"**: Trocar para `gradient-warm` (rose/ambar) - linha 1446
-- **Logo icon** (linha 975): Trocar de `gradient-vibrant` para `bg-secondary` (ambar)
-- **Botoes sociais** (Google/Apple): Adicionar borda colorida sutil - `border-secondary/30 hover:border-secondary/50`
+### 4. Simplificar informacoes no Departamento
 
-### 4. Landing (`src/pages/Landing.tsx`) - Ajustes adicionais
+**`src/pages/Department.tsx`:**
+- Na aba de escalas para lideres: remover `LeaderSlotAvailabilityView` (disponibilidade detalhada por horarios) e `LeaderBlackoutDatesView` (datas de bloqueio) da visualizacao padrao
+- Manter apenas o `UnifiedScheduleView` (calendario de escalas) como conteudo principal
+- A disponibilidade e datas de bloqueio continuam acessiveis pelo ActionMenu (ja existente)
 
-- **Botao "Criar Conta" no nav** (linha 154): Manter `gradient-vibrant`
-- **Botao "Ver demonstracao"** (linha 195): Adicionar `border-secondary/50 text-secondary hover:bg-secondary/10`
+### 5. Remover botoes/menus soltos fora do sidebar
+
+**`src/pages/MySchedules.tsx`:**
+- Remover toggle "Minhas Escalas / Escala da Equipe" do conteudo - mover para sidebar
+- Remover botoes "Minha Disponibilidade" e "Criar Escala" do conteudo - mover para sidebar
 
 ---
 
 ### Arquivos a editar
 
-1. `src/pages/MySchedules.tsx` - Substituir header por DashboardSidebar + layout ml-64
-2. `src/pages/Department.tsx` - Substituir header por DashboardSidebar + sub-header interno
-3. `src/pages/Auth.tsx` - Diversificar cores dos botoes de submit e social
-4. `src/pages/Landing.tsx` - Ajuste no botao "Ver demonstracao"
+1. `src/App.tsx` - Remover `SupportNotification` global
+2. `src/components/DashboardSidebar.tsx` - Avatar do usuario, subtitulo, acoes de lider
+3. `src/pages/Dashboard.tsx` - Remover card "Apoie o LEVI", passar props de avatar
+4. `src/pages/MySchedules.tsx` - Remover card "Apoie", remover botoes soltos, passar acoes para sidebar
+5. `src/pages/Department.tsx` - Remover `LeaderSlotAvailabilityView` e `LeaderBlackoutDatesView` da aba escalas, passar props de avatar
 
 ### Detalhes tecnicos
 
-**Layout com sidebar (MySchedules e Department):**
-
-```text
-<div className="min-h-screen bg-background">
-  <DashboardSidebar ... />
-  <div className={isMobile ? '' : 'ml-64'}>
-    <main>...</main>
-  </div>
-</div>
+**Novas props do DashboardSidebar:**
+```typescript
+interface DashboardSidebarProps {
+  isAdmin: boolean;
+  shouldShowInstallPrompt: boolean;
+  onInstallClick: () => void;
+  onSignOut: () => void;
+  userName?: string;
+  userAvatarUrl?: string | null;
+  extraMenuItems?: Array<{
+    icon: LucideIcon;
+    label: string;
+    onClick: () => void;
+    isActive?: boolean;
+    color?: string;
+  }>;
+}
 ```
 
-**Sub-header do Departamento (dentro do conteudo):**
-Sera uma barra simples com avatar, nome do departamento, badge de lider, e botoes de acao - sem ser sticky, apenas no topo do conteudo.
+**Avatar no sidebar:** O item "Dashboard" sera substituido por um avatar circular com o nome do usuario. Se nao houver foto, mostra iniciais com fundo ambar.
+
+**Subtitulo abaixo do logo:**
+```text
+LEVI
+Logistica de Escalas para
+Voluntarios da Igreja
+```
+Em texto `text-white/50 text-[10px]` abaixo do logo.
+
