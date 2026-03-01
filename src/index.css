@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    --background: 263 100% 97%;
+    --background: 270 50% 98%;
     --foreground: 244 46% 20%;
 
     --card: 0 0% 100%;
@@ -572,6 +572,14 @@
 
   .gradient-fresh {
     background: linear-gradient(135deg, hsl(160 67% 52%), hsl(172 66% 50%), hsl(189 94% 43%));
+  }
+
+  .gradient-sidebar {
+    background: linear-gradient(180deg, hsl(263 84% 58%) 0%, hsl(263 76% 42%) 100%);
+  }
+
+  .dark .gradient-sidebar {
+    background: linear-gradient(180deg, hsl(263 76% 42%) 0%, hsl(263 68% 26%) 100%);
   }
 }
 

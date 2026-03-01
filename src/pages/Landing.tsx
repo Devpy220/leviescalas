@@ -146,7 +146,7 @@ export default function Landing() {
               </Button>
             )}
             <Link to="/auth?forceLogin=true">
-              <Button variant="outline" size="sm" className="border-primary/50 text-primary hover:bg-primary/10">
+              <Button variant="outline" size="sm" className="border-secondary/50 text-secondary hover:bg-secondary/10">
                 Entrar
               </Button>
             </Link>
@@ -187,7 +187,7 @@ export default function Landing() {
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/acessar">
-                <Button size="lg" className="w-full sm:w-auto gradient-vibrant text-white shadow-glow hover:shadow-glow-lg transition-all text-lg px-8 animate-gradient">
+                <Button size="lg" className="w-full sm:w-auto bg-secondary text-secondary-foreground shadow-glow-sm hover:shadow-glow transition-all text-lg px-8 hover:brightness-110">
                   Acessar com Código
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
@@ -242,7 +242,7 @@ export default function Landing() {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-8">
-              <span className="inline-block px-4 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+              <span className="inline-block px-4 py-1 rounded-full bg-accent/10 text-accent text-sm font-medium mb-4">
                 Veja como funciona
               </span>
               <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
@@ -424,7 +424,7 @@ export default function Landing() {
               Junte-se a centenas de igrejas que já simplificaram sua gestão de voluntários.
             </p>
             <Link to="/acessar">
-              <Button size="lg" className="gradient-vibrant text-white shadow-glow hover:shadow-glow-lg transition-all text-lg px-8">
+              <Button size="lg" className="bg-secondary text-secondary-foreground shadow-glow-sm hover:shadow-glow transition-all text-lg px-8 hover:brightness-110">
                 Acessar com Código
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
