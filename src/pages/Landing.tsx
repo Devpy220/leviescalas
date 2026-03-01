@@ -170,7 +170,7 @@ export default function Landing() {
         
         <div className="container mx-auto px-4 relative">
           <div className="max-w-4xl mx-auto text-center stagger-children">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6 border border-primary/20">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/10 text-secondary text-sm font-medium mb-6 border border-secondary/20">
               <Sparkles className="w-4 h-4" />
               <span>Simplifique a gestão de escalas da sua igreja</span>
             </div>
@@ -209,10 +209,15 @@ export default function Landing() {
             {/* User Counter */}
             <div className="mt-8 flex items-center justify-center gap-3">
               <div className="flex -space-x-2">
-                {[...Array(4)].map((_, i) => (
+                {[
+                  'from-primary/80 to-primary',
+                  'from-secondary/80 to-secondary',
+                  'from-accent/80 to-accent',
+                  'from-destructive/80 to-destructive',
+                ].map((gradient, i) => (
                   <div 
                     key={i} 
-                    className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/80 to-primary border-2 border-background flex items-center justify-center"
+                    className={`w-8 h-8 rounded-full bg-gradient-to-br ${gradient} border-2 border-background flex items-center justify-center`}
                   >
                     <Users className="w-4 h-4 text-white" />
                   </div>
@@ -311,11 +316,11 @@ export default function Landing() {
         <div className="absolute inset-0 bg-secondary/30 dark:bg-secondary/10" />
         <div className="container mx-auto px-4 relative">
           <div className="text-center mb-16">
-            <span className="inline-block px-4 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+            <span className="inline-block px-4 py-1 rounded-full bg-accent/10 text-accent text-sm font-medium mb-4">
               Recursos
             </span>
             <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-4">
-              Tudo que você precisa para gerenciar escalas
+              Tudo que você precisa para <span className="text-accent">gerenciar escalas</span>
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Ferramentas poderosas, interface simples. Desenvolvido especialmente para igrejas.
@@ -349,7 +354,7 @@ export default function Landing() {
         <div className="absolute inset-0 mesh-gradient opacity-30" />
         <div className="container mx-auto px-4 relative">
           <div className="text-center mb-16">
-            <span className="inline-block px-4 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+            <span className="inline-block px-4 py-1 rounded-full bg-destructive/10 text-destructive text-sm font-medium mb-4">
               Apoie o Projeto
             </span>
             <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-4">
@@ -366,7 +371,7 @@ export default function Landing() {
               <div className="absolute inset-0 gradient-vibrant rounded-3xl blur-2xl opacity-20" />
               <div className="relative glass rounded-3xl p-8 lg:p-10 border-2 border-primary/20 shadow-colored">
                 <div className="text-center mb-8">
-                  <div className="w-20 h-20 rounded-full gradient-vibrant flex items-center justify-center mx-auto mb-4 shadow-glow">
+                  <div className="w-20 h-20 rounded-full gradient-warm flex items-center justify-center mx-auto mb-4 shadow-glow">
                     <Heart className="w-10 h-10 text-white" />
                   </div>
                   <h3 className="text-2xl font-display font-bold text-foreground mb-2">
@@ -378,18 +383,21 @@ export default function Landing() {
                 </div>
                 
                 <ul className="space-y-4 mb-8">
-                  {appFeatures.map((feature) => (
-                    <li key={feature} className="flex items-center gap-3">
-                      <div className="w-6 h-6 rounded-full gradient-vibrant flex items-center justify-center flex-shrink-0">
-                        <CheckCircle2 className="w-4 h-4 text-white" />
-                      </div>
-                      <span className="text-foreground">{feature}</span>
-                    </li>
-                  ))}
+                  {appFeatures.map((feature, i) => {
+                    const colors = ['gradient-fresh', 'gradient-warm', 'gradient-vibrant'];
+                    return (
+                      <li key={feature} className="flex items-center gap-3">
+                        <div className={`w-6 h-6 rounded-full ${colors[i % 3]} flex items-center justify-center flex-shrink-0`}>
+                          <CheckCircle2 className="w-4 h-4 text-white" />
+                        </div>
+                        <span className="text-foreground">{feature}</span>
+                      </li>
+                    );
+                  })}
                 </ul>
                 
                 <Link to="/payment" className="block">
-                  <Button className="w-full gradient-vibrant text-white shadow-glow hover:shadow-glow-lg transition-all text-lg py-6">
+                  <Button className="w-full gradient-warm text-white shadow-glow hover:shadow-glow-lg transition-all text-lg py-6">
                     <Heart className="w-5 h-5 mr-2" />
                     Apoie o LEVI
                   </Button>
@@ -406,7 +414,7 @@ export default function Landing() {
 
       {/* CTA Section */}
       <section className="py-20 lg:py-32 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-background via-secondary/20 to-background" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-accent/10 to-background" />
         <div className="container mx-auto px-4 relative">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-6">
