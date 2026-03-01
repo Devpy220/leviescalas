@@ -1,50 +1,41 @@
 
 
-## Ajuste do Dark Mode - Menos Roxo, Mais Contraste
+## Mais Cores na Landing Page e Geral
 
 ### Problema
-O modo escuro atual tem saturacao roxa demais em todas as superficies (background, cards, popover, muted, input, border, sidebar). Isso cria uma aparencia monocromatica e cansativa.
+A Landing page e outras areas estao muito monocromaticas em violeta. O usuario quer mais presenca das cores verde (emerald), laranja/ambar (secondary), e vermelho (rose/coral) espalhadas pela interface, especialmente na pagina inicial.
 
-### Solucao
-Reduzir drasticamente a saturacao roxa das superficies de fundo, mantendo o roxo apenas nos elementos interativos (primary, ring, gradients). O fundo e cards passam a ser quase preto com um toque sutil de roxo, criando contraste natural.
+### Mudancas na Landing Page (`src/pages/Landing.tsx`)
 
-### Mudancas em `src/index.css` (bloco `.dark`)
+**1. Hero Section - Mais cores nos elementos decorativos:**
+- Badge "Simplifique..." trocar de `bg-primary/10 text-primary border-primary/20` para `bg-secondary/10 text-secondary border-secondary/20` (ambar)
+- Avatares do contador de usuarios: alternar cores (violeta, ambar, emerald, rose) em vez de todos violeta
+- Checkmarks na lista de features do "Apoio": alternar entre verde, ambar e violeta em vez de todos `gradient-vibrant`
 
-**Superficies - de roxo saturado para quase-preto neutro:**
+**2. Features Section - Fundo com cor alternada:**
+- Trocar fundo da secao de `bg-secondary/30` (ja ambar) para manter, mas adicionar borda decorativa
+- Badge "Recursos" mudar para `bg-emerald/10 text-emerald` (verde)
+- Titulo com destaque colorido: "Tudo que voce precisa" com palavra-chave em cor accent
 
-| Variavel | Antes | Depois | Visual |
-|---|---|---|---|
-| `--background` | `260 53% 8%` | `250 20% 5%` | Preto com toque sutil de roxo |
-| `--card` | `261 52% 13%` | `252 15% 10%` | Cinza muito escuro, menos roxo |
-| `--popover` | `261 52% 11%` | `252 15% 8%` | Idem |
-| `--muted` | `261 40% 18%` | `255 12% 15%` | Cinza escuro dessaturado |
-| `--input` | `261 40% 20%` | `255 12% 14%` | Idem |
-| `--border` | `261 49% 23%` | `258 15% 18%` | Borda mais neutra |
+**3. Support Section:**
+- Badge "Apoie o Projeto" mudar para `bg-rose/10 text-rose` (rosa/vermelho)
+- Coracao com gradiente rose em vez de violeta
+- Botao "Apoie o LEVI" com gradiente rose/coral
 
-**Sidebar - mesma abordagem:**
+**4. CTA Final Section:**
+- Fundo com gradiente que mistura ambar e verde sutil (em vez de so secondary/20)
+- Botao com borda ambar ou gradiente violeta-ambar
 
-| Variavel | Antes | Depois |
-|---|---|---|
-| `--sidebar-background` | `261 52% 11%` | `252 15% 7%` |
-| `--sidebar-accent` | `261 40% 18%` | `255 12% 15%` |
-| `--sidebar-border` | `261 49% 23%` | `258 15% 18%` |
+**5. Nav - Botao "Criar Conta":**
+- Manter gradiente vibrant mas adicionar borda ambar sutil no hover
 
-**Glass effects:**
+### Mudancas no CSS (`src/index.css`)
 
-| Variavel | Antes | Depois |
-|---|---|---|
-| `--glass-bg` | `261 52% 13% / 0.7` | `252 15% 10% / 0.75` |
-| `--glass-border` | `261 49% 30% / 0.4` | `258 20% 25% / 0.4` |
+**Novos gradientes utilitarios:**
+- `.gradient-warm`: gradiente de rose para ambar (para CTAs de apoio/doacao)
+- `.gradient-fresh`: gradiente de emerald para cyan (para status/sucesso)
 
-**Manter inalterados** (elementos de destaque que continuam roxos):
-- `--primary`, `--ring`, `--gradient-start/mid`, `--sidebar-primary`, `--sidebar-ring`
-- `--secondary` (ambar), `--accent` (verde), `--destructive`
+### Arquivos a editar:
+1. `src/pages/Landing.tsx` - Distribuir cores verde, ambar e rosa nos elementos
+2. `src/index.css` - Adicionar 2 novos gradientes utilitarios
 
-### Resultado esperado
-- Fundos e cards quase pretos, com apenas um toque sutil de roxo
-- Elementos interativos (botoes, links, badges) continuam vibrantes em violeta e ambar
-- Melhor contraste e legibilidade
-- Visual mais sofisticado e menos "monocromatico roxo"
-
-### Arquivo editado
-- `src/index.css` (somente o bloco `.dark`)
