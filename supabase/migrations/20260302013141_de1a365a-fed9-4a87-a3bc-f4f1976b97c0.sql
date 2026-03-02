@@ -1,0 +1,1 @@
+ALTER TABLE departments ADD COLUMN max_blackout_dates integer NOT NULL DEFAULT 5;

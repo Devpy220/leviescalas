@@ -23,6 +23,7 @@ export default function MemberPreferences({ departmentId, userId }: MemberPrefer
   const [minDaysBetween, setMinDaysBetween] = useState<number | string>(3);
   const [blackoutDates, setBlackoutDates] = useState<string[]>([]);
   const [newBlackoutDate, setNewBlackoutDate] = useState('');
+  const [maxBlackoutDates, setMaxBlackoutDates] = useState(5);
 
   useEffect(() => {
     fetchPreferences();
@@ -30,6 +31,17 @@ export default function MemberPreferences({ departmentId, userId }: MemberPrefer
 
   const fetchPreferences = async () => {
     try {
+      // Fetch department blackout limit
+      const { data: deptData } = await supabase
+        .from('departments')
+        .select('max_blackout_dates')
+        .eq('id', departmentId)
+        .maybeSingle();
+
+      if (deptData?.max_blackout_dates) {
+        setMaxBlackoutDates(deptData.max_blackout_dates);
+      }
+
       const { data, error } = await supabase
         .from('member_preferences')
         .select('*')
@@ -58,6 +70,14 @@ export default function MemberPreferences({ departmentId, userId }: MemberPrefer
         variant: 'destructive',
         title: 'Data já adicionada',
         description: 'Esta data já está na lista de bloqueio.',
+      });
+      return;
+    }
+    if (blackoutDates.length >= maxBlackoutDates) {
+      toast({
+        variant: 'destructive',
+        title: 'Limite atingido',
+        description: `Você pode bloquear no máximo ${maxBlackoutDates} datas. Remova uma data antes de adicionar outra.`,
       });
       return;
     }
@@ -155,10 +175,15 @@ export default function MemberPreferences({ departmentId, userId }: MemberPrefer
         </div>
 
         <div className="space-y-3">
-          <Label className="flex items-center gap-2">
-            <Calendar className="w-4 h-4" />
-            Datas de Bloqueio
-          </Label>
+          <div className="flex items-center justify-between">
+            <Label className="flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              Datas de Bloqueio
+            </Label>
+            <Badge variant="outline" className="text-xs">
+              {blackoutDates.length} de {maxBlackoutDates}
+            </Badge>
+          </div>
           <p className="text-xs text-muted-foreground">
             Adicione datas específicas em que você NÃO está disponível (férias, compromissos, etc.).
           </p>

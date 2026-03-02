@@ -287,6 +287,7 @@ export type Database = {
           id: string
           invite_code: string
           leader_id: string
+          max_blackout_dates: number
           name: string
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
@@ -302,6 +303,7 @@ export type Database = {
           id?: string
           invite_code?: string
           leader_id: string
+          max_blackout_dates?: number
           name: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
@@ -317,6 +319,7 @@ export type Database = {
           id?: string
           invite_code?: string
           leader_id?: string
+          max_blackout_dates?: number
           name?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null

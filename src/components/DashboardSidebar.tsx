@@ -6,6 +6,7 @@ import {
   Shield,
   Menu,
   Heart,
+  Settings,
   type LucideIcon
 } from 'lucide-react';
 import { LeviLogo } from '@/components/LeviLogo';
@@ -35,6 +36,7 @@ interface DashboardSidebarProps {
 
 const menuItems = [
   { icon: CalendarDays, label: 'Minhas Escalas', path: '/my-schedules', color: 'text-white' },
+  { icon: Settings, label: 'Configurações', path: '/security', color: 'text-white' },
   { icon: Heart, label: 'Apoie o LEVI', path: '/payment', color: 'text-white' },
 ];
 
