@@ -60,6 +60,7 @@ interface Department {
   created_at: string;
   avatar_url: string | null;
   stripe_customer_id: string | null;
+  max_blackout_dates?: number;
 }
 
 // Check if trial has expired
@@ -220,6 +221,13 @@ export default function Department() {
         return;
       }
       
+      // Fetch max_blackout_dates separately (not in RPC)
+      const { data: deptExtra } = await supabase
+        .from('departments')
+        .select('max_blackout_dates')
+        .eq('id', id)
+        .maybeSingle();
+
       setDepartment({
         id: data.id,
         name: data.name,
@@ -230,7 +238,8 @@ export default function Department() {
         trial_ends_at: data.trial_ends_at || null,
         created_at: data.created_at,
         avatar_url: (data as any).avatar_url || null,
-        stripe_customer_id: data.stripe_customer_id || null
+        stripe_customer_id: data.stripe_customer_id || null,
+        max_blackout_dates: deptExtra?.max_blackout_dates ?? 5
       });
       setIsLeader(data.leader_id === currentUser?.id);
     } catch (error: any) {
