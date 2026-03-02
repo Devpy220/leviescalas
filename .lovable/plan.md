@@ -1,92 +1,53 @@
 
 
-## Simplificar Landing Page e Login/Cadastro como Modal
+## Plano de Implementação
 
-### Resumo
-Transformar a landing page em uma tela unica sem rolagem, com conteudo lado a lado (info + features compactas), e converter o login/cadastro em um modal centralizado com fundo transparente/blur que aparece sobre a landing page.
+### 1. Limite de datas de bloqueio por departamento (para líderes)
 
----
+**Problema:** Atualmente os voluntários podem bloquear quantas datas quiserem sem limite. O líder precisa controlar isso.
 
-### 1. Simplificar a Landing Page (`src/pages/Landing.tsx`)
+**Solução:**
 
-Redesign completo para caber em uma unica tela (100vh):
+**1.1 - Migração de banco de dados**
+- Adicionar coluna `max_blackout_dates` (integer, default 5) na tabela `departments`
+- Essa coluna define o limite maximo de datas de bloqueio que membros podem adicionar
+- O líder pode editar esse valor nas configurações do departamento (minimo: 1)
 
-**Layout lado a lado:**
-- **Lado esquerdo**: Logo LEVI, titulo, subtitulo curto, contador de usuarios, botoes "Entrar" e "Criar Conta" (abrem o modal de auth)
-- **Lado direito**: 3-4 features compactas em grid (icone + titulo, sem descricao longa)
+**1.2 - Configurações do departamento (DepartmentSettingsDialog)**
+- Adicionar campo "Limite de datas de bloqueio" no dialog de configurações
+- Input numérico editável pelo líder com valor mínimo de 1
+- Salvar junto com nome/descrição na tabela `departments`
 
-**Remover:**
-- Botao "Acessar com Codigo" (e o link para `/acessar`)
-- Secao de screenshots/carousel
-- Secao de recursos detalhados (6 cards)
-- Secao de apoio/doacao
-- Secao CTA final
-- Footer
-- Botao "Ver demonstracao"
-
-**Manter:**
-- Nav com logo, ThemeToggle, botao Instalar (PWA), botoes Entrar/Criar Conta
-- Contador de usuarios cadastrados
-- DemoTour e PWAInstallPrompt (componentes de dialog)
-
-### 2. Auth como Modal na Landing (`src/pages/Landing.tsx`)
-
-Em vez de navegar para `/auth`, abrir um Dialog/modal na propria landing page:
-
-- Usar o componente `Dialog` do Radix com overlay `bg-black/40 backdrop-blur-sm` (fundo transparente com blur)
-- O conteudo do modal sera o formulario de login/cadastro (extraido/inline)
-- Modal centralizado, `max-w-md`, com bordas arredondadas e glass effect
-- Tabs Entrar/Criar Conta dentro do modal
-- Manter toda a logica de auth existente (signIn, signUp, Google, Apple, recovery, etc.)
-
-### 3. Rota `/auth` continua funcionando
-
-A pagina `/auth` existente continua funcionando normalmente para links diretos (recovery, convites, etc.). O modal na landing e uma forma alternativa de acessar.
+**1.3 - Preferências do membro (MemberPreferences)**
+- Buscar o `max_blackout_dates` do departamento ao carregar
+- Impedir o voluntário de adicionar mais datas que o limite definido pelo líder
+- Mostrar contador "X de Y datas usadas"
+- Toast de aviso quando tentar ultrapassar o limite
 
 ---
 
-### Arquivos a editar
+### 2. Adicionar "Configurações" no sidebar global
 
-1. **`src/pages/Landing.tsx`** - Redesign completo: layout lado a lado em 100vh, sem scroll, modal de auth integrado
-2. **`src/pages/Auth.tsx`** - Sem alteracoes (continua funcionando para links diretos)
+**Problema:** O link para /security (Configurações) só aparece em alguns lugares. Precisa estar sempre visível no sidebar e no menu hamburger.
 
-### Detalhes tecnicos
+**Solução:**
 
-**Estrutura da nova Landing:**
-```text
-+--------------------------------------------------+
-| Nav: Logo LEVI | ThemeToggle | Entrar | Criar     |
-+--------------------------------------------------+
-|                                                    |
-|  [Lado Esquerdo]         [Lado Direito]           |
-|                                                    |
-|  Logo grande              Feature 1 (icone+titulo)|
-|  "Organize escalas        Feature 2               |
-|   com facilidade"          Feature 3               |
-|                            Feature 4               |
-|  123+ voluntarios                                  |
-|  cadastrados                                       |
-|                                                    |
-|  [Entrar]  [Criar Conta]                          |
-|                                                    |
-+--------------------------------------------------+
+**2.1 - DashboardSidebar**
+- Adicionar item "Configurações" (icone Settings) na lista `menuItems` do sidebar, apontando para `/security`
+- Vai aparecer automaticamente tanto no sidebar desktop quanto no menu hamburger (mobile), já que ambos usam o mesmo componente `SidebarContent`
+
+---
+
+### Detalhes Técnicos
+
+**Migração SQL:**
+```sql
+ALTER TABLE departments 
+ADD COLUMN max_blackout_dates integer NOT NULL DEFAULT 5;
 ```
 
-**Modal de Auth (Dialog):**
-```tsx
-<Dialog open={showAuth} onOpenChange={setShowAuth}>
-  <DialogContent className="max-w-md bg-card/95 backdrop-blur-xl border-border/50 shadow-2xl">
-    {/* Tabs: Entrar / Criar Conta */}
-    {/* Formularios de login/registro */}
-    {/* Social login (Google/Apple) */}
-    {/* Link "Esqueceu senha?" */}
-  </DialogContent>
-</Dialog>
-```
+**Arquivos modificados:**
+1. `src/components/DashboardSidebar.tsx` - Adicionar item "Configurações" com icone Settings
+2. `src/components/department/DepartmentSettingsDialog.tsx` - Adicionar campo de limite de bloqueio
+3. `src/components/department/MemberPreferences.tsx` - Buscar e aplicar o limite de blackout dates do departamento
 
-**Overlay transparente:**
-```tsx
-<DialogOverlay className="bg-black/40 backdrop-blur-sm" />
-```
-
-O modal inclui a logica completa de auth: login com email/senha, login social (Google, Apple), recuperacao de senha, e registro (quando tem contexto de igreja). Para registro sem codigo de igreja, redireciona para `/auth?tab=register` com contexto adequado.
