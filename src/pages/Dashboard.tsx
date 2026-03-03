@@ -305,26 +305,29 @@ export default function Dashboard() {
         shouldShowInstallPrompt={shouldShowInstallPrompt()}
         onInstallClick={() => setShowInstallDialog(true)}
         onSignOut={handleSignOut}
-        userName={userName}
-        userAvatarUrl={userAvatarUrl}
       />
 
-      <div className={isMobile ? '' : 'ml-64'}>
+      <div className={isMobile ? '' : 'ml-14'}>
         <main className="container mx-auto px-4 py-8">
 
-        {/* Welcome section - Centered */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/10 text-secondary text-sm font-medium mb-4">
-            <Sparkles className="w-4 h-4" />
-            <span>Dashboard</span>
+        {/* Profile Section */}
+        <div className="mb-10">
+          <div className="flex items-center gap-5 mb-6">
+            <Avatar className="w-20 h-20 border-4 border-primary/20">
+              {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={userName} />}
+              <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
+                {userName ? userName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'U'}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h1 className="font-display text-2xl font-bold text-foreground">{userName || 'Meu Perfil'}</h1>
+              <p className="text-muted-foreground text-sm">{currentUser?.email}</p>
+            </div>
           </div>
-          <h1 className="font-display text-3xl font-bold text-foreground mb-2">
-            Olá, {userName || 'bem-vindo'}! 👋
-          </h1>
-          <p className="text-muted-foreground">
-            Gerencie seus departamentos e escalas em um só lugar.
-          </p>
         </div>
+
+        {/* Departments Section */}
+        <h2 className="font-display text-xl font-semibold text-foreground mb-6">Meus Departamentos</h2>
 
         {/* Department Cards Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">

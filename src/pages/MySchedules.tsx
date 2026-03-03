@@ -389,32 +389,30 @@ export default function MySchedules() {
         shouldShowInstallPrompt={shouldShowInstallPrompt()}
         onInstallClick={install}
         onSignOut={handleSignOut}
-        extraMenuItems={[
-          ...(departmentIds.length > 0 ? [{
-            icon: Users,
-            label: viewMode === 'team' ? 'Minhas Escalas' : 'Escala da Equipe',
-            onClick: () => setViewMode(viewMode === 'team' ? 'mine' : 'team'),
-            isActive: viewMode === 'team',
-          }] : []),
-          ...(departmentIds.length > 0 ? [{
-            icon: Clock,
-            label: 'Minha Disponibilidade',
-            onClick: () => setAvailabilitySheetOpen(true),
-          }] : []),
-          ...(leaderDepartments.length === 1 ? [{
-            icon: CalendarPlus,
-            label: 'Criar Escala',
-            onClick: () => navigate(`/departments/${leaderDepartments[0].id}?action=add-schedule`),
-          }] : []),
-          ...(leaderDepartments.length > 1 ? leaderDepartments.map(dept => ({
-            icon: CalendarPlus,
-            label: `Criar em ${dept.name}`,
-            onClick: () => navigate(`/departments/${dept.id}?action=add-schedule`),
-          })) : []),
-        ]}
       />
       
-      <div className={isMobile ? 'flex-1 flex flex-col' : 'ml-64 flex-1 flex flex-col'}>
+      <div className={isMobile ? 'flex-1 flex flex-col' : 'ml-14 flex-1 flex flex-col'}>
+        {/* View mode toggle in header */}
+        {departmentIds.length > 0 && (
+          <div className="container mx-auto px-4 pt-6 flex gap-2">
+            <Button
+              variant={viewMode === 'mine' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('mine')}
+            >
+              <User className="w-4 h-4 mr-2" />
+              Minhas
+            </Button>
+            <Button
+              variant={viewMode === 'team' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('team')}
+            >
+              <Users className="w-4 h-4 mr-2" />
+              Equipe
+            </Button>
+          </div>
+        )}
       <main className="container mx-auto px-4 py-8 flex-1">
         <h3 className="font-display text-xl font-semibold text-foreground mb-6">
           {viewMode === 'team' ? 'Escala da Equipe' : 'Minhas Escalas'}

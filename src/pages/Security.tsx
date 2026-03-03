@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Footer from '@/components/Footer';
+import { DashboardSidebar } from '@/components/DashboardSidebar';
+import { useAdmin } from '@/hooks/useAdmin';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { ArrowLeft, Shield, ShieldOff, Loader2, AlertTriangle, Eye, EyeOff, Bell, BellOff, ChevronDown, ChevronUp, CalendarSync, Pencil, Check, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,10 +34,13 @@ import {
 
 export default function Security() {
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const { isEnabled, isLoading: mfaLoading, checkFactors, disable2FA } = useTwoFactor();
   const { isSupported: pushSupported, isSubscribed: pushSubscribed, permission: pushPermission, loading: pushLoading, subscribe: subscribePush, unsubscribe: unsubscribePush, recheckPermission } = usePushNotifications();
   const { toast } = useToast();
+  const { isAdmin } = useAdmin();
+  const { shouldShowInstallPrompt, install } = usePWAInstall();
+  const isMobile = useIsMobile();
   
   const [showSetup, setShowSetup] = useState(false);
   const [showDisableDialog, setShowDisableDialog] = useState(false);
@@ -182,29 +189,25 @@ export default function Security() {
     });
   };
 
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <DashboardSidebar
+        isAdmin={isAdmin}
+        shouldShowInstallPrompt={shouldShowInstallPrompt()}
+        onInstallClick={install}
+        onSignOut={handleSignOut}
+      />
+      <div className={isMobile ? 'flex-1 flex flex-col' : 'ml-14 flex-1 flex flex-col'}>
       <div className="container max-w-2xl py-8 px-4 flex-1">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => navigate('/dashboard')}
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Voltar</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Configurações</h1>
-            <p className="text-muted-foreground">Gerencie as configurações de segurança e privacidade da sua conta</p>
-          </div>
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-foreground">Configurações</h1>
+          <p className="text-muted-foreground">Gerencie as configurações de segurança e privacidade da sua conta</p>
         </div>
 
         {/* Profile Card */}
@@ -637,6 +640,7 @@ export default function Security() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
     </div>
   );
 }

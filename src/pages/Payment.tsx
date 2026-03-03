@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdmin } from "@/hooks/useAdmin";
+import { usePWAInstall } from "@/hooks/usePWAInstall";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, QrCode, Copy, Check, ArrowLeft, Heart, Sparkles } from "lucide-react";
@@ -14,7 +18,10 @@ const SUGGESTED_VALUE = "R$ 10,00";
 
 const Payment = () => {
   const navigate = useNavigate();
-  const { loading: authLoading } = useAuth();
+  const { loading: authLoading, signOut } = useAuth();
+  const { isAdmin } = useAdmin();
+  const { shouldShowInstallPrompt, install } = usePWAInstall();
+  const isMobile = useIsMobile();
   const [copied, setCopied] = useState(false);
 
   const copyPixKey = async () => {
@@ -36,18 +43,22 @@ const Payment = () => {
     );
   }
 
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex flex-col">
+      <DashboardSidebar
+        isAdmin={isAdmin}
+        shouldShowInstallPrompt={shouldShowInstallPrompt()}
+        onInstallClick={install}
+        onSignOut={handleSignOut}
+      />
+      <div className={isMobile ? 'flex-1 flex flex-col' : 'ml-14 flex-1 flex flex-col'}>
       <div className="flex-1 py-8 px-4">
         <div className="max-w-lg mx-auto">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate(-1)}
-            className="mb-6"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar
-          </Button>
 
           <div className="text-center mb-8">
             <div className="mx-auto w-16 h-16 bg-rose-500/10 rounded-full flex items-center justify-center mb-4">
@@ -132,6 +143,7 @@ const Payment = () => {
       </div>
       
       <Footer />
+      </div>
     </div>
   );
 };
