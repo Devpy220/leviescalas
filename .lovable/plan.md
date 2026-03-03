@@ -1,53 +1,104 @@
 
 
-## Plano de Implementação
+## Plano: Sidebar Unificada e Colapsavel em Todas as Paginas
 
-### 1. Limite de datas de bloqueio por departamento (para líderes)
-
-**Problema:** Atualmente os voluntários podem bloquear quantas datas quiserem sem limite. O líder precisa controlar isso.
-
-**Solução:**
-
-**1.1 - Migração de banco de dados**
-- Adicionar coluna `max_blackout_dates` (integer, default 5) na tabela `departments`
-- Essa coluna define o limite maximo de datas de bloqueio que membros podem adicionar
-- O líder pode editar esse valor nas configurações do departamento (minimo: 1)
-
-**1.2 - Configurações do departamento (DepartmentSettingsDialog)**
-- Adicionar campo "Limite de datas de bloqueio" no dialog de configurações
-- Input numérico editável pelo líder com valor mínimo de 1
-- Salvar junto com nome/descrição na tabela `departments`
-
-**1.3 - Preferências do membro (MemberPreferences)**
-- Buscar o `max_blackout_dates` do departamento ao carregar
-- Impedir o voluntário de adicionar mais datas que o limite definido pelo líder
-- Mostrar contador "X de Y datas usadas"
-- Toast de aviso quando tentar ultrapassar o limite
+### Objetivo
+Criar um sidebar unico e persistente em todas as paginas autenticadas, com estado colapsado (barra fina colorida) e expandido, e com a nova estrutura de menu solicitada.
 
 ---
 
-### 2. Adicionar "Configurações" no sidebar global
+### 1. Sidebar Colapsavel (DashboardSidebar refatorado)
 
-**Problema:** O link para /security (Configurações) só aparece em alguns lugares. Precisa estar sempre visível no sidebar e no menu hamburger.
+**Estado colapsado (desktop):**
+- Barra fina (~14px) com o gradiente violeta do sidebar
+- Ao passar o mouse ou clicar, expande para a largura completa (w-64)
+- Icones dos menus visiveis no modo colapsado (w-14) com tooltips
 
-**Solução:**
+**Mobile:** Manter o hamburger menu atual (Sheet lateral)
 
-**2.1 - DashboardSidebar**
-- Adicionar item "Configurações" (icone Settings) na lista `menuItems` do sidebar, apontando para `/security`
-- Vai aparecer automaticamente tanto no sidebar desktop quanto no menu hamburger (mobile), já que ambos usam o mesmo componente `SidebarContent`
+**Persistencia:** Salvar estado (colapsado/expandido) no localStorage
 
 ---
 
-### Detalhes Técnicos
+### 2. Nova Estrutura de Menu
 
-**Migração SQL:**
-```sql
-ALTER TABLE departments 
-ADD COLUMN max_blackout_dates integer NOT NULL DEFAULT 5;
+```text
++---------------------------+
+|  LEVI (logo)              |
++---------------------------+
+|  Meu Perfil      (User)   |  -> /dashboard (reformulado)
+|  Minhas Escalas  (Cal)    |  -> /my-schedules
+|  Escalas Equipe  (Users)  |  -> /my-schedules?view=team
+|  Configuracoes   (Gear)   |  -> /security
+|  Disponibilidade (Clock)  |  -> Abre sheet de disponibilidade
+|  Mural de Avisos (Mega)   |  -> Navega ao departamento aba avisos
+|  ---- Lider apenas ----   |
+|  Criar Escalas   (Plus)   |  -> Navega ao departamento
++---------------------------+
+|  Apoie o LEVI    (Heart)  |  -> /payment
+|  Sair            (LogOut) |
++---------------------------+
 ```
 
-**Arquivos modificados:**
-1. `src/components/DashboardSidebar.tsx` - Adicionar item "Configurações" com icone Settings
-2. `src/components/department/DepartmentSettingsDialog.tsx` - Adicionar campo de limite de bloqueio
-3. `src/components/department/MemberPreferences.tsx` - Buscar e aplicar o limite de blackout dates do departamento
+---
 
+### 3. Pagina "Meu Perfil" (Reformular Dashboard)
+
+Reformular a pagina `/dashboard` para ser o "Meu Perfil":
+
+- **Cabecalho:** Foto grande, nome, email, WhatsApp (editaveis)
+- **Secao "Meus Departamentos":** Cards dos departamentos do usuario (como ja existe hoje)
+- **Secao "Minha Igreja":** Nome e logo da igreja vinculada
+- Manter o botao de criar departamento para lideres
+
+O conteudo atual do Dashboard (cards de departamentos) permanece, mas agora com as informacoes pessoais em destaque no topo.
+
+---
+
+### 4. Adicionar Sidebar em Paginas que Nao Tem
+
+As seguintes paginas precisam receber o sidebar:
+
+- **Security.tsx** - Atualmente sem sidebar, apenas botao "Voltar"
+- **Payment.tsx** - Atualmente sem sidebar, apenas botao "Voltar"
+
+Ambas passarao a usar o layout `<DashboardSidebar> + <div ml-64>` como as demais.
+
+---
+
+### 5. Itens Contextuais (Disponibilidade / Mural / Criar Escalas)
+
+Como esses itens sao vinculados a departamentos:
+
+- **Disponibilidade:** Se o usuario pertence a 1 departamento, abre o sheet de disponibilidade diretamente. Se mais de 1, navega para o departamento principal.
+- **Mural de Avisos:** Navega para o departamento na aba "announcements". Se mais de 1, mostra dropdown para escolher.
+- **Criar Escalas (lider):** Navega para o departamento do lider na aba de escalas com acao de criar. Se lider de multiplos, mostra dropdown.
+
+---
+
+### Detalhes Tecnicos
+
+**Arquivos modificados:**
+1. `src/components/DashboardSidebar.tsx` - Refatorar completamente: adicionar estado colapsado/expandido, nova lista de menus, carregar departamentos do usuario internamente
+2. `src/pages/Dashboard.tsx` - Adicionar secao de perfil no topo (foto, nome, email, whatsapp, igreja)
+3. `src/pages/Security.tsx` - Adicionar DashboardSidebar + layout ml-64
+4. `src/pages/Payment.tsx` - Adicionar DashboardSidebar + layout ml-64
+
+**Novo hook (opcional):**
+- `src/hooks/useUserDepartments.tsx` - Hook compartilhado para carregar departamentos do usuario (evitar duplicacao entre sidebar e dashboard)
+
+**Logica de colapso:**
+```text
+Desktop:
+- Padrão: colapsado (barra fina w-14 com icones)
+- Hover ou clique: expande para w-64 com labels
+- Botao toggle para fixar expandido
+
+Mobile:
+- Sem mudanca: hamburger menu com Sheet
+```
+
+**CSS necessario:**
+- Transicao suave de largura (transition-all duration-300)
+- No modo colapsado: apenas icones com tooltip
+- No modo expandido: icones + labels (como atual)
