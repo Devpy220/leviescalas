@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Share, Plus, Check } from 'lucide-react';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
-import { usePushNotifications } from '@/hooks/usePushNotifications';
 import {
   Dialog,
   DialogContent,
@@ -14,26 +13,12 @@ import { Button } from '@/components/ui/button';
 const IOS_INSTRUCTIONS_SHOWN_KEY = 'pwa-ios-instructions-shown';
 
 /**
- * Invisible component that auto-triggers PWA installation prompt
- * and requests push notification permission after install.
+ * Invisible component that auto-triggers PWA installation prompt.
  */
 export function PWAAutoInstaller() {
   const { autoInstall, isInstalled, isIOS, isInstallable } = usePWAInstall();
-  const { subscribe, isSupported, isSubscribed } = usePushNotifications();
   const hasTriedRef = useRef(false);
-  const hasRequestedPushRef = useRef(false);
   const [showIOSModal, setShowIOSModal] = useState(false);
-
-  // Request push permission after PWA is installed (or detected as installed)
-  useEffect(() => {
-    if (!isInstalled || !isSupported || isSubscribed || hasRequestedPushRef.current) return;
-    hasRequestedPushRef.current = true;
-    // Small delay to let the app settle after install
-    const timer = setTimeout(() => {
-      subscribe();
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, [isInstalled, isSupported, isSubscribed, subscribe]);
 
   // Handle iOS: show instructions modal once
   useEffect(() => {
@@ -53,9 +38,8 @@ export function PWAAutoInstaller() {
       hasTriedRef.current = true;
       try {
         const installed = await autoInstall();
-        // If installed successfully, push permission will be requested by the effect above
         if (installed) {
-          console.log('[PWAAutoInstaller] PWA installed, push permission will be requested');
+          console.log('[PWAAutoInstaller] PWA installed');
         }
       } catch (error) {
         console.error('[PWAAutoInstaller] Error:', error);
@@ -67,13 +51,6 @@ export function PWAAutoInstaller() {
   const handleIOSClose = () => {
     localStorage.setItem(IOS_INSTRUCTIONS_SHOWN_KEY, 'true');
     setShowIOSModal(false);
-    // Request push permission after closing iOS instructions
-    if (isSupported && !isSubscribed && !hasRequestedPushRef.current) {
-      hasRequestedPushRef.current = true;
-      setTimeout(() => {
-        subscribe();
-      }, 1000);
-    }
   };
 
   // iOS instruction modal
@@ -133,6 +110,5 @@ export function PWAAutoInstaller() {
     );
   }
 
-  // Android/Desktop: component renders nothing
   return null;
 }
