@@ -6,67 +6,20 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const sendPushNotification = async (
-  userIds: string[],
-  title: string,
-  body: string,
-  data?: Record<string, unknown>
-): Promise<void> => {
-  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-  try {
-    await fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""}`,
-      },
-      body: JSON.stringify({ userIds, title, body, data }),
-    });
-  } catch (e) {
-    console.error("Push error:", e);
-  }
-};
-
-const sendTelegramNotification = async (
-  supabaseUrl: string,
-  serviceRoleKey: string,
-  userId: string,
-  message: string
-): Promise<boolean> => {
-  try {
-    const res = await fetch(`${supabaseUrl}/functions/v1/send-telegram-notification`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${serviceRoleKey}`,
-      },
-      body: JSON.stringify({ userId, message }),
-    });
-    const data = await res.json();
-    return data.sent === 1;
-  } catch (e) {
-    console.error("Telegram error for user", userId, e);
-    return false;
-  }
-};
-
 serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
-    // Verify caller
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+        status: 401, headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
@@ -74,130 +27,95 @@ serve(async (req: Request): Promise<Response> => {
     const { data: { user: caller }, error: authError } = await supabaseAdmin.auth.getUser(token);
     if (authError || !caller) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+        status: 401, headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
     const { department_id, department_name, announcement_title } = await req.json();
-
     if (!department_id || !department_name || !announcement_title) {
       return new Response(JSON.stringify({ error: "Missing fields" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+        status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
     // Verify caller is department leader
-    const { data: dept } = await supabaseAdmin
-      .from("departments")
-      .select("leader_id")
-      .eq("id", department_id)
-      .single();
-
+    const { data: dept } = await supabaseAdmin.from("departments").select("leader_id").eq("id", department_id).single();
     if (!dept || dept.leader_id !== caller.id) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
-        status: 403,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+        status: 403, headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
-    // Get all members (excluding the leader/author)
-    const { data: members } = await supabaseAdmin
-      .from("members")
-      .select("user_id")
-      .eq("department_id", department_id)
-      .neq("user_id", caller.id);
-
+    // Get members (excluding leader)
+    const { data: members } = await supabaseAdmin.from("members").select("user_id").eq("department_id", department_id).neq("user_id", caller.id);
     const memberIds = (members || []).map((m: any) => m.user_id);
 
     if (memberIds.length === 0) {
       return new Response(JSON.stringify({ success: true, notified: 0 }), {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+        status: 200, headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
-    const pushTitle = `📢 ${department_name}`;
-    const pushBody = announcement_title;
+    // Fetch profiles
+    const { data: memberProfiles } = await supabaseAdmin.from("profiles").select("id, name, whatsapp").in("id", memberIds);
 
-    // Create in-app notifications for all members
-    const notifications = memberIds.map((userId: string) => ({
-      user_id: userId,
-      department_id,
-      type: "announcement",
-      message: `📢 Novo aviso em ${department_name}: ${announcement_title}`,
-      status: "sent",
-    }));
+    const metadata = {
+      department_name,
+      announcement_title,
+    };
 
-    const { error: insertError } = await supabaseAdmin
-      .from("notifications")
-      .insert(notifications);
-
-    if (insertError) {
-      console.error("Error inserting notifications:", insertError);
-    }
-
-    // Send push notifications
-    await sendPushNotification(memberIds, pushTitle, pushBody, {
-      url: "/my-schedules",
+    // Insert notifications with metadata
+    const notifications = memberIds.map((userId: string) => {
+      const profile = (memberProfiles || []).find((p: any) => p.id === userId);
+      return {
+        user_id: userId,
+        department_id,
+        type: "announcement",
+        message: `📢 Novo aviso em ${department_name}: ${announcement_title}`,
+        status: "sent",
+        metadata: { ...metadata, user_name: profile?.name || 'Voluntário' },
+      };
     });
 
-    // Send Telegram notifications in parallel
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-    const telegramMessage = `📢 *Aviso - ${department_name}*\n\n${announcement_title}`;
+    const { data: insertedNotifs } = await supabaseAdmin
+      .from("notifications")
+      .insert(notifications as any)
+      .select("id, user_id");
 
-    const telegramResults = await Promise.allSettled(
-      memberIds.map((userId: string) =>
-        sendTelegramNotification(supabaseUrl, serviceRoleKey, userId, telegramMessage)
-      )
-    );
-
-    const telegramSent = telegramResults.filter(
-      (r) => r.status === "fulfilled" && r.value === true
-    ).length;
-
-    // Send WhatsApp notifications in parallel
-    const whatsappMessage = `📢 *Aviso — ${department_name}*\n\n━━━━━━━━━━━━━━━\n\n${announcement_title}\n\n━━━━━━━━━━━━━━━\n_LEVI — Escalas Inteligentes_\n🔗 leviescalas.com.br`;
-
-    // Fetch profiles with whatsapp numbers for the members
-    const { data: memberProfiles } = await supabaseAdmin
-      .from("profiles")
-      .select("id, whatsapp")
-      .in("id", memberIds);
+    // Send WhatsApp to each member with link
+    const notifMap = new Map((insertedNotifs || []).map((n: any) => [n.user_id, n.id]));
+    let whatsappSent = 0;
 
     const whatsappResults = await Promise.allSettled(
       (memberProfiles || [])
         .filter((p: any) => p.whatsapp)
-        .map((p: any) =>
-          fetch(`${supabaseUrl}/functions/v1/send-whatsapp-notification`, {
+        .map(async (p: any) => {
+          const notifId = notifMap.get(p.id);
+          const viewUrl = notifId ? `${supabaseUrl}/functions/v1/view-notification?id=${notifId}` : '';
+          const msg = `📢 *Aviso — ${department_name}*\n\nOlá, *${p.name}*!\n\n${announcement_title}\n\n${viewUrl ? `👉 Ver detalhes:\n${viewUrl}\n\n` : ''}_LEVI — Escalas Inteligentes_`;
+
+          const res = await fetch(`${supabaseUrl}/functions/v1/send-whatsapp-notification`, {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${serviceRoleKey}`,
-            },
-            body: JSON.stringify({ phone: p.whatsapp, message: whatsappMessage }),
-          }).then(r => r.json()).then(d => d.sent === true).catch(() => false)
-        )
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceRoleKey}` },
+            body: JSON.stringify({ phone: p.whatsapp, message: msg }),
+          });
+          const data = await res.json();
+          return data.sent === true;
+        })
     );
 
-    const whatsappSent = whatsappResults.filter(
-      (r) => r.status === "fulfilled" && r.value === true
-    ).length;
-
-    console.log(`Announcement notification sent to ${memberIds.length} members (push), ${telegramSent} via Telegram, ${whatsappSent} via WhatsApp`);
+    whatsappSent = whatsappResults.filter(r => r.status === "fulfilled" && r.value === true).length;
+    console.log(`Announcement: ${memberIds.length} notified, ${whatsappSent} WhatsApp`);
 
     return new Response(
-      JSON.stringify({ success: true, notified: memberIds.length }),
+      JSON.stringify({ success: true, notified: memberIds.length, whatsapp_sent: whatsappSent }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : "Unknown error";
     console.error("Error:", msg);
     return new Response(JSON.stringify({ error: msg }), {
-      status: 500,
-      headers: { "Content-Type": "application/json", ...corsHeaders },
+      status: 500, headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   }
 });

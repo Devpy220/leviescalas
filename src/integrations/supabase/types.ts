@@ -515,6 +515,7 @@ export type Database = {
           department_id: string | null
           id: string
           message: string
+          metadata: Json | null
           read_at: string | null
           schedule_id: string | null
           sent_at: string | null
@@ -527,6 +528,7 @@ export type Database = {
           department_id?: string | null
           id?: string
           message: string
+          metadata?: Json | null
           read_at?: string | null
           schedule_id?: string | null
           sent_at?: string | null
@@ -539,6 +541,7 @@ export type Database = {
           department_id?: string | null
           id?: string
           message?: string
+          metadata?: Json | null
           read_at?: string | null
           schedule_id?: string | null
           sent_at?: string | null
