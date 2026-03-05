@@ -1,81 +1,68 @@
 
 
-## Plano: Sidebar Persistente no Mobile + Atalhos Centralizados + Redirect para Meu Perfil
+## Plano: Separar Rotas de Escalas + Sidebar Icon-Only + Ações de Líder na Sidebar
 
-### Resumo
+### Problemas Identificados
 
-Tornar o sidebar identico no mobile e desktop (sempre visivel como barra lateral, sem hamburger menu), mover acoes contextuais (Disponibilidade, Mural, etc.) para abrir como modais/sheets em vez de navegar para a pagina do departamento, e redirecionar o login sempre para `/dashboard` (Meu Perfil).
+1. **"Escalas Equipe" não funciona** — O sidebar navega para `/my-schedules?view=team`, mas o `MySchedules` controla `viewMode` por estado interno, não lê o query param `?view=team`. Então sempre abre em "mine".
 
----
+2. **Sidebar mostra texto** — Quando expandido/hovered, mostra labels. Usuário quer apenas ícones com tooltip no hover/toque.
 
-### 1. Sidebar Identico no Mobile
+3. **Menu hamburger no departamento** — O `ActionMenuPopover` ainda aparece no header do departamento para líderes.
 
-**`src/components/DashboardSidebar.tsx`**
-
-Remover o bloco `if (isMobile)` que renderiza o header com hamburger + Sheet. No mobile, renderizar o mesmo `<aside>` fixo que o desktop, mas **sempre colapsado (w-14)** sem hover-expand (toque para expandir via overlay).
-
-- Mobile: sidebar fixa `w-14` com icones, toque no icone de menu (ou swipe) expande para `w-64` com overlay escuro
-- Desktop: manter comportamento atual (hover + pin)
-
-**Todas as paginas:** Atualizar o margin-left para sempre ter `ml-14` (mobile e desktop), removendo a condicao `isMobile ? '' : 'ml-14'`.
+4. **Ações de líder faltam na sidebar** — Itens como Setores, Funções, Resumo de Equipe, Convidar Membro e Exportar não estão na sidebar.
 
 ---
 
-### 2. Disponibilidade e Mural como Modais (sem navegar ao departamento)
+### 1. Corrigir navegação Escalas Equipe
 
-**`src/components/DashboardSidebar.tsx`**
-
-Alterar `handleContextualNav`:
-
-- **Disponibilidade:** Em vez de `navigate('/departamento/slug?action=availability')`, abrir `MyAvailabilitySheet` diretamente no sidebar (importar e renderizar como Sheet/Dialog). Se multiplos departamentos, mostrar um submenu para escolher qual.
-- **Mural de Avisos:** Abrir um Dialog transparente com `AnnouncementBoard` do departamento. Se multiplos, submenu para escolher.
-- **Criar Escalas (lider):** Abrir `AddScheduleDialog` diretamente como modal. Se multiplos departamentos de lideranca, submenu.
-
-Adicionar estado local no sidebar para controlar qual modal/sheet esta aberto e qual departamento foi selecionado.
+**`src/pages/MySchedules.tsx`**: No `useEffect` inicial, ler `searchParams.get('view')` da URL e inicializar `viewMode` com esse valor. Quando `?view=team` estiver presente, setar `viewMode = 'team'` automaticamente.
 
 ---
 
-### 3. Submenu de Departamentos
+### 2. Sidebar apenas com ícones + tooltip
 
-Quando o usuario pertence a mais de 1 departamento, ao clicar em Disponibilidade/Mural/Criar Escalas:
-
-- Expandir um submenu inline no sidebar listando os departamentos
-- Ao selecionar um, abre o modal/sheet correspondente
-- Se apenas 1 departamento, abre direto sem submenu
-
----
-
-### 4. Redirect Pos-Login para Meu Perfil
-
-**`src/pages/Auth.tsx` e `src/pages/Landing.tsx`**
-
-Alterar `getSmartRedirectDestination` para sempre retornar `/dashboard` em vez de `/my-schedules` quando o usuario tem 1 departamento. A logica fica:
-
-```text
-Qualquer quantidade de departamentos -> /dashboard (Meu Perfil)
-```
+**`src/components/DashboardSidebar.tsx`**: 
+- Remover o comportamento de expansão por hover no desktop (remover `onMouseEnter`/`onMouseLeave` + `hovered` state)
+- Sidebar fica sempre `w-14` (collapsed) tanto no mobile quanto no desktop
+- Todos os itens sempre renderizados com `collapsed=true` (apenas ícone)
+- Tooltip no hover/toque mostra o nome do item (já implementado quando `collapsed=true`)
+- Remover o overlay de expansão mobile (`mobileExpanded` + `w-64` overlay)
+- Remover botão de pin/collapse pois não há mais expansão
+- Manter ThemeToggle e NotificationBell visíveis mesmo no modo collapsed (empilhados verticalmente)
 
 ---
 
-### 5. Remover ActionMenuPopover da pagina Department
+### 3. Remover ActionMenuPopover do Departamento
 
-**`src/pages/Department.tsx`**
+**`src/pages/Department.tsx`**:
+- Remover o `ActionMenuPopover` do header (linhas 481-491)
+- Remover import do `ActionMenuPopover`
+- Manter apenas o botão de Settings (engrenagem) para líderes
 
-Como as acoes do lider agora vivem no sidebar, remover o `ActionMenuPopover` do header do departamento. Manter apenas o botao de Settings (engrenagem) que abre `DepartmentSettingsDialog` como modal.
+---
 
-As tabs de navegacao interna do departamento (Escalas, Disponibilidade, Membros, Mural) continuam na pagina — o sidebar apenas fornece atalhos rapidos que abrem modais.
+### 4. Adicionar ações de líder na sidebar
+
+**`src/components/DashboardSidebar.tsx`**: Adicionar novos itens `leaderOnly` ao `menuItems`:
+
+- `Layers` — **Setores** → abre modal com `SectorManagement` (novo contextual action)
+- `UserCog` — **Funções** → abre modal com `AssignmentRoleManagement` (novo contextual action)
+- `Users` — **Resumo Equipe** → abre modal com `ScheduleCountDialog` (novo contextual action)
+- `UserPlus` — **Convidar Membro** → abre modal com `InviteMemberDialog` (novo contextual action)
+- `Download` — **Exportar Escalas** → abre dropdown ou modal com opções PDF/Excel (novo contextual action)
+
+Cada ação segue o mesmo padrão existente: se múltiplos departamentos de liderança, abre `DepartmentPicker` primeiro; se apenas um, abre direto o modal.
+
+Adicionar novos tipos ao `ContextualAction`: `'sectors' | 'roles' | 'schedule-count' | 'invite' | 'export'`
+
+Adicionar novos estados e modais correspondentes no componente principal `DashboardSidebar`.
 
 ---
 
 ### Arquivos Modificados
 
-1. **`src/components/DashboardSidebar.tsx`** — Remover hamburger mobile, sidebar fixa w-14 no mobile, adicionar modais (MyAvailabilitySheet, AnnouncementBoard, AddScheduleDialog), submenu de departamentos
-2. **`src/pages/Auth.tsx`** — `getSmartRedirectDestination` retorna sempre `/dashboard`
-3. **`src/pages/Landing.tsx`** — Mesma alteracao no redirect
-4. **`src/pages/Dashboard.tsx`** — Garantir `ml-14` sem condicao mobile
-5. **`src/pages/Department.tsx`** — Garantir `ml-14`, remover ActionMenuPopover do header
-6. **`src/pages/MySchedules.tsx`** — Garantir `ml-14`
-7. **`src/pages/Security.tsx`** — Garantir `ml-14`
-8. **`src/pages/Payment.tsx`** — Garantir `ml-14`
-9. **`src/pages/Admin.tsx`** — Garantir `ml-14`
+1. **`src/components/DashboardSidebar.tsx`** — Sidebar sempre icon-only, remover expansão, adicionar ações de líder (setores, funções, resumo, convidar, exportar)
+2. **`src/pages/MySchedules.tsx`** — Ler `?view=team` da URL para inicializar viewMode
+3. **`src/pages/Department.tsx`** — Remover ActionMenuPopover do header
 
