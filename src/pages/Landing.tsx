@@ -116,7 +116,6 @@ export default function Landing() {
         ),
       ]);
       if (result.error || result.data === null) return '/dashboard';
-      if (result.data === 1) return '/my-schedules';
       return '/dashboard';
     } catch {
       return '/dashboard';

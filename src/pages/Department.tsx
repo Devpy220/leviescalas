@@ -472,7 +472,7 @@ export default function Department() {
           onSignOut={handleSignOut}
         />
         
-        <div className={isMobile ? '' : 'ml-64'}>
+        <div className="ml-14">
         {/* Sub-header with department info */}
         <div className="border-b border-border/50 bg-card/50">
           <div className="container mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 max-w-7xl py-3 flex items-center justify-between">

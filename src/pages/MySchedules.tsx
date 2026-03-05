@@ -391,7 +391,7 @@ export default function MySchedules() {
         onSignOut={handleSignOut}
       />
       
-      <div className={isMobile ? 'flex-1 flex flex-col' : 'ml-14 flex-1 flex flex-col'}>
+      <div className="ml-14 flex-1 flex flex-col">
         {/* View mode toggle in header */}
         {departmentIds.length > 0 && (
           <div className="container mx-auto px-4 pt-6 flex gap-2">

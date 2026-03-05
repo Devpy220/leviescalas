@@ -4,16 +4,16 @@ import {
   LogOut, 
   Download, 
   Shield,
-  Menu,
   Heart,
   Settings,
   Users,
   Clock,
   Megaphone,
   CalendarPlus,
-  User,
   PanelLeftClose,
   PanelLeftOpen,
+  ChevronRight,
+  X,
   type LucideIcon
 } from 'lucide-react';
 import { LeviLogo } from '@/components/LeviLogo';
@@ -21,12 +21,15 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { NotificationBell } from '@/components/NotificationBell';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useUserDepartments } from '@/hooks/useUserDepartments';
+import { useUserDepartments, type UserDepartment } from '@/hooks/useUserDepartments';
 import { useState, useEffect } from 'react';
-import { slugify } from '@/lib/slugify';
+import MyAvailabilitySheet from '@/components/department/MyAvailabilitySheet';
+import AnnouncementBoard from '@/components/department/AnnouncementBoard';
+import AddScheduleDialog from '@/components/department/AddScheduleDialog';
+import { useAuth } from '@/hooks/useAuth';
 
 interface DashboardSidebarProps {
   isAdmin: boolean;
@@ -47,6 +50,8 @@ function getInitials(name: string) {
   return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 }
 
+type ContextualAction = 'availability' | 'announcements' | 'create-schedule';
+
 function SidebarContent({ 
   isAdmin, 
   shouldShowInstallPrompt, 
@@ -54,7 +59,12 @@ function SidebarContent({
   onSignOut,
   onNavigate,
   collapsed,
-}: DashboardSidebarProps & { onNavigate?: () => void; collapsed: boolean }) {
+  onContextualAction,
+}: DashboardSidebarProps & { 
+  onNavigate?: () => void; 
+  collapsed: boolean;
+  onContextualAction: (action: ContextualAction) => void;
+}) {
   const location = useLocation();
   const navigate = useNavigate();
   const { departments, leaderDepartments, isLeader, userName, userAvatarUrl } = useUserDepartments();
@@ -64,35 +74,13 @@ function SidebarContent({
     onNavigate?.();
   };
 
-  const handleContextualNav = (type: 'availability' | 'announcements' | 'create-schedule') => {
-    const targetDepts = type === 'create-schedule' ? leaderDepartments : departments;
-    if (targetDepts.length === 0) return;
-    
-    const dept = targetDepts[0];
-    const slug = slugify(dept.name);
-    
-    switch (type) {
-      case 'availability':
-        navigate(`/departamento/${slug}?action=availability`);
-        break;
-      case 'announcements':
-        navigate(`/departamento/${slug}?tab=announcements`);
-        break;
-      case 'create-schedule':
-        navigate(`/departments/${dept.id}?action=add-schedule`);
-        break;
-    }
-    onNavigate?.();
-  };
-
   const menuItems: MenuItem[] = [
-    { icon: User, label: 'Meu Perfil', path: '/dashboard' },
     { icon: CalendarDays, label: 'Minhas Escalas', path: '/my-schedules' },
     { icon: Users, label: 'Escalas Equipe', path: '/my-schedules?view=team' },
     { icon: Settings, label: 'Configurações', path: '/security' },
-    { icon: Clock, label: 'Disponibilidade', onClick: () => handleContextualNav('availability') },
-    { icon: Megaphone, label: 'Mural de Avisos', onClick: () => handleContextualNav('announcements') },
-    { icon: CalendarPlus, label: 'Criar Escalas', onClick: () => handleContextualNav('create-schedule'), leaderOnly: true },
+    { icon: Clock, label: 'Disponibilidade', onClick: () => { onContextualAction('availability'); onNavigate?.(); } },
+    { icon: Megaphone, label: 'Mural de Avisos', onClick: () => { onContextualAction('announcements'); onNavigate?.(); } },
+    { icon: CalendarPlus, label: 'Criar Escalas', onClick: () => { onContextualAction('create-schedule'); onNavigate?.(); }, leaderOnly: true },
   ];
 
   const isActive = (item: MenuItem) => {
@@ -154,7 +142,7 @@ function SidebarContent({
       </div>
 
       {/* Profile quick access */}
-      {!collapsed && (
+      {!collapsed ? (
         <div className="px-3 mb-2">
           <button
             onClick={() => handleNav('/dashboard')}
@@ -173,6 +161,29 @@ function SidebarContent({
             <span className="truncate">{userName || 'Meu Perfil'}</span>
           </button>
         </div>
+      ) : (
+        <div className="px-3 mb-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => handleNav('/dashboard')}
+                className={`w-full flex items-center justify-center px-2 py-3 rounded-xl text-sm font-medium transition-all ${
+                  location.pathname === '/dashboard'
+                    ? 'bg-secondary text-secondary-foreground shadow-lg'
+                    : 'text-white/80 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                <Avatar className="w-6 h-6">
+                  {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={userName} />}
+                  <AvatarFallback className="bg-secondary text-secondary-foreground text-[9px] font-bold">
+                    {userName ? getInitials(userName) : 'U'}
+                  </AvatarFallback>
+                </Avatar>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right">Meu Perfil</TooltipContent>
+          </Tooltip>
+        </div>
       )}
 
       {/* Menu */}
@@ -183,33 +194,7 @@ function SidebarContent({
           </p>
         )}
         <ul className="space-y-1">
-          {collapsed && (
-            <li>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={() => handleNav('/dashboard')}
-                    className={`w-full flex items-center justify-center px-2 py-3 rounded-xl text-sm font-medium transition-all ${
-                      location.pathname === '/dashboard'
-                        ? 'bg-secondary text-secondary-foreground shadow-lg'
-                        : 'text-white/80 hover:bg-white/10 hover:text-white'
-                    }`}
-                  >
-                    <Avatar className="w-6 h-6">
-                      {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={userName} />}
-                      <AvatarFallback className="bg-secondary text-secondary-foreground text-[9px] font-bold">
-                        {userName ? getInitials(userName) : 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="right">Meu Perfil</TooltipContent>
-              </Tooltip>
-            </li>
-          )}
-
-          {/* Skip "Meu Perfil" from menuItems since we render it separately */}
-          {menuItems.filter(item => item.label !== 'Meu Perfil').map((item, idx) => renderItem(item, idx))}
+          {menuItems.map((item, idx) => renderItem(item, idx))}
 
           {isAdmin && (
             <li>
@@ -342,9 +327,50 @@ function SidebarContent({
   );
 }
 
+// Department picker for contextual actions
+function DepartmentPicker({ 
+  departments, 
+  onSelect, 
+  onClose,
+  title 
+}: { 
+  departments: UserDepartment[]; 
+  onSelect: (dept: UserDepartment) => void; 
+  onClose: () => void;
+  title: string;
+}) {
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-2">
+          {departments.map((dept) => (
+            <button
+              key={dept.id}
+              onClick={() => onSelect(dept)}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all hover:bg-accent text-foreground"
+            >
+              <Avatar className="w-8 h-8">
+                {dept.avatar_url && <AvatarImage src={dept.avatar_url} alt={dept.name} />}
+                <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                  {dept.name.slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <span className="flex-1 text-left truncate">{dept.name}</span>
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            </button>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function DashboardSidebar(props: DashboardSidebarProps) {
   const isMobile = useIsMobile();
-  const [open, setOpen] = useState(false);
+  const [mobileExpanded, setMobileExpanded] = useState(false);
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('sidebar-collapsed') !== 'false';
@@ -353,58 +379,226 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
   });
   const [hovered, setHovered] = useState(false);
 
+  // Contextual action states
+  const [pendingAction, setPendingAction] = useState<ContextualAction | null>(null);
+  const [selectedDept, setSelectedDept] = useState<UserDepartment | null>(null);
+  const [showAvailability, setShowAvailability] = useState(false);
+  const [showAnnouncements, setShowAnnouncements] = useState(false);
+  const [showAddSchedule, setShowAddSchedule] = useState(false);
+
+  const { departments, leaderDepartments } = useUserDepartments();
+  const { user, session } = useAuth();
+  const currentUser = user ?? session?.user ?? null;
+
   useEffect(() => {
     localStorage.setItem('sidebar-collapsed', String(collapsed));
   }, [collapsed]);
 
+  const handleContextualAction = (action: ContextualAction) => {
+    const targetDepts = action === 'create-schedule' ? leaderDepartments : departments;
+    if (targetDepts.length === 0) return;
+
+    if (targetDepts.length === 1) {
+      setSelectedDept(targetDepts[0]);
+      openActionModal(action, targetDepts[0]);
+    } else {
+      setPendingAction(action);
+    }
+  };
+
+  const openActionModal = (action: ContextualAction, dept: UserDepartment) => {
+    setSelectedDept(dept);
+    setPendingAction(null);
+    switch (action) {
+      case 'availability':
+        setShowAvailability(true);
+        break;
+      case 'announcements':
+        setShowAnnouncements(true);
+        break;
+      case 'create-schedule':
+        setShowAddSchedule(true);
+        break;
+    }
+  };
+
+  const handleDeptSelect = (dept: UserDepartment) => {
+    if (pendingAction) {
+      openActionModal(pendingAction, dept);
+    }
+  };
+
   const isExpanded = !collapsed || hovered;
   const sidebarWidth = isExpanded ? 'w-64' : 'w-14';
 
+  // Mobile: fixed w-14 sidebar + expandable overlay
   if (isMobile) {
     return (
       <>
-        <header className="sticky top-0 z-50 glass border-b border-border/50 flex items-center h-14 px-4 gap-3">
-          <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-foreground">
-                <Menu className="w-5 h-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="p-0 w-72 border-none [&>button]:hidden">
-              <SidebarContent {...props} collapsed={false} onNavigate={() => setOpen(false)} />
-            </SheetContent>
-          </Sheet>
-          <Link to="/" className="flex items-center gap-2">
-            <LeviLogo className="w-7 h-7" />
-            <span className="font-display text-lg font-bold text-foreground">LEVI</span>
-          </Link>
-        </header>
+        {/* Collapsed sidebar strip */}
+        <aside className="w-14 fixed left-0 top-0 bottom-0 z-40">
+          <SidebarContent 
+            {...props} 
+            collapsed={true} 
+            onNavigate={() => setMobileExpanded(false)} 
+            onContextualAction={handleContextualAction}
+          />
+          {/* Expand button at top */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setMobileExpanded(true)}
+                className="absolute top-5 right-1 w-6 h-6 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition-all"
+              >
+                <PanelLeftOpen className="w-3.5 h-3.5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right">Expandir menu</TooltipContent>
+          </Tooltip>
+        </aside>
+
+        {/* Expanded overlay */}
+        {mobileExpanded && (
+          <>
+            <div 
+              className="fixed inset-0 bg-black/50 z-50 animate-in fade-in duration-200" 
+              onClick={() => setMobileExpanded(false)} 
+            />
+            <aside className="w-64 fixed left-0 top-0 bottom-0 z-50 animate-in slide-in-from-left duration-200">
+              <SidebarContent 
+                {...props} 
+                collapsed={false} 
+                onNavigate={() => setMobileExpanded(false)}
+                onContextualAction={handleContextualAction}
+              />
+              <button
+                onClick={() => setMobileExpanded(false)}
+                className="absolute top-5 right-2 w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition-all"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </aside>
+          </>
+        )}
+
+        {/* Modals */}
+        {pendingAction && (
+          <DepartmentPicker
+            departments={pendingAction === 'create-schedule' ? leaderDepartments : departments}
+            onSelect={handleDeptSelect}
+            onClose={() => setPendingAction(null)}
+            title={
+              pendingAction === 'availability' ? 'Escolher Departamento' :
+              pendingAction === 'announcements' ? 'Escolher Departamento' :
+              'Escolher Departamento'
+            }
+          />
+        )}
+
+        {showAvailability && selectedDept && currentUser && (
+          <MyAvailabilitySheet
+            departmentId={selectedDept.id}
+            userId={currentUser.id}
+            open={showAvailability}
+            onOpenChange={setShowAvailability}
+          />
+        )}
+
+        {showAnnouncements && selectedDept && (
+          <Dialog open={showAnnouncements} onOpenChange={setShowAnnouncements}>
+            <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Mural de Avisos - {selectedDept.name}</DialogTitle>
+              </DialogHeader>
+              <AnnouncementBoard departmentId={selectedDept.id} isLeader={selectedDept.role === 'leader'} currentUserId={currentUser?.id || ''} />
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {showAddSchedule && selectedDept && (
+          <AddScheduleDialog
+            departmentId={selectedDept.id}
+            open={showAddSchedule}
+            onOpenChange={setShowAddSchedule}
+            members={[]}
+            selectedDate={null}
+            onScheduleCreated={() => setShowAddSchedule(false)}
+          />
+        )}
       </>
     );
   }
 
+  // Desktop: existing behavior
   return (
-    <aside 
-      className={`${sidebarWidth} fixed left-0 top-0 bottom-0 z-40 transition-all duration-300 ease-in-out`}
-      onMouseEnter={() => collapsed && setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      <SidebarContent {...props} collapsed={!isExpanded} />
-      {/* Toggle pin button */}
-      {isExpanded && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              onClick={() => { setCollapsed(!collapsed); setHovered(false); }}
-              className="absolute top-5 right-2 w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition-all"
-            >
-              {collapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="right">{collapsed ? 'Fixar sidebar' : 'Recolher sidebar'}</TooltipContent>
-        </Tooltip>
+    <>
+      <aside 
+        className={`${sidebarWidth} fixed left-0 top-0 bottom-0 z-40 transition-all duration-300 ease-in-out`}
+        onMouseEnter={() => collapsed && setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+      >
+        <SidebarContent 
+          {...props} 
+          collapsed={!isExpanded} 
+          onContextualAction={handleContextualAction}
+        />
+        {/* Toggle pin button */}
+        {isExpanded && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => { setCollapsed(!collapsed); setHovered(false); }}
+                className="absolute top-5 right-2 w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition-all"
+              >
+                {collapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right">{collapsed ? 'Fixar sidebar' : 'Recolher sidebar'}</TooltipContent>
+          </Tooltip>
+        )}
+      </aside>
+
+      {/* Modals */}
+      {pendingAction && (
+        <DepartmentPicker
+          departments={pendingAction === 'create-schedule' ? leaderDepartments : departments}
+          onSelect={handleDeptSelect}
+          onClose={() => setPendingAction(null)}
+          title="Escolher Departamento"
+        />
       )}
-    </aside>
+
+      {showAvailability && selectedDept && currentUser && (
+        <MyAvailabilitySheet
+          departmentId={selectedDept.id}
+          userId={currentUser.id}
+          open={showAvailability}
+          onOpenChange={setShowAvailability}
+        />
+      )}
+
+      {showAnnouncements && selectedDept && (
+        <Dialog open={showAnnouncements} onOpenChange={setShowAnnouncements}>
+          <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Mural de Avisos - {selectedDept.name}</DialogTitle>
+            </DialogHeader>
+            <AnnouncementBoard departmentId={selectedDept.id} isLeader={selectedDept.role === 'leader'} currentUserId={currentUser?.id || ''} />
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {showAddSchedule && selectedDept && (
+        <AddScheduleDialog
+          departmentId={selectedDept.id}
+          open={showAddSchedule}
+          onOpenChange={setShowAddSchedule}
+          members={[]}
+          selectedDate={null}
+          onScheduleCreated={() => setShowAddSchedule(false)}
+        />
+      )}
+    </>
   );
 }
 
@@ -417,6 +611,6 @@ export function useSidebarWidth() {
     return true;
   });
   
-  if (isMobile) return 0;
-  return collapsed ? 56 : 256; // w-14 = 56px, w-64 = 256px
+  if (isMobile) return 56; // w-14 = 56px, always visible now
+  return collapsed ? 56 : 256;
 }
