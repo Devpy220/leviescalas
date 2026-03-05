@@ -39,7 +39,7 @@ import SlotAvailability from '@/components/department/SlotAvailability';
 import LeaderSlotAvailabilityView from '@/components/department/LeaderSlotAvailabilityView';
 import UnifiedScheduleView from '@/components/department/UnifiedScheduleView';
 import MyAvailabilitySheet from '@/components/department/MyAvailabilitySheet';
-import ActionMenuPopover from '@/components/department/ActionMenuPopover';
+// ActionMenuPopover removed — leader actions are now in the sidebar
 import ScheduleCountDialog from '@/components/department/ScheduleCountDialog';
 import AnnouncementBoard from '@/components/department/AnnouncementBoard';
 
@@ -478,17 +478,19 @@ export default function Department() {
           <div className="container mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 max-w-7xl py-3 flex items-center justify-between">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               {isLeader && (
-                <ActionMenuPopover
-                  departmentName={department.name}
-                  currentTab={activeTab}
-                  onTabChange={setActiveTab}
-                  onExportPDF={handleExportPDF}
-                  onExportExcel={handleExportExcel}
-                  onOpenAvailability={() => setShowAvailabilitySheet(true)}
-                  onOpenInvite={() => setShowInviteMember(true)}
-                  onOpenScheduleCount={() => setShowScheduleCount(true)}
-                  onOpenCalendarSync={() => setShowCalendarSync(true)}
-                />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0"
+                      onClick={() => setShowSettings(true)}
+                    >
+                      <Settings className="w-5 h-5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Configurações</TooltipContent>
+                </Tooltip>
               )}
               <DepartmentAvatar
                 departmentId={department.id}

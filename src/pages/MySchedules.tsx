@@ -81,7 +81,10 @@ export default function MySchedules() {
   const [selectedSwap, setSelectedSwap] = useState<ScheduleSwap | null>(null);
   const [cancellingSwapId, setCancellingSwapId] = useState<string | null>(null);
   const [departmentIds, setDepartmentIds] = useState<string[]>([]);
-  const [viewMode, setViewMode] = useState<'mine' | 'team'>('mine');
+  const [viewMode, setViewMode] = useState<'mine' | 'team'>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('view') === 'team' ? 'team' : 'mine';
+  });
   const [memberProfiles, setMemberProfiles] = useState<Record<string, MemberProfile>>({});
   const [availabilitySheetOpen, setAvailabilitySheetOpen] = useState(false);
   const [leaderDepartments, setLeaderDepartments] = useState<{ id: string; name: string }[]>([]);
