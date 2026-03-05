@@ -151,7 +151,7 @@ export default function Security() {
         onInstallClick={install}
         onSignOut={handleSignOut}
       />
-      <div className={isMobile ? 'flex-1 flex flex-col' : 'ml-14 flex-1 flex flex-col'}>
+      <div className="ml-14 flex-1 flex flex-col">
       <div className="container max-w-2xl py-8 px-4 flex-1">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-foreground">Configurações</h1>

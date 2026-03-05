@@ -56,7 +56,7 @@ const Payment = () => {
         onInstallClick={install}
         onSignOut={handleSignOut}
       />
-      <div className={isMobile ? 'flex-1 flex flex-col' : 'ml-14 flex-1 flex flex-col'}>
+      <div className="ml-14 flex-1 flex flex-col">
       <div className="flex-1 py-8 px-4">
         <div className="max-w-lg mx-auto">
 

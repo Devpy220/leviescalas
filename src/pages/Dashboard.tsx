@@ -307,7 +307,7 @@ export default function Dashboard() {
         onSignOut={handleSignOut}
       />
 
-      <div className={isMobile ? '' : 'ml-14'}>
+      <div className="ml-14">
         <main className="container mx-auto px-4 py-8">
 
         {/* Profile Section */}

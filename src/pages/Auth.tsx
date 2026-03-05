@@ -553,11 +553,7 @@ export default function Auth() {
       if (lastResult.count > 0) {
         console.log(`[Auth] Smart redirect - departments found via RPC: ${lastResult.count} (attempt ${attempt + 1}, ${lastResult.elapsed}ms)`);
         
-        // 1 department -> go directly to schedules
-        // 2+ departments -> go to dashboard
-        if (lastResult.count === 1) {
-          return '/my-schedules';
-        }
+        // Always go to dashboard (Meu Perfil)
         return '/dashboard';
       }
       
