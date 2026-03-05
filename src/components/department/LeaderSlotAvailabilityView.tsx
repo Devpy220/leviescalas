@@ -1,11 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Calendar, Users, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getCurrentPeriodInfo, getNextPeriodInfo, formatPeriodEnd } from '@/lib/periodUtils';
+import { getCurrentPeriodInfo, formatPeriodEnd } from '@/lib/periodUtils';
 import { createExtendedMemberColorMap, getMemberBackgroundStyle } from '@/lib/memberColors';
 import { FIXED_SLOTS } from '@/lib/fixedSlots';
 
@@ -30,18 +29,11 @@ interface SlotAvailabilityRecord {
 
 export default function LeaderSlotAvailabilityView({ departmentId }: LeaderSlotAvailabilityViewProps) {
   const [loading, setLoading] = useState(true);
-  const [selectedPeriod, setSelectedPeriod] = useState<'current' | 'next'>('current');
   const [members, setMembers] = useState<MemberProfile[]>([]);
-  const [currentAvailability, setCurrentAvailability] = useState<SlotAvailabilityRecord[]>([]);
-  const [nextAvailability, setNextAvailability] = useState<SlotAvailabilityRecord[]>([]);
+  const [availability, setAvailability] = useState<SlotAvailabilityRecord[]>([]);
   
   const currentPeriod = useMemo(() => getCurrentPeriodInfo(), []);
-  const nextPeriod = useMemo(() => getNextPeriodInfo(), []);
-  
-  const activePeriod = selectedPeriod === 'current' ? currentPeriod : nextPeriod;
-  const availability = selectedPeriod === 'current' ? currentAvailability : nextAvailability;
 
-  // Normalize time to HH:mm format (database returns HH:mm:ss)
   const normalizeTime = (time: string) => time?.slice(0, 5);
 
   useEffect(() => {
@@ -53,37 +45,22 @@ export default function LeaderSlotAvailabilityView({ departmentId }: LeaderSlotA
     try {
       setLoading(true);
       
-      // Fetch member profiles
       const { data: profilesData, error: profilesError } = await supabase
         .rpc('get_department_member_profiles', { dept_id: departmentId });
 
       if (profilesError) throw profilesError;
 
-      // Fetch all member availability for this department (both periods)
       const { data: availabilityData, error: availabilityError } = await supabase
         .from('member_availability')
         .select('user_id, day_of_week, time_start, time_end, is_available, period_start')
         .eq('department_id', departmentId)
         .eq('is_available', true)
-        .gte('period_start', currentPeriod.periodStartStr);
+        .eq('period_start', currentPeriod.periodStartStr);
 
       if (availabilityError) throw availabilityError;
 
-      // Separate into current and next period
-      const current: SlotAvailabilityRecord[] = [];
-      const next: SlotAvailabilityRecord[] = [];
-      
-      (availabilityData || []).forEach(record => {
-        if (record.period_start === currentPeriod.periodStartStr) {
-          current.push(record);
-        } else if (record.period_start === nextPeriod.periodStartStr) {
-          next.push(record);
-        }
-      });
-
       setMembers(profilesData || []);
-      setCurrentAvailability(current);
-      setNextAvailability(next);
+      setAvailability(availabilityData || []);
     } catch (error) {
       console.error('Error fetching slot availability data:', error);
     } finally {
@@ -105,20 +82,12 @@ export default function LeaderSlotAvailabilityView({ departmentId }: LeaderSlotA
   };
 
   const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .slice(0, 2)
-      .join('')
-      .toUpperCase();
+    return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
   };
 
-  // Create color map for members
   const memberColorMap = useMemo(() => {
     const membersForColor = members.map(m => ({
-      id: m.id,
-      user_id: m.id,
-      profile: { name: m.name }
+      id: m.id, user_id: m.id, profile: { name: m.name }
     }));
     return createExtendedMemberColorMap(membersForColor);
   }, [members]);
@@ -135,7 +104,7 @@ export default function LeaderSlotAvailabilityView({ departmentId }: LeaderSlotA
     );
   }
 
-  const periodEndFormatted = formatPeriodEnd(activePeriod.periodEnd);
+  const periodEndFormatted = formatPeriodEnd(currentPeriod.periodEnd);
 
   return (
     <Card className="glass border-border/50">
@@ -149,133 +118,96 @@ export default function LeaderSlotAvailabilityView({ departmentId }: LeaderSlotA
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Period Tabs */}
-        <Tabs value={selectedPeriod} onValueChange={(v) => setSelectedPeriod(v as 'current' | 'next')}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="current" className="text-xs sm:text-sm">
-              {currentPeriod.label}
-              <span className="hidden sm:inline ml-1 text-muted-foreground">(atual)</span>
-            </TabsTrigger>
-            <TabsTrigger value="next" className="text-xs sm:text-sm">
-              {nextPeriod.label}
-              <span className="hidden sm:inline ml-1 text-muted-foreground">(próximo)</span>
-            </TabsTrigger>
-          </TabsList>
+        {/* Period notice */}
+        <div className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-lg">
+          <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+          <div className="text-sm">
+            <p className="font-medium text-amber-800 dark:text-amber-200">
+              {currentPeriod.label} — válido até {periodEndFormatted}
+            </p>
+            <p className="text-amber-700 dark:text-amber-300/80">
+              Após essa data, membros precisarão remarcar sua disponibilidade.
+            </p>
+          </div>
+        </div>
 
-          <TabsContent value={selectedPeriod} className="mt-4 space-y-4">
-            {/* Period validity notice */}
-            <div className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-lg">
-              <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-              <div className="text-sm">
-                <p className="font-medium text-amber-800 dark:text-amber-200">
-                  Período válido até {periodEndFormatted}
-                </p>
-                <p className="text-amber-700 dark:text-amber-300/80">
-                  {selectedPeriod === 'next' 
-                    ? 'Veja quem já marcou disponibilidade para o próximo período.'
-                    : 'Após essa data, membros precisarão remarcar sua disponibilidade.'}
-                </p>
-              </div>
-            </div>
+        {/* Slots Grid */}
+        <div className="space-y-3">
+          {FIXED_SLOTS.map(slot => {
+            const slotMembers = getMembersForSlot(slot);
+            const Icon = slot.icon;
+            const hasMembers = slotMembers.length > 0;
 
-            {/* Slots Grid */}
-            <div className="space-y-3">
-              {FIXED_SLOTS.map(slot => {
-                const slotMembers = getMembersForSlot(slot);
-                const Icon = slot.icon;
-                const hasMembers = slotMembers.length > 0;
+            return (
+              <div 
+                key={`${slot.dayOfWeek}-${slot.timeStart}`}
+                className={cn(
+                  "p-4 rounded-lg border-2 transition-all",
+                  slot.bgColor,
+                  hasMembers ? slot.borderColor : "border-transparent opacity-60"
+                )}
+              >
+                <div className="flex items-center justify-between gap-4 flex-wrap">
+                  <div className="flex items-center gap-3">
+                    <div className={cn(
+                      "w-10 h-10 rounded-full flex items-center justify-center",
+                      hasMembers ? slot.activeColor : "bg-muted"
+                    )}>
+                      <Icon className={cn(
+                        "w-5 h-5",
+                        hasMembers ? "text-white" : "text-muted-foreground"
+                      )} />
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">{slot.label}</p>
+                      <p className="text-sm text-muted-foreground">{slot.timeStart} - {slot.timeEnd}</p>
+                    </div>
+                  </div>
 
-                return (
-                  <div 
-                    key={`${slot.dayOfWeek}-${slot.timeStart}`}
-                    className={cn(
-                      "p-4 rounded-lg border-2 transition-all",
-                      slot.bgColor,
-                      hasMembers ? slot.borderColor : "border-transparent opacity-60"
-                    )}
-                  >
-                    <div className="flex items-center justify-between gap-4 flex-wrap">
-                      <div className="flex items-center gap-3">
-                        <div className={cn(
-                          "w-10 h-10 rounded-full flex items-center justify-center",
-                          hasMembers ? slot.activeColor : "bg-muted"
-                        )}>
-                          <Icon className={cn(
-                            "w-5 h-5",
-                            hasMembers ? "text-white" : "text-muted-foreground"
-                          )} />
-                        </div>
-                        <div>
-                          <p className="font-medium text-foreground">
-                            {slot.label}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {slot.timeStart} - {slot.timeEnd}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground mr-2">
-                          <Users className="w-4 h-4" />
-                          <span>{slotMembers.length}</span>
-                        </div>
-                        
-                        {hasMembers ? (
-                          <div className="flex -space-x-2">
-                            {slotMembers.slice(0, 6).map(member => (
-                              <Avatar 
-                                key={member.id} 
-                                className="w-8 h-8 border-2 border-background"
-                                title={member.name}
-                              >
-                              <AvatarImage src={member.avatar_url || undefined} alt={member.name} />
-                                <AvatarFallback 
-                                  className="text-xs font-bold text-white"
-                                  style={getMemberBgStyle(member.id)}
-                                >
-                                  {getInitials(member.name)}
-                                </AvatarFallback>
-                              </Avatar>
-                            ))}
-                            {slotMembers.length > 6 && (
-                              <div className="w-8 h-8 rounded-full bg-muted border-2 border-background flex items-center justify-center">
-                                <span className="text-xs font-medium text-muted-foreground">
-                                  +{slotMembers.length - 6}
-                                </span>
-                              </div>
-                            )}
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground mr-2">
+                      <Users className="w-4 h-4" />
+                      <span>{slotMembers.length}</span>
+                    </div>
+                    
+                    {hasMembers ? (
+                      <div className="flex -space-x-2">
+                        {slotMembers.slice(0, 6).map(member => (
+                          <Avatar key={member.id} className="w-8 h-8 border-2 border-background" title={member.name}>
+                            <AvatarImage src={member.avatar_url || undefined} alt={member.name} />
+                            <AvatarFallback className="text-xs font-bold text-white" style={getMemberBgStyle(member.id)}>
+                              {getInitials(member.name)}
+                            </AvatarFallback>
+                          </Avatar>
+                        ))}
+                        {slotMembers.length > 6 && (
+                          <div className="w-8 h-8 rounded-full bg-muted border-2 border-background flex items-center justify-center">
+                            <span className="text-xs font-medium text-muted-foreground">+{slotMembers.length - 6}</span>
                           </div>
-                        ) : (
-                          <span className="text-sm text-muted-foreground italic">
-                            Nenhum membro disponível
-                          </span>
                         )}
                       </div>
-                    </div>
-
-                    {/* Member names expanded view */}
-                    {hasMembers && (
-                      <div className="mt-3 pt-3 border-t border-border/30">
-                        <p className="text-sm text-muted-foreground">
-                          {slotMembers.map(m => m.name).join(', ')}
-                        </p>
-                      </div>
+                    ) : (
+                      <span className="text-sm text-muted-foreground italic">Nenhum membro disponível</span>
                     )}
                   </div>
-                );
-              })}
-            </div>
+                </div>
 
-            {/* Info */}
-            <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-              <p className="text-sm text-muted-foreground">
-                <strong>Dica:</strong> Estes são os horários fixos que os membros marcaram como disponíveis. 
-                Use esta informação para planejar escalas ou gerar automaticamente com a IA.
-              </p>
-            </div>
-          </TabsContent>
-        </Tabs>
+                {hasMembers && (
+                  <div className="mt-3 pt-3 border-t border-border/30">
+                    <p className="text-sm text-muted-foreground">{slotMembers.map(m => m.name).join(', ')}</p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+          <p className="text-sm text-muted-foreground">
+            <strong>Dica:</strong> Estes são os horários fixos que os membros marcaram como disponíveis. 
+            Use esta informação para planejar escalas ou gerar automaticamente com a IA.
+          </p>
+        </div>
       </CardContent>
     </Card>
   );
