@@ -14,8 +14,8 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <button className="relative inline-flex h-9 w-16 items-center rounded-full bg-muted p-1">
-        <span className="h-7 w-7 rounded-full bg-card" />
+      <button className="relative inline-flex h-7 w-10 items-center rounded-full bg-muted p-0.5">
+        <span className="h-5 w-5 rounded-full bg-card" />
       </button>
     );
   }
@@ -24,7 +24,7 @@ export function ThemeToggle() {
     <button
       onClick={() => setTheme(isDark ? 'light' : 'dark')}
       className={`
-        relative inline-flex h-9 w-16 items-center rounded-full p-1
+        relative inline-flex h-7 w-10 items-center rounded-full p-0.5
         transition-colors duration-300 ease-in-out
         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
         ${isDark 
@@ -36,18 +36,18 @@ export function ThemeToggle() {
     >
       <span
         className={`
-          inline-flex h-7 w-7 items-center justify-center rounded-full
+          inline-flex h-5 w-5 items-center justify-center rounded-full
           shadow-md transition-all duration-300 ease-in-out
           ${isDark 
-            ? 'translate-x-7 bg-primary text-primary-foreground rotate-0' 
-            : 'translate-x-0 bg-secondary text-secondary-foreground rotate-0'
+            ? 'translate-x-[14px] bg-primary text-primary-foreground' 
+            : 'translate-x-0 bg-secondary text-secondary-foreground'
           }
         `}
       >
         {isDark ? (
-          <Moon className="h-4 w-4 transition-transform duration-300 rotate-0" />
+          <Moon className="h-3 w-3 transition-transform duration-300" />
         ) : (
-          <Sun className="h-4 w-4 transition-transform duration-300 rotate-90" />
+          <Sun className="h-3 w-3 transition-transform duration-300" />
         )}
       </span>
     </button>

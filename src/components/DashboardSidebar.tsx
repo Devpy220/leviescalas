@@ -4,6 +4,7 @@ import {
   LogOut, 
   Download, 
   Shield,
+  Wrench,
   Heart,
   Settings,
   Users,
@@ -29,6 +30,7 @@ import MyAvailabilitySheet from '@/components/department/MyAvailabilitySheet';
 import AnnouncementBoard from '@/components/department/AnnouncementBoard';
 import AddScheduleDialog from '@/components/department/AddScheduleDialog';
 import SectorManagement from '@/components/department/SectorManagement';
+import DepartmentSettingsDialog from '@/components/department/DepartmentSettingsDialog';
 import AssignmentRoleManagement from '@/components/department/AssignmentRoleManagement';
 import InviteMemberDialog from '@/components/department/InviteMemberDialog';
 import ScheduleCountDialog from '@/components/department/ScheduleCountDialog';
@@ -48,7 +50,7 @@ function getInitials(name: string) {
   return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 }
 
-type ContextualAction = 'availability' | 'announcements' | 'create-schedule' | 'sectors' | 'roles' | 'schedule-count' | 'invite' | 'export';
+type ContextualAction = 'availability' | 'announcements' | 'create-schedule' | 'sectors' | 'roles' | 'schedule-count' | 'invite' | 'export' | 'dept-settings';
 
 // Icon-only sidebar item with tooltip
 function SidebarItem({ icon: Icon, label, active, onClick, className }: {
@@ -138,6 +140,8 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
   const [showScheduleCount, setShowScheduleCount] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [showExport, setShowExport] = useState(false);
+  const [showDeptSettings, setShowDeptSettings] = useState(false);
+  const [deptSettingsData, setDeptSettingsData] = useState<any>(null);
   const [inviteCode, setInviteCode] = useState('');
   const [scheduleCountData, setScheduleCountData] = useState<{ members: any[]; schedules: any[] }>({ members: [], schedules: [] });
 
@@ -149,7 +153,7 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
   };
 
   const handleContextualAction = (action: ContextualAction) => {
-    const isLeaderAction = ['create-schedule', 'sectors', 'roles', 'schedule-count', 'invite', 'export'].includes(action);
+    const isLeaderAction = ['create-schedule', 'sectors', 'roles', 'schedule-count', 'invite', 'export', 'dept-settings'].includes(action);
     const targetDepts = isLeaderAction ? leaderDepartments : departments;
     if (targetDepts.length === 0) return;
 
@@ -217,6 +221,22 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
         break;
       case 'export':
         setShowExport(true);
+        break;
+      case 'dept-settings':
+        // Fetch department data for settings
+        try {
+          const { data: deptData } = await supabase
+            .from('departments')
+            .select('id, name, description, subscription_status, stripe_customer_id, max_blackout_dates, allow_sunday_double')
+            .eq('id', dept.id)
+            .single();
+          if (deptData) {
+            setDeptSettingsData(deptData);
+            setShowDeptSettings(true);
+          }
+        } catch (e) {
+          console.error(e);
+        }
         break;
     }
   };
@@ -374,6 +394,9 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
                   <li>
                     <SidebarItem icon={FileDown} label="Exportar Escalas" onClick={() => handleContextualAction('export')} />
                   </li>
+                  <li>
+                    <SidebarItem icon={Wrench} label="Config. Departamento" onClick={() => handleContextualAction('dept-settings')} />
+                  </li>
                 </>
               )}
 
@@ -413,7 +436,7 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
       {/* Modals */}
       {pendingAction && (
         <DepartmentPicker
-          departments={['create-schedule', 'sectors', 'roles', 'schedule-count', 'invite', 'export'].includes(pendingAction) ? leaderDepartments : departments}
+          departments={['create-schedule', 'sectors', 'roles', 'schedule-count', 'invite', 'export', 'dept-settings'].includes(pendingAction) ? leaderDepartments : departments}
           onSelect={handleDeptSelect}
           onClose={() => setPendingAction(null)}
           title="Escolher Departamento"
@@ -514,6 +537,15 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
             </div>
           </DialogContent>
         </Dialog>
+      )}
+
+      {showDeptSettings && selectedDept && deptSettingsData && (
+        <DepartmentSettingsDialog
+          open={showDeptSettings}
+          onOpenChange={setShowDeptSettings}
+          department={deptSettingsData}
+          onDepartmentUpdated={() => setShowDeptSettings(false)}
+        />
       )}
     </>
   );
