@@ -111,6 +111,7 @@ const handler = async (req: Request): Promise<Response> => {
           const weekday = WEEKDAYS_PT[dateObj.getDay()];
           const dayNum = dateObj.getDate();
           const monthShort = MONTHS_SHORT_PT[dateObj.getMonth()];
+          const monthFull = MONTHS_PT[dateObj.getMonth()];
           const detailsParts = [sectorName, roleLabel].filter(Boolean).join(' - ');
           const detailsSuffix = detailsParts ? ` | ${detailsParts}` : '';
 
@@ -149,16 +150,26 @@ const handler = async (req: Request): Promise<Response> => {
             reminder_type: window.type,
           });
 
-          // Send WhatsApp with link
+          // Send WhatsApp with rich link
           if ((profile as any).whatsapp && notifRecord) {
             const viewUrl = `${supabaseUrl}/functions/v1/view-notification?id=${notifRecord.id}`;
-            const whatsappMsg = `🔔 *Lembrete — ${dept.name}*\n\nOlá, *${profile.name}*! Sua escala é ${window.label}.\n\n📆 ${weekday}, ${dayNum} de ${MONTHS_PT[dateObj.getMonth()]}\n⏰ ${formatTime(schedule.time_start)} às ${formatTime(schedule.time_end)}\n\n👉 Ver detalhes:\n${viewUrl}\n\n_LEVI — Escalas Inteligentes_`;
+
+            const linkTitle = `🔔 Lembrete — ${dept.name}`;
+            const linkDescription = `${weekday}, ${dayNum} de ${monthFull} • ${formatTime(schedule.time_start)} às ${formatTime(schedule.time_end)}`;
+
+            const whatsappMsg = `🔔 *Lembrete — ${dept.name}*\n\nOlá, *${profile.name}*! Sua escala é ${window.label}.\n\n📆 ${weekday}, ${dayNum} de ${monthFull}\n⏰ ${formatTime(schedule.time_start)} às ${formatTime(schedule.time_end)}\n\n👉 Ver detalhes:\n${viewUrl}\n\n_LEVI — Escalas Inteligentes_`;
 
             try {
               await fetch(`${supabaseUrl}/functions/v1/send-whatsapp-notification`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceRoleKey}` },
-                body: JSON.stringify({ phone: (profile as any).whatsapp, message: whatsappMsg }),
+                body: JSON.stringify({
+                  phone: (profile as any).whatsapp,
+                  message: whatsappMsg,
+                  linkUrl: viewUrl,
+                  title: linkTitle,
+                  linkDescription,
+                }),
               });
               totalSent++;
             } catch { totalErrors++; }

@@ -133,10 +133,16 @@ const handler = async (req: Request): Promise<Response> => {
       console.error("Error creating notification:", notifError);
     }
 
-    // Send WhatsApp with link to card
+    // Send WhatsApp with rich link
     let whatsappSent = false;
     if (profile.whatsapp && notifRecord) {
       const viewUrl = `${SUPABASE_URL}/functions/v1/view-notification?id=${notifRecord.id}`;
+
+      const linkTitle = type === 'new_schedule'
+        ? `📅 Nova Escala — ${department_name}`
+        : `⚠️ Escala Alterada — ${department_name}`;
+
+      const linkDescription = `${weekday}, ${dayNum} de ${monthName} • ${fTimeStart} às ${fTimeEnd}${sector_name ? ` • ${sector_name}` : ''}`;
 
       const whatsappMessage = type === 'new_schedule'
         ? `📅 *Nova Escala — ${department_name}*\n\nOlá, *${profile.name}*! 👋\nVocê foi escalado(a).\n\n📆 ${weekday}, ${dayNum} de ${monthName} de ${year}\n⏰ ${fTimeStart} às ${fTimeEnd}\n${sector_name ? `📍 ${sector_name}\n` : ''}${assignment_role_label ? `💼 ${assignment_role_label}\n` : ''}\n👉 Ver detalhes completos:\n${viewUrl}\n\n_LEVI — Escalas Inteligentes_`
@@ -149,7 +155,13 @@ const handler = async (req: Request): Promise<Response> => {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""}`,
           },
-          body: JSON.stringify({ phone: profile.whatsapp, message: whatsappMessage }),
+          body: JSON.stringify({
+            phone: profile.whatsapp,
+            message: whatsappMessage,
+            linkUrl: viewUrl,
+            title: linkTitle,
+            linkDescription,
+          }),
         });
         const data = await res.json();
         whatsappSent = data.sent === true;
