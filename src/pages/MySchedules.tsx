@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   Calendar, 
   Clock,
@@ -81,10 +81,16 @@ export default function MySchedules() {
   const [selectedSwap, setSelectedSwap] = useState<ScheduleSwap | null>(null);
   const [cancellingSwapId, setCancellingSwapId] = useState<string | null>(null);
   const [departmentIds, setDepartmentIds] = useState<string[]>([]);
+  const [searchParams] = useSearchParams();
   const [viewMode, setViewMode] = useState<'mine' | 'team'>(() => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('view') === 'team' ? 'team' : 'mine';
+    return searchParams.get('view') === 'team' ? 'team' : 'mine';
   });
+
+  // Sync viewMode with URL search params (when navigating from sidebar)
+  useEffect(() => {
+    const urlView = searchParams.get('view') === 'team' ? 'team' : 'mine';
+    setViewMode(urlView);
+  }, [searchParams]);
   const [memberProfiles, setMemberProfiles] = useState<Record<string, MemberProfile>>({});
   const [availabilitySheetOpen, setAvailabilitySheetOpen] = useState(false);
   const [leaderDepartments, setLeaderDepartments] = useState<{ id: string; name: string }[]>([]);

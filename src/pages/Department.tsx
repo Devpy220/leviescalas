@@ -61,6 +61,7 @@ interface Department {
   avatar_url: string | null;
   stripe_customer_id: string | null;
   max_blackout_dates?: number;
+  allow_sunday_double?: boolean;
 }
 
 // Check if trial has expired
@@ -221,10 +222,10 @@ export default function Department() {
         return;
       }
       
-      // Fetch max_blackout_dates separately (not in RPC)
+      // Fetch extra fields not in RPC
       const { data: deptExtra } = await supabase
         .from('departments')
-        .select('max_blackout_dates')
+        .select('max_blackout_dates, allow_sunday_double')
         .eq('id', id)
         .maybeSingle();
 
@@ -239,7 +240,8 @@ export default function Department() {
         created_at: data.created_at,
         avatar_url: (data as any).avatar_url || null,
         stripe_customer_id: data.stripe_customer_id || null,
-        max_blackout_dates: deptExtra?.max_blackout_dates ?? 5
+        max_blackout_dates: deptExtra?.max_blackout_dates ?? 5,
+        allow_sunday_double: deptExtra?.allow_sunday_double ?? false,
       });
       setIsLeader(data.leader_id === currentUser?.id);
     } catch (error: any) {
@@ -477,21 +479,6 @@ export default function Department() {
         <div className="border-b border-border/50 bg-card/50">
           <div className="container mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 max-w-7xl py-3 flex items-center justify-between">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              {isLeader && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="shrink-0"
-                      onClick={() => setShowSettings(true)}
-                    >
-                      <Settings className="w-5 h-5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Configurações</TooltipContent>
-                </Tooltip>
-              )}
               <DepartmentAvatar
                 departmentId={department.id}
                 avatarUrl={department.avatar_url}
