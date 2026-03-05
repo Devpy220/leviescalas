@@ -94,10 +94,19 @@ serve(async (req: Request): Promise<Response> => {
           const viewUrl = notifId ? `${supabaseUrl}/functions/v1/view-notification?id=${notifId}` : '';
           const msg = `📢 *Aviso — ${department_name}*\n\nOlá, *${p.name}*!\n\n${announcement_title}\n\n${viewUrl ? `👉 Ver detalhes:\n${viewUrl}\n\n` : ''}_LEVI — Escalas Inteligentes_`;
 
+          const linkTitle = `📢 Aviso — ${department_name}`;
+          const linkDescription = announcement_title.length > 80 ? announcement_title.slice(0, 77) + '...' : announcement_title;
+
           const res = await fetch(`${supabaseUrl}/functions/v1/send-whatsapp-notification`, {
             method: "POST",
             headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceRoleKey}` },
-            body: JSON.stringify({ phone: p.whatsapp, message: msg }),
+            body: JSON.stringify({
+              phone: p.whatsapp,
+              message: msg,
+              linkUrl: viewUrl || undefined,
+              title: viewUrl ? linkTitle : undefined,
+              linkDescription: viewUrl ? linkDescription : undefined,
+            }),
           });
           const data = await res.json();
           return data.sent === true;

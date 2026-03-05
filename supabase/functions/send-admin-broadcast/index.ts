@@ -91,10 +91,19 @@ const handler = async (req: Request): Promise<Response> => {
         const viewUrl = notifId ? `${supabaseUrl}/functions/v1/view-notification?id=${notifId}` : '';
         const whatsappMsg = `📢 *Comunicado LEVI*\n\nOlá, *${profile.name}*!\n\n*${title}*\n\n${message}\n\n${viewUrl ? `👉 Ver detalhes:\n${viewUrl}\n\n` : ''}_LEVI — Escalas Inteligentes_`;
 
+        const linkTitle = `📢 Comunicado LEVI`;
+        const linkDescription = title.length > 80 ? title.slice(0, 77) + '...' : title;
+
         const res = await fetch(`${supabaseUrl}/functions/v1/send-whatsapp-notification`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceRoleKey}` },
-          body: JSON.stringify({ phone: profile.whatsapp, message: whatsappMsg }),
+          body: JSON.stringify({
+            phone: profile.whatsapp,
+            message: whatsappMsg,
+            linkUrl: viewUrl || undefined,
+            title: viewUrl ? linkTitle : undefined,
+            linkDescription: viewUrl ? linkDescription : undefined,
+          }),
         });
         if (res.ok) {
           const result = await res.json();
