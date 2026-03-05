@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Trash2, AlertTriangle } from 'lucide-react';
+import { Loader2, Trash2, AlertTriangle, Sun } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -23,6 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -37,6 +38,7 @@ interface DepartmentSettingsDialogProps {
     subscription_status: string;
     stripe_customer_id?: string | null;
     max_blackout_dates?: number;
+    allow_sunday_double?: boolean;
   };
   onDepartmentUpdated: () => void;
 }
@@ -54,6 +56,7 @@ export default function DepartmentSettingsDialog({
   const [name, setName] = useState(department.name);
   const [description, setDescription] = useState(department.description || '');
   const [maxBlackoutDates, setMaxBlackoutDates] = useState(department.max_blackout_dates ?? 5);
+  const [allowSundayDouble, setAllowSundayDouble] = useState(department.allow_sunday_double ?? false);
   const [saving, setSaving] = useState(false);
   
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -77,7 +80,8 @@ export default function DepartmentSettingsDialog({
         .update({ 
           name: name.trim(),
           description: description.trim() || null,
-          max_blackout_dates: Math.max(1, maxBlackoutDates)
+          max_blackout_dates: Math.max(1, maxBlackoutDates),
+          allow_sunday_double: allowSundayDouble,
         })
         .eq('id', department.id);
 
@@ -206,6 +210,25 @@ export default function DepartmentSettingsDialog({
                 <p className="text-xs text-muted-foreground">
                   Quantidade máxima de datas que cada voluntário pode bloquear.
                 </p>
+              </div>
+
+              <Separator />
+
+              <div className="flex items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <Label htmlFor="sunday-double" className="flex items-center gap-2">
+                    <Sun className="w-4 h-4 text-amber-500" />
+                    Escalar manhã e noite no domingo
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Permite que o mesmo voluntário seja escalado nos turnos da manhã e noite no mesmo domingo.
+                  </p>
+                </div>
+                <Switch
+                  id="sunday-double"
+                  checked={allowSundayDouble}
+                  onCheckedChange={setAllowSundayDouble}
+                />
               </div>
 
               <Button 

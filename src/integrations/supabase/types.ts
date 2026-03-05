@@ -280,6 +280,7 @@ export type Database = {
       }
       departments: {
         Row: {
+          allow_sunday_double: boolean
           avatar_url: string | null
           church_id: string | null
           created_at: string
@@ -296,6 +297,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          allow_sunday_double?: boolean
           avatar_url?: string | null
           church_id?: string | null
           created_at?: string
@@ -312,6 +314,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          allow_sunday_double?: boolean
           avatar_url?: string | null
           church_id?: string | null
           created_at?: string
