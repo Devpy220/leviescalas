@@ -129,7 +129,7 @@ const handler = async (req: Request): Promise<Response> => {
           };
 
           // Insert notification
-          const { data: notifRecord } = await supabaseAdmin
+          await supabaseAdmin
             .from('notifications')
             .insert({
               user_id: schedule.user_id,
@@ -140,9 +140,7 @@ const handler = async (req: Request): Promise<Response> => {
               status: 'sent',
               sent_at: new Date().toISOString(),
               metadata,
-            } as any)
-            .select('id')
-            .single();
+            } as any);
 
           // Record reminder as sent
           await supabaseAdmin.from('schedule_reminders_sent').insert({
