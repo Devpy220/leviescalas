@@ -166,9 +166,6 @@ const handler = async (req: Request): Promise<Response> => {
                 body: JSON.stringify({
                   phone: (profile as any).whatsapp,
                   message: whatsappMsg,
-                  linkUrl: viewUrl,
-                  title: linkTitle,
-                  linkDescription,
                 }),
               });
               totalSent++;
