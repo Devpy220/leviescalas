@@ -77,10 +77,9 @@ serve(async (req: Request): Promise<Response> => {
       };
     });
 
-    const { data: insertedNotifs } = await supabaseAdmin
+    await supabaseAdmin
       .from("notifications")
-      .insert(notifications as any)
-      .select("id, user_id");
+      .insert(notifications as any);
 
     // Send WhatsApp to each member
     let whatsappSent = 0;
