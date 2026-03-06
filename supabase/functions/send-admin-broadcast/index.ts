@@ -76,23 +76,15 @@ const handler = async (req: Request): Promise<Response> => {
       metadata: { user_name: p.name || 'Voluntário', announcement_title: `${title}\n\n${message}` },
     }));
 
-    const { data: insertedNotifs } = await supabase
+    await supabase
       .from("notifications")
-      .insert(notifications as any)
-      .select("id, user_id");
-
-    const notifMap = new Map((insertedNotifs || []).map((n: any) => [n.user_id, n.id]));
+      .insert(notifications as any);
 
     // WhatsApp
     const whatsappRecipients = recipients.filter((p) => p.whatsapp);
     for (const profile of whatsappRecipients) {
       try {
-        const notifId = notifMap.get(profile.id);
-        const viewUrl = notifId ? `${supabaseUrl}/functions/v1/view-notification?id=${notifId}` : '';
-        const whatsappMsg = `📢 *Comunicado LEVI*\n\nOlá, *${profile.name}*!\n\n*${title}*\n\n${message}\n\n${viewUrl ? `👉 Ver detalhes:\n${viewUrl}\n\n` : ''}_LEVI — Escalas Inteligentes_`;
-
-        const linkTitle = `📢 Comunicado LEVI`;
-        const linkDescription = title.length > 80 ? title.slice(0, 77) + '...' : title;
+        const whatsappMsg = `📢 *Comunicado LEVI*\n\nOlá, *${profile.name}*!\n\n*${title}*\n\n${message}\n\n_LEVI — Escalas Inteligentes_`;
 
         const res = await fetch(`${supabaseUrl}/functions/v1/send-whatsapp-notification`, {
           method: "POST",

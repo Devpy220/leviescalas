@@ -77,25 +77,18 @@ serve(async (req: Request): Promise<Response> => {
       };
     });
 
-    const { data: insertedNotifs } = await supabaseAdmin
+    await supabaseAdmin
       .from("notifications")
-      .insert(notifications as any)
-      .select("id, user_id");
+      .insert(notifications as any);
 
-    // Send WhatsApp to each member with link
-    const notifMap = new Map((insertedNotifs || []).map((n: any) => [n.user_id, n.id]));
+    // Send WhatsApp to each member
     let whatsappSent = 0;
 
     const whatsappResults = await Promise.allSettled(
       (memberProfiles || [])
         .filter((p: any) => p.whatsapp)
         .map(async (p: any) => {
-          const notifId = notifMap.get(p.id);
-          const viewUrl = notifId ? `${supabaseUrl}/functions/v1/view-notification?id=${notifId}` : '';
-          const msg = `📢 *Aviso — ${department_name}*\n\nOlá, *${p.name}*!\n\n${announcement_title}\n\n${viewUrl ? `👉 Ver detalhes:\n${viewUrl}\n\n` : ''}_LEVI — Escalas Inteligentes_`;
-
-          const linkTitle = `📢 Aviso — ${department_name}`;
-          const linkDescription = announcement_title.length > 80 ? announcement_title.slice(0, 77) + '...' : announcement_title;
+          const msg = `📢 *Aviso — ${department_name}*\n\nOlá, *${p.name}*!\n\n${announcement_title}\n\n_LEVI — Escalas Inteligentes_`;
 
           const res = await fetch(`${supabaseUrl}/functions/v1/send-whatsapp-notification`, {
             method: "POST",
