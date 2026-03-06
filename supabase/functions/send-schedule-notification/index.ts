@@ -158,9 +158,6 @@ const handler = async (req: Request): Promise<Response> => {
           body: JSON.stringify({
             phone: profile.whatsapp,
             message: whatsappMessage,
-            linkUrl: viewUrl,
-            title: linkTitle,
-            linkDescription,
           }),
         });
         const data = await res.json();

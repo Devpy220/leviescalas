@@ -100,9 +100,6 @@ const handler = async (req: Request): Promise<Response> => {
           body: JSON.stringify({
             phone: profile.whatsapp,
             message: whatsappMsg,
-            linkUrl: viewUrl || undefined,
-            title: viewUrl ? linkTitle : undefined,
-            linkDescription: viewUrl ? linkDescription : undefined,
           }),
         });
         if (res.ok) {

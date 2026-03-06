@@ -103,9 +103,6 @@ serve(async (req: Request): Promise<Response> => {
             body: JSON.stringify({
               phone: p.whatsapp,
               message: msg,
-              linkUrl: viewUrl || undefined,
-              title: viewUrl ? linkTitle : undefined,
-              linkDescription: viewUrl ? linkDescription : undefined,
             }),
           });
           const data = await res.json();
