@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSidebarExpanded } from '@/contexts/SidebarContext';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
   ArrowLeft,
@@ -124,7 +125,7 @@ export default function Department() {
   const { isAdmin } = useAdmin();
   const { shouldShowInstallPrompt, install } = usePWAInstall();
   const { toast } = useToast();
-  
+  const { expanded: sidebarExpanded } = useSidebarExpanded();
   // Use session.user as fallback when user state hasn't updated yet
   const currentUser = user ?? session?.user;
   
@@ -474,7 +475,7 @@ export default function Department() {
           onSignOut={handleSignOut}
         />
         
-        <div className="ml-14">
+        <div className={`${sidebarExpanded ? 'ml-52' : 'ml-14'} transition-all duration-300`}>
         {/* Sub-header with department info */}
         <div className="border-b border-border/50 bg-card/50">
           <div className="container mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 max-w-7xl py-3 flex items-center justify-between">

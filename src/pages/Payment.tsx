@@ -5,6 +5,7 @@ import { useAdmin } from "@/hooks/useAdmin";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
+import { useSidebarExpanded } from '@/contexts/SidebarContext';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, QrCode, Copy, Check, ArrowLeft, Heart, Sparkles } from "lucide-react";
@@ -23,6 +24,7 @@ const Payment = () => {
   const { shouldShowInstallPrompt, install } = usePWAInstall();
   const isMobile = useIsMobile();
   const [copied, setCopied] = useState(false);
+  const { expanded: sidebarExpanded } = useSidebarExpanded();
 
   const copyPixKey = async () => {
     try {
@@ -56,7 +58,7 @@ const Payment = () => {
         onInstallClick={install}
         onSignOut={handleSignOut}
       />
-      <div className="ml-14 flex-1 flex flex-col">
+      <div className={`${sidebarExpanded ? 'ml-52' : 'ml-14'} flex-1 flex flex-col transition-all duration-300`}>
       <div className="flex-1 py-8 px-4">
         <div className="max-w-lg mx-auto">
 

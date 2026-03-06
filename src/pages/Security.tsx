@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Footer from '@/components/Footer';
 import { DashboardSidebar } from '@/components/DashboardSidebar';
+import { useSidebarExpanded } from '@/contexts/SidebarContext';
 import { useAdmin } from '@/hooks/useAdmin';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -38,7 +39,7 @@ export default function Security() {
   const { isAdmin } = useAdmin();
   const { shouldShowInstallPrompt, install } = usePWAInstall();
   const isMobile = useIsMobile();
-  
+  const { expanded: sidebarExpanded } = useSidebarExpanded();
   const [showSetup, setShowSetup] = useState(false);
   const [showDisableDialog, setShowDisableDialog] = useState(false);
   const [isDisabling, setIsDisabling] = useState(false);
@@ -151,7 +152,7 @@ export default function Security() {
         onInstallClick={install}
         onSignOut={handleSignOut}
       />
-      <div className="ml-14 flex-1 flex flex-col">
+      <div className={`${sidebarExpanded ? 'ml-52' : 'ml-14'} flex-1 flex flex-col transition-all duration-300`}>
       <div className="container max-w-2xl py-8 px-4 flex-1">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-foreground">Configurações</h1>

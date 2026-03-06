@@ -1,46 +1,68 @@
 
 
-## Plano: Sidebar expansível com ícones + labels
+## Plano: Separar Rotas de Escalas + Sidebar Icon-Only + Ações de Líder na Sidebar
 
-### Resumo
-Adicionar um botão de expandir/recolher na sidebar. Quando recolhida, fica como hoje (56px, apenas ícones com tooltips). Quando expandida, alarga para ~200px e mostra os nomes ao lado dos ícones.
+### Problemas Identificados
 
-### Mudanças
+1. **"Escalas Equipe" não funciona** — O sidebar navega para `/my-schedules?view=team`, mas o `MySchedules` controla `viewMode` por estado interno, não lê o query param `?view=team`. Então sempre abre em "mine".
 
-**1. `src/components/DashboardSidebar.tsx`**
-- Adicionar estado `expanded` (default `false`), persistido em `localStorage`
-- Botão toggle (ícone `ChevronRight`/`ChevronLeft`) no topo ou rodapé da sidebar
-- Sidebar: `w-14` quando recolhida, `w-52` quando expandida, com `transition-all duration-300`
-- `SidebarItem`: recebe prop `expanded` -- quando `true`, mostra label ao lado do ícone e remove tooltip; quando `false`, mantém comportamento atual (só ícone + tooltip)
-- Logo, avatar, footer (ThemeToggle, NotificationBell) adaptam layout para modo expandido
+2. **Sidebar mostra texto** — Quando expandido/hovered, mostra labels. Usuário quer apenas ícones com tooltip no hover/toque.
 
-**2. Páginas que usam `ml-14`** (5 arquivos)
-- `Dashboard.tsx`, `MySchedules.tsx`, `Department.tsx`, `Security.tsx`, `Payment.tsx`
-- Trocar `ml-14` fixo por margem dinâmica usando o valor exportado de `useSidebarWidth()`
-- Atualizar `useSidebarWidth()` para retornar 56 ou 208 conforme o estado expandido
+3. **Menu hamburger no departamento** — O `ActionMenuPopover` ainda aparece no header do departamento para líderes.
 
-**3. Compartilhar estado**
-- Usar contexto React ou `localStorage` + evento `storage` para sincronizar o estado `expanded` entre sidebar e páginas
-- Abordagem simples: criar um pequeno contexto `SidebarExpandedProvider` no nível do layout, ou exportar um hook que lê `localStorage`
+4. **Ações de líder faltam na sidebar** — Itens como Setores, Funções, Resumo de Equipe, Convidar Membro e Exportar não estão na sidebar.
 
-### Detalhes técnicos
+---
 
-```text
-Recolhida (padrão):        Expandida:
-┌──────┐                   ┌──────────────────┐
-│ LOGO │                   │ LOGO    LEVI     │
-│  👤  │                   │  👤  João Silva  │
-│  📅  │                   │  📅  Escalas     │
-│  👥  │                   │  👥  Equipe      │
-│  ⚙️  │                   │  ⚙️  Config      │
-│  ... │                   │  ...             │
-│  ◀   │                   │  ▶  Recolher     │
-└──────┘                   └──────────────────┘
- w-14 (56px)                w-52 (208px)
-```
+### 1. Corrigir navegação Escalas Equipe
 
-- Transição suave com `transition-all duration-300`
-- Em mobile, manter recolhida por padrão (sem mudança no UX mobile)
-- Tooltips desativados quando expandida (label visível)
-- Estado salvo em `localStorage('sidebar-expanded')`
+**`src/pages/MySchedules.tsx`**: No `useEffect` inicial, ler `searchParams.get('view')` da URL e inicializar `viewMode` com esse valor. Quando `?view=team` estiver presente, setar `viewMode = 'team'` automaticamente.
+
+---
+
+### 2. Sidebar apenas com ícones + tooltip
+
+**`src/components/DashboardSidebar.tsx`**: 
+- Remover o comportamento de expansão por hover no desktop (remover `onMouseEnter`/`onMouseLeave` + `hovered` state)
+- Sidebar fica sempre `w-14` (collapsed) tanto no mobile quanto no desktop
+- Todos os itens sempre renderizados com `collapsed=true` (apenas ícone)
+- Tooltip no hover/toque mostra o nome do item (já implementado quando `collapsed=true`)
+- Remover o overlay de expansão mobile (`mobileExpanded` + `w-64` overlay)
+- Remover botão de pin/collapse pois não há mais expansão
+- Manter ThemeToggle e NotificationBell visíveis mesmo no modo collapsed (empilhados verticalmente)
+
+---
+
+### 3. Remover ActionMenuPopover do Departamento
+
+**`src/pages/Department.tsx`**:
+- Remover o `ActionMenuPopover` do header (linhas 481-491)
+- Remover import do `ActionMenuPopover`
+- Manter apenas o botão de Settings (engrenagem) para líderes
+
+---
+
+### 4. Adicionar ações de líder na sidebar
+
+**`src/components/DashboardSidebar.tsx`**: Adicionar novos itens `leaderOnly` ao `menuItems`:
+
+- `Layers` — **Setores** → abre modal com `SectorManagement` (novo contextual action)
+- `UserCog` — **Funções** → abre modal com `AssignmentRoleManagement` (novo contextual action)
+- `Users` — **Resumo Equipe** → abre modal com `ScheduleCountDialog` (novo contextual action)
+- `UserPlus` — **Convidar Membro** → abre modal com `InviteMemberDialog` (novo contextual action)
+- `Download` — **Exportar Escalas** → abre dropdown ou modal com opções PDF/Excel (novo contextual action)
+
+Cada ação segue o mesmo padrão existente: se múltiplos departamentos de liderança, abre `DepartmentPicker` primeiro; se apenas um, abre direto o modal.
+
+Adicionar novos tipos ao `ContextualAction`: `'sectors' | 'roles' | 'schedule-count' | 'invite' | 'export'`
+
+Adicionar novos estados e modais correspondentes no componente principal `DashboardSidebar`.
+
+---
+
+### Arquivos Modificados
+
+1. **`src/components/DashboardSidebar.tsx`** — Sidebar sempre icon-only, remover expansão, adicionar ações de líder (setores, funções, resumo, convidar, exportar)
+2. **`src/pages/MySchedules.tsx`** — Ler `?view=team` da URL para inicializar viewMode
+3. **`src/pages/Department.tsx`** — Remover ActionMenuPopover do header
 

@@ -25,6 +25,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
+import { useSidebarExpanded } from '@/contexts/SidebarContext';
 import { useToast } from '@/hooks/use-toast';
 import { slugify } from '@/lib/slugify';
 
@@ -64,6 +65,7 @@ export default function Dashboard() {
   const [showInstallDialog, setShowInstallDialog] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { expanded: sidebarExpanded } = useSidebarExpanded();
   
   // CRITICAL: Use fallback to prevent infinite loading when user state is delayed
   const currentUser = user ?? session?.user ?? null;
@@ -307,7 +309,7 @@ export default function Dashboard() {
         onSignOut={handleSignOut}
       />
 
-      <div className="ml-14">
+      <div className={`${sidebarExpanded ? 'ml-52' : 'ml-14'} transition-all duration-300`}>
         <main className="container mx-auto px-4 py-8">
 
         {/* Profile Section */}

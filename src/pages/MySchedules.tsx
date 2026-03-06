@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useSidebarExpanded } from '@/contexts/SidebarContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   Calendar, 
@@ -98,6 +99,7 @@ export default function MySchedules() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { isAdmin } = useAdmin();
+  const { expanded: sidebarExpanded } = useSidebarExpanded();
   const { shouldShowInstallPrompt, install } = usePWAInstall();
   const isMobile = useIsMobile();
   
@@ -400,7 +402,7 @@ export default function MySchedules() {
         onSignOut={handleSignOut}
       />
       
-      <div className="ml-14 flex-1 flex flex-col">
+      <div className={`${sidebarExpanded ? 'ml-52' : 'ml-14'} flex-1 flex flex-col transition-all duration-300`}>
         {/* View mode toggle in header */}
         {departmentIds.length > 0 && (
           <div className="container mx-auto px-4 pt-6 flex gap-2">

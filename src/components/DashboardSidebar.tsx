@@ -12,6 +12,7 @@ import {
   Megaphone,
   CalendarPlus,
   ChevronRight,
+  ChevronLeft,
   Layers,
   UserCog,
   UserPlus,
@@ -26,6 +27,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useUserDepartments, type UserDepartment } from '@/hooks/useUserDepartments';
 import { useState, useEffect } from 'react';
+import { useSidebarExpanded } from '@/contexts/SidebarContext';
 import MyAvailabilitySheet from '@/components/department/MyAvailabilitySheet';
 import AnnouncementBoard from '@/components/department/AnnouncementBoard';
 import AddScheduleDialog from '@/components/department/AddScheduleDialog';
@@ -52,28 +54,33 @@ function getInitials(name: string) {
 
 type ContextualAction = 'availability' | 'announcements' | 'create-schedule' | 'sectors' | 'roles' | 'schedule-count' | 'invite' | 'export' | 'dept-settings';
 
-// Icon-only sidebar item with tooltip
-function SidebarItem({ icon: Icon, label, active, onClick, className }: {
+// Sidebar item with tooltip (collapsed) or label (expanded)
+function SidebarItem({ icon: Icon, label, active, onClick, className, expanded }: {
   icon: LucideIcon;
   label: string;
   active?: boolean;
   onClick: () => void;
   className?: string;
+  expanded?: boolean;
 }) {
+  const baseClass = `w-full flex items-center ${expanded ? 'justify-start px-3' : 'justify-center px-2'} py-3 rounded-xl text-sm font-medium transition-all ${
+    active
+      ? 'bg-secondary text-secondary-foreground shadow-lg'
+      : className || 'text-white/80 hover:bg-white/10 hover:text-white'
+  }`;
+
+  const button = (
+    <button onClick={onClick} className={baseClass}>
+      <Icon className="w-5 h-5 shrink-0" />
+      {expanded && <span className="ml-3 truncate text-sm">{label}</span>}
+    </button>
+  );
+
+  if (expanded) return button;
+
   return (
     <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          onClick={onClick}
-          className={`w-full flex items-center justify-center px-2 py-3 rounded-xl text-sm font-medium transition-all ${
-            active
-              ? 'bg-secondary text-secondary-foreground shadow-lg'
-              : className || 'text-white/80 hover:bg-white/10 hover:text-white'
-          }`}
-        >
-          <Icon className="w-5 h-5 shrink-0" />
-        </button>
-      </TooltipTrigger>
+      <TooltipTrigger asChild>{button}</TooltipTrigger>
       <TooltipContent side="right">{label}</TooltipContent>
     </Tooltip>
   );
@@ -311,63 +318,98 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
     setShowExport(false);
   };
 
+  const { expanded, toggleExpanded } = useSidebarExpanded();
+
   return (
     <>
-      <aside className="w-14 fixed left-0 top-0 bottom-0 z-40">
+      <aside className={`${expanded ? 'w-52' : 'w-14'} fixed left-0 top-0 bottom-0 z-40 transition-all duration-300`}>
         <div className="flex flex-col h-full gradient-sidebar text-white">
-          {/* Logo */}
-          <div className="p-2 pb-2 flex justify-center">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button onClick={() => navigate('/')} className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shrink-0">
+          {/* Logo + expand toggle */}
+          <div className={`p-2 pb-2 flex ${expanded ? 'justify-between' : 'justify-center'} items-center`}>
+            {expanded ? (
+              <button onClick={() => navigate('/')} className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shrink-0">
                   <LeviLogo className="w-8 h-8" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right">LEVI</TooltipContent>
-            </Tooltip>
+                </div>
+                <span className="font-display font-bold text-lg truncate">LEVI</span>
+              </button>
+            ) : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button onClick={() => navigate('/')} className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shrink-0">
+                    <LeviLogo className="w-8 h-8" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right">LEVI</TooltipContent>
+              </Tooltip>
+            )}
+            {expanded && (
+              <button onClick={toggleExpanded} className="p-1 rounded-lg hover:bg-white/10 transition-colors">
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
           {/* Profile */}
           <div className="px-2 mb-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => navigate('/dashboard')}
-                  className={`w-full flex items-center justify-center px-2 py-3 rounded-xl text-sm font-medium transition-all ${
-                    isActive('/dashboard')
-                      ? 'bg-secondary text-secondary-foreground shadow-lg'
-                      : 'text-white/80 hover:bg-white/10 hover:text-white'
-                  }`}
-                >
-                  <Avatar className="w-6 h-6">
-                    {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={userName || 'Usuário'} />}
-                    <AvatarFallback className="bg-secondary text-secondary-foreground text-[9px] font-bold">
-                      {userName ? getInitials(userName) : 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right">{userName || 'Meu Perfil'}</TooltipContent>
-            </Tooltip>
+            {expanded ? (
+              <button
+                onClick={() => navigate('/dashboard')}
+                className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all ${
+                  isActive('/dashboard')
+                    ? 'bg-secondary text-secondary-foreground shadow-lg'
+                    : 'text-white/80 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                <Avatar className="w-6 h-6">
+                  {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={userName || 'Usuário'} />}
+                  <AvatarFallback className="bg-secondary text-secondary-foreground text-[9px] font-bold">
+                    {userName ? getInitials(userName) : 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="truncate text-sm">{userName || 'Meu Perfil'}</span>
+              </button>
+            ) : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => navigate('/dashboard')}
+                    className={`w-full flex items-center justify-center px-2 py-3 rounded-xl text-sm font-medium transition-all ${
+                      isActive('/dashboard')
+                        ? 'bg-secondary text-secondary-foreground shadow-lg'
+                        : 'text-white/80 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    <Avatar className="w-6 h-6">
+                      {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={userName || 'Usuário'} />}
+                      <AvatarFallback className="bg-secondary text-secondary-foreground text-[9px] font-bold">
+                        {userName ? getInitials(userName) : 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right">{userName || 'Meu Perfil'}</TooltipContent>
+              </Tooltip>
+            )}
           </div>
 
           {/* Main menu */}
           <nav className="flex-1 px-2 overflow-y-auto">
             <ul className="space-y-1">
               <li>
-                <SidebarItem icon={CalendarDays} label="Minhas Escalas" active={isActive('/my-schedules')} onClick={() => navigate('/my-schedules')} />
+                <SidebarItem expanded={expanded} icon={CalendarDays} label="Minhas Escalas" active={isActive('/my-schedules')} onClick={() => navigate('/my-schedules')} />
               </li>
               <li>
-                <SidebarItem icon={Users} label="Escalas Equipe" active={isActive('/my-schedules?view=team')} onClick={() => navigate('/my-schedules?view=team')} />
+                <SidebarItem expanded={expanded} icon={Users} label="Escalas Equipe" active={isActive('/my-schedules?view=team')} onClick={() => navigate('/my-schedules?view=team')} />
               </li>
               <li>
-                <SidebarItem icon={Settings} label="Configurações" active={isActive('/security')} onClick={() => navigate('/security')} />
+                <SidebarItem expanded={expanded} icon={Settings} label="Configurações" active={isActive('/security')} onClick={() => navigate('/security')} />
               </li>
               <li>
-                <SidebarItem icon={Clock} label="Disponibilidade" onClick={() => handleContextualAction('availability')} />
+                <SidebarItem expanded={expanded} icon={Clock} label="Disponibilidade" onClick={() => handleContextualAction('availability')} />
               </li>
               <li>
-                <SidebarItem icon={Megaphone} label="Mural de Avisos" onClick={() => handleContextualAction('announcements')} />
+                <SidebarItem expanded={expanded} icon={Megaphone} label="Mural de Avisos" onClick={() => handleContextualAction('announcements')} />
               </li>
 
               {/* Leader-only items */}
@@ -377,38 +419,38 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
                     <div className="border-t border-white/10 mb-2" />
                   </li>
                   <li>
-                    <SidebarItem icon={CalendarPlus} label="Criar Escalas" onClick={() => handleContextualAction('create-schedule')} />
+                    <SidebarItem expanded={expanded} icon={CalendarPlus} label="Criar Escalas" onClick={() => handleContextualAction('create-schedule')} />
                   </li>
                   <li>
-                    <SidebarItem icon={Layers} label="Setores" onClick={() => handleContextualAction('sectors')} />
+                    <SidebarItem expanded={expanded} icon={Layers} label="Setores" onClick={() => handleContextualAction('sectors')} />
                   </li>
                   <li>
-                    <SidebarItem icon={UserCog} label="Funções" onClick={() => handleContextualAction('roles')} />
+                    <SidebarItem expanded={expanded} icon={UserCog} label="Funções" onClick={() => handleContextualAction('roles')} />
                   </li>
                   <li>
-                    <SidebarItem icon={Users} label="Resumo Equipe" onClick={() => handleContextualAction('schedule-count')} />
+                    <SidebarItem expanded={expanded} icon={Users} label="Resumo Equipe" onClick={() => handleContextualAction('schedule-count')} />
                   </li>
                   <li>
-                    <SidebarItem icon={UserPlus} label="Convidar Membro" onClick={() => handleContextualAction('invite')} />
+                    <SidebarItem expanded={expanded} icon={UserPlus} label="Convidar Membro" onClick={() => handleContextualAction('invite')} />
                   </li>
                   <li>
-                    <SidebarItem icon={FileDown} label="Exportar Escalas" onClick={() => handleContextualAction('export')} />
+                    <SidebarItem expanded={expanded} icon={FileDown} label="Exportar Escalas" onClick={() => handleContextualAction('export')} />
                   </li>
                   <li>
-                    <SidebarItem icon={Wrench} label="Config. Departamento" onClick={() => handleContextualAction('dept-settings')} />
+                    <SidebarItem expanded={expanded} icon={Wrench} label="Config. Departamento" onClick={() => handleContextualAction('dept-settings')} />
                   </li>
                 </>
               )}
 
               {isAdmin && (
                 <li>
-                  <SidebarItem icon={Shield} label="Painel Admin" active={isActive('/admin')} onClick={() => navigate('/admin')} />
+                  <SidebarItem expanded={expanded} icon={Shield} label="Painel Admin" active={isActive('/admin')} onClick={() => navigate('/admin')} />
                 </li>
               )}
 
               {shouldShowInstallPrompt && (
                 <li>
-                  <SidebarItem icon={Download} label="Instalar App" onClick={onInstallClick} />
+                  <SidebarItem expanded={expanded} icon={Download} label="Instalar App" onClick={onInstallClick} />
                 </li>
               )}
             </ul>
@@ -416,19 +458,35 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
 
           {/* Footer */}
           <div className="p-2 space-y-1">
-            <SidebarItem icon={Heart} label="Apoie o LEVI" active={isActive('/payment')} onClick={() => navigate('/payment')} />
+            <SidebarItem expanded={expanded} icon={Heart} label="Apoie o LEVI" active={isActive('/payment')} onClick={() => navigate('/payment')} />
             
-            <div className="flex flex-col items-center gap-1 py-1">
+            <div className={`flex ${expanded ? 'flex-row justify-center' : 'flex-col'} items-center gap-1 py-1`}>
               <ThemeToggle />
               <NotificationBell />
             </div>
             
             <SidebarItem 
+              expanded={expanded}
               icon={LogOut} 
               label="Sair" 
               onClick={onSignOut}
               className="text-rose-300 hover:bg-rose-500/20 hover:text-rose-200"
             />
+
+            {/* Expand toggle when collapsed */}
+            {!expanded && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={toggleExpanded}
+                    className="w-full flex items-center justify-center px-2 py-2 rounded-xl text-white/60 hover:bg-white/10 hover:text-white transition-all"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right">Expandir menu</TooltipContent>
+              </Tooltip>
+            )}
           </div>
         </div>
       </aside>
@@ -551,6 +609,4 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
   );
 }
 
-export function useSidebarWidth() {
-  return 56; // Always w-14 = 56px
-}
+export { useSidebarExpanded } from '@/contexts/SidebarContext';
