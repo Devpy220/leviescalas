@@ -337,7 +337,7 @@ export default function SmartScheduleDialog({
         </DialogHeader>
 
         {step === 'config' ? (
-          <div className="flex-1 overflow-y-auto space-y-4 py-4 -mx-6 px-6">
+          <div className="flex-1 overflow-y-auto space-y-4 py-4 -mx-4 px-4 sm:-mx-6 sm:px-6">
             {/* Month Selection */}
             <div className="space-y-2">
               <Label>Mês</Label>
@@ -452,7 +452,7 @@ export default function SmartScheduleDialog({
               {suggestions.filter(s => s.selected).length} de {suggestions.length} escalas selecionadas
             </div>
 
-            <ScrollArea className="flex-1 -mx-6 px-6">
+            <ScrollArea className="flex-1 -mx-4 px-4 sm:-mx-6 sm:px-6">
               <div className="space-y-4">
                 {Object.entries(groupedByDate).map(([date, schedules]) => (
                   <div key={date} className="space-y-2">
