@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
+import { SidebarExpandedProvider } from "@/contexts/SidebarContext";
 import { AdminRedirect } from "@/components/AdminRedirect";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { usePageTracking } from "@/hooks/usePageTracking";
@@ -46,6 +47,7 @@ const App = () => (
   <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <SidebarExpandedProvider>
         <TooltipProvider>
           <Toaster />
           <Sonner />
@@ -135,6 +137,7 @@ const App = () => (
             </PageTracker>
           </BrowserRouter>
         </TooltipProvider>
+        </SidebarExpandedProvider>
       </AuthProvider>
     </QueryClientProvider>
   </ThemeProvider>
