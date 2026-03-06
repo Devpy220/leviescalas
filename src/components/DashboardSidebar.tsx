@@ -12,6 +12,7 @@ import {
   Megaphone,
   CalendarPlus,
   ChevronRight,
+  ChevronLeft,
   Layers,
   UserCog,
   UserPlus,
@@ -26,6 +27,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useUserDepartments, type UserDepartment } from '@/hooks/useUserDepartments';
 import { useState, useEffect } from 'react';
+import { useSidebarExpanded } from '@/contexts/SidebarContext';
 import MyAvailabilitySheet from '@/components/department/MyAvailabilitySheet';
 import AnnouncementBoard from '@/components/department/AnnouncementBoard';
 import AddScheduleDialog from '@/components/department/AddScheduleDialog';
