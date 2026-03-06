@@ -65,6 +65,7 @@ export default function Dashboard() {
   const [showInstallDialog, setShowInstallDialog] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { expanded: sidebarExpanded } = useSidebarExpanded();
   
   // CRITICAL: Use fallback to prevent infinite loading when user state is delayed
   const currentUser = user ?? session?.user ?? null;
