@@ -187,7 +187,7 @@ export default function AnnouncementPopup({ departmentId, currentUserId }: Annou
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
       <DialogContent
-        className="max-w-md animate-in zoom-in-95 announcement-popup-glow"
+        className="max-w-sm w-[calc(100%-2rem)] animate-in zoom-in-95 announcement-popup-glow"
         onPointerDownOutside={(e) => e.preventDefault()}
       >
         <DialogHeader>
