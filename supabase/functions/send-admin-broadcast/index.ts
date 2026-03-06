@@ -76,12 +76,9 @@ const handler = async (req: Request): Promise<Response> => {
       metadata: { user_name: p.name || 'Voluntário', announcement_title: `${title}\n\n${message}` },
     }));
 
-    const { data: insertedNotifs } = await supabase
+    await supabase
       .from("notifications")
-      .insert(notifications as any)
-      .select("id, user_id");
-
-    const notifMap = new Map((insertedNotifs || []).map((n: any) => [n.user_id, n.id]));
+      .insert(notifications as any);
 
     // WhatsApp
     const whatsappRecipients = recipients.filter((p) => p.whatsapp);
