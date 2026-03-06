@@ -9,28 +9,7 @@ export function usePWAUpdate() {
   const [registration, setRegistration] = useState<ServiceWorkerRegistrationWithUpdate | null>(null);
   const checkIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Force show update prompt on first load for installed PWAs to refresh icons
-  useEffect(() => {
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
-      || (window.navigator as any).standalone === true;
-    
-    const lastIconVersion = localStorage.getItem('pwa-icon-version');
-    const currentIconVersion = '2'; // Bump this whenever icons change
-    
-    if (isStandalone && lastIconVersion !== currentIconVersion) {
-      console.log('[PWA] Icon version changed, prompting update for installed PWA');
-      localStorage.setItem('pwa-icon-version', currentIconVersion);
-      // Clear caches and reload to force new icons
-      if ('caches' in window) {
-        caches.keys().then(names => {
-          Promise.all(names.map(name => caches.delete(name))).then(() => {
-            console.log('[PWA] Caches cleared for icon update');
-            window.location.reload();
-          });
-        });
-      }
-    }
-  }, []);
+  // Only show update when a real SW update is detected (removed icon-version force-update)
 
   useEffect(() => {
     if (!('serviceWorker' in navigator)) {
