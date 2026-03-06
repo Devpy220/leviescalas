@@ -133,20 +133,12 @@ const handler = async (req: Request): Promise<Response> => {
       console.error("Error creating notification:", notifError);
     }
 
-    // Send WhatsApp with rich link
+    // Send WhatsApp
     let whatsappSent = false;
-    if (profile.whatsapp && notifRecord) {
-      const viewUrl = `${SUPABASE_URL}/functions/v1/view-notification?id=${notifRecord.id}`;
-
-      const linkTitle = type === 'new_schedule'
-        ? `📅 Nova Escala — ${department_name}`
-        : `⚠️ Escala Alterada — ${department_name}`;
-
-      const linkDescription = `${weekday}, ${dayNum} de ${monthName} • ${fTimeStart} às ${fTimeEnd}${sector_name ? ` • ${sector_name}` : ''}`;
-
+    if (profile.whatsapp) {
       const whatsappMessage = type === 'new_schedule'
-        ? `📅 *Nova Escala — ${department_name}*\n\nOlá, *${profile.name}*! 👋\nVocê foi escalado(a).\n\n📆 ${weekday}, ${dayNum} de ${monthName} de ${year}\n⏰ ${fTimeStart} às ${fTimeEnd}\n${sector_name ? `📍 ${sector_name}\n` : ''}${assignment_role_label ? `💼 ${assignment_role_label}\n` : ''}\n👉 Ver detalhes completos:\n${viewUrl}\n\n_LEVI — Escalas Inteligentes_`
-        : `⚠️ *Escala Alterada — ${department_name}*\n\nOlá, *${profile.name}*! 👋\nSua escala foi alterada.\n\n📆 ${weekday}, ${dayNum} de ${monthName} de ${year}\n⏰ ${fTimeStart} às ${fTimeEnd}\n\n👉 Ver detalhes completos:\n${viewUrl}\n\n_LEVI — Escalas Inteligentes_`;
+        ? `📅 *Nova Escala — ${department_name}*\n\nOlá, *${profile.name}*! 👋\nVocê foi escalado(a).\n\n📆 ${weekday}, ${dayNum} de ${monthName} de ${year}\n⏰ ${fTimeStart} às ${fTimeEnd}\n${sector_name ? `📍 ${sector_name}\n` : ''}${assignment_role_label ? `💼 ${assignment_role_label}\n` : ''}\n_LEVI — Escalas Inteligentes_`
+        : `⚠️ *Escala Alterada — ${department_name}*\n\nOlá, *${profile.name}*! 👋\nSua escala foi alterada.\n\n📆 ${weekday}, ${dayNum} de ${monthName} de ${year}\n⏰ ${fTimeStart} às ${fTimeEnd}\n${sector_name ? `📍 ${sector_name}\n` : ''}${assignment_role_label ? `💼 ${assignment_role_label}\n` : ''}\n_LEVI — Escalas Inteligentes_`;
 
       try {
         const res = await fetch(`${SUPABASE_URL}/functions/v1/send-whatsapp-notification`, {

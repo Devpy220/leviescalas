@@ -87,12 +87,7 @@ const handler = async (req: Request): Promise<Response> => {
     const whatsappRecipients = recipients.filter((p) => p.whatsapp);
     for (const profile of whatsappRecipients) {
       try {
-        const notifId = notifMap.get(profile.id);
-        const viewUrl = notifId ? `${supabaseUrl}/functions/v1/view-notification?id=${notifId}` : '';
-        const whatsappMsg = `📢 *Comunicado LEVI*\n\nOlá, *${profile.name}*!\n\n*${title}*\n\n${message}\n\n${viewUrl ? `👉 Ver detalhes:\n${viewUrl}\n\n` : ''}_LEVI — Escalas Inteligentes_`;
-
-        const linkTitle = `📢 Comunicado LEVI`;
-        const linkDescription = title.length > 80 ? title.slice(0, 77) + '...' : title;
+        const whatsappMsg = `📢 *Comunicado LEVI*\n\nOlá, *${profile.name}*!\n\n*${title}*\n\n${message}\n\n_LEVI — Escalas Inteligentes_`;
 
         const res = await fetch(`${supabaseUrl}/functions/v1/send-whatsapp-notification`, {
           method: "POST",

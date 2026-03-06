@@ -150,14 +150,11 @@ const handler = async (req: Request): Promise<Response> => {
             reminder_type: window.type,
           });
 
-          // Send WhatsApp with rich link
-          if ((profile as any).whatsapp && notifRecord) {
-            const viewUrl = `${supabaseUrl}/functions/v1/view-notification?id=${notifRecord.id}`;
-
-            const linkTitle = `🔔 Lembrete — ${dept.name}`;
-            const linkDescription = `${weekday}, ${dayNum} de ${monthFull} • ${formatTime(schedule.time_start)} às ${formatTime(schedule.time_end)}`;
-
-            const whatsappMsg = `🔔 *Lembrete — ${dept.name}*\n\nOlá, *${profile.name}*! Sua escala é ${window.label}.\n\n📆 ${weekday}, ${dayNum} de ${monthFull}\n⏰ ${formatTime(schedule.time_start)} às ${formatTime(schedule.time_end)}\n\n👉 Ver detalhes:\n${viewUrl}\n\n_LEVI — Escalas Inteligentes_`;
+          // Send WhatsApp
+          if ((profile as any).whatsapp) {
+            const sectorSuffix = sectorName ? `\n📍 ${sectorName}` : '';
+            const roleSuffix = roleLabel ? `\n💼 ${roleLabel}` : '';
+            const whatsappMsg = `🔔 *Lembrete — ${dept.name}*\n\nOlá, *${profile.name}*! Sua escala é ${window.label}.\n\n📆 ${weekday}, ${dayNum} de ${monthFull}\n⏰ ${formatTime(schedule.time_start)} às ${formatTime(schedule.time_end)}${sectorSuffix}${roleSuffix}\n\n_LEVI — Escalas Inteligentes_`;
 
             try {
               await fetch(`${supabaseUrl}/functions/v1/send-whatsapp-notification`, {
