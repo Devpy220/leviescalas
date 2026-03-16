@@ -1,68 +1,42 @@
 
 
-## Plano: Separar Rotas de Escalas + Sidebar Icon-Only + Ações de Líder na Sidebar
+## Plano: Ajustes nas mensagens de apoio, lembretes e limpeza de código
 
-### Problemas Identificados
+### 1. Mensagens de apoio via WhatsApp — recriar edge function com botão de copiar
 
-1. **"Escalas Equipe" não funciona** — O sidebar navega para `/my-schedules?view=team`, mas o `MySchedules` controla `viewMode` por estado interno, não lê o query param `?view=team`. Então sempre abre em "mine".
+A função `send-support-whatsapp` foi deletada anteriormente. Precisa ser recriada com as mudanças:
+- **Frequência**: 4x/mês em dias fixos (1, 8, 16, 24) ao invés de 2x (1 e 16)
+- **Mensagem**: Incluir a chave PIX como texto copiável (`suport@leviescalas.com.br`) em vez de um link `mailto:` que abre o e-mail
+- **Criar edge function** `supabase/functions/send-support-whatsapp/index.ts` que busca todos os profiles com WhatsApp e envia mensagem de apoio
+- **Criar cron job** via SQL insert para chamar a função nos dias 1, 8, 16 e 24 às 12:00 BRT
 
-2. **Sidebar mostra texto** — Quando expandido/hovered, mostra labels. Usuário quer apenas ícones com tooltip no hover/toque.
+### 2. Remover lembrete de 72h
 
-3. **Menu hamburger no departamento** — O `ActionMenuPopover` ainda aparece no header do departamento para líderes.
+**`supabase/functions/send-scheduled-reminders/index.ts`**
+- Remover a entrada `{ type: '72h', hoursAhead: 72, label: 'em 3 dias' }` do array `REMINDER_WINDOWS`
+- Manter apenas 48h, 12h e 3h
 
-4. **Ações de líder faltam na sidebar** — Itens como Setores, Funções, Resumo de Equipe, Convidar Membro e Exportar não estão na sidebar.
+### 3. Limpeza de código morto
 
----
+**`supabase/functions/send-whatsapp-notification/index.ts`**
+- Remover parâmetros não utilizados: `linkUrl`, `title`, `linkDescription`
+- Remover lógica `send-link` (nunca mais usada, todas as notificações são texto puro)
+- Simplificar para usar apenas `send-text`
 
-### 1. Corrigir navegação Escalas Equipe
+**`src/components/SupportNotification.tsx`**
+- Componente não é importado em nenhum lugar — **deletar**
 
-**`src/pages/MySchedules.tsx`**: No `useEffect` inicial, ler `searchParams.get('view')` da URL e inicializar `viewMode` com esse valor. Quando `?view=team` estiver presente, setar `viewMode = 'team'` automaticamente.
+**`src/lib/constants.ts`**
+- Remover `SUPPORT_NOTIFICATION_LAST_SHOWN` do `STORAGE_KEYS` (referenciado apenas pelo componente deletado)
 
----
+### Resumo dos arquivos
 
-### 2. Sidebar apenas com ícones + tooltip
-
-**`src/components/DashboardSidebar.tsx`**: 
-- Remover o comportamento de expansão por hover no desktop (remover `onMouseEnter`/`onMouseLeave` + `hovered` state)
-- Sidebar fica sempre `w-14` (collapsed) tanto no mobile quanto no desktop
-- Todos os itens sempre renderizados com `collapsed=true` (apenas ícone)
-- Tooltip no hover/toque mostra o nome do item (já implementado quando `collapsed=true`)
-- Remover o overlay de expansão mobile (`mobileExpanded` + `w-64` overlay)
-- Remover botão de pin/collapse pois não há mais expansão
-- Manter ThemeToggle e NotificationBell visíveis mesmo no modo collapsed (empilhados verticalmente)
-
----
-
-### 3. Remover ActionMenuPopover do Departamento
-
-**`src/pages/Department.tsx`**:
-- Remover o `ActionMenuPopover` do header (linhas 481-491)
-- Remover import do `ActionMenuPopover`
-- Manter apenas o botão de Settings (engrenagem) para líderes
-
----
-
-### 4. Adicionar ações de líder na sidebar
-
-**`src/components/DashboardSidebar.tsx`**: Adicionar novos itens `leaderOnly` ao `menuItems`:
-
-- `Layers` — **Setores** → abre modal com `SectorManagement` (novo contextual action)
-- `UserCog` — **Funções** → abre modal com `AssignmentRoleManagement` (novo contextual action)
-- `Users` — **Resumo Equipe** → abre modal com `ScheduleCountDialog` (novo contextual action)
-- `UserPlus` — **Convidar Membro** → abre modal com `InviteMemberDialog` (novo contextual action)
-- `Download` — **Exportar Escalas** → abre dropdown ou modal com opções PDF/Excel (novo contextual action)
-
-Cada ação segue o mesmo padrão existente: se múltiplos departamentos de liderança, abre `DepartmentPicker` primeiro; se apenas um, abre direto o modal.
-
-Adicionar novos tipos ao `ContextualAction`: `'sectors' | 'roles' | 'schedule-count' | 'invite' | 'export'`
-
-Adicionar novos estados e modais correspondentes no componente principal `DashboardSidebar`.
-
----
-
-### Arquivos Modificados
-
-1. **`src/components/DashboardSidebar.tsx`** — Sidebar sempre icon-only, remover expansão, adicionar ações de líder (setores, funções, resumo, convidar, exportar)
-2. **`src/pages/MySchedules.tsx`** — Ler `?view=team` da URL para inicializar viewMode
-3. **`src/pages/Department.tsx`** — Remover ActionMenuPopover do header
+| Arquivo | Ação |
+|---------|------|
+| `supabase/functions/send-support-whatsapp/index.ts` | Criar (novo) |
+| `supabase/functions/send-scheduled-reminders/index.ts` | Editar (remover 72h) |
+| `supabase/functions/send-whatsapp-notification/index.ts` | Editar (remover send-link) |
+| `src/components/SupportNotification.tsx` | Deletar |
+| `src/lib/constants.ts` | Editar (remover chave não usada) |
+| SQL (cron job) | Criar via insert tool |
 
