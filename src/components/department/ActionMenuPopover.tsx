@@ -39,7 +39,7 @@ export default function ActionMenuPopover({
   onOpenCalendarSync,
 }: ActionMenuPopoverProps) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMobile = useIsMobile();
 
   const handleMouseEnter = useCallback(() => {
