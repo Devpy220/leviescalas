@@ -20,7 +20,6 @@ interface ReminderWindow {
 }
 
 const REMINDER_WINDOWS: ReminderWindow[] = [
-  { type: '72h', hoursAhead: 72, label: 'em 3 dias' },
   { type: '48h', hoursAhead: 48, label: 'em 2 dias' },
   { type: '12h', hoursAhead: 12, label: 'amanhã' },
   { type: '3h', hoursAhead: 3, label: 'em 3 horas' },

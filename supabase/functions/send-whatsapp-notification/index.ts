@@ -23,7 +23,7 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    const { phone, message, linkUrl, title, linkDescription } = await req.json();
+    const { phone, message } = await req.json();
 
     if (!phone || !message) {
       return new Response(
@@ -43,23 +43,7 @@ serve(async (req: Request): Promise<Response> => {
 
     const fullNumber = cleanNumber.startsWith("55") ? cleanNumber : `55${cleanNumber}`;
 
-    // Use send-link when linkUrl is provided, otherwise send-text
-    const useSendLink = linkUrl && title;
-    const endpoint = useSendLink ? "send-link" : "send-text";
-    const url = `https://api.z-api.io/instances/${instanceId}/token/${token}/${endpoint}`;
-
-    const body = useSendLink
-      ? {
-          phone: fullNumber,
-          message,
-          linkUrl,
-          title,
-          linkDescription: linkDescription || "",
-        }
-      : {
-          phone: fullNumber,
-          message,
-        };
+    const url = `https://api.z-api.io/instances/${instanceId}/token/${token}/send-text`;
 
     const res = await fetch(url, {
       method: "POST",
@@ -67,19 +51,19 @@ serve(async (req: Request): Promise<Response> => {
         "Content-Type": "application/json",
         "Client-Token": clientToken,
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ phone: fullNumber, message }),
     });
 
     if (res.ok) {
       const data = await res.json();
-      console.log(`WhatsApp ${endpoint} sent to ${fullNumber}:`, data);
+      console.log(`WhatsApp sent to ${fullNumber}:`, data);
       return new Response(
         JSON.stringify({ sent: true }),
         { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     } else {
       const errText = await res.text();
-      console.error(`WhatsApp ${endpoint} error for ${fullNumber}:`, errText);
+      console.error(`WhatsApp error for ${fullNumber}:`, errText);
       return new Response(
         JSON.stringify({ sent: false, error: errText }),
         { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }

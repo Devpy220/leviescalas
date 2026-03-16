@@ -1,7 +1,5 @@
 // Local Storage Keys
-export const STORAGE_KEYS = {
-  SUPPORT_NOTIFICATION_LAST_SHOWN: 'levi_support_notification_last_shown',
-} as const;
+export const STORAGE_KEYS = {} as const;
 
 // Assignment Roles - Função do membro na escala
 export const ASSIGNMENT_ROLES = {
