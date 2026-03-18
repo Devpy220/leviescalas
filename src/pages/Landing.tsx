@@ -592,9 +592,9 @@ export default function Landing() {
               </div>
             </div>
 
-            {/* Right — 3D Glass Cube */}
-            <div className="hidden lg:flex justify-center items-center" style={{ perspective: 900 }}>
-              <GlassCube />
+            {/* Right — 3D Orbiting Globe */}
+            <div className="hidden sm:flex justify-center items-center">
+              <OrbitGlobe />
             </div>
 
             {/* Mobile fallback — simple grid */}
