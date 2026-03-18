@@ -597,30 +597,6 @@ export default function Landing() {
               <OrbitGlobe />
             </div>
 
-            {/* Mobile fallback — simple grid */}
-            <div className="grid grid-cols-2 gap-4 lg:hidden">
-              {[
-                { icon: Calendar, title: 'Calendário\nInterativo', pill: '⚡ Ao vivo', color: 'border-primary/30' },
-                { icon: Users, title: 'Gestão de\nMembros', pill: '✓ Organizado', color: 'border-orange-500/30' },
-                { icon: Bell, title: 'Notificações\nAutomáticas', pill: '📲 Automático', color: 'border-accent/30' },
-                { icon: Zap, title: 'Tempo\nReal', pill: '🔴 Online', color: 'border-secondary/30' },
-              ].map((f, i) => (
-                <div
-                  key={f.pill}
-                  className={`group relative p-5 rounded-2xl bg-card/60 backdrop-blur-sm border ${f.color} cursor-default overflow-hidden animate-scale-in`}
-                  style={{ animationDelay: `${0.3 + i * 0.1}s`, animationFillMode: 'both' }}
-                >
-                  <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-white/[0.06] to-transparent rounded-t-2xl pointer-events-none" />
-                  <div className="relative z-[1] flex flex-col items-center text-center gap-2">
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <f.icon className="w-6 h-6 text-primary" />
-                    </div>
-                    <h3 className="font-display text-sm font-bold text-foreground whitespace-pre-line leading-tight">{f.title}</h3>
-                    <span className="text-[10px] px-2.5 py-1 rounded-full border border-border/50 bg-muted/30 text-muted-foreground uppercase tracking-wider">{f.pill}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </section>
