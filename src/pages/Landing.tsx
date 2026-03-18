@@ -221,9 +221,9 @@ function OrbitGlobe() {
       const container = containerRef.current;
       if (container) {
         const cards = container.querySelectorAll<HTMLDivElement>('[data-orbit-card]');
-        const radiusX = 140;
-        const radiusZ = 100;
-        const radiusY = 30;
+        const radiusX = 200;
+        const radiusZ = 140;
+        const radiusY = 45;
 
         cards.forEach((card, i) => {
           const baseAngle = items[i].angle;
@@ -231,7 +231,7 @@ function OrbitGlobe() {
           const x = Math.sin(angle) * radiusX;
           const z = Math.cos(angle) * radiusZ;
           const y = Math.sin(angle * 0.5) * radiusY;
-          const scale = 0.65 + ((z + radiusZ) / (2 * radiusZ)) * 0.45;
+          const scale = 0.7 + ((z + radiusZ) / (2 * radiusZ)) * 0.5;
           const opacity = 0.4 + ((z + radiusZ) / (2 * radiusZ)) * 0.6;
           const zIndex = Math.round(z + radiusZ);
 
@@ -256,26 +256,19 @@ function OrbitGlobe() {
       onTouchEnd={() => setPaused(false)}
     >
       {/* Central glow */}
-      <div className="absolute w-[300px] h-[300px] rounded-full top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none animate-pulse-glow"
+      <div className="absolute w-[420px] h-[420px] rounded-full top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none animate-pulse-glow"
         style={{ background: 'radial-gradient(circle, hsl(var(--primary) / 0.25) 0%, hsl(var(--primary) / 0.05) 50%, transparent 70%)' }}
       />
 
       {/* Orbit ring hint */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[140px] rounded-[50%] border border-primary/10 pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[200px] rounded-[50%] border border-primary/10 pointer-events-none" />
 
       {/* Orbiting cards */}
       <div
         ref={containerRef}
         className="relative cursor-default"
-        style={{ width: 320, height: 280 }}
+        style={{ width: 460, height: 380 }}
       >
-        {/* Center logo */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50">
-          <div className="w-16 h-16 rounded-2xl bg-card/80 backdrop-blur-sm border border-primary/30 flex items-center justify-center shadow-glow-sm">
-            <LeviLogo className="w-10 h-10" />
-          </div>
-        </div>
-
         {items.map((item, i) => (
           <div
             key={item.label}
@@ -283,14 +276,14 @@ function OrbitGlobe() {
             className="absolute top-1/2 left-1/2 pointer-events-none"
             style={{ willChange: 'transform, opacity' }}
           >
-            <div className="flex flex-col items-center gap-1.5 px-4 py-3 rounded-2xl bg-card/70 backdrop-blur-sm border border-primary/20 shadow-soft min-w-[100px]"
+            <div className="flex flex-col items-center gap-2 px-5 py-4 rounded-2xl bg-card/70 backdrop-blur-sm border border-primary/20 shadow-soft min-w-[120px]"
               style={{ boxShadow: 'inset 0 1px 0 hsl(0 0% 100% / 0.1), 0 8px 24px hsl(0 0% 0% / 0.15)' }}
             >
-              <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
-                <item.Icon className="w-5 h-5 text-primary" />
+              <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center">
+                <item.Icon className="w-6 h-6 text-primary" />
               </div>
-              <span className="text-xs font-bold text-foreground">{item.label}</span>
-              <span className="text-[9px] px-2 py-0.5 rounded-full border border-border/40 bg-muted/20 text-muted-foreground uppercase tracking-wider">
+              <span className="text-sm font-bold text-foreground">{item.label}</span>
+              <span className="text-[10px] px-2.5 py-0.5 rounded-full border border-border/40 bg-muted/20 text-muted-foreground uppercase tracking-wider">
                 {item.pill}
               </span>
             </div>
