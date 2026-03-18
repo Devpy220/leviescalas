@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,31 +13,34 @@ import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useUserCount } from '@/hooks/useUserCount';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  Dialog,
-  DialogContent,
-  DialogOverlay,
+import {
   DialogPortal,
+  Dialog,
 } from '@/components/ui/dialog';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { 
-  Calendar, 
-  Users, 
-  Bell, 
-  Zap, 
+import {
+  Calendar,
+  Users,
+  Bell,
+  Zap,
   Download,
   Eye,
   EyeOff,
   Loader2,
   Sparkles,
   X,
+  RefreshCw,
+  LayoutGrid,
+  CheckCircle2,
+  ArrowRight,
 } from 'lucide-react';
 import { LeviLogo } from '@/components/LeviLogo';
 import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable';
 import { TwoFactorVerify } from '@/components/auth/TwoFactorVerify';
+import { motion, useInView } from 'framer-motion';
 
-// Google Icon Component
+// ── Icons ────────────────────────────────────────────────────────────────────
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5">
     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -46,33 +49,150 @@ const GoogleIcon = () => (
     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
   </svg>
 );
-
-// Apple Icon Component
 const AppleIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current">
     <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
   </svg>
 );
 
-const features = [
-  { icon: Calendar, title: 'Calendário Interativo', color: 'icon-violet' },
-  { icon: Users, title: 'Gestão de Membros', color: 'icon-coral' },
-  { icon: Bell, title: 'Notificações Automáticas', color: 'icon-emerald' },
-  { icon: Zap, title: 'Tempo Real', color: 'icon-amber' },
+// ── Typewriter ───────────────────────────────────────────────────────────────
+function Typewriter({ words }: { words: string[] }) {
+  const [idx, setIdx] = useState(0);
+  const [text, setText] = useState('');
+  const [del, setDel] = useState(false);
+
+  useEffect(() => {
+    const word = words[idx];
+    const t = del
+      ? setTimeout(() => {
+          setText(s => s.slice(0, -1));
+          if (text.length === 1) { setDel(false); setIdx(i => (i + 1) % words.length); }
+        }, 55)
+      : setTimeout(() => {
+          setText(word.slice(0, text.length + 1));
+          if (text.length === word.length - 1) setTimeout(() => setDel(true), 1500);
+        }, 85);
+    return () => clearTimeout(t);
+  }, [text, del, idx, words]);
+
+  return (
+    <span className="text-secondary">
+      {text}
+      <span className="animate-pulse">|</span>
+    </span>
+  );
+}
+
+// ── Particle Background ──────────────────────────────────────────────────────
+function ParticleBackground() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    let animId: number;
+    let W: number, H: number;
+
+    const particles: { x: number; y: number; r: number; sx: number; sy: number; opacity: number; hue: number }[] = [];
+    const resize = () => { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; };
+    resize();
+    window.addEventListener('resize', resize);
+
+    for (let i = 0; i < 50; i++) {
+      particles.push({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        r: Math.random() * 2 + 0.3,
+        sx: (Math.random() - 0.5) * 0.2,
+        sy: (Math.random() - 0.5) * 0.2,
+        opacity: Math.random() * 0.3 + 0.05,
+        hue: [263, 263, 38, 160][Math.floor(Math.random() * 4)],
+      });
+    }
+
+    const draw = () => {
+      ctx.clearRect(0, 0, W, H);
+      particles.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `hsla(${p.hue}, 70%, 60%, ${p.opacity})`;
+        ctx.fill();
+        p.x += p.sx; p.y += p.sy;
+        if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+        if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+      });
+      animId = requestAnimationFrame(draw);
+    };
+    draw();
+    return () => { cancelAnimationFrame(animId); window.removeEventListener('resize', resize); };
+  }, []);
+
+  return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0" />;
+}
+
+// ── Reveal wrapper ──────────────────────────────────────────────────────────
+function Reveal({ children, delay = 0, direction = 'up' }: { children: React.ReactNode; delay?: number; direction?: 'up' | 'left' | 'right' }) {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: '-60px' });
+  const dirs = { up: { y: 30 }, left: { x: -30 }, right: { x: 30 } };
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, ...dirs[direction] }}
+      animate={inView ? { opacity: 1, x: 0, y: 0 } : {}}
+      transition={{ duration: 0.6, delay, ease: 'easeOut' }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+// ── Counter animation ────────────────────────────────────────────────────────
+function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: string }) {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true });
+  const [n, setN] = useState(0);
+
+  useEffect(() => {
+    if (!inView) return;
+    let v = 0;
+    const step = Math.ceil(target / 50);
+    const t = setInterval(() => {
+      v += step;
+      if (v >= target) { setN(target); clearInterval(t); } else setN(v);
+    }, 25);
+    return () => clearInterval(t);
+  }, [inView, target]);
+
+  return <span ref={ref}>{n.toLocaleString('pt-BR')}{suffix}</span>;
+}
+
+// ── Feature data (real LEVI features) ────────────────────────────────────────
+const featureCards = [
+  { icon: Calendar, title: 'Escalas inteligentes', desc: 'Crie escalas semanais ou mensais com poucos cliques. O sistema distribui os voluntários automaticamente.', color: 'bg-primary/15 text-primary' },
+  { icon: Bell, title: 'Notificações automáticas', desc: 'Voluntários recebem lembrete via WhatsApp antes do compromisso, sem você precisar fazer nada.', color: 'bg-accent/15 text-accent' },
+  { icon: CheckCircle2, title: 'Confirmações em tempo real', desc: 'Acompanhe quem confirmou, quem pediu troca e quem ainda não respondeu — tudo num painel.', color: 'bg-emerald/15 text-emerald' },
+  { icon: RefreshCw, title: 'Troca de horários', desc: 'Voluntários solicitam trocas direto no app, sem precisar falar com o líder a cada pedido.', color: 'bg-orange-500/15 text-orange-500' },
+  { icon: LayoutGrid, title: 'Múltiplas equipes', desc: 'Louvor, recepção, mídia, infantil — gerencie quantas equipes precisar em um único lugar.', color: 'bg-violet-500/15 text-violet-500' },
+  { icon: Users, title: 'Setores e funções', desc: 'Organize membros por setores e atribua funções específicas para cada escala.', color: 'bg-secondary/15 text-secondary' },
 ];
 
-const loginSchema = z.object({
-  email: z.string().email('Email inválido'),
-  password: z.string().min(1, 'Senha é obrigatória'),
-});
+const steps = [
+  { title: 'Crie sua conta', desc: 'Cadastre-se em menos de 2 minutos. Totalmente gratuito.' },
+  { title: 'Monte sua equipe', desc: 'Cadastre os voluntários e organize por ministério ou setor.' },
+  { title: 'Gere a escala', desc: 'Defina datas e o sistema cuida do resto automaticamente.' },
+  { title: 'Acompanhe ao vivo', desc: 'Confirmações e pendências em tempo real no painel.' },
+];
 
-const recoverySchema = z.object({
-  email: z.string().email('Email inválido'),
-});
-
+// ── Schemas ──────────────────────────────────────────────────────────────────
+const loginSchema = z.object({ email: z.string().email('Email inválido'), password: z.string().min(1, 'Senha é obrigatória') });
+const recoverySchema = z.object({ email: z.string().email('Email inválido') });
 type LoginForm = z.infer<typeof loginSchema>;
 type RecoveryForm = z.infer<typeof recoverySchema>;
 
+// ══════════════════════════════════════════════════════════════════════════════
 export default function Landing() {
   const [showDemo, setShowDemo] = useState(false);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
@@ -81,15 +201,15 @@ export default function Landing() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [recoveryEmailSent, setRecoveryEmailSent] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const hasRedirectedRef = useRef(false);
-  
+
   const { count, loading: countLoading } = useUserCount();
   const { isInstallable, shouldShowInstallPrompt } = usePWAInstall();
   const { signIn, user, session, ensureSession } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Show PWA install prompt after 5 seconds if installable
   useEffect(() => {
     if (shouldShowInstallPrompt()) {
       const timer = setTimeout(() => setShowInstallPrompt(true), 5000);
@@ -97,29 +217,28 @@ export default function Landing() {
     }
   }, [shouldShowInstallPrompt]);
 
-  const loginForm = useForm<LoginForm>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '' },
-  });
+  useEffect(() => {
+    const fn = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', fn);
+    return () => window.removeEventListener('scroll', fn);
+  }, []);
 
-  const recoveryForm = useForm<RecoveryForm>({
-    resolver: zodResolver(recoverySchema),
-    defaultValues: { email: '' },
-  });
+  const loginForm = useForm<LoginForm>({ resolver: zodResolver(loginSchema), defaultValues: { email: '', password: '' } });
+  const recoveryForm = useForm<RecoveryForm>({ resolver: zodResolver(recoverySchema), defaultValues: { email: '' } });
+
+  const scrollTo = useCallback((id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
 
   const getSmartRedirectDestination = async (userId: string): Promise<string> => {
     try {
       const result = await Promise.race([
         supabase.rpc('get_my_department_count', { p_user_id: userId }),
-        new Promise<{ data: null; error: Error }>((resolve) =>
-          setTimeout(() => resolve({ data: null, error: new Error('timeout') }), 4000)
-        ),
+        new Promise<{ data: null; error: Error }>((resolve) => setTimeout(() => resolve({ data: null, error: new Error('timeout') }), 4000)),
       ]);
       if (result.error || result.data === null) return '/dashboard';
       return '/dashboard';
-    } catch {
-      return '/dashboard';
-    }
+    } catch { return '/dashboard'; }
   };
 
   const handleLogin = async (data: LoginForm) => {
@@ -143,7 +262,6 @@ export default function Landing() {
         toast({ variant: 'destructive', title: 'Erro ao entrar', description: 'Não foi possível iniciar a sessão.' });
         return;
       }
-      // Wait for auth state
       await new Promise<void>((resolve) => {
         if (user) { resolve(); return; }
         const timeout = setTimeout(resolve, 3000);
@@ -152,20 +270,17 @@ export default function Landing() {
         });
         setTimeout(() => subscription.unsubscribe(), 3100);
       });
-      // Check MFA
       const { data: mfaData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
       if (mfaData?.currentLevel === 'aal1' && mfaData?.nextLevel === 'aal2') {
         setAuthTab('2fa-verify');
         return;
       }
-      // Check admin
       const { data: hasRole } = await supabase.rpc('has_role', { _user_id: currentSession.user.id, _role: 'admin' });
       if (hasRole) {
         toast({ title: 'Bem-vindo, Admin!', description: 'Redirecionando para o painel administrativo.' });
         navigate('/admin', { replace: true });
         return;
       }
-      // Check profile completion
       const { data: profile } = await supabase.from('profiles').select('name, whatsapp').eq('id', currentSession.user.id).maybeSingle();
       if (profile && (!profile.name || !profile.whatsapp || profile.name.trim() === '' || profile.whatsapp.trim() === '')) {
         navigate('/complete-profile', { replace: true });
@@ -178,9 +293,7 @@ export default function Landing() {
       console.error('[Landing] Login error:', err);
       hasRedirectedRef.current = false;
       toast({ variant: 'destructive', title: 'Erro inesperado', description: 'Ocorreu um erro. Tente novamente.' });
-    } finally {
-      setIsLoading(false);
-    }
+    } finally { setIsLoading(false); }
   };
 
   const handle2FASuccess = async () => {
@@ -196,20 +309,14 @@ export default function Landing() {
     navigate('/dashboard', { replace: true });
   };
 
-  const handle2FACancel = async () => {
-    await supabase.auth.signOut();
-    setAuthTab('login');
-  };
+  const handle2FACancel = async () => { await supabase.auth.signOut(); setAuthTab('login'); };
 
   const handleRecovery = async (data: RecoveryForm) => {
     setIsLoading(true);
     const redirectUrl = `${window.location.origin}/auth`;
     const { error } = await supabase.auth.resetPasswordForEmail(data.email, { redirectTo: redirectUrl });
     setIsLoading(false);
-    if (error) {
-      toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível enviar o email de recuperação.' });
-      return;
-    }
+    if (error) { toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível enviar o email de recuperação.' }); return; }
     setRecoveryEmailSent(true);
     toast({ title: 'Email enviado!', description: 'Verifique sua caixa de entrada para redefinir sua senha.' });
   };
@@ -239,26 +346,31 @@ export default function Landing() {
     }
   };
 
-  const openAuth = (tab: 'login') => {
-    setAuthTab(tab);
-    setShowAuth(true);
-    setRecoveryEmailSent(false);
-  };
+  const openAuth = (tab: 'login') => { setAuthTab(tab); setShowAuth(true); setRecoveryEmailSent(false); };
 
   return (
-    <div className="min-h-screen h-screen bg-background flex flex-col overflow-hidden">
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       <DemoTour open={showDemo} onOpenChange={setShowDemo} />
       <PWAInstallPrompt open={showInstallPrompt} onOpenChange={setShowInstallPrompt} />
+      <ParticleBackground />
 
-      {/* Navigation */}
-      <nav className="flex-shrink-0 glass border-b border-border/50 z-50">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+      {/* ── NAV ── */}
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-400 ${scrolled ? 'glass border-b border-border/50 shadow-soft' : 'bg-transparent'}`}>
+        <div className="container mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
             <LeviLogo className="transition-all duration-300" />
-            <span className="font-display text-xl font-bold text-foreground">LEVI</span>
+            <span className="font-display text-xl font-bold text-foreground tracking-tight">LEVI</span>
           </div>
-          
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
+            {/* Desktop nav links */}
+            <div className="hidden md:flex items-center gap-0.5">
+              {[{ label: 'Funcionalidades', id: 'funcionalidades' }, { label: 'Como funciona', id: 'como-funciona' }].map(({ label, id }) => (
+                <button key={id} onClick={() => scrollTo(id)} className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-primary/5 rounded-lg transition-colors">
+                  {label}
+                </button>
+              ))}
+              <div className="w-px h-5 bg-border mx-2" />
+            </div>
             <ThemeToggle />
             {isInstallable && (
               <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground" onClick={() => setShowInstallPrompt(true)}>
@@ -266,98 +378,253 @@ export default function Landing() {
                 <span className="hidden sm:inline">Instalar</span>
               </Button>
             )}
-            <Button variant="outline" size="sm" className="border-secondary/50 text-secondary hover:bg-secondary/10" onClick={() => openAuth('login')}>
+            <Button
+              size="sm"
+              className="bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-glow-sm rounded-full px-5 font-semibold"
+              onClick={() => openAuth('login')}
+            >
               Entrar
             </Button>
           </div>
         </div>
       </nav>
 
-      {/* Main Content - Single Screen */}
-      <main className="flex-1 flex items-center relative overflow-hidden">
-        {/* Background */}
-        <div className="absolute inset-0 mesh-gradient mesh-gradient-animated" />
-        <div className="absolute inset-0 gradient-radial opacity-40" />
-
-        <div className="container mx-auto px-4 relative z-10">
+      {/* ── HERO ── */}
+      <section className="min-h-screen flex items-center relative z-[1] pt-20" style={{ scrollMarginTop: 80 }}>
+        <div className="absolute inset-0 mesh-gradient mesh-gradient-animated opacity-50" />
+        <div className="container mx-auto px-4 sm:px-6 relative z-10">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
-            {/* Left Side - Branding */}
+            {/* Left */}
             <div className="text-center lg:text-left space-y-6">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/10 text-secondary text-sm font-medium border border-secondary/20">
-                <Sparkles className="w-4 h-4" />
-                <span>Gestão de escalas para igrejas</span>
-              </div>
-              
-              <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground leading-tight">
-                Organize suas escalas com{' '}
-                <span className="text-gradient-vibrant">facilidade</span>
-              </h1>
-              
-              <p className="text-base sm:text-lg text-muted-foreground max-w-lg mx-auto lg:mx-0">
-                Calendário visual, notificações automáticas e sincronização em tempo real para voluntários.
-              </p>
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}>
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium border border-primary/20">
+                  <Sparkles className="w-4 h-4" />
+                  <span>Gestão de escalas para igrejas</span>
+                </div>
+              </motion.div>
 
-              {/* User Counter */}
-              <div className="flex items-center justify-center lg:justify-start gap-3">
+              <motion.h1
+                className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground leading-tight"
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.25 }}
+              >
+                Organize suas<br />escalas com<br />
+                <Typewriter words={['facilidade', 'agilidade', 'amor', 'inteligência']} />
+              </motion.h1>
+
+              <motion.p
+                className="text-base sm:text-lg text-muted-foreground max-w-lg mx-auto lg:mx-0 leading-relaxed"
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.4 }}
+              >
+                Calendário visual, notificações automáticas e sincronização em tempo real para voluntários da sua igreja.
+              </motion.p>
+
+              <motion.div
+                className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start"
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.55 }}
+              >
+                <Button
+                  size="lg"
+                  className="bg-secondary text-secondary-foreground shadow-glow-sm hover:shadow-glow transition-all hover:brightness-110 rounded-full px-8 font-semibold"
+                  onClick={() => openAuth('login')}
+                >
+                  Entrar
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="border-primary/30 text-primary hover:bg-primary/10 rounded-full px-8"
+                  onClick={() => scrollTo('funcionalidades')}
+                >
+                  Ver funcionalidades <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              </motion.div>
+
+              {/* User counter */}
+              <motion.div
+                className="flex items-center justify-center lg:justify-start gap-3"
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.7 }}
+              >
                 <div className="flex -space-x-2">
                   {['from-primary/80 to-primary', 'from-secondary/80 to-secondary', 'from-accent/80 to-accent'].map((gradient, i) => (
-                    <div key={i} className={`w-7 h-7 rounded-full bg-gradient-to-br ${gradient} border-2 border-background flex items-center justify-center`}>
+                    <div key={i} className={`w-8 h-8 rounded-full bg-gradient-to-br ${gradient} border-2 border-background flex items-center justify-center`}>
                       <Users className="w-3.5 h-3.5 text-white" />
                     </div>
                   ))}
                 </div>
                 <div className="text-left">
-                  <span className="text-xl font-bold text-gradient-vibrant">
-                    {countLoading ? '...' : (count || 0).toLocaleString('pt-BR')}+
+                  <span className="text-xl font-bold text-secondary">
+                    {countLoading ? '...' : <AnimatedCounter target={count || 0} suffix="+" />}
                   </span>
                   <p className="text-xs text-muted-foreground">voluntários cadastrados</p>
                 </div>
-              </div>
-
-              {/* CTA */}
-              <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-                <Button 
-                  size="lg" 
-                  className="bg-secondary text-secondary-foreground shadow-glow-sm hover:shadow-glow transition-all hover:brightness-110"
-                  onClick={() => openAuth('login')}
-                >
-                  Entrar
-                </Button>
-              </div>
+              </motion.div>
             </div>
 
-            {/* Right Side - Features */}
+            {/* Right — Feature cards grid (glass) */}
             <div className="grid grid-cols-2 gap-4">
-              {features.map((feature) => (
-                <div 
-                  key={feature.title}
-                  className="group p-5 rounded-2xl bg-card/80 backdrop-blur-sm border border-border/50 hover-lift cursor-default"
+              {[
+                { icon: Calendar, title: 'Calendário\nInterativo', pill: '⚡ Ao vivo', color: 'border-primary/30 hover:border-primary/60' },
+                { icon: Users, title: 'Gestão de\nMembros', pill: '✓ Organizado', color: 'border-orange-500/30 hover:border-orange-500/60' },
+                { icon: Bell, title: 'Notificações\nAutomáticas', pill: '📲 Automático', color: 'border-accent/30 hover:border-accent/60' },
+                { icon: Zap, title: 'Tempo\nReal', pill: '🔴 Online', color: 'border-secondary/30 hover:border-secondary/60' },
+              ].map((f, i) => (
+                <motion.div
+                  key={f.pill}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.3 + i * 0.1 }}
+                  className={`group relative p-6 rounded-2xl bg-card/60 backdrop-blur-sm border ${f.color} hover-lift cursor-default transition-all duration-300 overflow-hidden`}
                 >
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-3 ${feature.color} transition-transform group-hover:scale-110`}>
-                    <feature.icon className="w-6 h-6" />
+                  {/* Glass shine */}
+                  <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-white/[0.06] to-transparent rounded-t-2xl pointer-events-none" />
+                  <div className="relative z-[1] flex flex-col items-center text-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <f.icon className="w-6 h-6 text-primary" />
+                    </div>
+                    <h3 className="font-display text-sm font-bold text-foreground whitespace-pre-line leading-tight">
+                      {f.title}
+                    </h3>
+                    <span className="text-[10px] px-2.5 py-1 rounded-full border border-border/50 bg-muted/30 text-muted-foreground uppercase tracking-wider">
+                      {f.pill}
+                    </span>
                   </div>
-                  <h3 className="font-display text-sm font-semibold text-foreground">
-                    {feature.title}
-                  </h3>
-                </div>
+                </motion.div>
               ))}
             </div>
           </div>
         </div>
-      </main>
+      </section>
 
-      {/* Auth Modal */}
+      {/* ── FEATURES ── */}
+      <section id="funcionalidades" className="relative z-[1] py-20 sm:py-28" style={{ scrollMarginTop: 80 }}>
+        <div className="container mx-auto px-4 sm:px-6 max-w-5xl">
+          <Reveal>
+            <div className="text-center mb-14">
+              <p className="text-primary text-xs font-semibold uppercase tracking-[0.12em] mb-3">Funcionalidades</p>
+              <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">Tudo que sua igreja precisa</h2>
+            </div>
+          </Reveal>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {featureCards.map((card, i) => (
+              <Reveal key={card.title} delay={i * 0.08}>
+                <div className="group p-6 rounded-2xl bg-card/70 backdrop-blur-sm border border-border/50 hover:border-primary/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-colored/10 cursor-default">
+                  <div className={`w-12 h-12 rounded-xl ${card.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                    <card.icon className="w-6 h-6" />
+                  </div>
+                  <h3 className="font-display text-base font-bold text-foreground mb-2">{card.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{card.desc}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── HOW IT WORKS ── */}
+      <section id="como-funciona" className="relative z-[1] py-20 sm:py-28 border-t border-b border-border/30 bg-muted/20" style={{ scrollMarginTop: 80 }}>
+        <div className="container mx-auto px-4 sm:px-6 max-w-5xl">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            {/* Steps */}
+            <div>
+              <Reveal>
+                <p className="text-primary text-xs font-semibold uppercase tracking-[0.12em] mb-3">Como funciona</p>
+                <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground mb-10">
+                  Simples de começar,<br />poderoso para crescer
+                </h2>
+              </Reveal>
+              <div className="flex flex-col gap-6">
+                {steps.map((step, i) => (
+                  <Reveal key={step.title} delay={0.1 + i * 0.12} direction="left">
+                    <div className="flex gap-4 items-start">
+                      <div className="min-w-[44px] h-11 rounded-full bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center font-bold text-sm text-primary-foreground shrink-0 shadow-glow-sm">
+                        {i + 1}
+                      </div>
+                      <div>
+                        <h4 className="font-display font-bold text-foreground mb-1">{step.title}</h4>
+                        <p className="text-sm text-muted-foreground leading-relaxed">{step.desc}</p>
+                      </div>
+                    </div>
+                  </Reveal>
+                ))}
+              </div>
+            </div>
+
+            {/* Preview panel */}
+            <Reveal direction="right" delay={0.2}>
+              <div className="rounded-2xl bg-card/80 backdrop-blur-sm border border-border/50 p-5 shadow-soft-lg">
+                <div className="flex items-center gap-2 mb-4">
+                  {['bg-destructive/60', 'bg-secondary/60', 'bg-accent/60'].map((c, i) => (
+                    <div key={i} className={`w-2.5 h-2.5 rounded-full ${c}`} />
+                  ))}
+                  <span className="text-xs text-muted-foreground ml-2">Painel — próximo domingo</span>
+                </div>
+                {[
+                  { name: 'Louvor', people: 'Ana, Pedro, Marcos', ok: true },
+                  { name: 'Recepção', people: 'Lúcia, João', ok: false },
+                  { name: 'Mídia', people: 'Rafael, Bia', ok: true },
+                  { name: 'Infantil', people: 'Carla, Tiago', ok: false },
+                ].map((t) => (
+                  <div key={t.name} className="bg-muted/30 border border-border/30 rounded-xl p-3 mb-2 flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-bold text-foreground">{t.name}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">{t.people}</div>
+                    </div>
+                    <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${t.ok ? 'bg-accent/15 text-accent' : 'bg-secondary/15 text-secondary'}`}>
+                      {t.ok ? '✓ Confirmado' : '⏳ Pendente'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
+      {/* ── CTA FINAL ── */}
+      <section className="relative z-[1] py-20 sm:py-28">
+        <div className="container mx-auto px-4 sm:px-6 max-w-xl">
+          <Reveal>
+            <div className="text-center rounded-3xl bg-card/70 backdrop-blur-sm border border-border/50 p-10 sm:p-14 shadow-soft-lg relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 pointer-events-none" />
+              <div className="relative z-[1]">
+                <div className="text-5xl mb-4">📅</div>
+                <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground mb-3">Comece hoje, gratuitamente</h2>
+                <p className="text-muted-foreground mb-8 leading-relaxed">
+                  Junte-se aos voluntários que já simplificaram a gestão das escalas na sua igreja.
+                </p>
+                <div className="flex gap-3 justify-center flex-wrap">
+                  <Button
+                    size="lg"
+                    className="bg-secondary text-secondary-foreground shadow-glow-sm hover:shadow-glow rounded-full px-8 font-semibold"
+                    onClick={() => openAuth('login')}
+                  >
+                    Entrar
+                  </Button>
+                </div>
+                <p className="mt-5 text-xs text-muted-foreground/50">
+                  100% gratuito · Suporte em português
+                </p>
+              </div>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ── FOOTER ── */}
+      <footer className="relative z-[1] py-6 border-t border-border/30 text-center text-xs text-muted-foreground/40">
+        <span className="text-primary font-bold">LEVI</span> · © {new Date().getFullYear()} · Feito com 💜 para igrejas brasileiras
+      </footer>
+
+      {/* ── AUTH MODAL ── */}
       <Dialog open={showAuth} onOpenChange={(open) => { setShowAuth(open); if (!open) { setAuthTab('login'); setRecoveryEmailSent(false); } }}>
         <DialogPortal>
           <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
           <DialogPrimitive.Content className="fixed left-[50%] top-[50%] z-50 w-full max-w-md translate-x-[-50%] translate-y-[-50%] rounded-2xl border border-border/50 bg-card/95 backdrop-blur-xl p-6 shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]">
-            {/* Close button */}
             <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
               <X className="h-4 w-4" />
               <span className="sr-only">Fechar</span>
             </DialogPrimitive.Close>
 
-            {/* Modal Header */}
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center">
                 <LeviLogo className="w-7 h-7" />
@@ -368,7 +635,6 @@ export default function Landing() {
               </div>
             </div>
 
-            {/* Login Form */}
             {authTab === 'login' && (
               <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4 animate-fade-in">
                 <div className="space-y-2">
@@ -376,7 +642,6 @@ export default function Landing() {
                   <Input id="modal-email" type="email" placeholder="seu@email.com" {...loginForm.register('email')} className="h-11" />
                   {loginForm.formState.errors.email && <p className="text-sm text-destructive">{loginForm.formState.errors.email.message}</p>}
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="modal-password">Senha</Label>
                   <div className="relative">
@@ -387,20 +652,15 @@ export default function Landing() {
                   </div>
                   {loginForm.formState.errors.password && <p className="text-sm text-destructive">{loginForm.formState.errors.password.message}</p>}
                 </div>
-
                 <Button type="submit" className="w-full h-11 bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-glow-sm transition-all" disabled={isLoading}>
                   {isLoading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Entrando...</> : 'Entrar'}
                 </Button>
-
                 <button type="button" onClick={() => { setAuthTab('recovery'); setRecoveryEmailSent(false); }} className="w-full text-center text-sm text-primary hover:underline">
                   Esqueceu sua senha?
                 </button>
-
                 <div className="relative my-2">
                   <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border"></div></div>
                 </div>
-
-                {/* Social Login */}
                 <div className="flex justify-center gap-4">
                   <Button type="button" variant="outline" size="icon" className="h-11 w-11 rounded-xl border-secondary/30 hover:border-secondary/50" onClick={() => handleSocialSignIn('google')} disabled={isLoading} title="Continuar com Google">
                     <GoogleIcon />
@@ -412,7 +672,6 @@ export default function Landing() {
               </form>
             )}
 
-            {/* Recovery Form */}
             {authTab === 'recovery' && (
               <div className="space-y-4 animate-fade-in">
                 <div className="mb-2">
@@ -445,7 +704,6 @@ export default function Landing() {
               </div>
             )}
 
-            {/* 2FA Verification */}
             {authTab === '2fa-verify' && (
               <TwoFactorVerify onSuccess={handle2FASuccess} onCancel={handle2FACancel} />
             )}
