@@ -192,97 +192,112 @@ function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: str
   return <span ref={ref}>{n.toLocaleString('pt-BR')}{suffix}</span>;
 }
 
-// ── 3D Glass Cube ────────────────────────────────────────────────────────────
-function GlassCube() {
-  const [paused, setPaused] = useState(false);
+// ── 3D Orbiting Globe ────────────────────────────────────────────────────────
+function OrbitGlobe() {
+  const containerRef = useRef<HTMLDivElement>(null);
   const rotRef = useRef(0);
-  const lastRef = useRef<number | null>(null);
   const rafRef = useRef<number>(0);
-  const cubeRef = useRef<HTMLDivElement>(null);
+  const [paused, setPaused] = useState(false);
+  const lastRef = useRef<number | null>(null);
+
+  const items = [
+    { Icon: Calendar, label: 'Calendário', pill: '⚡ Ao vivo', angle: 0 },
+    { Icon: Users, label: 'Membros', pill: '✓ Organizado', angle: 60 },
+    { Icon: Bell, label: 'Notificações', pill: '📲 Auto', angle: 120 },
+    { Icon: Zap, label: 'Tempo Real', pill: '🔴 Online', angle: 180 },
+    { Icon: RefreshCw, label: 'Trocas', pill: '🔄 Fácil', angle: 240 },
+    { Icon: CheckCircle2, label: 'Confirmações', pill: '✅ Real-time', angle: 300 },
+  ];
 
   useEffect(() => {
     const animate = (ts: number) => {
       if (!paused) {
-        if (lastRef.current !== null) rotRef.current += (ts - lastRef.current) * 0.03;
+        if (lastRef.current !== null) rotRef.current += (ts - lastRef.current) * 0.015;
         lastRef.current = ts;
-        if (cubeRef.current) cubeRef.current.style.transform = `rotateX(-15deg) rotateY(${rotRef.current}deg)`;
       } else {
         lastRef.current = null;
       }
+
+      const container = containerRef.current;
+      if (container) {
+        const cards = container.querySelectorAll<HTMLDivElement>('[data-orbit-card]');
+        const radiusX = 140;
+        const radiusZ = 100;
+        const radiusY = 30;
+
+        cards.forEach((card, i) => {
+          const baseAngle = items[i].angle;
+          const angle = ((baseAngle + rotRef.current) * Math.PI) / 180;
+          const x = Math.sin(angle) * radiusX;
+          const z = Math.cos(angle) * radiusZ;
+          const y = Math.sin(angle * 0.5) * radiusY;
+          const scale = 0.65 + ((z + radiusZ) / (2 * radiusZ)) * 0.45;
+          const opacity = 0.4 + ((z + radiusZ) / (2 * radiusZ)) * 0.6;
+          const zIndex = Math.round(z + radiusZ);
+
+          card.style.transform = `translate(-50%, -50%) translate3d(${x}px, ${y}px, 0) scale(${scale})`;
+          card.style.opacity = String(opacity);
+          card.style.zIndex = String(zIndex);
+        });
+      }
+
       rafRef.current = requestAnimationFrame(animate);
     };
     rafRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(rafRef.current);
   }, [paused]);
 
-  const faces = [
-    { pos: 'front' as const, Icon: Calendar, title: ['Calendário', 'Interativo'], desc: 'Visualize todas as escalas num calendário intuitivo', pill: '⚡ Ao vivo' },
-    { pos: 'right' as const, Icon: Users, title: ['Gestão de', 'Membros'], desc: 'Cadastre voluntários e equipes em um só lugar', pill: '✓ Organizado' },
-    { pos: 'back' as const, Icon: Bell, title: ['Notificações', 'Automáticas'], desc: 'WhatsApp enviados automaticamente antes do culto', pill: '📲 Automático' },
-    { pos: 'left' as const, Icon: Zap, title: ['Tempo', 'Real'], desc: 'Confirmações e trocas sincronizadas instantaneamente', pill: '🔴 Online' },
-  ];
-
-  const faceTransforms: Record<string, string> = {
-    front: 'translateZ(130px)',
-    right: 'rotateY(90deg) translateZ(130px)',
-    back: 'rotateY(180deg) translateZ(130px)',
-    left: 'rotateY(-90deg) translateZ(130px)',
-  };
-
-  const borderColors: Record<string, string> = {
-    front: 'border-primary/40',
-    right: 'border-orange-500/35',
-    back: 'border-accent/35',
-    left: 'border-secondary/35',
-  };
-
   return (
-    <div className="flex flex-col items-center gap-3 relative">
-      {/* Glow behind cube */}
-      <div className="absolute w-[340px] h-[340px] rounded-full top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none animate-pulse-glow"
-        style={{ background: 'radial-gradient(circle, hsl(var(--primary) / 0.2) 0%, transparent 70%)' }}
+    <div
+      className="relative flex flex-col items-center gap-2"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onTouchStart={() => setPaused(true)}
+      onTouchEnd={() => setPaused(false)}
+    >
+      {/* Central glow */}
+      <div className="absolute w-[300px] h-[300px] rounded-full top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none animate-pulse-glow"
+        style={{ background: 'radial-gradient(circle, hsl(var(--primary) / 0.25) 0%, hsl(var(--primary) / 0.05) 50%, transparent 70%)' }}
       />
 
+      {/* Orbit ring hint */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[140px] rounded-[50%] border border-primary/10 pointer-events-none" />
+
+      {/* Orbiting cards */}
       <div
-        ref={cubeRef}
+        ref={containerRef}
         className="relative cursor-default"
-        style={{ width: 260, height: 260, transformStyle: 'preserve-3d' }}
-        onMouseEnter={() => setPaused(true)}
-        onMouseLeave={() => setPaused(false)}
-        onTouchStart={() => setPaused(true)}
-        onTouchEnd={() => setPaused(false)}
+        style={{ width: 320, height: 280 }}
       >
-        {faces.map(f => (
+        {/* Center logo */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50">
+          <div className="w-16 h-16 rounded-2xl bg-card/80 backdrop-blur-sm border border-primary/30 flex items-center justify-center shadow-glow-sm">
+            <LeviLogo className="w-10 h-10" />
+          </div>
+        </div>
+
+        {items.map((item, i) => (
           <div
-            key={f.pos}
-            className={`absolute w-[260px] h-[260px] rounded-2xl border ${borderColors[f.pos]} backdrop-blur-xl flex flex-col items-center justify-center gap-2.5 p-7 text-center overflow-hidden`}
-            style={{
-              transform: faceTransforms[f.pos],
-              background: 'hsl(var(--card) / 0.15)',
-              boxShadow: 'inset 0 1px 0 hsl(0 0% 100% / 0.12), inset 0 -1px 0 hsl(0 0% 0% / 0.1), 0 20px 60px hsl(0 0% 0% / 0.4)',
-              backfaceVisibility: 'hidden',
-            }}
+            key={item.label}
+            data-orbit-card
+            className="absolute top-1/2 left-1/2 pointer-events-none"
+            style={{ willChange: 'transform, opacity' }}
           >
-            {/* Glass shine overlay */}
-            <div className="absolute top-0 left-0 right-0 h-[42%] rounded-t-2xl pointer-events-none"
-              style={{ background: 'linear-gradient(180deg, hsl(0 0% 100% / 0.08) 0%, transparent 100%)' }}
-            />
-            <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center relative z-[1]"
-              style={{ boxShadow: 'inset 0 1px 0 hsl(0 0% 100% / 0.2), 0 4px 16px hsl(0 0% 0% / 0.3)' }}
+            <div className="flex flex-col items-center gap-1.5 px-4 py-3 rounded-2xl bg-card/70 backdrop-blur-sm border border-primary/20 shadow-soft min-w-[100px]"
+              style={{ boxShadow: 'inset 0 1px 0 hsl(0 0% 100% / 0.1), 0 8px 24px hsl(0 0% 0% / 0.15)' }}
             >
-              <f.Icon className="w-7 h-7 text-primary" />
-            </div>
-            <div className="font-display text-sm font-bold text-foreground relative z-[1] leading-tight">
-              {f.title.map((l, i) => <span key={i} className="block">{l}</span>)}
-            </div>
-            <div className="text-[11px] text-muted-foreground leading-snug relative z-[1]">{f.desc}</div>
-            <div className="text-[10px] px-2.5 py-1 rounded-full border border-border/30 bg-muted/20 text-muted-foreground uppercase tracking-wider relative z-[1]">
-              {f.pill}
+              <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
+                <item.Icon className="w-5 h-5 text-primary" />
+              </div>
+              <span className="text-xs font-bold text-foreground">{item.label}</span>
+              <span className="text-[9px] px-2 py-0.5 rounded-full border border-border/40 bg-muted/20 text-muted-foreground uppercase tracking-wider">
+                {item.pill}
+              </span>
             </div>
           </div>
         ))}
       </div>
-      <span className="text-[11px] text-primary/40 tracking-wider">↻ passe o mouse para pausar</span>
+      <span className="text-[11px] text-primary/40 tracking-wider mt-1">↻ passe o mouse para pausar</span>
     </div>
   );
 }
