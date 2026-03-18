@@ -38,7 +38,6 @@ import { LeviLogo } from '@/components/LeviLogo';
 import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable';
 import { TwoFactorVerify } from '@/components/auth/TwoFactorVerify';
-import { motion, useInView } from 'framer-motion';
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 const GoogleIcon = () => (
@@ -132,31 +131,55 @@ function ParticleBackground() {
   return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0" />;
 }
 
-// ── Reveal wrapper ──────────────────────────────────────────────────────────
+// ── Reveal wrapper (CSS-only, no framer-motion) ─────────────────────────────
 function Reveal({ children, delay = 0, direction = 'up' }: { children: React.ReactNode; delay?: number; direction?: 'up' | 'left' | 'right' }) {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: '-60px' });
-  const dirs = { up: { y: 30 }, left: { x: -30 }, right: { x: 30 } };
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setVisible(true); }, { threshold: 0.1 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  const transforms: Record<string, string> = {
+    up: 'translateY(30px)',
+    left: 'translateX(-30px)',
+    right: 'translateX(30px)',
+  };
+
   return (
-    <motion.div
+    <div
       ref={ref}
-      initial={{ opacity: 0, ...dirs[direction] }}
-      animate={inView ? { opacity: 1, x: 0, y: 0 } : {}}
-      transition={{ duration: 0.6, delay, ease: 'easeOut' }}
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'none' : transforms[direction],
+        transition: `opacity 0.6s ease ${delay}s, transform 0.6s ease ${delay}s`,
+      }}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }
 
 // ── Counter animation ────────────────────────────────────────────────────────
 function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: string }) {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true });
+  const ref = useRef<HTMLSpanElement>(null);
   const [n, setN] = useState(0);
+  const [started, setStarted] = useState(false);
 
   useEffect(() => {
-    if (!inView) return;
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setStarted(true); }, { threshold: 0.1 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!started) return;
     let v = 0;
     const step = Math.ceil(target / 50);
     const t = setInterval(() => {
@@ -164,9 +187,104 @@ function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: str
       if (v >= target) { setN(target); clearInterval(t); } else setN(v);
     }, 25);
     return () => clearInterval(t);
-  }, [inView, target]);
+  }, [started, target]);
 
   return <span ref={ref}>{n.toLocaleString('pt-BR')}{suffix}</span>;
+}
+
+// ── 3D Glass Cube ────────────────────────────────────────────────────────────
+function GlassCube() {
+  const [paused, setPaused] = useState(false);
+  const rotRef = useRef(0);
+  const lastRef = useRef<number | null>(null);
+  const rafRef = useRef<number>(0);
+  const cubeRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const animate = (ts: number) => {
+      if (!paused) {
+        if (lastRef.current !== null) rotRef.current += (ts - lastRef.current) * 0.03;
+        lastRef.current = ts;
+        if (cubeRef.current) cubeRef.current.style.transform = `rotateX(-15deg) rotateY(${rotRef.current}deg)`;
+      } else {
+        lastRef.current = null;
+      }
+      rafRef.current = requestAnimationFrame(animate);
+    };
+    rafRef.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [paused]);
+
+  const faces = [
+    { pos: 'front' as const, Icon: Calendar, title: ['Calendário', 'Interativo'], desc: 'Visualize todas as escalas num calendário intuitivo', pill: '⚡ Ao vivo' },
+    { pos: 'right' as const, Icon: Users, title: ['Gestão de', 'Membros'], desc: 'Cadastre voluntários e equipes em um só lugar', pill: '✓ Organizado' },
+    { pos: 'back' as const, Icon: Bell, title: ['Notificações', 'Automáticas'], desc: 'WhatsApp enviados automaticamente antes do culto', pill: '📲 Automático' },
+    { pos: 'left' as const, Icon: Zap, title: ['Tempo', 'Real'], desc: 'Confirmações e trocas sincronizadas instantaneamente', pill: '🔴 Online' },
+  ];
+
+  const faceTransforms: Record<string, string> = {
+    front: 'translateZ(130px)',
+    right: 'rotateY(90deg) translateZ(130px)',
+    back: 'rotateY(180deg) translateZ(130px)',
+    left: 'rotateY(-90deg) translateZ(130px)',
+  };
+
+  const borderColors: Record<string, string> = {
+    front: 'border-primary/40',
+    right: 'border-orange-500/35',
+    back: 'border-accent/35',
+    left: 'border-secondary/35',
+  };
+
+  return (
+    <div className="flex flex-col items-center gap-3 relative">
+      {/* Glow behind cube */}
+      <div className="absolute w-[340px] h-[340px] rounded-full top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none animate-pulse-glow"
+        style={{ background: 'radial-gradient(circle, hsl(var(--primary) / 0.2) 0%, transparent 70%)' }}
+      />
+
+      <div
+        ref={cubeRef}
+        className="relative cursor-default"
+        style={{ width: 260, height: 260, transformStyle: 'preserve-3d' }}
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => setPaused(false)}
+        onTouchStart={() => setPaused(true)}
+        onTouchEnd={() => setPaused(false)}
+      >
+        {faces.map(f => (
+          <div
+            key={f.pos}
+            className={`absolute w-[260px] h-[260px] rounded-2xl border ${borderColors[f.pos]} backdrop-blur-xl flex flex-col items-center justify-center gap-2.5 p-7 text-center overflow-hidden`}
+            style={{
+              transform: faceTransforms[f.pos],
+              background: 'hsl(var(--card) / 0.15)',
+              boxShadow: 'inset 0 1px 0 hsl(0 0% 100% / 0.12), inset 0 -1px 0 hsl(0 0% 0% / 0.1), 0 20px 60px hsl(0 0% 0% / 0.4)',
+              backfaceVisibility: 'hidden',
+            }}
+          >
+            {/* Glass shine overlay */}
+            <div className="absolute top-0 left-0 right-0 h-[42%] rounded-t-2xl pointer-events-none"
+              style={{ background: 'linear-gradient(180deg, hsl(0 0% 100% / 0.08) 0%, transparent 100%)' }}
+            />
+            <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center relative z-[1]"
+              style={{ boxShadow: 'inset 0 1px 0 hsl(0 0% 100% / 0.2), 0 4px 16px hsl(0 0% 0% / 0.3)' }}
+            >
+              <f.Icon className="w-7 h-7 text-primary" />
+            </div>
+            <div className="font-display text-sm font-bold text-foreground relative z-[1] leading-tight">
+              {f.title.map((l, i) => <span key={i} className="block">{l}</span>)}
+            </div>
+            <div className="text-[11px] text-muted-foreground leading-snug relative z-[1]">{f.desc}</div>
+            <div className="text-[10px] px-2.5 py-1 rounded-full border border-border/30 bg-muted/20 text-muted-foreground uppercase tracking-wider relative z-[1]">
+              {f.pill}
+            </div>
+          </div>
+        ))}
+      </div>
+      <span className="text-[11px] text-primary/40 tracking-wider">↻ passe o mouse para pausar</span>
+    </div>
+  );
 }
 
 // ── Feature data (real LEVI features) ────────────────────────────────────────
@@ -355,14 +473,13 @@ export default function Landing() {
       <ParticleBackground />
 
       {/* ── NAV ── */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-400 ${scrolled ? 'glass border-b border-border/50 shadow-soft' : 'bg-transparent'}`}>
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'glass border-b border-border/50 shadow-soft' : 'bg-transparent'}`}>
         <div className="container mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <LeviLogo className="transition-all duration-300" />
             <span className="font-display text-xl font-bold text-foreground tracking-tight">LEVI</span>
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
-            {/* Desktop nav links */}
             <div className="hidden md:flex items-center gap-0.5">
               {[{ label: 'Funcionalidades', id: 'funcionalidades' }, { label: 'Como funciona', id: 'como-funciona' }].map(({ label, id }) => (
                 <button key={id} onClick={() => scrollTo(id)} className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-primary/5 rounded-lg transition-colors">
@@ -396,31 +513,31 @@ export default function Landing() {
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
             {/* Left */}
             <div className="text-center lg:text-left space-y-6">
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}>
+              <div className="animate-fade-in" style={{ animationDelay: '0.1s', animationFillMode: 'both' }}>
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium border border-primary/20">
                   <Sparkles className="w-4 h-4" />
                   <span>Gestão de escalas para igrejas</span>
                 </div>
-              </motion.div>
+              </div>
 
-              <motion.h1
-                className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground leading-tight"
-                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.25 }}
+              <h1
+                className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground leading-tight animate-fade-in"
+                style={{ animationDelay: '0.25s', animationFillMode: 'both' }}
               >
                 Organize suas<br />escalas com<br />
                 <Typewriter words={['facilidade', 'agilidade', 'amor', 'inteligência']} />
-              </motion.h1>
+              </h1>
 
-              <motion.p
-                className="text-base sm:text-lg text-muted-foreground max-w-lg mx-auto lg:mx-0 leading-relaxed"
-                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.4 }}
+              <p
+                className="text-base sm:text-lg text-muted-foreground max-w-lg mx-auto lg:mx-0 leading-relaxed animate-fade-in"
+                style={{ animationDelay: '0.4s', animationFillMode: 'both' }}
               >
                 Calendário visual, notificações automáticas e sincronização em tempo real para voluntários da sua igreja.
-              </motion.p>
+              </p>
 
-              <motion.div
-                className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start"
-                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.55 }}
+              <div
+                className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start animate-fade-in"
+                style={{ animationDelay: '0.55s', animationFillMode: 'both' }}
               >
                 <Button
                   size="lg"
@@ -437,12 +554,12 @@ export default function Landing() {
                 >
                   Ver funcionalidades <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>
-              </motion.div>
+              </div>
 
               {/* User counter */}
-              <motion.div
-                className="flex items-center justify-center lg:justify-start gap-3"
-                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.7 }}
+              <div
+                className="flex items-center justify-center lg:justify-start gap-3 animate-fade-in"
+                style={{ animationDelay: '0.7s', animationFillMode: 'both' }}
               >
                 <div className="flex -space-x-2">
                   {['from-primary/80 to-primary', 'from-secondary/80 to-secondary', 'from-accent/80 to-accent'].map((gradient, i) => (
@@ -457,38 +574,36 @@ export default function Landing() {
                   </span>
                   <p className="text-xs text-muted-foreground">voluntários cadastrados</p>
                 </div>
-              </motion.div>
+              </div>
             </div>
 
-            {/* Right — Feature cards grid (glass) */}
-            <div className="grid grid-cols-2 gap-4">
+            {/* Right — 3D Glass Cube */}
+            <div className="hidden lg:flex justify-center items-center" style={{ perspective: 900 }}>
+              <GlassCube />
+            </div>
+
+            {/* Mobile fallback — simple grid */}
+            <div className="grid grid-cols-2 gap-4 lg:hidden">
               {[
-                { icon: Calendar, title: 'Calendário\nInterativo', pill: '⚡ Ao vivo', color: 'border-primary/30 hover:border-primary/60' },
-                { icon: Users, title: 'Gestão de\nMembros', pill: '✓ Organizado', color: 'border-orange-500/30 hover:border-orange-500/60' },
-                { icon: Bell, title: 'Notificações\nAutomáticas', pill: '📲 Automático', color: 'border-accent/30 hover:border-accent/60' },
-                { icon: Zap, title: 'Tempo\nReal', pill: '🔴 Online', color: 'border-secondary/30 hover:border-secondary/60' },
+                { icon: Calendar, title: 'Calendário\nInterativo', pill: '⚡ Ao vivo', color: 'border-primary/30' },
+                { icon: Users, title: 'Gestão de\nMembros', pill: '✓ Organizado', color: 'border-orange-500/30' },
+                { icon: Bell, title: 'Notificações\nAutomáticas', pill: '📲 Automático', color: 'border-accent/30' },
+                { icon: Zap, title: 'Tempo\nReal', pill: '🔴 Online', color: 'border-secondary/30' },
               ].map((f, i) => (
-                <motion.div
+                <div
                   key={f.pill}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.5, delay: 0.3 + i * 0.1 }}
-                  className={`group relative p-6 rounded-2xl bg-card/60 backdrop-blur-sm border ${f.color} hover-lift cursor-default transition-all duration-300 overflow-hidden`}
+                  className={`group relative p-5 rounded-2xl bg-card/60 backdrop-blur-sm border ${f.color} cursor-default overflow-hidden animate-scale-in`}
+                  style={{ animationDelay: `${0.3 + i * 0.1}s`, animationFillMode: 'both' }}
                 >
-                  {/* Glass shine */}
                   <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-white/[0.06] to-transparent rounded-t-2xl pointer-events-none" />
-                  <div className="relative z-[1] flex flex-col items-center text-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <div className="relative z-[1] flex flex-col items-center text-center gap-2">
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
                       <f.icon className="w-6 h-6 text-primary" />
                     </div>
-                    <h3 className="font-display text-sm font-bold text-foreground whitespace-pre-line leading-tight">
-                      {f.title}
-                    </h3>
-                    <span className="text-[10px] px-2.5 py-1 rounded-full border border-border/50 bg-muted/30 text-muted-foreground uppercase tracking-wider">
-                      {f.pill}
-                    </span>
+                    <h3 className="font-display text-sm font-bold text-foreground whitespace-pre-line leading-tight">{f.title}</h3>
+                    <span className="text-[10px] px-2.5 py-1 rounded-full border border-border/50 bg-muted/30 text-muted-foreground uppercase tracking-wider">{f.pill}</span>
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
           </div>
@@ -507,7 +622,7 @@ export default function Landing() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {featureCards.map((card, i) => (
               <Reveal key={card.title} delay={i * 0.08}>
-                <div className="group p-6 rounded-2xl bg-card/70 backdrop-blur-sm border border-border/50 hover:border-primary/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-colored/10 cursor-default">
+                <div className="group p-6 rounded-2xl bg-card/70 backdrop-blur-sm border border-border/50 hover:border-primary/40 transition-all duration-300 hover:-translate-y-1 cursor-default">
                   <div className={`w-12 h-12 rounded-xl ${card.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                     <card.icon className="w-6 h-6" />
                   </div>
@@ -524,7 +639,6 @@ export default function Landing() {
       <section id="como-funciona" className="relative z-[1] py-20 sm:py-28 border-t border-b border-border/30 bg-muted/20" style={{ scrollMarginTop: 80 }}>
         <div className="container mx-auto px-4 sm:px-6 max-w-5xl">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            {/* Steps */}
             <div>
               <Reveal>
                 <p className="text-primary text-xs font-semibold uppercase tracking-[0.12em] mb-3">Como funciona</p>
@@ -549,7 +663,6 @@ export default function Landing() {
               </div>
             </div>
 
-            {/* Preview panel */}
             <Reveal direction="right" delay={0.2}>
               <div className="rounded-2xl bg-card/80 backdrop-blur-sm border border-border/50 p-5 shadow-soft-lg">
                 <div className="flex items-center gap-2 mb-4">
