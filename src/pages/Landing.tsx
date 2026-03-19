@@ -484,6 +484,8 @@ export default function Landing() {
   const loginForm = useForm<LoginForm>({ resolver: zodResolver(loginSchema), defaultValues: { email: '', password: '' } });
   const recoveryForm = useForm<RecoveryForm>({ resolver: zodResolver(recoverySchema), defaultValues: { email: '' } });
 
+  const contactForm = useForm<ContactForm>({ resolver: zodResolver(contactSchema), defaultValues: { name: '', email: '', message: '' } });
+
   const scrollTo = useCallback((id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
