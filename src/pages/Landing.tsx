@@ -452,6 +452,9 @@ export default function Landing() {
   const [showDemo, setShowDemo] = useState(false);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
+  const [showContact, setShowContact] = useState(false);
+  const [contactSent, setContactSent] = useState(false);
+  const [contactLoading, setContactLoading] = useState(false);
   const [authTab, setAuthTab] = useState<'login' | 'recovery' | '2fa-verify'>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
