@@ -635,7 +635,7 @@ export default function Landing() {
         <div className="container mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <LeviLogo className="transition-all duration-300" />
-            <span className="font-display text-xl font-bold text-foreground tracking-tight">LEVI</span>
+            <LeviTypewriter />
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
             <div className="hidden md:flex items-center gap-0.5">

@@ -327,11 +327,18 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
           {/* Logo + expand toggle */}
           <div className={`p-2 pb-2 flex ${expanded ? 'justify-between' : 'justify-center'} items-center`}>
             {expanded ? (
-              <button onClick={() => navigate('/')} className="flex items-center gap-2">
+              <button onClick={() => navigate('/')} className="flex items-center gap-2 overflow-hidden">
                 <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shrink-0">
                   <LeviLogo className="w-8 h-8" />
                 </div>
-                <span className="font-display font-bold text-lg truncate">LEVI</span>
+                <div className="flex flex-col min-w-0">
+                  <span className="font-display font-bold text-lg text-destructive truncate">LEVI</span>
+                  <span className="text-[8px] text-white/50 font-medium tracking-wide truncate leading-tight">
+                    {['L','o','g','í','s','t','i','c','a',' ','d','e',' ','E','s','c','a','l','a','s'].map((c, i) => (
+                      <span key={i} className={['L','E','V','I'].includes(c) ? 'font-bold text-destructive/70' : ''}>{c}</span>
+                    ))}
+                  </span>
+                </div>
               </button>
             ) : (
               <Tooltip>
