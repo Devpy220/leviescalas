@@ -608,6 +608,19 @@ export default function Landing() {
 
   const openAuth = (tab: 'login') => { setAuthTab(tab); setShowAuth(true); setRecoveryEmailSent(false); };
 
+  const handleContact = async (data: ContactForm) => {
+    setContactLoading(true);
+    try {
+      const mailtoUrl = `mailto:suport@leviescalas.com.br?subject=${encodeURIComponent(`Contato LEVI - ${data.name}`)}&body=${encodeURIComponent(`Nome: ${data.name}\nEmail: ${data.email}\n\nMensagem:\n${data.message}`)}`;
+      window.open(mailtoUrl, '_blank');
+      setContactSent(true);
+      contactForm.reset();
+      toast({ title: 'Mensagem preparada!', description: 'Seu cliente de email foi aberto com a mensagem.' });
+    } catch {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível abrir o email.' });
+    } finally { setContactLoading(false); }
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       <DemoTour open={showDemo} onOpenChange={setShowDemo} />
