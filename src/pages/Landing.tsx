@@ -34,6 +34,8 @@ import {
   LayoutGrid,
   CheckCircle2,
   ArrowRight,
+  Mail,
+  Send,
 } from 'lucide-react';
 import { LeviLogo } from '@/components/LeviLogo';
 import { supabase } from '@/integrations/supabase/client';
@@ -436,14 +438,23 @@ function FeatureCarousel() {
 // ── Schemas ──────────────────────────────────────────────────────────────────
 const loginSchema = z.object({ email: z.string().email('Email inválido'), password: z.string().min(1, 'Senha é obrigatória') });
 const recoverySchema = z.object({ email: z.string().email('Email inválido') });
+const contactSchema = z.object({
+  name: z.string().trim().min(1, 'Nome é obrigatório').max(100),
+  email: z.string().trim().email('Email inválido').max(255),
+  message: z.string().trim().min(1, 'Mensagem é obrigatória').max(1000),
+});
 type LoginForm = z.infer<typeof loginSchema>;
 type RecoveryForm = z.infer<typeof recoverySchema>;
+type ContactForm = z.infer<typeof contactSchema>;
 
 // ══════════════════════════════════════════════════════════════════════════════
 export default function Landing() {
   const [showDemo, setShowDemo] = useState(false);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
+  const [showContact, setShowContact] = useState(false);
+  const [contactSent, setContactSent] = useState(false);
+  const [contactLoading, setContactLoading] = useState(false);
   const [authTab, setAuthTab] = useState<'login' | 'recovery' | '2fa-verify'>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -472,6 +483,8 @@ export default function Landing() {
 
   const loginForm = useForm<LoginForm>({ resolver: zodResolver(loginSchema), defaultValues: { email: '', password: '' } });
   const recoveryForm = useForm<RecoveryForm>({ resolver: zodResolver(recoverySchema), defaultValues: { email: '' } });
+
+  const contactForm = useForm<ContactForm>({ resolver: zodResolver(contactSchema), defaultValues: { name: '', email: '', message: '' } });
 
   const scrollTo = useCallback((id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -595,6 +608,19 @@ export default function Landing() {
 
   const openAuth = (tab: 'login') => { setAuthTab(tab); setShowAuth(true); setRecoveryEmailSent(false); };
 
+  const handleContact = async (data: ContactForm) => {
+    setContactLoading(true);
+    try {
+      const mailtoUrl = `mailto:suport@leviescalas.com.br?subject=${encodeURIComponent(`Contato LEVI - ${data.name}`)}&body=${encodeURIComponent(`Nome: ${data.name}\nEmail: ${data.email}\n\nMensagem:\n${data.message}`)}`;
+      window.open(mailtoUrl, '_blank');
+      setContactSent(true);
+      contactForm.reset();
+      toast({ title: 'Mensagem preparada!', description: 'Seu cliente de email foi aberto com a mensagem.' });
+    } catch {
+      toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível abrir o email.' });
+    } finally { setContactLoading(false); }
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       <DemoTour open={showDemo} onOpenChange={setShowDemo} />
@@ -610,11 +636,9 @@ export default function Landing() {
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
             <div className="hidden md:flex items-center gap-0.5">
-              {[{ label: 'Funcionalidades', id: 'funcionalidades' }, { label: 'Como funciona', id: 'como-funciona' }].map(({ label, id }) => (
-                <button key={id} onClick={() => scrollTo(id)} className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-primary/5 rounded-lg transition-colors">
-                  {label}
-                </button>
-              ))}
+              <button onClick={() => { setShowContact(true); setContactSent(false); }} className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-destructive/10 rounded-lg transition-colors flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5" /> Contato
+              </button>
               <div className="w-px h-5 bg-border mx-2" />
             </div>
             <ThemeToggle />
@@ -678,10 +702,10 @@ export default function Landing() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="border-primary/30 text-primary hover:bg-primary/10 rounded-full px-8"
-                  onClick={() => scrollTo('funcionalidades')}
+                  className="border-destructive/30 text-destructive hover:bg-destructive/10 rounded-full px-8"
+                  onClick={() => { setShowContact(true); setContactSent(false); }}
                 >
-                  Ver funcionalidades <ArrowRight className="w-4 h-4 ml-1" />
+                  Fale conosco <Mail className="w-4 h-4 ml-1" />
                 </Button>
               </div>
 
@@ -840,6 +864,82 @@ export default function Landing() {
 
             {authTab === '2fa-verify' && (
               <TwoFactorVerify onSuccess={handle2FASuccess} onCancel={handle2FACancel} />
+            )}
+          </DialogPrimitive.Content>
+        </DialogPortal>
+      </Dialog>
+
+      {/* ── CONTACT MODAL ── */}
+      <Dialog open={showContact} onOpenChange={(open) => { setShowContact(open); if (!open) setContactSent(false); }}>
+        <DialogPortal>
+          <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+          <DialogPrimitive.Content className="fixed left-[50%] top-[50%] z-50 w-full max-w-md translate-x-[-50%] translate-y-[-50%] rounded-2xl border border-destructive/20 bg-card/95 backdrop-blur-xl p-6 shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]"
+            style={{ boxShadow: '0 0 60px hsl(0 70% 50% / 0.15), 0 25px 50px hsl(0 0% 0% / 0.25)' }}
+          >
+            <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+              <X className="h-4 w-4" />
+              <span className="sr-only">Fechar</span>
+            </DialogPrimitive.Close>
+
+            {/* Red accent line */}
+            <div className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl bg-gradient-to-r from-destructive via-destructive/80 to-destructive/40" />
+
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
+                <Mail className="w-5 h-5 text-destructive" />
+              </div>
+              <div>
+                <span className="font-display text-xl font-bold text-foreground">Fale conosco</span>
+                <p className="text-xs text-muted-foreground">Envie sua dúvida ou sugestão</p>
+              </div>
+            </div>
+
+            {!contactSent ? (
+              <form onSubmit={contactForm.handleSubmit(handleContact)} className="space-y-4 animate-fade-in">
+                <div className="space-y-2">
+                  <Label htmlFor="contact-name">Nome</Label>
+                  <Input id="contact-name" placeholder="Seu nome" {...contactForm.register('name')} className="h-11 border-destructive/15 focus-visible:ring-destructive/30" />
+                  {contactForm.formState.errors.name && <p className="text-sm text-destructive">{contactForm.formState.errors.name.message}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="contact-email">Email</Label>
+                  <Input id="contact-email" type="email" placeholder="seu@email.com" {...contactForm.register('email')} className="h-11 border-destructive/15 focus-visible:ring-destructive/30" />
+                  {contactForm.formState.errors.email && <p className="text-sm text-destructive">{contactForm.formState.errors.email.message}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="contact-message">Mensagem</Label>
+                  <textarea
+                    id="contact-message"
+                    placeholder="Escreva sua mensagem..."
+                    rows={4}
+                    {...contactForm.register('message')}
+                    className="flex w-full rounded-md border border-destructive/15 bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30 focus-visible:ring-offset-2 resize-none"
+                  />
+                  {contactForm.formState.errors.message && <p className="text-sm text-destructive">{contactForm.formState.errors.message.message}</p>}
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full h-11 bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-all"
+                  style={{ boxShadow: '0 0 20px hsl(0 70% 50% / 0.25)' }}
+                  disabled={contactLoading}
+                >
+                  {contactLoading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Enviando...</> : <><Send className="w-4 h-4 mr-2" />Enviar mensagem</>}
+                </Button>
+                <p className="text-center text-xs text-muted-foreground/50">
+                  Enviado para suport@leviescalas.com.br
+                </p>
+              </form>
+            ) : (
+              <div className="text-center space-y-3 py-6 animate-fade-in">
+                <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto" style={{ boxShadow: '0 0 30px hsl(0 70% 50% / 0.2)' }}>
+                  <CheckCircle2 className="w-8 h-8 text-destructive" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground">Mensagem preparada!</h3>
+                <p className="text-sm text-muted-foreground">Seu cliente de email foi aberto. Envie a mensagem para concluir.</p>
+                <Button variant="outline" className="border-destructive/20 text-destructive hover:bg-destructive/10" onClick={() => setContactSent(false)}>
+                  Enviar outra mensagem
+                </Button>
+              </div>
             )}
           </DialogPrimitive.Content>
         </DialogPortal>
