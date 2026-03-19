@@ -702,7 +702,6 @@ export default function Landing() {
             {/* Left */}
             <div className="text-center lg:text-left space-y-6">
               <div className="animate-fade-in flex flex-col items-center lg:items-start gap-3" style={{ animationDelay: '0.1s', animationFillMode: 'both' }}>
-                <LeviTypewriter className="mt-1" />
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium border border-primary/20">
                   <Sparkles className="w-4 h-4" />
                   <span>Gestão de escalas para igrejas</span>
