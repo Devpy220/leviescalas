@@ -636,11 +636,9 @@ export default function Landing() {
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
             <div className="hidden md:flex items-center gap-0.5">
-              {[{ label: 'Funcionalidades', id: 'funcionalidades' }, { label: 'Como funciona', id: 'como-funciona' }].map(({ label, id }) => (
-                <button key={id} onClick={() => scrollTo(id)} className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-primary/5 rounded-lg transition-colors">
-                  {label}
-                </button>
-              ))}
+              <button onClick={() => { setShowContact(true); setContactSent(false); }} className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-destructive/10 rounded-lg transition-colors flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5" /> Contato
+              </button>
               <div className="w-px h-5 bg-border mx-2" />
             </div>
             <ThemeToggle />
