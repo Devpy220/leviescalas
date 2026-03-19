@@ -382,7 +382,9 @@ function FeatureCarousel() {
                 <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(135deg, hsl(var(--primary) / 0.06) 0%, transparent 50%, hsl(var(--secondary) / 0.04) 100%)' }} />
 
                 <div className="relative z-[1] flex flex-col items-center text-center gap-3">
-                  {s.type === 'feature' && 'icon' in s ? (
+                  {s.type === 'cta' ? (
+                    <div className="text-5xl mb-1">📅</div>
+                  ) : s.type === 'feature' && 'icon' in s ? (
                     <div className={`w-14 h-14 rounded-xl ${'color' in s ? s.color : ''} flex items-center justify-center shadow-sm`}>
                       {(() => { const Icon = (s as any).icon; return <Icon className="w-7 h-7" />; })()}
                     </div>
