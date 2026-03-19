@@ -357,7 +357,7 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
                 onClick={() => navigate('/dashboard')}
                 className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all ${
                   isActive('/dashboard')
-                    ? 'bg-secondary text-secondary-foreground shadow-lg'
+                    ? 'bg-destructive text-destructive-foreground shadow-lg'
                     : 'text-white/80 hover:bg-white/10 hover:text-white'
                 }`}
               >
