@@ -316,6 +316,8 @@ const allSlides = [
   { type: 'step' as const, step: 2, title: 'Monte sua equipe', desc: 'Cadastre os voluntários e organize por ministério ou setor.' },
   { type: 'step' as const, step: 3, title: 'Gere a escala', desc: 'Defina datas e o sistema cuida do resto automaticamente.' },
   { type: 'step' as const, step: 4, title: 'Acompanhe ao vivo', desc: 'Confirmações e pendências em tempo real no painel.' },
+  // CTA
+  { type: 'cta' as const, title: 'Comece hoje, gratuitamente', desc: 'Junte-se aos voluntários que já simplificaram a gestão das escalas na sua igreja. 100% gratuito · Suporte em português' },
 ];
 
 // Keep for backward compat references
