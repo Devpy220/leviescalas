@@ -702,10 +702,10 @@ export default function Landing() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="border-primary/30 text-primary hover:bg-primary/10 rounded-full px-8"
-                  onClick={() => scrollTo('funcionalidades')}
+                  className="border-destructive/30 text-destructive hover:bg-destructive/10 rounded-full px-8"
+                  onClick={() => { setShowContact(true); setContactSent(false); }}
                 >
-                  Ver funcionalidades <ArrowRight className="w-4 h-4 ml-1" />
+                  Fale conosco <Mail className="w-4 h-4 ml-1" />
                 </Button>
               </div>
 
