@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 
 const FULL_TEXT = 'Logística de Escalas para Voluntários da Igreja';
-const HIGHLIGHT_LETTERS = new Set(['L', 'E', 'V', 'I']);
+
+// Indices of the letters that form "LEVI": L(0), E(14), V(26), I(40)
+const HIGHLIGHT_INDICES = new Set([0, 14, 26, 40]);
 
 interface LeviTypewriterProps {
   className?: string;
@@ -35,22 +37,32 @@ export function LeviTypewriter({ className = '' }: LeviTypewriterProps) {
 
   return (
     <span className={`inline-flex items-baseline gap-0 ${className}`}>
-      <span className="font-display font-bold text-amber-400 tracking-tight text-lg sm:text-xl mr-1.5 drop-shadow-[0_0_6px_hsl(45_100%_50%/0.4)]">
+      <span 
+        className="font-display font-extrabold tracking-tight text-lg sm:text-xl mr-1.5"
+        style={{ 
+          color: '#FBBF24',
+          textShadow: '0 0 8px rgba(251,191,36,0.5), 0 0 16px rgba(251,191,36,0.3)' 
+        }}
+      >
         LEVI
       </span>
       <span className="text-[10px] sm:text-xs text-muted-foreground/70 font-medium tracking-wide hidden sm:inline">
         {visibleText.split('').map((char, i) => {
-          const isHighlight = HIGHLIGHT_LETTERS.has(char);
+          const isHighlight = HIGHLIGHT_INDICES.has(i);
           return (
             <span
               key={i}
-              className={isHighlight ? 'font-bold text-amber-400' : ''}
+              className={isHighlight ? 'font-extrabold text-base' : ''}
+              style={isHighlight ? { 
+                color: '#FBBF24', 
+                textShadow: '0 0 6px rgba(251,191,36,0.4)' 
+              } : undefined}
             >
               {char}
             </span>
           );
         })}
-        <span className="animate-pulse text-amber-400">|</span>
+        <span className="animate-pulse" style={{ color: '#FBBF24' }}>|</span>
       </span>
     </span>
   );
