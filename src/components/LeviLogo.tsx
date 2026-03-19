@@ -1,4 +1,4 @@
-import leviIcon from '@/assets/levi-icon-emerald.png';
+import leviIcon from '@/assets/levi-icon-red.png';
 
 interface LeviLogoProps {
   size?: 'sm' | 'md' | 'lg';
@@ -13,10 +13,12 @@ export function LeviLogo({ size = 'md', className = '' }: LeviLogoProps) {
   };
   
   return (
-    <img 
-      src={leviIcon} 
-      alt="LEVI" 
-      className={`${sizeClasses[size]} ${className}`}
-    />
+    <div className={`${sizeClasses[size]} overflow-hidden rounded-xl ${className}`}>
+      <img 
+        src={leviIcon} 
+        alt="LEVI" 
+        className="w-full h-full object-cover scale-150"
+      />
+    </div>
   );
 }
