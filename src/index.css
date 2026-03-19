@@ -724,19 +724,8 @@
 }
 
 .typewriter-word {
-  background: linear-gradient(
-    90deg,
-    hsl(var(--secondary)),
-    hsl(45 100% 75%),
-    hsl(var(--secondary)),
-    hsl(40 100% 65%),
-    hsl(var(--secondary))
-  );
-  background-size: 300% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: shimmer-text 3s ease-in-out infinite, neon-pulse 2s ease-in-out infinite;
+  color: hsl(var(--secondary));
+  animation: shimmer-text 3s ease-in-out infinite;
 }
 
 .typewriter-cursor {
