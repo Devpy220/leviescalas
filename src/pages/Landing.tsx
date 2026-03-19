@@ -34,6 +34,8 @@ import {
   LayoutGrid,
   CheckCircle2,
   ArrowRight,
+  Mail,
+  Send,
 } from 'lucide-react';
 import { LeviLogo } from '@/components/LeviLogo';
 import { supabase } from '@/integrations/supabase/client';
