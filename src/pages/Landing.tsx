@@ -192,53 +192,50 @@ function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: str
   return <span ref={ref}>{n.toLocaleString('pt-BR')}{suffix}</span>;
 }
 
-// ── 3D Orbiting Globe ────────────────────────────────────────────────────────
-function OrbitGlobe() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const rotRef = useRef(0);
+// ── 3D Rotating Cube ─────────────────────────────────────────────────────────
+function FeatureCube() {
+  const cubeRef = useRef<HTMLDivElement>(null);
+  const rotRef = useRef({ x: -25, y: 0 });
   const rafRef = useRef<number>(0);
   const [paused, setPaused] = useState(false);
   const lastRef = useRef<number | null>(null);
 
-  const items = [
-    { Icon: Calendar, label: 'Calendário', pill: '⚡ Ao vivo', angle: 0 },
-    { Icon: Users, label: 'Membros', pill: '✓ Organizado', angle: 60 },
-    { Icon: Bell, label: 'Notificações', pill: '📲 Auto', angle: 120 },
-    { Icon: Zap, label: 'Tempo Real', pill: '🔴 Online', angle: 180 },
-    { Icon: RefreshCw, label: 'Trocas', pill: '🔄 Fácil', angle: 240 },
-    { Icon: CheckCircle2, label: 'Confirmações', pill: '✅ Real-time', angle: 300 },
+  const faces = [
+    { Icon: Calendar, label: 'Calendário', pill: '⚡ Ao vivo', face: 'front' },
+    { Icon: Users, label: 'Membros', pill: '✓ Organizado', face: 'right' },
+    { Icon: Bell, label: 'Notificações', pill: '📲 Auto', face: 'back' },
+    { Icon: RefreshCw, label: 'Trocas', pill: '🔄 Fácil', face: 'left' },
+    { Icon: Zap, label: 'Tempo Real', pill: '🔴 Online', face: 'top' },
+    { Icon: CheckCircle2, label: 'Confirmações', pill: '✅ Real-time', face: 'bottom' },
   ];
+
+  // Size of the cube (half-side for translateZ)
+  const size = 130; // mobile-friendly
+
+  const faceTransforms: Record<string, string> = {
+    front: `translateZ(${size}px)`,
+    back: `rotateY(180deg) translateZ(${size}px)`,
+    right: `rotateY(90deg) translateZ(${size}px)`,
+    left: `rotateY(-90deg) translateZ(${size}px)`,
+    top: `rotateX(90deg) translateZ(${size}px)`,
+    bottom: `rotateX(-90deg) translateZ(${size}px)`,
+  };
 
   useEffect(() => {
     const animate = (ts: number) => {
       if (!paused) {
-        if (lastRef.current !== null) rotRef.current += (ts - lastRef.current) * 0.015;
+        if (lastRef.current !== null) {
+          const dt = ts - lastRef.current;
+          rotRef.current.y += dt * 0.02;
+          rotRef.current.x = -25 + Math.sin(ts * 0.0005) * 10;
+        }
         lastRef.current = ts;
       } else {
         lastRef.current = null;
       }
 
-      const container = containerRef.current;
-      if (container) {
-        const cards = container.querySelectorAll<HTMLDivElement>('[data-orbit-card]');
-        const radiusX = 200;
-        const radiusZ = 140;
-        const radiusY = 45;
-
-        cards.forEach((card, i) => {
-          const baseAngle = items[i].angle;
-          const angle = ((baseAngle + rotRef.current) * Math.PI) / 180;
-          const x = Math.sin(angle) * radiusX;
-          const z = Math.cos(angle) * radiusZ;
-          const y = Math.sin(angle * 0.5) * radiusY;
-          const scale = 0.7 + ((z + radiusZ) / (2 * radiusZ)) * 0.5;
-          const opacity = 0.4 + ((z + radiusZ) / (2 * radiusZ)) * 0.6;
-          const zIndex = Math.round(z + radiusZ);
-
-          card.style.transform = `translate(-50%, -50%) translate3d(${x}px, ${y}px, 0) scale(${scale})`;
-          card.style.opacity = String(opacity);
-          card.style.zIndex = String(zIndex);
-        });
+      if (cubeRef.current) {
+        cubeRef.current.style.transform = `rotateX(${rotRef.current.x}deg) rotateY(${rotRef.current.y}deg)`;
       }
 
       rafRef.current = requestAnimationFrame(animate);
@@ -249,48 +246,58 @@ function OrbitGlobe() {
 
   return (
     <div
-      className="relative flex flex-col items-center gap-2"
+      className="flex flex-col items-center gap-3"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onTouchStart={() => setPaused(true)}
       onTouchEnd={() => setPaused(false)}
     >
-      {/* Central glow */}
-      <div className="absolute w-[420px] h-[420px] rounded-full top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none animate-pulse-glow"
-        style={{ background: 'radial-gradient(circle, hsl(var(--primary) / 0.25) 0%, hsl(var(--primary) / 0.05) 50%, transparent 70%)' }}
+      {/* Glow behind cube */}
+      <div className="absolute w-[300px] h-[300px] sm:w-[380px] sm:h-[380px] rounded-full pointer-events-none animate-pulse-glow"
+        style={{ background: 'radial-gradient(circle, hsl(var(--primary) / 0.2) 0%, hsl(var(--primary) / 0.05) 50%, transparent 70%)' }}
       />
 
-      {/* Orbit ring hint */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[200px] rounded-[50%] border border-primary/10 pointer-events-none" />
-
-      {/* Orbiting cards */}
+      {/* 3D Cube Scene */}
       <div
-        ref={containerRef}
-        className="relative cursor-default"
-        style={{ width: 460, height: 380 }}
+        className="relative"
+        style={{
+          width: size * 2,
+          height: size * 2,
+          perspective: 800,
+        }}
       >
-        {items.map((item, i) => (
-          <div
-            key={item.label}
-            data-orbit-card
-            className="absolute top-1/2 left-1/2 pointer-events-none"
-            style={{ willChange: 'transform, opacity' }}
-          >
-            <div className="flex flex-col items-center gap-2 px-5 py-4 rounded-2xl bg-card/70 backdrop-blur-sm border border-primary/20 shadow-soft min-w-[120px]"
-              style={{ boxShadow: 'inset 0 1px 0 hsl(0 0% 100% / 0.1), 0 8px 24px hsl(0 0% 0% / 0.15)' }}
+        <div
+          ref={cubeRef}
+          style={{
+            width: '100%',
+            height: '100%',
+            position: 'relative',
+            transformStyle: 'preserve-3d',
+            transition: paused ? 'transform 0.3s ease-out' : 'none',
+          }}
+        >
+          {faces.map((item) => (
+            <div
+              key={item.face}
+              className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-2xl border border-primary/20 bg-card/80 backdrop-blur-sm"
+              style={{
+                transform: faceTransforms[item.face],
+                backfaceVisibility: 'hidden',
+                boxShadow: 'inset 0 1px 0 hsl(0 0% 100% / 0.12), 0 8px 32px hsl(0 0% 0% / 0.2)',
+              }}
             >
-              <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center">
-                <item.Icon className="w-6 h-6 text-primary" />
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-primary/15 flex items-center justify-center">
+                <item.Icon className="w-6 h-6 sm:w-7 sm:h-7 text-primary" />
               </div>
-              <span className="text-sm font-bold text-foreground">{item.label}</span>
-              <span className="text-[10px] px-2.5 py-0.5 rounded-full border border-border/40 bg-muted/20 text-muted-foreground uppercase tracking-wider">
+              <span className="text-sm sm:text-base font-bold text-foreground">{item.label}</span>
+              <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full border border-border/40 bg-muted/20 text-muted-foreground">
                 {item.pill}
               </span>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-      <span className="text-[11px] text-primary/40 tracking-wider mt-1">↻ passe o mouse para pausar</span>
+      <span className="text-[11px] text-primary/40 tracking-wider">↻ toque para pausar</span>
     </div>
   );
 }
@@ -585,9 +592,9 @@ export default function Landing() {
               </div>
             </div>
 
-            {/* Right — 3D Orbiting Globe */}
-            <div className="hidden sm:flex justify-center items-center">
-              <OrbitGlobe />
+            {/* Right — 3D Cube */}
+            <div className="flex justify-center items-center mt-8 lg:mt-0">
+              <FeatureCube />
             </div>
 
           </div>
