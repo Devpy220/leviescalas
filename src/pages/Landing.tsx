@@ -438,8 +438,14 @@ function FeatureCarousel() {
 // ── Schemas ──────────────────────────────────────────────────────────────────
 const loginSchema = z.object({ email: z.string().email('Email inválido'), password: z.string().min(1, 'Senha é obrigatória') });
 const recoverySchema = z.object({ email: z.string().email('Email inválido') });
+const contactSchema = z.object({
+  name: z.string().trim().min(1, 'Nome é obrigatório').max(100),
+  email: z.string().trim().email('Email inválido').max(255),
+  message: z.string().trim().min(1, 'Mensagem é obrigatória').max(1000),
+});
 type LoginForm = z.infer<typeof loginSchema>;
 type RecoveryForm = z.infer<typeof recoverySchema>;
+type ContactForm = z.infer<typeof contactSchema>;
 
 // ══════════════════════════════════════════════════════════════════════════════
 export default function Landing() {
