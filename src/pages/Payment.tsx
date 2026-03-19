@@ -58,7 +58,7 @@ const Payment = () => {
         onInstallClick={install}
         onSignOut={handleSignOut}
       />
-      <div className={`${sidebarExpanded ? 'ml-52' : 'ml-14'} flex-1 flex flex-col transition-all duration-300`}>
+      <div className={`${sidebarExpanded ? 'ml-56' : 'ml-16'} flex-1 flex flex-col transition-all duration-300`}>
       <div className="flex-1 py-8 px-4">
         <div className="max-w-lg mx-auto">
 
