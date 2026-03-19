@@ -36,33 +36,24 @@ export function LeviTypewriter({ className = '' }: LeviTypewriterProps) {
   const visibleText = FULL_TEXT.slice(0, charCount);
 
   return (
-    <span className={`inline-flex items-baseline gap-0 ${className}`}>
-      <span 
-        className="font-display font-extrabold tracking-tight text-lg sm:text-xl mr-1.5"
-        style={{ 
-          color: '#FBBF24',
-          textShadow: '0 0 8px rgba(251,191,36,0.5), 0 0 16px rgba(251,191,36,0.3)' 
-        }}
-      >
-        LEVI
-      </span>
+    <span className={`inline-flex items-baseline ${className}`}>
       <span className="text-[10px] sm:text-xs text-muted-foreground/70 font-medium tracking-wide">
         {visibleText.split('').map((char, i) => {
           const isHighlight = HIGHLIGHT_INDICES.has(i);
           return (
             <span
               key={i}
-              className={isHighlight ? 'font-extrabold text-base' : ''}
+              className={isHighlight ? 'font-extrabold text-sm sm:text-base' : ''}
               style={isHighlight ? { 
-                color: '#FBBF24', 
-                textShadow: '0 0 6px rgba(251,191,36,0.4)' 
+                color: 'hsl(var(--secondary))', 
+                textShadow: '0 0 6px hsla(var(--secondary), 0.4)' 
               } : undefined}
             >
               {char}
             </span>
           );
         })}
-        <span className="animate-pulse" style={{ color: '#FBBF24' }}>|</span>
+        <span className="animate-pulse" style={{ color: 'hsl(var(--secondary))' }}>|</span>
       </span>
     </span>
   );
