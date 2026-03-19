@@ -406,6 +406,7 @@ function FeatureCarousel() {
       <div className="flex items-center gap-2">
         {allSlides.map((s, i) => {
           const isFeatureGroup = i < 6;
+          const isStepGroup = i >= 6 && i < 10;
           return (
             <button
               key={i}
@@ -413,7 +414,7 @@ function FeatureCarousel() {
               className={`rounded-full transition-all duration-300 ${
                 i === active
                   ? 'w-6 h-2.5 bg-primary shadow-glow-sm'
-                  : `w-2.5 h-2.5 ${isFeatureGroup ? 'bg-primary/25 hover:bg-primary/40' : 'bg-secondary/25 hover:bg-secondary/40'}`
+                  : `w-2.5 h-2.5 ${isFeatureGroup ? 'bg-primary/25 hover:bg-primary/40' : isStepGroup ? 'bg-secondary/25 hover:bg-secondary/40' : 'bg-emerald/25 hover:bg-emerald/40'}`
               }`}
             />
           );
