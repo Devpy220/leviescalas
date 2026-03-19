@@ -322,7 +322,7 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
 
   return (
     <>
-      <aside className={`${expanded ? 'w-56' : 'w-16'} fixed left-0 top-0 bottom-0 z-40 transition-all duration-300`}>
+      <aside className={`${expanded ? 'w-52' : 'w-14'} fixed left-0 top-0 bottom-0 z-40 transition-all duration-300`}>
         <div className="flex flex-col h-full gradient-sidebar text-white border-r border-destructive/10" style={{ boxShadow: '4px 0 30px hsl(0 60% 20% / 0.15)' }}>
           {/* Logo + expand toggle */}
           <div className={`p-2 pb-2 flex ${expanded ? 'justify-between' : 'justify-center'} items-center`}>

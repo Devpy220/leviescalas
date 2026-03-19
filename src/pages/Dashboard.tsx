@@ -309,7 +309,7 @@ export default function Dashboard() {
         onSignOut={handleSignOut}
       />
 
-      <div className={`${sidebarExpanded ? 'ml-56' : 'ml-16'} transition-all duration-300`}>
+      <div className={`${sidebarExpanded ? 'ml-52' : 'ml-14'} transition-all duration-300`}>
         <main className="container mx-auto px-4 py-8">
 
         {/* Profile Section */}

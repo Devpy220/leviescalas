@@ -213,7 +213,7 @@ function FeatureCube() {
   ];
 
   // Size of the cube (half-side for translateZ)
-  const size = 130; // mobile-friendly
+  const size = 170;
 
   const faceTransforms: Record<string, string> = {
     front: `translateZ(${size}px)`,
