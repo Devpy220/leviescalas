@@ -674,6 +674,7 @@ export default function Landing() {
         <div className="container mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <LeviLogo className="transition-all duration-300" />
+            <LeviTypewriter />
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
             <div className="hidden md:flex items-center gap-0.5">
@@ -689,13 +690,6 @@ export default function Landing() {
                 <span className="hidden sm:inline">Instalar</span>
               </Button>
             )}
-            <Button
-              size="sm"
-              className="bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-glow-sm rounded-full px-5 font-semibold"
-              onClick={() => openAuth('login')}
-            >
-              Entrar
-            </Button>
           </div>
         </div>
       </nav>
@@ -708,7 +702,6 @@ export default function Landing() {
             {/* Left */}
             <div className="text-center lg:text-left space-y-6">
               <div className="animate-fade-in flex flex-col items-center lg:items-start gap-3" style={{ animationDelay: '0.1s', animationFillMode: 'both' }}>
-                <LeviTypewriter className="mt-1" />
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium border border-primary/20">
                   <Sparkles className="w-4 h-4" />
                   <span>Gestão de escalas para igrejas</span>
@@ -731,12 +724,12 @@ export default function Landing() {
               </p>
 
               <div
-                className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start animate-fade-in"
+                className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-fade-in"
                 style={{ animationDelay: '0.55s', animationFillMode: 'both' }}
               >
                 <Button
                   size="lg"
-                  className="bg-secondary text-secondary-foreground shadow-glow-sm hover:shadow-glow transition-all hover:brightness-110 rounded-full px-8 font-semibold"
+                  className="bg-secondary text-secondary-foreground shadow-glow hover:shadow-glow-lg transition-all hover:brightness-110 hover:scale-105 rounded-full px-12 py-6 text-lg font-bold"
                   onClick={() => openAuth('login')}
                 >
                   Entrar
