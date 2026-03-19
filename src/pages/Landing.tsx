@@ -259,7 +259,7 @@ function FeatureCube() {
       onTouchEnd={() => setPaused(false)}
     >
       {/* Glow behind cube */}
-      <div className="absolute w-[300px] h-[300px] sm:w-[380px] sm:h-[380px] rounded-full pointer-events-none animate-pulse-glow"
+      <div className={`absolute ${isMobile ? 'w-[200px] h-[200px]' : 'w-[300px] h-[300px] sm:w-[380px] sm:h-[380px]'} rounded-full pointer-events-none animate-pulse-glow`}
         style={{ background: 'radial-gradient(circle, hsl(var(--primary) / 0.2) 0%, hsl(var(--primary) / 0.05) 50%, transparent 70%)' }}
       />
 
