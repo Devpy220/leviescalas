@@ -690,13 +690,6 @@ export default function Landing() {
                 <span className="hidden sm:inline">Instalar</span>
               </Button>
             )}
-            <Button
-              size="sm"
-              className="bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-glow-sm rounded-full px-5 font-semibold"
-              onClick={() => openAuth('login')}
-            >
-              Entrar
-            </Button>
           </div>
         </div>
       </nav>
