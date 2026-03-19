@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import elsdigitalLogo from '@/assets/elsdigital-logo.jpeg';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -316,6 +317,8 @@ const allSlides = [
   { type: 'step' as const, step: 2, title: 'Monte sua equipe', desc: 'Cadastre os voluntários e organize por ministério ou setor.' },
   { type: 'step' as const, step: 3, title: 'Gere a escala', desc: 'Defina datas e o sistema cuida do resto automaticamente.' },
   { type: 'step' as const, step: 4, title: 'Acompanhe ao vivo', desc: 'Confirmações e pendências em tempo real no painel.' },
+  // CTA
+  { type: 'cta' as const, title: 'Comece hoje, gratuitamente', desc: 'Junte-se aos voluntários que já simplificaram a gestão das escalas na sua igreja. 100% gratuito · Suporte em português' },
 ];
 
 // Keep for backward compat references
@@ -340,9 +343,8 @@ function FeatureCarousel() {
   }, [paused, total]);
 
   const slide = allSlides[active];
-  const isFeature = slide.type === 'feature';
-  const sectionLabel = isFeature ? 'Funcionalidades' : 'Como funciona';
-  const sectionTitle = isFeature ? 'Tudo que sua igreja precisa' : 'Simples de começar';
+  const sectionLabel = slide.type === 'feature' ? 'Funcionalidades' : slide.type === 'step' ? 'Como funciona' : '🚀 Vamos começar';
+  const sectionTitle = slide.type === 'feature' ? 'Tudo que sua igreja precisa' : slide.type === 'step' ? 'Simples de começar' : 'Sua igreja mais organizada';
 
   return (
     <div
@@ -381,7 +383,9 @@ function FeatureCarousel() {
                 <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(135deg, hsl(var(--primary) / 0.06) 0%, transparent 50%, hsl(var(--secondary) / 0.04) 100%)' }} />
 
                 <div className="relative z-[1] flex flex-col items-center text-center gap-3">
-                  {s.type === 'feature' && 'icon' in s ? (
+                  {s.type === 'cta' ? (
+                    <div className="text-5xl mb-1">📅</div>
+                  ) : s.type === 'feature' && 'icon' in s ? (
                     <div className={`w-14 h-14 rounded-xl ${'color' in s ? s.color : ''} flex items-center justify-center shadow-sm`}>
                       {(() => { const Icon = (s as any).icon; return <Icon className="w-7 h-7" />; })()}
                     </div>
@@ -403,6 +407,7 @@ function FeatureCarousel() {
       <div className="flex items-center gap-2">
         {allSlides.map((s, i) => {
           const isFeatureGroup = i < 6;
+          const isStepGroup = i >= 6 && i < 10;
           return (
             <button
               key={i}
@@ -410,7 +415,7 @@ function FeatureCarousel() {
               className={`rounded-full transition-all duration-300 ${
                 i === active
                   ? 'w-6 h-2.5 bg-primary shadow-glow-sm'
-                  : `w-2.5 h-2.5 ${isFeatureGroup ? 'bg-primary/25 hover:bg-primary/40' : 'bg-secondary/25 hover:bg-secondary/40'}`
+                  : `w-2.5 h-2.5 ${isFeatureGroup ? 'bg-primary/25 hover:bg-primary/40' : isStepGroup ? 'bg-secondary/25 hover:bg-secondary/40' : 'bg-emerald/25 hover:bg-emerald/40'}`
               }`}
             />
           );
@@ -725,39 +730,23 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── CTA FINAL ── */}
-      <section className="relative z-[1] py-20 sm:py-28">
-        <div className="container mx-auto px-4 sm:px-6 max-w-xl">
-          <Reveal>
-            <div className="text-center rounded-3xl bg-card/70 backdrop-blur-sm border border-border/50 p-10 sm:p-14 shadow-soft-lg relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 pointer-events-none" />
-              <div className="relative z-[1]">
-                <div className="text-5xl mb-4">📅</div>
-                <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground mb-3">Comece hoje, gratuitamente</h2>
-                <p className="text-muted-foreground mb-8 leading-relaxed">
-                  Junte-se aos voluntários que já simplificaram a gestão das escalas na sua igreja.
-                </p>
-                <div className="flex gap-3 justify-center flex-wrap">
-                  <Button
-                    size="lg"
-                    className="bg-secondary text-secondary-foreground shadow-glow-sm hover:shadow-glow rounded-full px-8 font-semibold"
-                    onClick={() => openAuth('login')}
-                  >
-                    Entrar
-                  </Button>
-                </div>
-                <p className="mt-5 text-xs text-muted-foreground/50">
-                  100% gratuito · Suporte em português
-                </p>
-              </div>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
       {/* ── FOOTER ── */}
-      <footer className="relative z-[1] py-6 border-t border-border/30 text-center text-xs text-muted-foreground/40">
-        <span className="text-primary font-bold">LEVI</span> · © {new Date().getFullYear()} · Feito com 💜 para igrejas brasileiras
+      <footer className="relative z-[1] py-6 border-t border-border/30">
+        <div className="container mx-auto px-4 sm:px-6 flex flex-col items-center gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-primary font-bold text-sm">LEVI</span>
+            <span className="text-muted-foreground/30">·</span>
+            <span className="text-xs text-muted-foreground/40">© {new Date().getFullYear()}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <img
+              src={elsdigitalLogo}
+              alt="ELSDIGITAL"
+              className="w-6 h-6 rounded-full object-cover"
+            />
+            <span className="text-xs text-muted-foreground/50 font-medium">Desenvolvendo Soluções</span>
+          </div>
+        </div>
       </footer>
 
       {/* ── AUTH MODAL ── */}
