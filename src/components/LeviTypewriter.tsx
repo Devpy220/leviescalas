@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 const FULL_TEXT = 'Logística de Escalas para Voluntários da Igreja';
 const HIGHLIGHT_LETTERS = new Set(['L', 'E', 'V', 'I']);
@@ -9,37 +9,48 @@ interface LeviTypewriterProps {
 
 export function LeviTypewriter({ className = '' }: LeviTypewriterProps) {
   const [charCount, setCharCount] = useState(0);
-  const [done, setDone] = useState(false);
+  const [phase, setPhase] = useState<'typing' | 'pause' | 'deleting'>('typing');
+  const timerRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
-    if (charCount >= FULL_TEXT.length) {
-      setDone(true);
-      return;
+    if (phase === 'typing') {
+      if (charCount >= FULL_TEXT.length) {
+        timerRef.current = setTimeout(() => setPhase('pause'), 2000);
+      } else {
+        timerRef.current = setTimeout(() => setCharCount(c => c + 1), 45);
+      }
+    } else if (phase === 'pause') {
+      timerRef.current = setTimeout(() => setPhase('deleting'), 500);
+    } else if (phase === 'deleting') {
+      if (charCount <= 0) {
+        timerRef.current = setTimeout(() => setPhase('typing'), 400);
+      } else {
+        timerRef.current = setTimeout(() => setCharCount(c => c - 1), 25);
+      }
     }
-    const t = setTimeout(() => setCharCount(c => c + 1), 45);
-    return () => clearTimeout(t);
-  }, [charCount]);
+    return () => clearTimeout(timerRef.current);
+  }, [charCount, phase]);
 
   const visibleText = FULL_TEXT.slice(0, charCount);
 
   return (
     <span className={`inline-flex items-baseline gap-0 ${className}`}>
-      <span className="font-display font-bold text-destructive tracking-tight text-lg sm:text-xl mr-1.5">
+      <span className="font-display font-bold text-amber-400 tracking-tight text-lg sm:text-xl mr-1.5 drop-shadow-[0_0_6px_hsl(45_100%_50%/0.4)]">
         LEVI
       </span>
       <span className="text-[10px] sm:text-xs text-muted-foreground/70 font-medium tracking-wide hidden sm:inline">
         {visibleText.split('').map((char, i) => {
-          const isUpper = HIGHLIGHT_LETTERS.has(char);
+          const isHighlight = HIGHLIGHT_LETTERS.has(char);
           return (
             <span
               key={i}
-              className={isUpper ? 'font-bold text-destructive/80' : ''}
+              className={isHighlight ? 'font-bold text-amber-400' : ''}
             >
               {char}
             </span>
           );
         })}
-        {!done && <span className="animate-pulse text-destructive">|</span>}
+        <span className="animate-pulse text-amber-400">|</span>
       </span>
     </span>
   );
