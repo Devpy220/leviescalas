@@ -942,8 +942,8 @@ export default function Landing() {
                 <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto" style={{ boxShadow: '0 0 30px hsl(0 70% 50% / 0.2)' }}>
                   <CheckCircle2 className="w-8 h-8 text-destructive" />
                 </div>
-                <h3 className="text-lg font-semibold text-foreground">Mensagem preparada!</h3>
-                <p className="text-sm text-muted-foreground">Seu cliente de email foi aberto. Envie a mensagem para concluir.</p>
+                <h3 className="text-lg font-semibold text-foreground">Mensagem enviada!</h3>
+                <p className="text-sm text-muted-foreground">Recebemos sua mensagem e responderemos em breve.</p>
                 <Button variant="outline" className="border-destructive/20 text-destructive hover:bg-destructive/10" onClick={() => setContactSent(false)}>
                   Enviar outra mensagem
                 </Button>
