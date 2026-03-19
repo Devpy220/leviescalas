@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 const FULL_TEXT = 'Logística de Escalas para Voluntários da Igreja';
 
 // Indices of the letters that form "LEVI": L(0), E(14), V(26), I(40)
-const HIGHLIGHT_INDICES = new Set([0, 14, 26, 40]);
+const HIGHLIGHT_INDICES = new Set([0, 13, 26, 41]);
 
 interface LeviTypewriterProps {
   className?: string;
