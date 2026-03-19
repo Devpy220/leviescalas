@@ -152,7 +152,7 @@ export default function Security() {
         onInstallClick={install}
         onSignOut={handleSignOut}
       />
-      <div className={`${sidebarExpanded ? 'ml-56' : 'ml-16'} flex-1 flex flex-col transition-all duration-300`}>
+      <div className={`${sidebarExpanded ? 'ml-52' : 'ml-14'} flex-1 flex flex-col transition-all duration-300`}>
       <div className="container max-w-2xl py-8 px-4 flex-1">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-foreground">Configurações</h1>
