@@ -910,6 +910,11 @@ export default function Landing() {
                   {contactForm.formState.errors.email && <p className="text-sm text-destructive">{contactForm.formState.errors.email.message}</p>}
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="contact-phone">Telefone</Label>
+                  <Input id="contact-phone" type="tel" placeholder="(00) 00000-0000" {...contactForm.register('phone')} className="h-11 border-destructive/15 focus-visible:ring-destructive/30" />
+                  {contactForm.formState.errors.phone && <p className="text-sm text-destructive">{contactForm.formState.errors.phone.message}</p>}
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="contact-message">Mensagem</Label>
                   <textarea
                     id="contact-message"
