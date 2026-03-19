@@ -612,13 +612,15 @@ export default function Landing() {
   const handleContact = async (data: ContactForm) => {
     setContactLoading(true);
     try {
-      const mailtoUrl = `mailto:suport@leviescalas.com.br?subject=${encodeURIComponent(`Contato LEVI - ${data.name}`)}&body=${encodeURIComponent(`Nome: ${data.name}\nEmail: ${data.email}\n\nMensagem:\n${data.message}`)}`;
-      window.open(mailtoUrl, '_blank');
+      const { error } = await supabase.functions.invoke('send-contact-email', {
+        body: { name: data.name, email: data.email, phone: data.phone, message: data.message },
+      });
+      if (error) throw error;
       setContactSent(true);
       contactForm.reset();
-      toast({ title: 'Mensagem preparada!', description: 'Seu cliente de email foi aberto com a mensagem.' });
+      toast({ title: 'Mensagem enviada!', description: 'Recebemos sua mensagem e responderemos em breve.' });
     } catch {
-      toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível abrir o email.' });
+      toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível enviar. Tente novamente.' });
     } finally { setContactLoading(false); }
   };
 
