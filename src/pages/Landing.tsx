@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import elsdigitalLogo from '@/assets/elsdigital-logo.jpeg';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -203,6 +204,7 @@ function FeatureCube() {
   const rafRef = useRef<number>(0);
   const [paused, setPaused] = useState(false);
   const lastRef = useRef<number | null>(null);
+  const isMobile = useIsMobile();
 
   const faces = [
     { Icon: Calendar, label: 'Calendário', pill: '⚡ Ao vivo', face: 'front' },
@@ -213,8 +215,8 @@ function FeatureCube() {
     { Icon: CheckCircle2, label: 'Confirmações', pill: '✅ Real-time', face: 'bottom' },
   ];
 
-  // Size of the cube (half-side for translateZ)
-  const size = 170;
+  // Responsive size: smaller on mobile
+  const size = isMobile ? 100 : 170;
 
   const faceTransforms: Record<string, string> = {
     front: `translateZ(${size}px)`,
@@ -257,7 +259,7 @@ function FeatureCube() {
       onTouchEnd={() => setPaused(false)}
     >
       {/* Glow behind cube */}
-      <div className="absolute w-[300px] h-[300px] sm:w-[380px] sm:h-[380px] rounded-full pointer-events-none animate-pulse-glow"
+      <div className={`absolute ${isMobile ? 'w-[200px] h-[200px]' : 'w-[300px] h-[300px] sm:w-[380px] sm:h-[380px]'} rounded-full pointer-events-none animate-pulse-glow`}
         style={{ background: 'radial-gradient(circle, hsl(var(--primary) / 0.2) 0%, hsl(var(--primary) / 0.05) 50%, transparent 70%)' }}
       />
 
@@ -290,11 +292,11 @@ function FeatureCube() {
                 boxShadow: 'inset 0 1px 0 hsl(0 0% 100% / 0.12), 0 8px 32px hsl(0 0% 0% / 0.2)',
               }}
             >
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-primary/15 flex items-center justify-center">
-                <item.Icon className="w-6 h-6 sm:w-7 sm:h-7 text-primary" />
+              <div className={`${isMobile ? 'w-8 h-8' : 'w-12 h-12 sm:w-14 sm:h-14'} rounded-xl bg-primary/15 flex items-center justify-center`}>
+                <item.Icon className={`${isMobile ? 'w-4 h-4' : 'w-6 h-6 sm:w-7 sm:h-7'} text-primary`} />
               </div>
-              <span className="text-sm sm:text-base font-bold text-foreground">{item.label}</span>
-              <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full border border-border/40 bg-muted/20 text-muted-foreground">
+              <span className={`${isMobile ? 'text-[10px]' : 'text-sm sm:text-base'} font-bold text-foreground`}>{item.label}</span>
+              <span className={`${isMobile ? 'text-[8px] px-1.5' : 'text-[10px] sm:text-xs px-2.5'} py-0.5 rounded-full border border-border/40 bg-muted/20 text-muted-foreground`}>
                 {item.pill}
               </span>
             </div>
