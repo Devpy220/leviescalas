@@ -592,9 +592,9 @@ export default function Landing() {
               </div>
             </div>
 
-            {/* Right — 3D Orbiting Globe */}
-            <div className="hidden sm:flex justify-center items-center">
-              <OrbitGlobe />
+            {/* Right — 3D Cube */}
+            <div className="flex justify-center items-center mt-8 lg:mt-0">
+              <FeatureCube />
             </div>
 
           </div>
