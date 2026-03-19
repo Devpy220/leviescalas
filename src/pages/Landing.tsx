@@ -441,6 +441,7 @@ const recoverySchema = z.object({ email: z.string().email('Email inválido') });
 const contactSchema = z.object({
   name: z.string().trim().min(1, 'Nome é obrigatório').max(100),
   email: z.string().trim().email('Email inválido').max(255),
+  phone: z.string().trim().min(1, 'Telefone é obrigatório').max(20),
   message: z.string().trim().min(1, 'Mensagem é obrigatória').max(1000),
 });
 type LoginForm = z.infer<typeof loginSchema>;
@@ -484,7 +485,7 @@ export default function Landing() {
   const loginForm = useForm<LoginForm>({ resolver: zodResolver(loginSchema), defaultValues: { email: '', password: '' } });
   const recoveryForm = useForm<RecoveryForm>({ resolver: zodResolver(recoverySchema), defaultValues: { email: '' } });
 
-  const contactForm = useForm<ContactForm>({ resolver: zodResolver(contactSchema), defaultValues: { name: '', email: '', message: '' } });
+  const contactForm = useForm<ContactForm>({ resolver: zodResolver(contactSchema), defaultValues: { name: '', email: '', phone: '', message: '' } });
 
   const scrollTo = useCallback((id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -611,13 +612,15 @@ export default function Landing() {
   const handleContact = async (data: ContactForm) => {
     setContactLoading(true);
     try {
-      const mailtoUrl = `mailto:suport@leviescalas.com.br?subject=${encodeURIComponent(`Contato LEVI - ${data.name}`)}&body=${encodeURIComponent(`Nome: ${data.name}\nEmail: ${data.email}\n\nMensagem:\n${data.message}`)}`;
-      window.open(mailtoUrl, '_blank');
+      const { error } = await supabase.functions.invoke('send-contact-email', {
+        body: { name: data.name, email: data.email, phone: data.phone, message: data.message },
+      });
+      if (error) throw error;
       setContactSent(true);
       contactForm.reset();
-      toast({ title: 'Mensagem preparada!', description: 'Seu cliente de email foi aberto com a mensagem.' });
+      toast({ title: 'Mensagem enviada!', description: 'Recebemos sua mensagem e responderemos em breve.' });
     } catch {
-      toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível abrir o email.' });
+      toast({ variant: 'destructive', title: 'Erro', description: 'Não foi possível enviar. Tente novamente.' });
     } finally { setContactLoading(false); }
   };
 
@@ -907,6 +910,11 @@ export default function Landing() {
                   {contactForm.formState.errors.email && <p className="text-sm text-destructive">{contactForm.formState.errors.email.message}</p>}
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="contact-phone">Telefone</Label>
+                  <Input id="contact-phone" type="tel" placeholder="(00) 00000-0000" {...contactForm.register('phone')} className="h-11 border-destructive/15 focus-visible:ring-destructive/30" />
+                  {contactForm.formState.errors.phone && <p className="text-sm text-destructive">{contactForm.formState.errors.phone.message}</p>}
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="contact-message">Mensagem</Label>
                   <textarea
                     id="contact-message"
@@ -934,8 +942,8 @@ export default function Landing() {
                 <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto" style={{ boxShadow: '0 0 30px hsl(0 70% 50% / 0.2)' }}>
                   <CheckCircle2 className="w-8 h-8 text-destructive" />
                 </div>
-                <h3 className="text-lg font-semibold text-foreground">Mensagem preparada!</h3>
-                <p className="text-sm text-muted-foreground">Seu cliente de email foi aberto. Envie a mensagem para concluir.</p>
+                <h3 className="text-lg font-semibold text-foreground">Mensagem enviada!</h3>
+                <p className="text-sm text-muted-foreground">Recebemos sua mensagem e responderemos em breve.</p>
                 <Button variant="outline" className="border-destructive/20 text-destructive hover:bg-destructive/10" onClick={() => setContactSent(false)}>
                   Enviar outra mensagem
                 </Button>
