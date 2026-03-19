@@ -382,7 +382,7 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
                   >
                     <Avatar className="w-6 h-6">
                       {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={userName || 'Usuário'} />}
-                      <AvatarFallback className="bg-secondary text-secondary-foreground text-[9px] font-bold">
+                      <AvatarFallback className="bg-destructive text-destructive-foreground text-[9px] font-bold">
                         {userName ? getInitials(userName) : 'U'}
                       </AvatarFallback>
                     </Avatar>
