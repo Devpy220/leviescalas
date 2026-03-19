@@ -38,6 +38,7 @@ import {
   Send,
 } from 'lucide-react';
 import { LeviLogo } from '@/components/LeviLogo';
+import { LeviTypewriter } from '@/components/LeviTypewriter';
 import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable';
 import { TwoFactorVerify } from '@/components/auth/TwoFactorVerify';
