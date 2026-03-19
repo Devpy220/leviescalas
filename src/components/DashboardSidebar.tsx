@@ -65,7 +65,7 @@ function SidebarItem({ icon: Icon, label, active, onClick, className, expanded }
 }) {
   const baseClass = `w-full flex items-center ${expanded ? 'justify-start px-3' : 'justify-center px-2'} py-3 rounded-xl text-sm font-medium transition-all ${
     active
-      ? 'bg-secondary text-secondary-foreground shadow-lg'
+      ? 'bg-destructive text-destructive-foreground shadow-lg'
       : className || 'text-white/80 hover:bg-white/10 hover:text-white'
   }`;
 

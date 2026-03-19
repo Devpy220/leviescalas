@@ -575,11 +575,13 @@
   }
 
   .gradient-sidebar {
-    background: linear-gradient(180deg, hsl(263 84% 58%) 0%, hsl(263 76% 42%) 100%);
+    background: linear-gradient(180deg, hsl(0 0% 8%) 0%, hsl(0 60% 12%) 50%, hsl(0 0% 5%) 100%);
+    backdrop-filter: blur(20px);
   }
 
   .dark .gradient-sidebar {
-    background: linear-gradient(180deg, hsl(263 76% 42%) 0%, hsl(263 68% 26%) 100%);
+    background: linear-gradient(180deg, hsl(0 0% 5%) 0%, hsl(0 50% 8%) 50%, hsl(0 0% 3%) 100%);
+    backdrop-filter: blur(20px);
   }
 }
 
