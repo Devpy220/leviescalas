@@ -303,21 +303,130 @@ function FeatureCube() {
 }
 
 // ── Feature data (real LEVI features) ────────────────────────────────────────
-const featureCards = [
-  { icon: Calendar, title: 'Escalas inteligentes', desc: 'Crie escalas semanais ou mensais com poucos cliques. O sistema distribui os voluntários automaticamente.', color: 'bg-primary/15 text-primary' },
-  { icon: Bell, title: 'Notificações automáticas', desc: 'Voluntários recebem lembrete via WhatsApp antes do compromisso, sem você precisar fazer nada.', color: 'bg-accent/15 text-accent' },
-  { icon: CheckCircle2, title: 'Confirmações em tempo real', desc: 'Acompanhe quem confirmou, quem pediu troca e quem ainda não respondeu — tudo num painel.', color: 'bg-emerald/15 text-emerald' },
-  { icon: RefreshCw, title: 'Troca de horários', desc: 'Voluntários solicitam trocas direto no app, sem precisar falar com o líder a cada pedido.', color: 'bg-orange-500/15 text-orange-500' },
-  { icon: LayoutGrid, title: 'Múltiplas equipes', desc: 'Louvor, recepção, mídia, infantil — gerencie quantas equipes precisar em um único lugar.', color: 'bg-violet-500/15 text-violet-500' },
-  { icon: Users, title: 'Setores e funções', desc: 'Organize membros por setores e atribua funções específicas para cada escala.', color: 'bg-secondary/15 text-secondary' },
+const allSlides = [
+  // Features
+  { type: 'feature' as const, icon: Calendar, title: 'Escalas inteligentes', desc: 'Crie escalas semanais ou mensais com poucos cliques. O sistema distribui os voluntários automaticamente.', color: 'bg-primary/15 text-primary' },
+  { type: 'feature' as const, icon: Bell, title: 'Notificações automáticas', desc: 'Voluntários recebem lembrete via WhatsApp antes do compromisso, sem você precisar fazer nada.', color: 'bg-accent/15 text-accent' },
+  { type: 'feature' as const, icon: CheckCircle2, title: 'Confirmações em tempo real', desc: 'Acompanhe quem confirmou, quem pediu troca e quem ainda não respondeu — tudo num painel.', color: 'bg-emerald/15 text-emerald' },
+  { type: 'feature' as const, icon: RefreshCw, title: 'Troca de horários', desc: 'Voluntários solicitam trocas direto no app, sem precisar falar com o líder a cada pedido.', color: 'bg-orange-500/15 text-orange-500' },
+  { type: 'feature' as const, icon: LayoutGrid, title: 'Múltiplas equipes', desc: 'Louvor, recepção, mídia, infantil — gerencie quantas equipes precisar em um único lugar.', color: 'bg-violet-500/15 text-violet-500' },
+  { type: 'feature' as const, icon: Users, title: 'Setores e funções', desc: 'Organize membros por setores e atribua funções específicas para cada escala.', color: 'bg-secondary/15 text-secondary' },
+  // Steps
+  { type: 'step' as const, step: 1, title: 'Crie sua conta', desc: 'Cadastre-se em menos de 2 minutos. Totalmente gratuito.' },
+  { type: 'step' as const, step: 2, title: 'Monte sua equipe', desc: 'Cadastre os voluntários e organize por ministério ou setor.' },
+  { type: 'step' as const, step: 3, title: 'Gere a escala', desc: 'Defina datas e o sistema cuida do resto automaticamente.' },
+  { type: 'step' as const, step: 4, title: 'Acompanhe ao vivo', desc: 'Confirmações e pendências em tempo real no painel.' },
 ];
 
+// Keep for backward compat references
+const featureCards = allSlides.filter(s => s.type === 'feature');
 const steps = [
   { title: 'Crie sua conta', desc: 'Cadastre-se em menos de 2 minutos. Totalmente gratuito.' },
   { title: 'Monte sua equipe', desc: 'Cadastre os voluntários e organize por ministério ou setor.' },
   { title: 'Gere a escala', desc: 'Defina datas e o sistema cuida do resto automaticamente.' },
   { title: 'Acompanhe ao vivo', desc: 'Confirmações e pendências em tempo real no painel.' },
 ];
+
+// ── Feature Carousel (single-screen, auto-cycling) ──────────────────────────
+function FeatureCarousel() {
+  const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const total = allSlides.length;
+
+  useEffect(() => {
+    if (paused) return;
+    const t = setInterval(() => setActive(a => (a + 1) % total), 3500);
+    return () => clearInterval(t);
+  }, [paused, total]);
+
+  const slide = allSlides[active];
+  const isFeature = slide.type === 'feature';
+  const sectionLabel = isFeature ? 'Funcionalidades' : 'Como funciona';
+  const sectionTitle = isFeature ? 'Tudo que sua igreja precisa' : 'Simples de começar';
+
+  return (
+    <div
+      className="flex flex-col items-center gap-8"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      {/* Header */}
+      <div className="text-center">
+        <p className="text-primary text-xs font-semibold uppercase tracking-[0.12em] mb-2">{sectionLabel}</p>
+        <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">{sectionTitle}</h2>
+      </div>
+
+      {/* Card area */}
+      <div className="relative w-full max-w-md h-[220px] sm:h-[200px]">
+        {allSlides.map((s, i) => {
+          const isActive = i === active;
+          return (
+            <div
+              key={i}
+              className="absolute inset-0 flex items-center justify-center transition-all duration-700 ease-in-out"
+              style={{
+                opacity: isActive ? 1 : 0,
+                transform: isActive ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.95)',
+                pointerEvents: isActive ? 'auto' : 'none',
+              }}
+            >
+              <div
+                className="w-full p-8 rounded-2xl backdrop-blur-md border border-primary/15 overflow-hidden relative"
+                style={{
+                  background: 'hsl(var(--card) / 0.55)',
+                  boxShadow: '0 8px 40px hsl(var(--primary) / 0.12), 0 2px 8px hsl(0 0% 0% / 0.12), inset 0 1px 0 hsl(0 0% 100% / 0.1)',
+                }}
+              >
+                {/* Glass shine */}
+                <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(135deg, hsl(var(--primary) / 0.06) 0%, transparent 50%, hsl(var(--secondary) / 0.04) 100%)' }} />
+
+                <div className="relative z-[1] flex flex-col items-center text-center gap-3">
+                  {s.type === 'feature' && 'icon' in s ? (
+                    <div className={`w-14 h-14 rounded-xl ${'color' in s ? s.color : ''} flex items-center justify-center shadow-sm`}>
+                      {(() => { const Icon = (s as any).icon; return <Icon className="w-7 h-7" />; })()}
+                    </div>
+                  ) : (
+                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center font-bold text-lg text-primary-foreground shadow-glow-sm">
+                      {'step' in s ? (s as any).step : ''}
+                    </div>
+                  )}
+                  <h3 className="font-display text-lg sm:text-xl font-bold text-foreground">{s.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">{s.desc}</p>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Dot indicators */}
+      <div className="flex items-center gap-2">
+        {allSlides.map((s, i) => {
+          const isFeatureGroup = i < 6;
+          return (
+            <button
+              key={i}
+              onClick={() => setActive(i)}
+              className={`rounded-full transition-all duration-300 ${
+                i === active
+                  ? 'w-6 h-2.5 bg-primary shadow-glow-sm'
+                  : `w-2.5 h-2.5 ${isFeatureGroup ? 'bg-primary/25 hover:bg-primary/40' : 'bg-secondary/25 hover:bg-secondary/40'}`
+              }`}
+            />
+          );
+        })}
+      </div>
+
+      {/* Progress bar */}
+      <div className="w-full max-w-xs h-1 rounded-full bg-muted/30 overflow-hidden">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-primary to-secondary transition-all duration-300"
+          style={{ width: `${((active + 1) / total) * 100}%` }}
+        />
+      </div>
+    </div>
+  );
+}
 
 // ── Schemas ──────────────────────────────────────────────────────────────────
 const loginSchema = z.object({ email: z.string().email('Email inválido'), password: z.string().min(1, 'Senha é obrigatória') });
