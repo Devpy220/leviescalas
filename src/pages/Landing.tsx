@@ -342,9 +342,8 @@ function FeatureCarousel() {
   }, [paused, total]);
 
   const slide = allSlides[active];
-  const isFeature = slide.type === 'feature';
-  const sectionLabel = isFeature ? 'Funcionalidades' : 'Como funciona';
-  const sectionTitle = isFeature ? 'Tudo que sua igreja precisa' : 'Simples de começar';
+  const sectionLabel = slide.type === 'feature' ? 'Funcionalidades' : slide.type === 'step' ? 'Como funciona' : '🚀 Vamos começar';
+  const sectionTitle = slide.type === 'feature' ? 'Tudo que sua igreja precisa' : slide.type === 'step' ? 'Simples de começar' : 'Sua igreja mais organizada';
 
   return (
     <div
