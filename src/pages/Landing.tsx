@@ -729,39 +729,23 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── CTA FINAL ── */}
-      <section className="relative z-[1] py-20 sm:py-28">
-        <div className="container mx-auto px-4 sm:px-6 max-w-xl">
-          <Reveal>
-            <div className="text-center rounded-3xl bg-card/70 backdrop-blur-sm border border-border/50 p-10 sm:p-14 shadow-soft-lg relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 pointer-events-none" />
-              <div className="relative z-[1]">
-                <div className="text-5xl mb-4">📅</div>
-                <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground mb-3">Comece hoje, gratuitamente</h2>
-                <p className="text-muted-foreground mb-8 leading-relaxed">
-                  Junte-se aos voluntários que já simplificaram a gestão das escalas na sua igreja.
-                </p>
-                <div className="flex gap-3 justify-center flex-wrap">
-                  <Button
-                    size="lg"
-                    className="bg-secondary text-secondary-foreground shadow-glow-sm hover:shadow-glow rounded-full px-8 font-semibold"
-                    onClick={() => openAuth('login')}
-                  >
-                    Entrar
-                  </Button>
-                </div>
-                <p className="mt-5 text-xs text-muted-foreground/50">
-                  100% gratuito · Suporte em português
-                </p>
-              </div>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
       {/* ── FOOTER ── */}
-      <footer className="relative z-[1] py-6 border-t border-border/30 text-center text-xs text-muted-foreground/40">
-        <span className="text-primary font-bold">LEVI</span> · © {new Date().getFullYear()} · Feito com 💜 para igrejas brasileiras
+      <footer className="relative z-[1] py-6 border-t border-border/30">
+        <div className="container mx-auto px-4 sm:px-6 flex flex-col items-center gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-primary font-bold text-sm">LEVI</span>
+            <span className="text-muted-foreground/30">·</span>
+            <span className="text-xs text-muted-foreground/40">© {new Date().getFullYear()}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <img
+              src={elsdigitalLogo}
+              alt="ELSDIGITAL"
+              className="w-6 h-6 rounded-full object-cover"
+            />
+            <span className="text-xs text-muted-foreground/50 font-medium">Desenvolvendo Soluções</span>
+          </div>
+        </div>
       </footer>
 
       {/* ── AUTH MODAL ── */}
