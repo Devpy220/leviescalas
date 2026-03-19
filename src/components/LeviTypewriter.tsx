@@ -56,3 +56,5 @@ export function LeviTypewriter({ className = '' }: LeviTypewriterProps) {
         <span className="animate-pulse" style={{ color: 'hsl(var(--secondary))' }}>|</span>
       </span>
     </span>
+  );
+}
