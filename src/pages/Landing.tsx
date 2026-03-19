@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import elsdigitalLogo from '@/assets/elsdigital-logo.jpeg';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
