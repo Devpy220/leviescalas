@@ -203,6 +203,7 @@ function FeatureCube() {
   const rafRef = useRef<number>(0);
   const [paused, setPaused] = useState(false);
   const lastRef = useRef<number | null>(null);
+  const isMobile = useIsMobile();
 
   const faces = [
     { Icon: Calendar, label: 'Calendário', pill: '⚡ Ao vivo', face: 'front' },
@@ -213,8 +214,8 @@ function FeatureCube() {
     { Icon: CheckCircle2, label: 'Confirmações', pill: '✅ Real-time', face: 'bottom' },
   ];
 
-  // Size of the cube (half-side for translateZ)
-  const size = 170;
+  // Responsive size: smaller on mobile
+  const size = isMobile ? 100 : 170;
 
   const faceTransforms: Record<string, string> = {
     front: `translateZ(${size}px)`,
