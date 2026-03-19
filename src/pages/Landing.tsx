@@ -602,8 +602,16 @@ export default function Landing() {
       </section>
 
       {/* ── FEATURES ── */}
-      <section id="funcionalidades" className="relative z-[1] py-20 sm:py-28" style={{ scrollMarginTop: 80 }}>
-        <div className="container mx-auto px-4 sm:px-6 max-w-5xl">
+      <section id="funcionalidades" className="relative z-[1] py-20 sm:py-28 overflow-hidden" style={{ scrollMarginTop: 80 }}>
+        {/* Background effects */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/4 -left-32 w-[500px] h-[500px] rounded-full opacity-30 blur-mega" style={{ background: 'radial-gradient(circle, hsl(var(--primary) / 0.4), transparent 70%)' }} />
+          <div className="absolute bottom-1/4 -right-32 w-[400px] h-[400px] rounded-full opacity-25 blur-mega" style={{ background: 'radial-gradient(circle, hsl(var(--secondary) / 0.4), transparent 70%)' }} />
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+        </div>
+
+        <div className="container mx-auto px-4 sm:px-6 max-w-5xl relative">
           <Reveal>
             <div className="text-center mb-14">
               <p className="text-primary text-xs font-semibold uppercase tracking-[0.12em] mb-3">Funcionalidades</p>
@@ -613,12 +621,25 @@ export default function Landing() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {featureCards.map((card, i) => (
               <Reveal key={card.title} delay={i * 0.08}>
-                <div className="group p-6 rounded-2xl bg-card/70 backdrop-blur-sm border border-border/50 hover:border-primary/40 transition-all duration-300 hover:-translate-y-1 cursor-default">
-                  <div className={`w-12 h-12 rounded-xl ${card.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                    <card.icon className="w-6 h-6" />
+                <div
+                  className="group relative p-6 rounded-2xl backdrop-blur-md border border-primary/10 hover:border-primary/30 transition-all duration-500 hover:-translate-y-2 cursor-default overflow-hidden"
+                  style={{
+                    background: 'hsl(var(--card) / 0.5)',
+                    boxShadow: '0 4px 30px hsl(var(--primary) / 0.08), 0 1px 3px hsl(0 0% 0% / 0.1), inset 0 1px 0 hsl(0 0% 100% / 0.08)',
+                  }}
+                >
+                  {/* Glass shine */}
+                  <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ background: 'linear-gradient(135deg, hsl(var(--primary) / 0.08) 0%, transparent 50%, hsl(var(--secondary) / 0.05) 100%)' }} />
+                  {/* Glow on hover */}
+                  <div className="absolute -inset-px rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ boxShadow: '0 8px 40px hsl(var(--primary) / 0.15), 0 0 60px hsl(var(--primary) / 0.05)' }} />
+
+                  <div className="relative z-[1]">
+                    <div className={`w-12 h-12 rounded-xl ${card.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-sm`}>
+                      <card.icon className="w-6 h-6" />
+                    </div>
+                    <h3 className="font-display text-base font-bold text-foreground mb-2">{card.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{card.desc}</p>
                   </div>
-                  <h3 className="font-display text-base font-bold text-foreground mb-2">{card.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{card.desc}</p>
                 </div>
               </Reveal>
             ))}
