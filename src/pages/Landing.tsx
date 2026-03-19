@@ -64,13 +64,14 @@ function Typewriter({ words }: { words: string[] }) {
   const [idx, setIdx] = useState(0);
   const [text, setText] = useState('');
   const [del, setDel] = useState(false);
+  const [charKey, setCharKey] = useState(0);
 
   useEffect(() => {
     const word = words[idx];
     const t = del
       ? setTimeout(() => {
           setText(s => s.slice(0, -1));
-          if (text.length === 1) { setDel(false); setIdx(i => (i + 1) % words.length); }
+          if (text.length === 1) { setDel(false); setIdx(i => (i + 1) % words.length); setCharKey(k => k + 1); }
         }, 55)
       : setTimeout(() => {
           setText(word.slice(0, text.length + 1));
@@ -80,9 +81,17 @@ function Typewriter({ words }: { words: string[] }) {
   }, [text, del, idx, words]);
 
   return (
-    <span className="text-secondary">
-      {text}
-      <span className="animate-pulse">|</span>
+    <span className="typewriter-word">
+      {text.split('').map((char, i) => (
+        <span
+          key={`${charKey}-${i}`}
+          className="typewriter-char"
+          style={{ animationDelay: `${i * 30}ms` }}
+        >
+          {char}
+        </span>
+      ))}
+      <span className="typewriter-cursor">|</span>
     </span>
   );
 }
