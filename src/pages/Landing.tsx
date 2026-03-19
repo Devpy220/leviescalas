@@ -292,11 +292,11 @@ function FeatureCube() {
                 boxShadow: 'inset 0 1px 0 hsl(0 0% 100% / 0.12), 0 8px 32px hsl(0 0% 0% / 0.2)',
               }}
             >
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-primary/15 flex items-center justify-center">
-                <item.Icon className="w-6 h-6 sm:w-7 sm:h-7 text-primary" />
+              <div className={`${isMobile ? 'w-8 h-8' : 'w-12 h-12 sm:w-14 sm:h-14'} rounded-xl bg-primary/15 flex items-center justify-center`}>
+                <item.Icon className={`${isMobile ? 'w-4 h-4' : 'w-6 h-6 sm:w-7 sm:h-7'} text-primary`} />
               </div>
-              <span className="text-sm sm:text-base font-bold text-foreground">{item.label}</span>
-              <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full border border-border/40 bg-muted/20 text-muted-foreground">
+              <span className={`${isMobile ? 'text-[10px]' : 'text-sm sm:text-base'} font-bold text-foreground`}>{item.label}</span>
+              <span className={`${isMobile ? 'text-[8px] px-1.5' : 'text-[10px] sm:text-xs px-2.5'} py-0.5 rounded-full border border-border/40 bg-muted/20 text-muted-foreground`}>
                 {item.pill}
               </span>
             </div>
