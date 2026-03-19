@@ -710,8 +710,8 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── FEATURES ── */}
-      <section id="funcionalidades" className="relative z-[1] py-20 sm:py-28 overflow-hidden" style={{ scrollMarginTop: 80 }}>
+      {/* ── FEATURES + HOW IT WORKS — Single Screen Carousel ── */}
+      <section id="funcionalidades" className="relative z-[1] min-h-[80vh] flex items-center overflow-hidden py-12" style={{ scrollMarginTop: 80 }}>
         {/* Background effects */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/4 -left-32 w-[500px] h-[500px] rounded-full opacity-30 blur-mega" style={{ background: 'radial-gradient(circle, hsl(var(--primary) / 0.4), transparent 70%)' }} />
@@ -720,97 +720,8 @@ export default function Landing() {
           <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
         </div>
 
-        <div className="container mx-auto px-4 sm:px-6 max-w-5xl relative">
-          <Reveal>
-            <div className="text-center mb-14">
-              <p className="text-primary text-xs font-semibold uppercase tracking-[0.12em] mb-3">Funcionalidades</p>
-              <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">Tudo que sua igreja precisa</h2>
-            </div>
-          </Reveal>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {featureCards.map((card, i) => (
-              <Reveal key={card.title} delay={i * 0.08}>
-                <div
-                  className="group relative p-6 rounded-2xl backdrop-blur-md border border-primary/10 hover:border-primary/30 transition-all duration-500 hover:-translate-y-2 cursor-default overflow-hidden"
-                  style={{
-                    background: 'hsl(var(--card) / 0.5)',
-                    boxShadow: '0 4px 30px hsl(var(--primary) / 0.08), 0 1px 3px hsl(0 0% 0% / 0.1), inset 0 1px 0 hsl(0 0% 100% / 0.08)',
-                  }}
-                >
-                  {/* Glass shine */}
-                  <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ background: 'linear-gradient(135deg, hsl(var(--primary) / 0.08) 0%, transparent 50%, hsl(var(--secondary) / 0.05) 100%)' }} />
-                  {/* Glow on hover */}
-                  <div className="absolute -inset-px rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ boxShadow: '0 8px 40px hsl(var(--primary) / 0.15), 0 0 60px hsl(var(--primary) / 0.05)' }} />
-
-                  <div className="relative z-[1]">
-                    <div className={`w-12 h-12 rounded-xl ${card.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-sm`}>
-                      <card.icon className="w-6 h-6" />
-                    </div>
-                    <h3 className="font-display text-base font-bold text-foreground mb-2">{card.title}</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{card.desc}</p>
-                  </div>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── HOW IT WORKS ── */}
-      <section id="como-funciona" className="relative z-[1] py-20 sm:py-28 border-t border-b border-border/30 bg-muted/20" style={{ scrollMarginTop: 80 }}>
-        <div className="container mx-auto px-4 sm:px-6 max-w-5xl">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            <div>
-              <Reveal>
-                <p className="text-primary text-xs font-semibold uppercase tracking-[0.12em] mb-3">Como funciona</p>
-                <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground mb-10">
-                  Simples de começar,<br />poderoso para crescer
-                </h2>
-              </Reveal>
-              <div className="flex flex-col gap-6">
-                {steps.map((step, i) => (
-                  <Reveal key={step.title} delay={0.1 + i * 0.12} direction="left">
-                    <div className="flex gap-4 items-start">
-                      <div className="min-w-[44px] h-11 rounded-full bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center font-bold text-sm text-primary-foreground shrink-0 shadow-glow-sm">
-                        {i + 1}
-                      </div>
-                      <div>
-                        <h4 className="font-display font-bold text-foreground mb-1">{step.title}</h4>
-                        <p className="text-sm text-muted-foreground leading-relaxed">{step.desc}</p>
-                      </div>
-                    </div>
-                  </Reveal>
-                ))}
-              </div>
-            </div>
-
-            <Reveal direction="right" delay={0.2}>
-              <div className="rounded-2xl bg-card/80 backdrop-blur-sm border border-border/50 p-5 shadow-soft-lg">
-                <div className="flex items-center gap-2 mb-4">
-                  {['bg-destructive/60', 'bg-secondary/60', 'bg-accent/60'].map((c, i) => (
-                    <div key={i} className={`w-2.5 h-2.5 rounded-full ${c}`} />
-                  ))}
-                  <span className="text-xs text-muted-foreground ml-2">Painel — próximo domingo</span>
-                </div>
-                {[
-                  { name: 'Louvor', people: 'Ana, Pedro, Marcos', ok: true },
-                  { name: 'Recepção', people: 'Lúcia, João', ok: false },
-                  { name: 'Mídia', people: 'Rafael, Bia', ok: true },
-                  { name: 'Infantil', people: 'Carla, Tiago', ok: false },
-                ].map((t) => (
-                  <div key={t.name} className="bg-muted/30 border border-border/30 rounded-xl p-3 mb-2 flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-bold text-foreground">{t.name}</div>
-                      <div className="text-xs text-muted-foreground mt-0.5">{t.people}</div>
-                    </div>
-                    <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${t.ok ? 'bg-accent/15 text-accent' : 'bg-secondary/15 text-secondary'}`}>
-                      {t.ok ? '✓ Confirmado' : '⏳ Pendente'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </Reveal>
-          </div>
+        <div className="container mx-auto px-4 sm:px-6 max-w-5xl relative w-full">
+          <FeatureCarousel />
         </div>
       </section>
 
