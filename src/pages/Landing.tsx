@@ -868,6 +868,82 @@ export default function Landing() {
           </DialogPrimitive.Content>
         </DialogPortal>
       </Dialog>
+
+      {/* ── CONTACT MODAL ── */}
+      <Dialog open={showContact} onOpenChange={(open) => { setShowContact(open); if (!open) setContactSent(false); }}>
+        <DialogPortal>
+          <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+          <DialogPrimitive.Content className="fixed left-[50%] top-[50%] z-50 w-full max-w-md translate-x-[-50%] translate-y-[-50%] rounded-2xl border border-destructive/20 bg-card/95 backdrop-blur-xl p-6 shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]"
+            style={{ boxShadow: '0 0 60px hsl(0 70% 50% / 0.15), 0 25px 50px hsl(0 0% 0% / 0.25)' }}
+          >
+            <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+              <X className="h-4 w-4" />
+              <span className="sr-only">Fechar</span>
+            </DialogPrimitive.Close>
+
+            {/* Red accent line */}
+            <div className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl bg-gradient-to-r from-destructive via-destructive/80 to-destructive/40" />
+
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
+                <Mail className="w-5 h-5 text-destructive" />
+              </div>
+              <div>
+                <span className="font-display text-xl font-bold text-foreground">Fale conosco</span>
+                <p className="text-xs text-muted-foreground">Envie sua dúvida ou sugestão</p>
+              </div>
+            </div>
+
+            {!contactSent ? (
+              <form onSubmit={contactForm.handleSubmit(handleContact)} className="space-y-4 animate-fade-in">
+                <div className="space-y-2">
+                  <Label htmlFor="contact-name">Nome</Label>
+                  <Input id="contact-name" placeholder="Seu nome" {...contactForm.register('name')} className="h-11 border-destructive/15 focus-visible:ring-destructive/30" />
+                  {contactForm.formState.errors.name && <p className="text-sm text-destructive">{contactForm.formState.errors.name.message}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="contact-email">Email</Label>
+                  <Input id="contact-email" type="email" placeholder="seu@email.com" {...contactForm.register('email')} className="h-11 border-destructive/15 focus-visible:ring-destructive/30" />
+                  {contactForm.formState.errors.email && <p className="text-sm text-destructive">{contactForm.formState.errors.email.message}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="contact-message">Mensagem</Label>
+                  <textarea
+                    id="contact-message"
+                    placeholder="Escreva sua mensagem..."
+                    rows={4}
+                    {...contactForm.register('message')}
+                    className="flex w-full rounded-md border border-destructive/15 bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30 focus-visible:ring-offset-2 resize-none"
+                  />
+                  {contactForm.formState.errors.message && <p className="text-sm text-destructive">{contactForm.formState.errors.message.message}</p>}
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full h-11 bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-all"
+                  style={{ boxShadow: '0 0 20px hsl(0 70% 50% / 0.25)' }}
+                  disabled={contactLoading}
+                >
+                  {contactLoading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Enviando...</> : <><Send className="w-4 h-4 mr-2" />Enviar mensagem</>}
+                </Button>
+                <p className="text-center text-xs text-muted-foreground/50">
+                  Enviado para suport@leviescalas.com.br
+                </p>
+              </form>
+            ) : (
+              <div className="text-center space-y-3 py-6 animate-fade-in">
+                <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto" style={{ boxShadow: '0 0 30px hsl(0 70% 50% / 0.2)' }}>
+                  <CheckCircle2 className="w-8 h-8 text-destructive" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground">Mensagem preparada!</h3>
+                <p className="text-sm text-muted-foreground">Seu cliente de email foi aberto. Envie a mensagem para concluir.</p>
+                <Button variant="outline" className="border-destructive/20 text-destructive hover:bg-destructive/10" onClick={() => setContactSent(false)}>
+                  Enviar outra mensagem
+                </Button>
+              </div>
+            )}
+          </DialogPrimitive.Content>
+        </DialogPortal>
+      </Dialog>
     </div>
   );
 }
