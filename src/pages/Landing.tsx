@@ -441,6 +441,7 @@ const recoverySchema = z.object({ email: z.string().email('Email inválido') });
 const contactSchema = z.object({
   name: z.string().trim().min(1, 'Nome é obrigatório').max(100),
   email: z.string().trim().email('Email inválido').max(255),
+  phone: z.string().trim().min(1, 'Telefone é obrigatório').max(20),
   message: z.string().trim().min(1, 'Mensagem é obrigatória').max(1000),
 });
 type LoginForm = z.infer<typeof loginSchema>;
