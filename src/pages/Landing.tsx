@@ -724,12 +724,12 @@ export default function Landing() {
               </p>
 
               <div
-                className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start animate-fade-in"
+                className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-fade-in"
                 style={{ animationDelay: '0.55s', animationFillMode: 'both' }}
               >
                 <Button
                   size="lg"
-                  className="bg-secondary text-secondary-foreground shadow-glow-sm hover:shadow-glow transition-all hover:brightness-110 rounded-full px-8 font-semibold"
+                  className="bg-secondary text-secondary-foreground shadow-glow hover:shadow-glow-lg transition-all hover:brightness-110 hover:scale-105 rounded-full px-12 py-6 text-lg font-bold"
                   onClick={() => openAuth('login')}
                 >
                   Entrar
