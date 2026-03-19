@@ -42,6 +42,7 @@ const DialogContent = React.forwardRef<
       style={{ background: 'hsl(var(--card) / 0.92)', boxShadow: '0 0 40px hsl(0 50% 20% / 0.1), 0 25px 50px hsl(0 0% 0% / 0.2), inset 0 1px 0 hsl(0 0% 100% / 0.06)' }}
       {...props}
     >
+      <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-2xl bg-gradient-to-r from-destructive/60 via-destructive/30 to-transparent" />
       {children}
       <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity data-[state=open]:bg-accent data-[state=open]:text-muted-foreground hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
         <X className="h-4 w-4" />
