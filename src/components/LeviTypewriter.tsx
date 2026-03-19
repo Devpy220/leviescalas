@@ -46,7 +46,7 @@ export function LeviTypewriter({ className = '' }: LeviTypewriterProps) {
       >
         LEVI
       </span>
-      <span className="text-[10px] sm:text-xs text-muted-foreground/70 font-medium tracking-wide hidden sm:inline">
+      <span className="text-[10px] sm:text-xs text-muted-foreground/70 font-medium tracking-wide">
         {visibleText.split('').map((char, i) => {
           const isHighlight = HIGHLIGHT_INDICES.has(i);
           return (

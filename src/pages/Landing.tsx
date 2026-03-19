@@ -202,9 +202,15 @@ function FeatureCube() {
   const cubeRef = useRef<HTMLDivElement>(null);
   const rotRef = useRef({ x: -25, y: 0 });
   const rafRef = useRef<number>(0);
-  const [paused, setPaused] = useState(false);
   const lastRef = useRef<number | null>(null);
   const isMobile = useIsMobile();
+
+  // Drag state
+  const dragging = useRef(false);
+  const dragStart = useRef({ x: 0, y: 0 });
+  const rotStart = useRef({ x: 0, y: 0 });
+  const autoSpeed = useRef(0.02); // current auto-rotation speed
+  const lastInteraction = useRef(0);
 
   const faces = [
     { Icon: Calendar, label: 'Calendário', pill: '⚡ Ao vivo', face: 'front' },
@@ -215,7 +221,6 @@ function FeatureCube() {
     { Icon: CheckCircle2, label: 'Confirmações', pill: '✅ Real-time', face: 'bottom' },
   ];
 
-  // Responsive size: smaller on mobile
   const size = isMobile ? 100 : 170;
 
   const faceTransforms: Record<string, string> = {
@@ -227,9 +232,34 @@ function FeatureCube() {
     bottom: `rotateX(-90deg) translateZ(${size}px)`,
   };
 
+  // Pointer handlers for drag rotation
+  const onPointerDown = useCallback((e: React.PointerEvent) => {
+    dragging.current = true;
+    dragStart.current = { x: e.clientX, y: e.clientY };
+    rotStart.current = { ...rotRef.current };
+    lastInteraction.current = Date.now();
+    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+  }, []);
+
+  const onPointerMove = useCallback((e: React.PointerEvent) => {
+    if (!dragging.current) return;
+    const dx = e.clientX - dragStart.current.x;
+    const dy = e.clientY - dragStart.current.y;
+    rotRef.current.y = rotStart.current.y + dx * 0.5;
+    rotRef.current.x = rotStart.current.x - dy * 0.5;
+    lastInteraction.current = Date.now();
+  }, []);
+
+  const onPointerUp = useCallback(() => {
+    dragging.current = false;
+    lastInteraction.current = Date.now();
+  }, []);
+
   useEffect(() => {
     const animate = (ts: number) => {
-      if (!paused) {
+      // Resume auto-rotation 2s after last interaction
+      const timeSinceInteraction = Date.now() - lastInteraction.current;
+      if (!dragging.current && timeSinceInteraction > 2000) {
         if (lastRef.current !== null) {
           const dt = ts - lastRef.current;
           rotRef.current.y += dt * 0.02;
@@ -248,16 +278,10 @@ function FeatureCube() {
     };
     rafRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [paused]);
+  }, []);
 
   return (
-    <div
-      className="flex flex-col items-center gap-3"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onTouchStart={() => setPaused(true)}
-      onTouchEnd={() => setPaused(false)}
-    >
+    <div className="flex flex-col items-center gap-3">
       {/* Glow behind cube */}
       <div className={`absolute ${isMobile ? 'w-[200px] h-[200px]' : 'w-[300px] h-[300px] sm:w-[380px] sm:h-[380px]'} rounded-full pointer-events-none animate-pulse-glow`}
         style={{ background: 'radial-gradient(circle, hsl(var(--primary) / 0.2) 0%, hsl(var(--primary) / 0.05) 50%, transparent 70%)' }}
@@ -265,12 +289,16 @@ function FeatureCube() {
 
       {/* 3D Cube Scene */}
       <div
-        className="relative"
+        className="relative cursor-grab active:cursor-grabbing touch-none"
         style={{
           width: size * 2,
           height: size * 2,
           perspective: 800,
         }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
       >
         <div
           ref={cubeRef}
@@ -279,7 +307,6 @@ function FeatureCube() {
             height: '100%',
             position: 'relative',
             transformStyle: 'preserve-3d',
-            transition: paused ? 'transform 0.3s ease-out' : 'none',
           }}
         >
           {faces.map((item) => (
@@ -303,7 +330,7 @@ function FeatureCube() {
           ))}
         </div>
       </div>
-      <span className="text-[11px] text-primary/40 tracking-wider">↻ toque para pausar</span>
+      <span className="text-[11px] text-primary/40 tracking-wider select-none">↻ arraste para girar</span>
     </div>
   );
 }
