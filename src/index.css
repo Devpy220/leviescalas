@@ -219,6 +219,18 @@
     border-color: hsl(261 49% 23% / 0.4);
   }
 
+  .glass-card {
+    @apply backdrop-blur-xl border rounded-2xl;
+    background: hsl(var(--card) / 0.6);
+    border-color: hsl(0 50% 40% / 0.12);
+    box-shadow: 0 4px 24px hsl(0 50% 20% / 0.06), 0 1px 3px hsl(0 0% 0% / 0.08), inset 0 1px 0 hsl(0 0% 100% / 0.06);
+  }
+
+  .glass-card:hover {
+    border-color: hsl(0 50% 40% / 0.22);
+    box-shadow: 0 8px 32px hsl(0 50% 20% / 0.1), 0 2px 6px hsl(0 0% 0% / 0.1), inset 0 1px 0 hsl(0 0% 100% / 0.08);
+  }
+
   .glass-subtle {
     @apply backdrop-blur-xl border border-border/10;
     background: hsl(var(--card) / 0.4);
@@ -575,11 +587,13 @@
   }
 
   .gradient-sidebar {
-    background: linear-gradient(180deg, hsl(263 84% 58%) 0%, hsl(263 76% 42%) 100%);
+    background: linear-gradient(180deg, hsl(0 0% 8%) 0%, hsl(0 60% 12%) 50%, hsl(0 0% 5%) 100%);
+    backdrop-filter: blur(20px);
   }
 
   .dark .gradient-sidebar {
-    background: linear-gradient(180deg, hsl(263 76% 42%) 0%, hsl(263 68% 26%) 100%);
+    background: linear-gradient(180deg, hsl(0 0% 5%) 0%, hsl(0 50% 8%) 50%, hsl(0 0% 3%) 100%);
+    backdrop-filter: blur(20px);
   }
 }
 

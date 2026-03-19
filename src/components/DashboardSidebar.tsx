@@ -65,7 +65,7 @@ function SidebarItem({ icon: Icon, label, active, onClick, className, expanded }
 }) {
   const baseClass = `w-full flex items-center ${expanded ? 'justify-start px-3' : 'justify-center px-2'} py-3 rounded-xl text-sm font-medium transition-all ${
     active
-      ? 'bg-secondary text-secondary-foreground shadow-lg'
+      ? 'bg-destructive text-destructive-foreground shadow-lg'
       : className || 'text-white/80 hover:bg-white/10 hover:text-white'
   }`;
 
@@ -323,7 +323,7 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
   return (
     <>
       <aside className={`${expanded ? 'w-52' : 'w-14'} fixed left-0 top-0 bottom-0 z-40 transition-all duration-300`}>
-        <div className="flex flex-col h-full gradient-sidebar text-white">
+        <div className="flex flex-col h-full gradient-sidebar text-white border-r border-destructive/10" style={{ boxShadow: '4px 0 30px hsl(0 60% 20% / 0.15)' }}>
           {/* Logo + expand toggle */}
           <div className={`p-2 pb-2 flex ${expanded ? 'justify-between' : 'justify-center'} items-center`}>
             {expanded ? (
@@ -357,13 +357,13 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
                 onClick={() => navigate('/dashboard')}
                 className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all ${
                   isActive('/dashboard')
-                    ? 'bg-secondary text-secondary-foreground shadow-lg'
+                    ? 'bg-destructive text-destructive-foreground shadow-lg'
                     : 'text-white/80 hover:bg-white/10 hover:text-white'
                 }`}
               >
                 <Avatar className="w-6 h-6">
                   {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={userName || 'Usuário'} />}
-                  <AvatarFallback className="bg-secondary text-secondary-foreground text-[9px] font-bold">
+                   <AvatarFallback className="bg-destructive text-destructive-foreground text-[9px] font-bold">
                     {userName ? getInitials(userName) : 'U'}
                   </AvatarFallback>
                 </Avatar>
@@ -376,13 +376,13 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
                     onClick={() => navigate('/dashboard')}
                     className={`w-full flex items-center justify-center px-2 py-3 rounded-xl text-sm font-medium transition-all ${
                       isActive('/dashboard')
-                        ? 'bg-secondary text-secondary-foreground shadow-lg'
+                        ? 'bg-destructive text-destructive-foreground shadow-lg'
                         : 'text-white/80 hover:bg-white/10 hover:text-white'
                     }`}
                   >
                     <Avatar className="w-6 h-6">
                       {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={userName || 'Usuário'} />}
-                      <AvatarFallback className="bg-secondary text-secondary-foreground text-[9px] font-bold">
+                      <AvatarFallback className="bg-destructive text-destructive-foreground text-[9px] font-bold">
                         {userName ? getInitials(userName) : 'U'}
                       </AvatarFallback>
                     </Avatar>
