@@ -1,4 +1,4 @@
-import leviIcon from '@/assets/levi-icon-red.png';
+import leviIcon from '@/assets/levi-icon-red-black.png';
 
 interface LeviLogoProps {
   size?: 'sm' | 'md' | 'lg';
