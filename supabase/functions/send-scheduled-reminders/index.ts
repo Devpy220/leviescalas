@@ -13,16 +13,11 @@ const MONTHS_SHORT_PT = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago',
 
 const ROLE_LABELS: Record<string, string> = { on_duty: 'Plantão', participant: 'Culto' };
 
-interface ReminderWindow {
-  type: string;
-  hoursAhead: number;
-  label: string;
-}
-
-const REMINDER_WINDOWS: ReminderWindow[] = [
-  { type: '48h', hoursAhead: 48, label: 'em 2 dias' },
-  { type: '12h', hoursAhead: 12, label: 'amanhã' },
-  { type: '3h', hoursAhead: 3, label: 'em 3 horas' },
+// Staggered reminder windows per department group (index % 3)
+const REMINDER_GROUPS = [
+  { windows: [{ type: '48h', hoursAhead: 48, label: 'em 2 dias' }, { type: '16h', hoursAhead: 16, label: 'amanhã' }] },
+  { windows: [{ type: '36h', hoursAhead: 36, label: 'amanhã' }, { type: '10h', hoursAhead: 10, label: 'em 10 horas' }] },
+  { windows: [{ type: '24h', hoursAhead: 24, label: 'amanhã' }, { type: '6h', hoursAhead: 6, label: 'em 6 horas' }] },
 ];
 
 const WINDOW_MARGIN_MINUTES = 20;
@@ -51,7 +46,34 @@ const handler = async (req: Request): Promise<Response> => {
       return { date: `${get('year')}-${get('month')}-${get('day')}`, time: `${get('hour')}:${get('minute')}:${get('second')}` };
     };
 
-    for (const window of REMINDER_WINDOWS) {
+    // Fetch all departments ordered by created_at to assign stable indices
+    const { data: allDepartments } = await supabaseAdmin
+      .from('departments')
+      .select('id, created_at')
+      .order('created_at', { ascending: true });
+
+    if (!allDepartments?.length) {
+      return new Response(
+        JSON.stringify({ success: true, sent: 0, errors: 0, message: 'No departments found' }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Build department-to-group map
+    const deptGroupMap = new Map<string, number>();
+    allDepartments.forEach((dept, index) => {
+      deptGroupMap.set(dept.id, index % 3);
+    });
+
+    // Collect all unique windows we need to check
+    const allWindows: { type: string; hoursAhead: number; label: string; groupIndex: number }[] = [];
+    for (let g = 0; g < REMINDER_GROUPS.length; g++) {
+      for (const w of REMINDER_GROUPS[g].windows) {
+        allWindows.push({ ...w, groupIndex: g });
+      }
+    }
+
+    for (const window of allWindows) {
       const targetTime = new Date(now.getTime() + window.hoursAhead * 60 * 60 * 1000);
       const marginMs = WINDOW_MARGIN_MINUTES * 60 * 1000;
       const windowStart = new Date(targetTime.getTime() - marginMs);
@@ -60,9 +82,17 @@ const handler = async (req: Request): Promise<Response> => {
       const brStart = toBrazilParts(windowStart);
       const brEnd = toBrazilParts(windowEnd);
 
+      // Get department IDs that belong to this group
+      const groupDeptIds = allDepartments
+        .filter((_, idx) => idx % 3 === window.groupIndex)
+        .map(d => d.id);
+
+      if (!groupDeptIds.length) continue;
+
       const { data: schedules, error: schedulesError } = await supabaseAdmin
         .from('schedules')
         .select('id, date, time_start, time_end, user_id, department_id, sector_id, assignment_role, sector:sectors(name)')
+        .in('department_id', groupDeptIds)
         .gte('date', brStart.date)
         .lte('date', brEnd.date);
 
@@ -116,7 +146,6 @@ const handler = async (req: Request): Promise<Response> => {
 
           const body = `Escala ${window.label}: ${weekday.split('-')[0]}, ${dayNum}/${monthShort} às ${formatTime(schedule.time_start)} - ${dept.name}${detailsSuffix}`;
 
-          // Build metadata
           const metadata = {
             user_name: profile.name,
             department_name: dept.name,
@@ -127,7 +156,6 @@ const handler = async (req: Request): Promise<Response> => {
             role_label: roleLabel,
           };
 
-          // Insert notification
           await supabaseAdmin
             .from('notifications')
             .insert({
@@ -141,13 +169,11 @@ const handler = async (req: Request): Promise<Response> => {
               metadata,
             } as any);
 
-          // Record reminder as sent
           await supabaseAdmin.from('schedule_reminders_sent').insert({
             schedule_id: schedule.id,
             reminder_type: window.type,
           });
 
-          // Send WhatsApp
           if ((profile as any).whatsapp) {
             const sectorSuffix = sectorName ? `\n📍 ${sectorName}` : '';
             const roleSuffix = roleLabel ? `\n💼 ${roleLabel}` : '';
