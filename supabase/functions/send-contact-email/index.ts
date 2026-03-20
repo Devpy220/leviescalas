@@ -66,7 +66,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         from: "LEVI Contato <onboarding@resend.dev>",
-        to: ["suport@leviescalas.com.br"],
+        to: ["els.fatec@gmail.com"],
         reply_to: email,
         subject: `[LEVI Contato] ${name} - Nova mensagem`,
         html: htmlBody,
