@@ -114,6 +114,9 @@ export default function Admin() {
   const [newChurchCity, setNewChurchCity] = useState('');
   const [newChurchState, setNewChurchState] = useState('');
   const [newChurchEmail, setNewChurchEmail] = useState('');
+  const [newChurchPhone, setNewChurchPhone] = useState('');
+  const [newChurchAddress, setNewChurchAddress] = useState('');
+  const [newChurchDescription, setNewChurchDescription] = useState('');
   
   // Edit church state
   const [editingChurch, setEditingChurch] = useState<ChurchData | null>(null);
@@ -356,6 +359,9 @@ export default function Admin() {
         p_name: newChurchName.trim(),
         p_slug: slug,
         p_email: newChurchEmail.trim(),
+        p_phone: newChurchPhone.trim() || null,
+        p_address: newChurchAddress.trim() || null,
+        p_description: newChurchDescription.trim() || null,
         p_city: newChurchCity.trim() || null,
         p_state: newChurchState.trim() || null,
       });
@@ -388,6 +394,9 @@ export default function Admin() {
       setNewChurchCity('');
       setNewChurchState('');
       setNewChurchEmail('');
+      setNewChurchPhone('');
+      setNewChurchAddress('');
+      setNewChurchDescription('');
       fetchChurches();
     } catch (error: any) {
       console.error('Error creating church:', error);
@@ -1325,6 +1334,24 @@ export default function Admin() {
                         O código da igreja será enviado para este email
                       </p>
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="churchPhone">Telefone</Label>
+                      <Input
+                        id="churchPhone"
+                        value={newChurchPhone}
+                        onChange={(e) => setNewChurchPhone(e.target.value)}
+                        placeholder="(18) 99634-4885"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="churchAddress">Endereço</Label>
+                      <Input
+                        id="churchAddress"
+                        value={newChurchAddress}
+                        onChange={(e) => setNewChurchAddress(e.target.value)}
+                        placeholder="Rua Exemplo, 123"
+                      />
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="churchCity">Cidade</Label>
@@ -1344,6 +1371,16 @@ export default function Admin() {
                           placeholder="SP"
                         />
                       </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="churchDescription">Descrição</Label>
+                      <Textarea
+                        id="churchDescription"
+                        value={newChurchDescription}
+                        onChange={(e) => setNewChurchDescription(e.target.value)}
+                        placeholder="Descrição da igreja..."
+                        rows={3}
+                      />
                     </div>
                     <Button 
                       onClick={handleCreateChurch} 
