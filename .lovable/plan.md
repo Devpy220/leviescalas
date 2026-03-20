@@ -1,68 +1,65 @@
+## Plano: WhatsApp no Formulário de Contato + Lembretes Escalonados por Departamento
 
+### Parte 1: Formulário "Fale Conosco" via WhatsApp
 
-## Plano: Separar Rotas de Escalas + Sidebar Icon-Only + Ações de Líder na Sidebar
+Substituir o envio de email (Resend) por uma mensagem WhatsApp para **18 996344885** via Z-API.
 
-### Problemas Identificados
+**Alterações:**
 
-1. **"Escalas Equipe" não funciona** — O sidebar navega para `/my-schedules?view=team`, mas o `MySchedules` controla `viewMode` por estado interno, não lê o query param `?view=team`. Então sempre abre em "mine".
+1. `**supabase/functions/send-contact-email/index.ts**` — Reescrever para chamar `send-whatsapp-notification` internamente, enviando os dados do formulário (nome, email, telefone, mensagem) formatados como texto para o número fixo `5518996344885`
+2. `**src/pages/Landing.tsx**` — Nenhuma alteração necessária (já chama `send-contact-email`, só muda o backend)
+3. **Deletar dependência do Resend** — A edge function não usará mais `RESEND_API_KEY`
 
-2. **Sidebar mostra texto** — Quando expandido/hovered, mostra labels. Usuário quer apenas ícones com tooltip no hover/toque.
+**Formato da mensagem WhatsApp:**
 
-3. **Menu hamburger no departamento** — O `ActionMenuPopover` ainda aparece no header do departamento para líderes.
+```
+📩 *Novo contato — LEVI*
 
-4. **Ações de líder faltam na sidebar** — Itens como Setores, Funções, Resumo de Equipe, Convidar Membro e Exportar não estão na sidebar.
+*Nome:* João Silva
+*Email:* joao@email.com
+*Telefone:* (18) 99634-4885
 
----
+*Mensagem:*
+Texto da mensagem aqui
 
-### 1. Corrigir navegação Escalas Equipe
-
-**`src/pages/MySchedules.tsx`**: No `useEffect` inicial, ler `searchParams.get('view')` da URL e inicializar `viewMode` com esse valor. Quando `?view=team` estiver presente, setar `viewMode = 'team'` automaticamente.
-
----
-
-### 2. Sidebar apenas com ícones + tooltip
-
-**`src/components/DashboardSidebar.tsx`**: 
-- Remover o comportamento de expansão por hover no desktop (remover `onMouseEnter`/`onMouseLeave` + `hovered` state)
-- Sidebar fica sempre `w-14` (collapsed) tanto no mobile quanto no desktop
-- Todos os itens sempre renderizados com `collapsed=true` (apenas ícone)
-- Tooltip no hover/toque mostra o nome do item (já implementado quando `collapsed=true`)
-- Remover o overlay de expansão mobile (`mobileExpanded` + `w-64` overlay)
-- Remover botão de pin/collapse pois não há mais expansão
-- Manter ThemeToggle e NotificationBell visíveis mesmo no modo collapsed (empilhados verticalmente)
+_Enviado via formulário de contato_
+```
 
 ---
 
-### 3. Remover ActionMenuPopover do Departamento
+### Parte 2: Lembretes Escalonados por Departamento
 
-**`src/pages/Department.tsx`**:
-- Remover o `ActionMenuPopover` do header (linhas 481-491)
-- Remover import do `ActionMenuPopover`
-- Manter apenas o botão de Settings (engrenagem) para líderes
+Atualmente: todos os departamentos recebem lembretes nos mesmos horários (48h, 12h, 3h).
+
+**Nova lógica:** Escalonar os horários por departamento para evitar envios simultâneos.
+
+Cada departamento recebe um "índice" baseado na ordem de criação. Os horários são distribuídos ciclicamente em 3 faixas:
+
+
+| Faixa (índice % 3) | 1º Lembrete | 2º Lembrete |
+| ------------------ | ----------- | ----------- |
+| 0                  | 48h         | 16h         |
+| 1                  | 36h         | 10h         |
+| 2                  | 24h         | 6h          |
+
+
+Se houver mais de 3 departamentos, o ciclo se repete (dept 4 = faixa 0, dept 5 = faixa 1, etc.).
+
+**Alteração:** `supabase/functions/send-scheduled-reminders/index.ts`
+
+- Buscar todos os departamentos ordenados por `created_at` e atribuir índice
+- Gerar janelas de lembrete dinâmicas por departamento
+- Ao buscar escalas, filtrar pelo departamento correspondente à janela
+- Manter a tabela `schedule_reminders_sent` para evitar duplicidade (com `reminder_type` atualizado para os novos intervalos)
 
 ---
 
-### 4. Adicionar ações de líder na sidebar
+### Parte 3: Limpeza
 
-**`src/components/DashboardSidebar.tsx`**: Adicionar novos itens `leaderOnly` ao `menuItems`:
-
-- `Layers` — **Setores** → abre modal com `SectorManagement` (novo contextual action)
-- `UserCog` — **Funções** → abre modal com `AssignmentRoleManagement` (novo contextual action)
-- `Users` — **Resumo Equipe** → abre modal com `ScheduleCountDialog` (novo contextual action)
-- `UserPlus` — **Convidar Membro** → abre modal com `InviteMemberDialog` (novo contextual action)
-- `Download` — **Exportar Escalas** → abre dropdown ou modal com opções PDF/Excel (novo contextual action)
-
-Cada ação segue o mesmo padrão existente: se múltiplos departamentos de liderança, abre `DepartmentPicker` primeiro; se apenas um, abre direto o modal.
-
-Adicionar novos tipos ao `ContextualAction`: `'sectors' | 'roles' | 'schedule-count' | 'invite' | 'export'`
-
-Adicionar novos estados e modais correspondentes no componente principal `DashboardSidebar`.
-
----
+- Remover qualquer referência ao Resend na edge function `send-contact-email`
+- O secret `RESEND_API_KEY` permanece no projeto (não causa problemas) mas não será mais usado
 
 ### Arquivos Modificados
 
-1. **`src/components/DashboardSidebar.tsx`** — Sidebar sempre icon-only, remover expansão, adicionar ações de líder (setores, funções, resumo, convidar, exportar)
-2. **`src/pages/MySchedules.tsx`** — Ler `?view=team` da URL para inicializar viewMode
-3. **`src/pages/Department.tsx`** — Remover ActionMenuPopover do header
-
+- `supabase/functions/send-contact-email/index.ts` — reescrever para WhatsApp
+- `supabase/functions/send-scheduled-reminders/index.ts` — lembretes escalonados
