@@ -394,6 +394,9 @@ export default function Admin() {
       setNewChurchCity('');
       setNewChurchState('');
       setNewChurchEmail('');
+      setNewChurchPhone('');
+      setNewChurchAddress('');
+      setNewChurchDescription('');
       fetchChurches();
     } catch (error: any) {
       console.error('Error creating church:', error);
