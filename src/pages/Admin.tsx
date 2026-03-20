@@ -114,6 +114,9 @@ export default function Admin() {
   const [newChurchCity, setNewChurchCity] = useState('');
   const [newChurchState, setNewChurchState] = useState('');
   const [newChurchEmail, setNewChurchEmail] = useState('');
+  const [newChurchPhone, setNewChurchPhone] = useState('');
+  const [newChurchAddress, setNewChurchAddress] = useState('');
+  const [newChurchDescription, setNewChurchDescription] = useState('');
   
   // Edit church state
   const [editingChurch, setEditingChurch] = useState<ChurchData | null>(null);
