@@ -359,6 +359,9 @@ export default function Admin() {
         p_name: newChurchName.trim(),
         p_slug: slug,
         p_email: newChurchEmail.trim(),
+        p_phone: newChurchPhone.trim() || null,
+        p_address: newChurchAddress.trim() || null,
+        p_description: newChurchDescription.trim() || null,
         p_city: newChurchCity.trim() || null,
         p_state: newChurchState.trim() || null,
       });
