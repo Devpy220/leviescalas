@@ -1334,6 +1334,24 @@ export default function Admin() {
                         O código da igreja será enviado para este email
                       </p>
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="churchPhone">Telefone</Label>
+                      <Input
+                        id="churchPhone"
+                        value={newChurchPhone}
+                        onChange={(e) => setNewChurchPhone(e.target.value)}
+                        placeholder="(18) 99634-4885"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="churchAddress">Endereço</Label>
+                      <Input
+                        id="churchAddress"
+                        value={newChurchAddress}
+                        onChange={(e) => setNewChurchAddress(e.target.value)}
+                        placeholder="Rua Exemplo, 123"
+                      />
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="churchCity">Cidade</Label>
@@ -1353,6 +1371,16 @@ export default function Admin() {
                           placeholder="SP"
                         />
                       </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="churchDescription">Descrição</Label>
+                      <Textarea
+                        id="churchDescription"
+                        value={newChurchDescription}
+                        onChange={(e) => setNewChurchDescription(e.target.value)}
+                        placeholder="Descrição da igreja..."
+                        rows={3}
+                      />
                     </div>
                     <Button 
                       onClick={handleCreateChurch} 
