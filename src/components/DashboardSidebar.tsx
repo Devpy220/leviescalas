@@ -26,7 +26,7 @@ import { NotificationBell } from '@/components/NotificationBell';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useUserDepartments, type UserDepartment } from '@/hooks/useUserDepartments';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useSidebarExpanded } from '@/contexts/SidebarContext';
 import MyAvailabilitySheet from '@/components/department/MyAvailabilitySheet';
 import AnnouncementBoard from '@/components/department/AnnouncementBoard';
@@ -53,25 +53,30 @@ function getInitials(name: string) {
 }
 
 type ContextualAction = 'availability' | 'announcements' | 'create-schedule' | 'sectors' | 'roles' | 'schedule-count' | 'invite' | 'export' | 'dept-settings';
+type SidebarItemVariant = 'nav' | 'action' | 'danger';
 
 // Sidebar item with tooltip (collapsed) or label (expanded)
-function SidebarItem({ icon: Icon, label, active, onClick, className, expanded }: {
+function SidebarItem({ icon: Icon, label, active, onClick, variant = 'nav', expanded }: {
   icon: LucideIcon;
   label: string;
   active?: boolean;
   onClick: () => void;
-  className?: string;
+  variant?: SidebarItemVariant;
   expanded?: boolean;
 }) {
-  const baseClass = `w-full flex items-center ${expanded ? 'justify-start px-3' : 'justify-center px-2'} py-3 rounded-xl text-sm font-medium transition-all ${
-    active
-      ? 'bg-destructive text-destructive-foreground shadow-lg'
-      : className || 'text-white/80 hover:bg-white/10 hover:text-white'
-  }`;
+  const base = `w-full flex items-center ${expanded ? 'justify-start px-3' : 'justify-center px-2'} py-2.5 rounded-xl text-sm transition-all`;
+
+  const styles: Record<SidebarItemVariant, string> = {
+    nav: active
+      ? 'bg-sidebar-primary/12 text-sidebar-primary font-medium'
+      : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground',
+    action: 'text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground',
+    danger: 'text-rose-500 dark:text-rose-400 hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-300',
+  };
 
   const button = (
-    <button onClick={onClick} className={baseClass}>
-      <Icon className="w-5 h-5 shrink-0" />
+    <button onClick={onClick} className={`${base} ${styles[variant]}`}>
+      <Icon className="w-[18px] h-[18px] shrink-0" />
       {expanded && <span className="ml-3 truncate text-sm">{label}</span>}
     </button>
   );
@@ -83,6 +88,20 @@ function SidebarItem({ icon: Icon, label, active, onClick, className, expanded }
       <TooltipTrigger asChild>{button}</TooltipTrigger>
       <TooltipContent side="right">{label}</TooltipContent>
     </Tooltip>
+  );
+}
+
+// Section label divider
+function SectionLabel({ label, expanded }: { label: string; expanded: boolean }) {
+  if (!expanded) {
+    return <div className="border-t border-sidebar-border my-2 mx-1" />;
+  }
+  return (
+    <div className="px-3 pt-4 pb-1">
+      <span className="text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/30">
+        {label}
+      </span>
+    </div>
   );
 }
 
@@ -152,12 +171,7 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
   const [inviteCode, setInviteCode] = useState('');
   const [scheduleCountData, setScheduleCountData] = useState<{ members: any[]; schedules: any[] }>({ members: [], schedules: [] });
 
-  const isActive = (path: string) => {
-    if (path.includes('?')) {
-      return location.pathname + location.search === path;
-    }
-    return location.pathname === path;
-  };
+  const isActive = (path: string) => location.pathname === path;
 
   const handleContextualAction = (action: ContextualAction) => {
     const isLeaderAction = ['create-schedule', 'sectors', 'roles', 'schedule-count', 'invite', 'export', 'dept-settings'].includes(action);
@@ -191,7 +205,6 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
         setShowRoles(true);
         break;
       case 'schedule-count':
-        // Fetch members and schedules for the dialog
         try {
           const { data: members } = await supabase
             .rpc('get_department_member_profiles', { dept_id: dept.id });
@@ -214,7 +227,6 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
         setShowScheduleCount(true);
         break;
       case 'invite':
-        // Fetch invite code
         try {
           const { data } = await supabase
             .rpc('get_department_secure', { dept_id: dept.id });
@@ -230,7 +242,6 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
         setShowExport(true);
         break;
       case 'dept-settings':
-        // Fetch department data for settings
         try {
           const { data: deptData } = await supabase
             .from('departments')
@@ -319,39 +330,31 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
   };
 
   const { expanded, toggleExpanded } = useSidebarExpanded();
+  const hasDepartments = departments.length > 0;
 
   return (
     <>
-      <aside className={`${expanded ? 'w-52' : 'w-14'} fixed left-0 top-0 bottom-0 z-40 transition-all duration-300`}>
-        <div className="flex flex-col h-full gradient-sidebar text-white border-r border-destructive/10" style={{ boxShadow: '4px 0 30px hsl(0 60% 20% / 0.15)' }}>
-          {/* Logo + expand toggle */}
-          <div className={`p-2 pb-2 flex ${expanded ? 'justify-between' : 'justify-center'} items-center`}>
+      <aside className={`${expanded ? 'w-56' : 'w-16'} fixed left-0 top-0 bottom-0 z-40 transition-all duration-300`}>
+        <div className="flex flex-col h-full bg-sidebar border-r border-sidebar-border text-sidebar-foreground">
+          {/* Logo */}
+          <div className={`p-3 flex ${expanded ? 'justify-between' : 'justify-center'} items-center`}>
             {expanded ? (
-              <button onClick={() => navigate('/')} className="flex items-center gap-2 overflow-hidden">
-                <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shrink-0">
-                  <LeviLogo className="w-8 h-8" />
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="font-display font-bold text-lg text-destructive truncate">LEVI</span>
-                  <span className="text-[8px] text-white/50 font-medium tracking-wide truncate leading-tight">
-                    {['L','o','g','í','s','t','i','c','a',' ','d','e',' ','E','s','c','a','l','a','s'].map((c, i) => (
-                      <span key={i} className={['L','E','V','I'].includes(c) ? 'font-bold text-destructive/70' : ''}>{c}</span>
-                    ))}
-                  </span>
-                </div>
+              <button onClick={() => navigate('/')} className="flex items-center gap-2.5 overflow-hidden">
+                <LeviLogo className="w-7 h-7 shrink-0" />
+                <span className="font-display font-bold text-lg text-sidebar-primary">LEVI</span>
               </button>
             ) : (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <button onClick={() => navigate('/')} className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shrink-0">
-                    <LeviLogo className="w-8 h-8" />
+                  <button onClick={() => navigate('/')} className="shrink-0">
+                    <LeviLogo className="w-7 h-7" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="right">LEVI</TooltipContent>
               </Tooltip>
             )}
             {expanded && (
-              <button onClick={toggleExpanded} className="p-1 rounded-lg hover:bg-white/10 transition-colors">
+              <button onClick={toggleExpanded} className="p-1.5 rounded-lg hover:bg-sidebar-accent transition-colors text-sidebar-foreground/50">
                 <ChevronLeft className="w-4 h-4" />
               </button>
             )}
@@ -362,15 +365,15 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
             {expanded ? (
               <button
                 onClick={() => navigate('/dashboard')}
-                className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all ${
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
                   isActive('/dashboard')
-                    ? 'bg-destructive text-destructive-foreground shadow-lg'
-                    : 'text-white/80 hover:bg-white/10 hover:text-white'
+                    ? 'bg-sidebar-primary/12 text-sidebar-primary font-medium'
+                    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
                 }`}
               >
-                <Avatar className="w-6 h-6">
+                <Avatar className="w-7 h-7">
                   {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={userName || 'Usuário'} />}
-                   <AvatarFallback className="bg-destructive text-destructive-foreground text-[9px] font-bold">
+                  <AvatarFallback className="bg-sidebar-primary/10 text-sidebar-primary text-[10px] font-bold">
                     {userName ? getInitials(userName) : 'U'}
                   </AvatarFallback>
                 </Avatar>
@@ -381,15 +384,15 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
                 <TooltipTrigger asChild>
                   <button
                     onClick={() => navigate('/dashboard')}
-                    className={`w-full flex items-center justify-center px-2 py-3 rounded-xl text-sm font-medium transition-all ${
+                    className={`w-full flex items-center justify-center px-2 py-2.5 rounded-xl text-sm transition-all ${
                       isActive('/dashboard')
-                        ? 'bg-destructive text-destructive-foreground shadow-lg'
-                        : 'text-white/80 hover:bg-white/10 hover:text-white'
+                        ? 'bg-sidebar-primary/12 text-sidebar-primary font-medium'
+                        : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
                     }`}
                   >
-                    <Avatar className="w-6 h-6">
+                    <Avatar className="w-7 h-7">
                       {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={userName || 'Usuário'} />}
-                      <AvatarFallback className="bg-destructive text-destructive-foreground text-[9px] font-bold">
+                      <AvatarFallback className="bg-sidebar-primary/10 text-sidebar-primary text-[10px] font-bold">
                         {userName ? getInitials(userName) : 'U'}
                       </AvatarFallback>
                     </Avatar>
@@ -400,84 +403,87 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
             )}
           </div>
 
-          {/* Main menu */}
+          {/* Main nav */}
           <nav className="flex-1 px-2 overflow-y-auto">
-            <ul className="space-y-1">
+            {/* Navigation section */}
+            <ul className="space-y-0.5">
               <li>
-                <SidebarItem expanded={expanded} icon={CalendarDays} label="Minhas Escalas" active={isActive('/my-schedules')} onClick={() => navigate('/my-schedules')} />
+                <SidebarItem expanded={expanded} icon={CalendarDays} label="Minhas Escalas" variant="nav" active={isActive('/my-schedules')} onClick={() => navigate('/my-schedules')} />
               </li>
               <li>
-                <SidebarItem expanded={expanded} icon={Users} label="Escalas Equipe" active={isActive('/my-schedules?view=team')} onClick={() => navigate('/my-schedules?view=team')} />
+                <SidebarItem expanded={expanded} icon={Settings} label="Configurações" variant="nav" active={isActive('/security')} onClick={() => navigate('/security')} />
               </li>
-              <li>
-                <SidebarItem expanded={expanded} icon={Settings} label="Configurações" active={isActive('/security')} onClick={() => navigate('/security')} />
-              </li>
-              <li>
-                <SidebarItem expanded={expanded} icon={Clock} label="Disponibilidade" onClick={() => handleContextualAction('availability')} />
-              </li>
-              <li>
-                <SidebarItem expanded={expanded} icon={Megaphone} label="Mural de Avisos" onClick={() => handleContextualAction('announcements')} />
-              </li>
-
-              {/* Leader-only items */}
-              {isLeader && (
-                <>
-                  <li className="pt-2">
-                    <div className="border-t border-white/10 mb-2" />
-                  </li>
-                  <li>
-                    <SidebarItem expanded={expanded} icon={CalendarPlus} label="Criar Escalas" onClick={() => handleContextualAction('create-schedule')} />
-                  </li>
-                  <li>
-                    <SidebarItem expanded={expanded} icon={Layers} label="Setores" onClick={() => handleContextualAction('sectors')} />
-                  </li>
-                  <li>
-                    <SidebarItem expanded={expanded} icon={UserCog} label="Funções" onClick={() => handleContextualAction('roles')} />
-                  </li>
-                  <li>
-                    <SidebarItem expanded={expanded} icon={Users} label="Resumo Equipe" onClick={() => handleContextualAction('schedule-count')} />
-                  </li>
-                  <li>
-                    <SidebarItem expanded={expanded} icon={UserPlus} label="Convidar Membro" onClick={() => handleContextualAction('invite')} />
-                  </li>
-                  <li>
-                    <SidebarItem expanded={expanded} icon={FileDown} label="Exportar Escalas" onClick={() => handleContextualAction('export')} />
-                  </li>
-                  <li>
-                    <SidebarItem expanded={expanded} icon={Wrench} label="Config. Departamento" onClick={() => handleContextualAction('dept-settings')} />
-                  </li>
-                </>
-              )}
-
-              {isAdmin && (
-                <li>
-                  <SidebarItem expanded={expanded} icon={Shield} label="Painel Admin" active={isActive('/admin')} onClick={() => navigate('/admin')} />
-                </li>
-              )}
-
-              {shouldShowInstallPrompt && (
-                <li>
-                  <SidebarItem expanded={expanded} icon={Download} label="Instalar App" onClick={onInstallClick} />
-                </li>
-              )}
             </ul>
+
+            {/* Department section — visible when user has departments */}
+            {hasDepartments && (
+              <>
+                <SectionLabel label="Departamento" expanded={expanded} />
+                <ul className="space-y-0.5">
+                  <li>
+                    <SidebarItem expanded={expanded} icon={Clock} label="Disponibilidade" variant="action" onClick={() => handleContextualAction('availability')} />
+                  </li>
+                  <li>
+                    <SidebarItem expanded={expanded} icon={Megaphone} label="Mural de Avisos" variant="action" onClick={() => handleContextualAction('announcements')} />
+                  </li>
+                </ul>
+              </>
+            )}
+
+            {/* Leader management section */}
+            {isLeader && (
+              <>
+                <SectionLabel label="Gestão" expanded={expanded} />
+                <ul className="space-y-0.5">
+                  <li>
+                    <SidebarItem expanded={expanded} icon={CalendarPlus} label="Criar Escala" variant="action" onClick={() => handleContextualAction('create-schedule')} />
+                  </li>
+                  <li>
+                    <SidebarItem expanded={expanded} icon={Layers} label="Setores" variant="action" onClick={() => handleContextualAction('sectors')} />
+                  </li>
+                  <li>
+                    <SidebarItem expanded={expanded} icon={UserCog} label="Funções" variant="action" onClick={() => handleContextualAction('roles')} />
+                  </li>
+                  <li>
+                    <SidebarItem expanded={expanded} icon={Users} label="Resumo Equipe" variant="action" onClick={() => handleContextualAction('schedule-count')} />
+                  </li>
+                  <li>
+                    <SidebarItem expanded={expanded} icon={UserPlus} label="Convidar Membro" variant="action" onClick={() => handleContextualAction('invite')} />
+                  </li>
+                  <li>
+                    <SidebarItem expanded={expanded} icon={FileDown} label="Exportar" variant="action" onClick={() => handleContextualAction('export')} />
+                  </li>
+                  <li>
+                    <SidebarItem expanded={expanded} icon={Wrench} label="Config. Departamento" variant="action" onClick={() => handleContextualAction('dept-settings')} />
+                  </li>
+                </ul>
+              </>
+            )}
           </nav>
 
           {/* Footer */}
-          <div className="p-2 space-y-1">
-            <SidebarItem expanded={expanded} icon={Heart} label="Apoie o LEVI" active={isActive('/payment')} onClick={() => navigate('/payment')} />
+          <div className="p-2 space-y-0.5 border-t border-sidebar-border">
+            <SidebarItem expanded={expanded} icon={Heart} label="Apoie o LEVI" variant="nav" active={isActive('/payment')} onClick={() => navigate('/payment')} />
             
             <div className={`flex ${expanded ? 'flex-row justify-center' : 'flex-col'} items-center gap-1 py-1`}>
               <ThemeToggle />
               <NotificationBell />
             </div>
+
+            {isAdmin && (
+              <SidebarItem expanded={expanded} icon={Shield} label="Painel Admin" variant="nav" active={isActive('/admin')} onClick={() => navigate('/admin')} />
+            )}
+
+            {shouldShowInstallPrompt && (
+              <SidebarItem expanded={expanded} icon={Download} label="Instalar App" variant="action" onClick={onInstallClick} />
+            )}
             
             <SidebarItem 
               expanded={expanded}
               icon={LogOut} 
               label="Sair" 
+              variant="danger"
               onClick={onSignOut}
-              className="text-rose-300 hover:bg-rose-500/20 hover:text-rose-200"
             />
 
             {/* Expand toggle when collapsed */}
@@ -486,7 +492,7 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
                 <TooltipTrigger asChild>
                   <button
                     onClick={toggleExpanded}
-                    className="w-full flex items-center justify-center px-2 py-2 rounded-xl text-white/60 hover:bg-white/10 hover:text-white transition-all"
+                    className="w-full flex items-center justify-center px-2 py-2 rounded-xl text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-all"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </button>
@@ -498,7 +504,7 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
         </div>
       </aside>
 
-      {/* Modals */}
+      {/* Modals — all logic preserved */}
       {pendingAction && (
         <DepartmentPicker
           departments={['create-schedule', 'sectors', 'roles', 'schedule-count', 'invite', 'export', 'dept-settings'].includes(pendingAction) ? leaderDepartments : departments}
