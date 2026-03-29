@@ -1,0 +1,1 @@
+UPDATE profiles SET whatsapp = '18997346560' WHERE id = '1994e487-8537-488d-81a7-d873c34500b5';
