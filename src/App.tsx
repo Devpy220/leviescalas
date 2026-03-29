@@ -104,6 +104,7 @@ const App = () => (
                       <CreateDepartment />
                     </ProtectedRoute>
                   } />
+                  <Route path="/novo-departamento" element={<Navigate to="/departments/new" replace />} />
                   <Route path="/my-schedules" element={
                     <ProtectedRoute>
                       <MySchedules />
