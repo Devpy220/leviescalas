@@ -70,7 +70,7 @@ const App = () => (
                   <Route path="/entrar" element={<Navigate to="/auth?forceLogin=true" replace />} />
                   
                   {/* Church access - updated 2023-12-23 */}
-                  <Route path="/acessar" element={<Index />} />
+                  <Route path="/acessar" element={<Navigate to="/auth" replace />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/join" element={<JoinChurch />} />
                   <Route path="/join/:inviteCode" element={<JoinDepartment />} />
@@ -104,6 +104,7 @@ const App = () => (
                       <CreateDepartment />
                     </ProtectedRoute>
                   } />
+                  <Route path="/novo-departamento" element={<Navigate to="/departments/new" replace />} />
                   <Route path="/my-schedules" element={
                     <ProtectedRoute>
                       <MySchedules />
