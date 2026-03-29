@@ -1,23 +1,17 @@
 import elsdigitalLogo from '@/assets/elsdigital-logo.jpeg';
-import { LeviLogo } from '@/components/LeviLogo';
 
 const Footer = () => {
   return (
-    <footer className="border-t border-border/30 py-5 mt-auto">
-      <div className="container mx-auto px-4 flex flex-col items-center gap-3">
-        <div className="flex items-center gap-2">
-          <LeviLogo size="sm" className="w-6 h-6" />
-          <span className="font-display text-sm font-bold text-foreground">LEVI</span>
-          <span className="text-muted-foreground/30">·</span>
-          <span className="text-xs text-muted-foreground/40">© {new Date().getFullYear()}</span>
+    <footer className="relative z-[1] py-6 border-t border-border mt-auto">
+      <div className="container mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span className="font-semibold text-foreground">LEVI</span>
+          <span>·</span>
+          <span className="text-xs">© {new Date().getFullYear()} Escalas</span>
         </div>
-        <div className="flex items-center gap-2">
-          <img
-            src={elsdigitalLogo}
-            alt="ELSDIGITAL"
-            className="w-6 h-6 rounded-full object-cover"
-          />
-          <span className="text-xs text-muted-foreground/50 font-medium">Desenvolvendo Soluções</span>
+        <div className="flex items-center gap-3">
+          <img src={elsdigitalLogo} alt="ELSDIGITAL" className="w-5 h-5 rounded-full object-cover" />
+          <span className="text-xs text-muted-foreground">Desenvolvendo Soluções</span>
         </div>
       </div>
     </footer>
