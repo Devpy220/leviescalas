@@ -1,65 +1,64 @@
-## Plano: WhatsApp no Formulário de Contato + Lembretes Escalonados por Departamento
 
-### Parte 1: Formulário "Fale Conosco" via WhatsApp
 
-Substituir o envio de email (Resend) por uma mensagem WhatsApp para **18 996344885** via Z-API.
+## Plano: Modernização da Landing Page — Estilo SaaS Premium
 
-**Alterações:**
-
-1. `**supabase/functions/send-contact-email/index.ts**` — Reescrever para chamar `send-whatsapp-notification` internamente, enviando os dados do formulário (nome, email, telefone, mensagem) formatados como texto para o número fixo `5518996344885`
-2. `**src/pages/Landing.tsx**` — Nenhuma alteração necessária (já chama `send-contact-email`, só muda o backend)
-3. **Deletar dependência do Resend** — A edge function não usará mais `RESEND_API_KEY`
-
-**Formato da mensagem WhatsApp:**
-
-```
-📩 *Novo contato — LEVI*
-
-*Nome:* João Silva
-*Email:* joao@email.com
-*Telefone:* (18) 99634-4885
-
-*Mensagem:*
-Texto da mensagem aqui
-
-_Enviado via formulário de contato_
-```
+Transformar a landing page atual em um design limpo, profissional e de alto impacto, inspirado em SaaS modernas (Linear, Vercel, Resend).
 
 ---
 
-### Parte 2: Lembretes Escalonados por Departamento
+### Arquivos a modificar (3 arquivos, nenhum novo)
 
-Atualmente: todos os departamentos recebem lembretes nos mesmos horários (48h, 12h, 3h).
+**1. `src/index.css` — Tokens de cor + animações CSS**
 
-**Nova lógica:** Escalonar os horários por departamento para evitar envios simultâneos.
+- Atualizar variáveis `:root` (modo claro):
+  - Background: branco puro (`0 0% 100%`), Foreground: quase preto (`0 0% 4%`)
+  - Primary: violeta profundo (`258 90% 56%`), Secondary: âmbar vibrante (`38 95% 52%`)
+  - Card: `0 0% 98%` com borda `0 0% 90%`, Muted: `0 0% 45%`
+- Atualizar variáveis `.dark`:
+  - Background: `240 10% 4%`, Card: `240 8% 8%`
+  - Primary: `258 100% 72%`, Secondary: `46 100% 60%`
+- Adicionar animações CSS:
+  - `@keyframes slideUpFade` — entrada suave dos elementos do hero
+  - `@keyframes glowPulse` — glow pulsante no botão primário
+  - Classes `.animate-slide-up` com delays escalonados e `.btn-glow`
+- Limpar `src/App.css` — remover estilos padrão Vite que não são usados
 
-Cada departamento recebe um "índice" baseado na ordem de criação. Os horários são distribuídos ciclicamente em 3 faixas:
+**2. `src/pages/Landing.tsx` — Redesenho visual (manter 100% da lógica)**
 
+Toda a lógica existente permanece intacta: auth, 2FA, recuperação, contato, PWA, contagem de usuários, navegação.
 
-| Faixa (índice % 3) | 1º Lembrete | 2º Lembrete |
-| ------------------ | ----------- | ----------- |
-| 0                  | 48h         | 16h         |
-| 1                  | 36h         | 10h         |
-| 2                  | 24h         | 6h          |
+Mudanças visuais:
 
+- **Remover** `ParticleBackground` (canvas pesado no mobile) — substituir por dot grid CSS + blob gradiente borrado
+- **Remover** instância do `DemoTour` da landing (componente permanece no projeto)
+- **Remover** botão "Instalar" da nav (manter PWAInstallPrompt como popup)
 
-Se houver mais de 3 departamentos, o ciclo se repete (dept 4 = faixa 0, dept 5 = faixa 1, etc.).
+- **NAV**: `bg-background/80 backdrop-blur-xl`, borda sutil ao scrollar. Logo + Typewriter à esquerda. Direita: "Contato" (texto), ThemeToggle, "Entrar" como pill preenchido
 
-**Alteração:** `supabase/functions/send-scheduled-reminders/index.ts`
+- **HERO**: Layout duas colunas (desktop), coluna única centralizada (mobile):
+  - Esquerda: badge pill, H1 grande com Typewriter, subtítulo, CTAs (botão primário "Entrar" com glow + ghost "Ver demonstração"), social proof (3 avatares + contador)
+  - Direita: FeatureCube 3D (mantido)
+  - Background: dot grid CSS (`radial-gradient` repetido) + blob violeta/âmbar com `blur(120px)`
 
-- Buscar todos os departamentos ordenados por `created_at` e atribuir índice
-- Gerar janelas de lembrete dinâmicas por departamento
-- Ao buscar escalas, filtrar pelo departamento correspondente à janela
-- Manter a tabela `schedule_reminders_sent` para evitar duplicidade (com `reminder_type` atualizado para os novos intervalos)
+- **FEATURES (carousel)**: Cards com `bg-card` sólido, `border border-border`, `rounded-2xl`, `shadow-sm`, padding `p-10`. Ícone maior, título `text-xl font-bold`. Seção fixa "Funcionalidades" (remover label dinâmico)
+
+- **FOOTER**: Linha separadora. 2 colunas: `© 2025 LEVI Escalas` + logo ELSDIGITAL. Link "Política de Privacidade" (visual only)
+
+- **Modal de Login**: `max-w-sm`, `rounded-3xl`, `p-8`, `shadow-2xl`. Inputs `h-12` com ring violeta. Botão submit com gradiente. Botões Google/Apple `w-full h-11` com texto ("Continuar com Google"). Divisor "ou continue com"
+
+- **Modal de Contato**: Mesmo padrão visual do login modernizado
+
+**3. `src/App.css` — Limpar estilos Vite padrão**
+
+Remover regras `#root`, `.logo`, `.card`, `.read-the-docs` que são resquícios do template Vite e não são usados.
 
 ---
 
-### Parte 3: Limpeza
+### O que NÃO muda
 
-- Remover qualquer referência ao Resend na edge function `send-contact-email`
-- O secret `RESEND_API_KEY` permanece no projeto (não causa problemas) mas não será mais usado
+- Toda lógica de autenticação, hooks, integração com backend
+- Componentes: LeviLogo, LeviTypewriter, FeatureCube, ThemeToggle, TwoFactorVerify, PWAInstallPrompt
+- Rotas, navegação, formulários de contato
+- `tailwind.config.ts` — sem alterações
+- Nenhum arquivo novo criado
 
-### Arquivos Modificados
-
-- `supabase/functions/send-contact-email/index.ts` — reescrever para WhatsApp
-- `supabase/functions/send-scheduled-reminders/index.ts` — lembretes escalonados
