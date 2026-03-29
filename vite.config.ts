@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "prompt", // Changed to prompt for manual update control
-      includeAssets: ["favicon.ico", "favicon.png", "levi-icon.svg", "placeholder.svg"],
+      includeAssets: ["favicon.png", "levi-icon.svg", "placeholder.svg"],
       manifest: {
         name: "LEVI - Gerenciador de Escalas",
         short_name: "LEVI",
