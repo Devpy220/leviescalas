@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { DemoTour } from '@/components/DemoTour';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useUserCount } from '@/hooks/useUserCount';
@@ -25,7 +24,6 @@ import {
   Users,
   Bell,
   Zap,
-  Download,
   Eye,
   EyeOff,
   Loader2,
@@ -96,88 +94,6 @@ function Typewriter({ words }: { words: string[] }) {
   );
 }
 
-// ── Particle Background ──────────────────────────────────────────────────────
-function ParticleBackground() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    let animId: number;
-    let W: number, H: number;
-
-    const particles: { x: number; y: number; r: number; sx: number; sy: number; opacity: number; hue: number }[] = [];
-    const resize = () => { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; };
-    resize();
-    window.addEventListener('resize', resize);
-
-    for (let i = 0; i < 50; i++) {
-      particles.push({
-        x: Math.random() * window.innerWidth,
-        y: Math.random() * window.innerHeight,
-        r: Math.random() * 2 + 0.3,
-        sx: (Math.random() - 0.5) * 0.2,
-        sy: (Math.random() - 0.5) * 0.2,
-        opacity: Math.random() * 0.3 + 0.05,
-        hue: [263, 263, 38, 160][Math.floor(Math.random() * 4)],
-      });
-    }
-
-    const draw = () => {
-      ctx.clearRect(0, 0, W, H);
-      particles.forEach(p => {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `hsla(${p.hue}, 70%, 60%, ${p.opacity})`;
-        ctx.fill();
-        p.x += p.sx; p.y += p.sy;
-        if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
-        if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
-      });
-      animId = requestAnimationFrame(draw);
-    };
-    draw();
-    return () => { cancelAnimationFrame(animId); window.removeEventListener('resize', resize); };
-  }, []);
-
-  return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0" />;
-}
-
-// ── Reveal wrapper (CSS-only, no framer-motion) ─────────────────────────────
-function Reveal({ children, delay = 0, direction = 'up' }: { children: React.ReactNode; delay?: number; direction?: 'up' | 'left' | 'right' }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setVisible(true); }, { threshold: 0.1 });
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
-
-  const transforms: Record<string, string> = {
-    up: 'translateY(30px)',
-    left: 'translateX(-30px)',
-    right: 'translateX(30px)',
-  };
-
-  return (
-    <div
-      ref={ref}
-      style={{
-        opacity: visible ? 1 : 0,
-        transform: visible ? 'none' : transforms[direction],
-        transition: `opacity 0.6s ease ${delay}s, transform 0.6s ease ${delay}s`,
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
 // ── Counter animation ────────────────────────────────────────────────────────
 function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: string }) {
   const ref = useRef<HTMLSpanElement>(null);
@@ -214,11 +130,9 @@ function FeatureCube() {
   const lastRef = useRef<number | null>(null);
   const isMobile = useIsMobile();
 
-  // Drag state
   const dragging = useRef(false);
   const dragStart = useRef({ x: 0, y: 0 });
   const rotStart = useRef({ x: 0, y: 0 });
-  const autoSpeed = useRef(0.02); // current auto-rotation speed
   const lastInteraction = useRef(0);
 
   const faces = [
@@ -241,7 +155,6 @@ function FeatureCube() {
     bottom: `rotateX(-90deg) translateZ(${size}px)`,
   };
 
-  // Pointer handlers for drag rotation
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     dragging.current = true;
     dragStart.current = { x: e.clientX, y: e.clientY };
@@ -266,7 +179,6 @@ function FeatureCube() {
 
   useEffect(() => {
     const animate = (ts: number) => {
-      // Resume auto-rotation 2s after last interaction
       const timeSinceInteraction = Date.now() - lastInteraction.current;
       if (!dragging.current && timeSinceInteraction > 2000) {
         if (lastRef.current !== null) {
@@ -278,11 +190,9 @@ function FeatureCube() {
       } else {
         lastRef.current = null;
       }
-
       if (cubeRef.current) {
         cubeRef.current.style.transform = `rotateX(${rotRef.current.x}deg) rotateY(${rotRef.current.y}deg)`;
       }
-
       rafRef.current = requestAnimationFrame(animate);
     };
     rafRef.current = requestAnimationFrame(animate);
@@ -291,87 +201,60 @@ function FeatureCube() {
 
   return (
     <div className="flex flex-col items-center gap-3">
-      {/* Glow behind cube */}
-      <div className={`absolute ${isMobile ? 'w-[200px] h-[200px]' : 'w-[300px] h-[300px] sm:w-[380px] sm:h-[380px]'} rounded-full pointer-events-none animate-pulse-glow`}
-        style={{ background: 'radial-gradient(circle, hsl(var(--primary) / 0.2) 0%, hsl(var(--primary) / 0.05) 50%, transparent 70%)' }}
+      <div className={`absolute ${isMobile ? 'w-[200px] h-[200px]' : 'w-[300px] h-[300px] sm:w-[380px] sm:h-[380px]'} rounded-full pointer-events-none`}
+        style={{ background: 'radial-gradient(circle, hsl(var(--primary) / 0.15) 0%, transparent 70%)', filter: 'blur(40px)' }}
       />
-
-      {/* 3D Cube Scene */}
       <div
         className="relative cursor-grab active:cursor-grabbing touch-none"
-        style={{
-          width: size * 2,
-          height: size * 2,
-          perspective: 800,
-        }}
+        style={{ width: size * 2, height: size * 2, perspective: 800 }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
       >
-        <div
-          ref={cubeRef}
-          style={{
-            width: '100%',
-            height: '100%',
-            position: 'relative',
-            transformStyle: 'preserve-3d',
-          }}
-        >
+        <div ref={cubeRef} style={{ width: '100%', height: '100%', position: 'relative', transformStyle: 'preserve-3d' }}>
           {faces.map((item) => (
             <div
               key={item.face}
-              className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-2xl border border-primary/20 bg-card/80 backdrop-blur-sm"
+              className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-card/90 backdrop-blur-sm"
               style={{
                 transform: faceTransforms[item.face],
                 backfaceVisibility: 'hidden',
-                boxShadow: 'inset 0 1px 0 hsl(0 0% 100% / 0.12), 0 8px 32px hsl(0 0% 0% / 0.2)',
+                boxShadow: '0 1px 3px hsl(0 0% 0% / 0.08), inset 0 1px 0 hsl(0 0% 100% / 0.06)',
               }}
             >
-              <div className={`${isMobile ? 'w-8 h-8' : 'w-12 h-12 sm:w-14 sm:h-14'} rounded-xl bg-primary/15 flex items-center justify-center`}>
-                <item.Icon className={`${isMobile ? 'w-4 h-4' : 'w-6 h-6 sm:w-7 sm:h-7'} text-primary`} />
+              <div className={`${isMobile ? 'w-8 h-8' : 'w-12 h-12'} rounded-xl bg-primary/10 flex items-center justify-center`}>
+                <item.Icon className={`${isMobile ? 'w-4 h-4' : 'w-6 h-6'} text-primary`} />
               </div>
-              <span className={`${isMobile ? 'text-[10px]' : 'text-sm sm:text-base'} font-bold text-foreground`}>{item.label}</span>
-              <span className={`${isMobile ? 'text-[8px] px-1.5' : 'text-[10px] sm:text-xs px-2.5'} py-0.5 rounded-full border border-border/40 bg-muted/20 text-muted-foreground`}>
+              <span className={`${isMobile ? 'text-[10px]' : 'text-sm'} font-semibold text-foreground`}>{item.label}</span>
+              <span className={`${isMobile ? 'text-[8px] px-1.5' : 'text-xs px-2.5'} py-0.5 rounded-full border border-border bg-muted/50 text-muted-foreground`}>
                 {item.pill}
               </span>
             </div>
           ))}
         </div>
       </div>
-      <span className="text-[11px] text-primary/40 tracking-wider select-none">↻ arraste para girar</span>
+      <span className="text-[11px] text-muted-foreground/50 tracking-wider select-none">↻ arraste para girar</span>
     </div>
   );
 }
 
-// ── Feature data (real LEVI features) ────────────────────────────────────────
+// ── Feature data ─────────────────────────────────────────────────────────────
 const allSlides = [
-  // Features
-  { type: 'feature' as const, icon: Calendar, title: 'Escalas inteligentes', desc: 'Crie escalas semanais ou mensais com poucos cliques. O sistema distribui os voluntários automaticamente.', color: 'bg-primary/15 text-primary' },
-  { type: 'feature' as const, icon: Bell, title: 'Notificações automáticas', desc: 'Voluntários recebem lembrete via WhatsApp antes do compromisso, sem você precisar fazer nada.', color: 'bg-accent/15 text-accent' },
-  { type: 'feature' as const, icon: CheckCircle2, title: 'Confirmações em tempo real', desc: 'Acompanhe quem confirmou, quem pediu troca e quem ainda não respondeu — tudo num painel.', color: 'bg-emerald/15 text-emerald' },
-  { type: 'feature' as const, icon: RefreshCw, title: 'Troca de horários', desc: 'Voluntários solicitam trocas direto no app, sem precisar falar com o líder a cada pedido.', color: 'bg-orange-500/15 text-orange-500' },
-  { type: 'feature' as const, icon: LayoutGrid, title: 'Múltiplas equipes', desc: 'Louvor, recepção, mídia, infantil — gerencie quantas equipes precisar em um único lugar.', color: 'bg-violet-500/15 text-violet-500' },
-  { type: 'feature' as const, icon: Users, title: 'Setores e funções', desc: 'Organize membros por setores e atribua funções específicas para cada escala.', color: 'bg-secondary/15 text-secondary' },
-  // Steps
+  { type: 'feature' as const, icon: Calendar, title: 'Escalas inteligentes', desc: 'Crie escalas semanais ou mensais com poucos cliques. O sistema distribui os voluntários automaticamente.', color: 'bg-primary/10 text-primary' },
+  { type: 'feature' as const, icon: Bell, title: 'Notificações automáticas', desc: 'Voluntários recebem lembrete via WhatsApp antes do compromisso, sem você precisar fazer nada.', color: 'bg-accent/10 text-accent' },
+  { type: 'feature' as const, icon: CheckCircle2, title: 'Confirmações em tempo real', desc: 'Acompanhe quem confirmou, quem pediu troca e quem ainda não respondeu — tudo num painel.', color: 'bg-accent/10 text-accent' },
+  { type: 'feature' as const, icon: RefreshCw, title: 'Troca de horários', desc: 'Voluntários solicitam trocas direto no app, sem precisar falar com o líder a cada pedido.', color: 'bg-secondary/10 text-secondary' },
+  { type: 'feature' as const, icon: LayoutGrid, title: 'Múltiplas equipes', desc: 'Louvor, recepção, mídia, infantil — gerencie quantas equipes precisar em um único lugar.', color: 'bg-primary/10 text-primary' },
+  { type: 'feature' as const, icon: Users, title: 'Setores e funções', desc: 'Organize membros por setores e atribua funções específicas para cada escala.', color: 'bg-secondary/10 text-secondary' },
   { type: 'step' as const, step: 1, title: 'Crie sua conta', desc: 'Cadastre-se em menos de 2 minutos. Totalmente gratuito.' },
   { type: 'step' as const, step: 2, title: 'Monte sua equipe', desc: 'Cadastre os voluntários e organize por ministério ou setor.' },
   { type: 'step' as const, step: 3, title: 'Gere a escala', desc: 'Defina datas e o sistema cuida do resto automaticamente.' },
   { type: 'step' as const, step: 4, title: 'Acompanhe ao vivo', desc: 'Confirmações e pendências em tempo real no painel.' },
-  // CTA
   { type: 'cta' as const, title: 'Comece hoje, gratuitamente', desc: 'Junte-se aos voluntários que já simplificaram a gestão das escalas na sua igreja. 100% gratuito · Suporte em português' },
 ];
 
-// Keep for backward compat references
-const featureCards = allSlides.filter(s => s.type === 'feature');
-const steps = [
-  { title: 'Crie sua conta', desc: 'Cadastre-se em menos de 2 minutos. Totalmente gratuito.' },
-  { title: 'Monte sua equipe', desc: 'Cadastre os voluntários e organize por ministério ou setor.' },
-  { title: 'Gere a escala', desc: 'Defina datas e o sistema cuida do resto automaticamente.' },
-  { title: 'Acompanhe ao vivo', desc: 'Confirmações e pendências em tempo real no painel.' },
-];
-
-// ── Feature Carousel (single-screen, auto-cycling) ──────────────────────────
+// ── Feature Carousel ────────────────────────────────────────────────────────
 function FeatureCarousel() {
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -384,8 +267,6 @@ function FeatureCarousel() {
   }, [paused, total]);
 
   const slide = allSlides[active];
-  const sectionLabel = slide.type === 'feature' ? 'Funcionalidades' : slide.type === 'step' ? 'Como funciona' : '🚀 Vamos começar';
-  const sectionTitle = slide.type === 'feature' ? 'Tudo que sua igreja precisa' : slide.type === 'step' ? 'Simples de começar' : 'Sua igreja mais organizada';
 
   return (
     <div
@@ -393,13 +274,11 @@ function FeatureCarousel() {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      {/* Header */}
       <div className="text-center">
-        <p className="text-primary text-xs font-semibold uppercase tracking-[0.12em] mb-2">{sectionLabel}</p>
-        <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">{sectionTitle}</h2>
+        <p className="text-primary text-xs font-semibold uppercase tracking-[0.15em] mb-2">Funcionalidades</p>
+        <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">Tudo que sua igreja precisa</h2>
       </div>
 
-      {/* Card area */}
       <div className="relative w-full max-w-md h-[220px] sm:h-[200px]">
         {allSlides.map((s, i) => {
           const isActive = i === active;
@@ -413,29 +292,20 @@ function FeatureCarousel() {
                 pointerEvents: isActive ? 'auto' : 'none',
               }}
             >
-              <div
-                className="w-full p-8 rounded-2xl backdrop-blur-md border border-primary/15 overflow-hidden relative"
-                style={{
-                  background: 'hsl(var(--card) / 0.55)',
-                  boxShadow: '0 8px 40px hsl(var(--primary) / 0.12), 0 2px 8px hsl(0 0% 0% / 0.12), inset 0 1px 0 hsl(0 0% 100% / 0.1)',
-                }}
-              >
-                {/* Glass shine */}
-                <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(135deg, hsl(var(--primary) / 0.06) 0%, transparent 50%, hsl(var(--secondary) / 0.04) 100%)' }} />
-
-                <div className="relative z-[1] flex flex-col items-center text-center gap-3">
+              <div className="w-full p-10 rounded-2xl border border-border bg-card shadow-sm">
+                <div className="flex flex-col items-center text-center gap-3">
                   {s.type === 'cta' ? (
                     <div className="text-5xl mb-1">📅</div>
                   ) : s.type === 'feature' && 'icon' in s ? (
-                    <div className={`w-14 h-14 rounded-xl ${'color' in s ? s.color : ''} flex items-center justify-center shadow-sm`}>
+                    <div className={`w-14 h-14 rounded-xl ${'color' in s ? s.color : ''} flex items-center justify-center`}>
                       {(() => { const Icon = (s as any).icon; return <Icon className="w-7 h-7" />; })()}
                     </div>
                   ) : (
-                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center font-bold text-lg text-primary-foreground shadow-glow-sm">
+                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center font-bold text-lg text-primary-foreground">
                       {'step' in s ? (s as any).step : ''}
                     </div>
                   )}
-                  <h3 className="font-display text-lg sm:text-xl font-bold text-foreground">{s.title}</h3>
+                  <h3 className="text-xl font-bold text-foreground">{s.title}</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">{s.desc}</p>
                 </div>
               </div>
@@ -444,27 +314,21 @@ function FeatureCarousel() {
         })}
       </div>
 
-      {/* Dot indicators */}
       <div className="flex items-center gap-2">
-        {allSlides.map((s, i) => {
-          const isFeatureGroup = i < 6;
-          const isStepGroup = i >= 6 && i < 10;
-          return (
-            <button
-              key={i}
-              onClick={() => setActive(i)}
-              className={`rounded-full transition-all duration-300 ${
-                i === active
-                  ? 'w-6 h-2.5 bg-primary shadow-glow-sm'
-                  : `w-2.5 h-2.5 ${isFeatureGroup ? 'bg-primary/25 hover:bg-primary/40' : isStepGroup ? 'bg-secondary/25 hover:bg-secondary/40' : 'bg-emerald/25 hover:bg-emerald/40'}`
-              }`}
-            />
-          );
-        })}
+        {allSlides.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setActive(i)}
+            className={`rounded-full transition-all duration-300 ${
+              i === active
+                ? 'w-6 h-2.5 bg-primary'
+                : 'w-2.5 h-2.5 bg-border hover:bg-muted-foreground/30'
+            }`}
+          />
+        ))}
       </div>
 
-      {/* Progress bar */}
-      <div className="w-full max-w-xs h-1 rounded-full bg-muted/30 overflow-hidden">
+      <div className="w-full max-w-xs h-1 rounded-full bg-border overflow-hidden">
         <div
           className="h-full rounded-full bg-gradient-to-r from-primary to-secondary transition-all duration-300"
           style={{ width: `${((active + 1) / total) * 100}%` }}
@@ -489,7 +353,6 @@ type ContactForm = z.infer<typeof contactSchema>;
 
 // ══════════════════════════════════════════════════════════════════════════════
 export default function Landing() {
-  const [showDemo, setShowDemo] = useState(false);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [showContact, setShowContact] = useState(false);
@@ -523,12 +386,7 @@ export default function Landing() {
 
   const loginForm = useForm<LoginForm>({ resolver: zodResolver(loginSchema), defaultValues: { email: '', password: '' } });
   const recoveryForm = useForm<RecoveryForm>({ resolver: zodResolver(recoverySchema), defaultValues: { email: '' } });
-
   const contactForm = useForm<ContactForm>({ resolver: zodResolver(contactSchema), defaultValues: { name: '', email: '', phone: '', message: '' } });
-
-  const scrollTo = useCallback((id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, []);
 
   const getSmartRedirectDestination = async (userId: string): Promise<string> => {
     try {
@@ -665,12 +523,10 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
-      <DemoTour open={showDemo} onOpenChange={setShowDemo} />
       <PWAInstallPrompt open={showInstallPrompt} onOpenChange={setShowInstallPrompt} />
-      <ParticleBackground />
 
       {/* ── NAV ── */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'glass border-b border-border/50 shadow-soft' : 'bg-transparent'}`}>
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-background/80 backdrop-blur-xl border-b border-border shadow-sm' : 'bg-transparent'}`}>
         <div className="container mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="flex flex-col items-center gap-0.5">
@@ -679,88 +535,81 @@ export default function Landing() {
             </div>
             <LeviTypewriter />
           </div>
-          <div className="flex items-center gap-1 sm:gap-2">
-            <div className="hidden md:flex items-center gap-0.5">
-              <button onClick={() => { setShowContact(true); setContactSent(false); }} className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-destructive/10 rounded-lg transition-colors flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5" /> Contato
-              </button>
-              <div className="w-px h-5 bg-border mx-2" />
-            </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => { setShowContact(true); setContactSent(false); }}
+              className="hidden md:inline-flex px-3 py-2 text-sm text-muted-foreground hover:text-foreground rounded-lg transition-colors"
+            >
+              Contato
+            </button>
             <ThemeToggle />
-            {isInstallable && (
-              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground" onClick={() => setShowInstallPrompt(true)}>
-                <Download className="w-4 h-4 mr-1" />
-                <span className="hidden sm:inline">Instalar</span>
-              </Button>
-            )}
+            <Button
+              size="sm"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-5 text-sm font-medium"
+              onClick={() => openAuth('login')}
+            >
+              Entrar
+            </Button>
           </div>
         </div>
       </nav>
 
       {/* ── HERO ── */}
-      <section className="min-h-screen flex items-center relative z-[1] pt-20" style={{ scrollMarginTop: 80 }}>
-        <div className="absolute inset-0 mesh-gradient mesh-gradient-animated opacity-50" />
+      <section className="min-h-screen flex items-center relative z-[1] pt-20">
+        {/* Dot grid + gradient blobs */}
+        <div className="absolute inset-0 dot-grid" />
+        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: 'hsl(var(--primary) / 0.12)', filter: 'blur(120px)' }} />
+        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full pointer-events-none" style={{ background: 'hsl(var(--secondary) / 0.1)', filter: 'blur(120px)' }} />
+
         <div className="container mx-auto px-4 sm:px-6 relative z-10">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
             {/* Left */}
             <div className="text-center lg:text-left space-y-6">
-              <div className="animate-fade-in flex flex-col items-center lg:items-start gap-3" style={{ animationDelay: '0.1s', animationFillMode: 'both' }}>
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium border border-primary/20">
-                  <Sparkles className="w-4 h-4" />
+              <div className="animate-slide-up-1 flex flex-col items-center lg:items-start gap-3">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/8 text-primary text-sm font-medium border border-primary/15">
+                  <Sparkles className="w-3.5 h-3.5" />
                   <span>Gestão de escalas para igrejas</span>
                 </div>
               </div>
 
-              <h1
-                className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground leading-tight animate-fade-in"
-                style={{ animationDelay: '0.25s', animationFillMode: 'both' }}
-              >
+              <h1 className="animate-slide-up-2 font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground leading-tight">
                 Organize suas<br />escalas com<br />
                 <Typewriter words={['facilidade', 'agilidade', 'amor', 'inteligência']} />
               </h1>
 
-              <p
-                className="text-base sm:text-lg text-muted-foreground max-w-lg mx-auto lg:mx-0 leading-relaxed animate-fade-in"
-                style={{ animationDelay: '0.4s', animationFillMode: 'both' }}
-              >
+              <p className="animate-slide-up-3 text-base sm:text-lg text-muted-foreground max-w-lg mx-auto lg:mx-0 leading-relaxed">
                 Calendário visual, notificações automáticas e sincronização em tempo real para voluntários da sua igreja.
               </p>
 
-              <div
-                className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-fade-in"
-                style={{ animationDelay: '0.55s', animationFillMode: 'both' }}
-              >
+              <div className="animate-slide-up-4 flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
                 <Button
                   size="lg"
-                  className="bg-secondary text-secondary-foreground shadow-glow hover:shadow-glow-lg transition-all hover:brightness-110 hover:scale-105 rounded-full px-12 py-6 text-lg font-bold"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-10 py-6 text-base font-semibold btn-glow transition-all hover:scale-[1.02]"
                   onClick={() => openAuth('login')}
                 >
-                  Entrar
+                  Entrar <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
                 <Button
                   size="lg"
                   variant="outline"
-                  className="border-destructive/30 text-destructive hover:bg-destructive/10 rounded-full px-8"
+                  className="border-border text-foreground hover:bg-muted rounded-full px-8"
                   onClick={() => { setShowContact(true); setContactSent(false); }}
                 >
-                  Fale conosco <Mail className="w-4 h-4 ml-1" />
+                  Fale conosco
                 </Button>
               </div>
 
-              {/* User counter */}
-              <div
-                className="flex items-center justify-center lg:justify-start gap-3 animate-fade-in"
-                style={{ animationDelay: '0.7s', animationFillMode: 'both' }}
-              >
+              {/* Social proof */}
+              <div className="animate-slide-up-5 flex items-center justify-center lg:justify-start gap-3">
                 <div className="flex -space-x-2">
-                  {['from-primary/80 to-primary', 'from-secondary/80 to-secondary', 'from-accent/80 to-accent'].map((gradient, i) => (
+                  {['from-primary to-primary/70', 'from-secondary to-secondary/70', 'from-accent to-accent/70'].map((gradient, i) => (
                     <div key={i} className={`w-8 h-8 rounded-full bg-gradient-to-br ${gradient} border-2 border-background flex items-center justify-center`}>
                       <Users className="w-3.5 h-3.5 text-white" />
                     </div>
                   ))}
                 </div>
                 <div className="text-left">
-                  <span className="text-xl font-bold text-secondary">
+                  <span className="text-xl font-bold text-foreground">
                     {countLoading ? '...' : <AnimatedCounter target={count || 0} suffix="+" />}
                   </span>
                   <p className="text-xs text-muted-foreground">voluntários cadastrados</p>
@@ -772,41 +621,29 @@ export default function Landing() {
             <div className="flex justify-center items-center mt-8 lg:mt-0">
               <FeatureCube />
             </div>
-
           </div>
         </div>
       </section>
 
-      {/* ── FEATURES + HOW IT WORKS — Single Screen Carousel ── */}
+      {/* ── FEATURES ── */}
       <section id="funcionalidades" className="relative z-[1] min-h-[80vh] flex items-center overflow-hidden py-12" style={{ scrollMarginTop: 80 }}>
-        {/* Background effects */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/4 -left-32 w-[500px] h-[500px] rounded-full opacity-30 blur-mega" style={{ background: 'radial-gradient(circle, hsl(var(--primary) / 0.4), transparent 70%)' }} />
-          <div className="absolute bottom-1/4 -right-32 w-[400px] h-[400px] rounded-full opacity-25 blur-mega" style={{ background: 'radial-gradient(circle, hsl(var(--secondary) / 0.4), transparent 70%)' }} />
-          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
-        </div>
-
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
         <div className="container mx-auto px-4 sm:px-6 max-w-5xl relative w-full">
           <FeatureCarousel />
         </div>
       </section>
 
       {/* ── FOOTER ── */}
-      <footer className="relative z-[1] py-6 border-t border-border/30">
-        <div className="container mx-auto px-4 sm:px-6 flex flex-col items-center gap-2">
-          <div className="flex items-center gap-2">
-            <span className="text-primary font-bold text-sm">LEVI</span>
-            <span className="text-muted-foreground/30">·</span>
-            <span className="text-xs text-muted-foreground/40">© {new Date().getFullYear()}</span>
+      <footer className="relative z-[1] py-6 border-t border-border">
+        <div className="container mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span className="font-semibold text-foreground">LEVI</span>
+            <span>·</span>
+            <span className="text-xs">© {new Date().getFullYear()} Escalas</span>
           </div>
-          <div className="flex items-center gap-2">
-            <img
-              src={elsdigitalLogo}
-              alt="ELSDIGITAL"
-              className="w-6 h-6 rounded-full object-cover"
-            />
-            <span className="text-xs text-muted-foreground/50 font-medium">Desenvolvendo Soluções</span>
+          <div className="flex items-center gap-3">
+            <img src={elsdigitalLogo} alt="ELSDIGITAL" className="w-5 h-5 rounded-full object-cover" />
+            <span className="text-xs text-muted-foreground">Desenvolvendo Soluções</span>
           </div>
         </div>
       </footer>
@@ -815,14 +652,14 @@ export default function Landing() {
       <Dialog open={showAuth} onOpenChange={(open) => { setShowAuth(open); if (!open) { setAuthTab('login'); setRecoveryEmailSent(false); } }}>
         <DialogPortal>
           <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-          <DialogPrimitive.Content className="fixed left-[50%] top-[50%] z-50 w-full max-w-md translate-x-[-50%] translate-y-[-50%] rounded-2xl border border-border/50 bg-card/95 backdrop-blur-xl p-6 shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]">
+          <DialogPrimitive.Content className="fixed left-[50%] top-[50%] z-50 w-full max-w-sm translate-x-[-50%] translate-y-[-50%] rounded-3xl border border-border bg-background p-8 shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]">
             <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
               <X className="h-4 w-4" />
               <span className="sr-only">Fechar</span>
             </DialogPrimitive.Close>
 
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
                 <LeviLogo className="w-7 h-7" />
               </div>
               <div>
@@ -835,34 +672,35 @@ export default function Landing() {
               <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4 animate-fade-in">
                 <div className="space-y-2">
                   <Label htmlFor="modal-email">Email</Label>
-                  <Input id="modal-email" type="email" placeholder="seu@email.com" {...loginForm.register('email')} className="h-11" />
+                  <Input id="modal-email" type="email" placeholder="seu@email.com" {...loginForm.register('email')} className="h-12 rounded-xl" />
                   {loginForm.formState.errors.email && <p className="text-sm text-destructive">{loginForm.formState.errors.email.message}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="modal-password">Senha</Label>
                   <div className="relative">
-                    <Input id="modal-password" type={showPassword ? 'text' : 'password'} placeholder="••••••••" {...loginForm.register('password')} className="h-11 pr-12" />
+                    <Input id="modal-password" type={showPassword ? 'text' : 'password'} placeholder="••••••••" {...loginForm.register('password')} className="h-12 pr-12 rounded-xl" />
                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                   {loginForm.formState.errors.password && <p className="text-sm text-destructive">{loginForm.formState.errors.password.message}</p>}
                 </div>
-                <Button type="submit" className="w-full h-11 bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-glow-sm transition-all" disabled={isLoading}>
+                <Button type="submit" className="w-full h-12 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-base" disabled={isLoading}>
                   {isLoading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Entrando...</> : 'Entrar'}
                 </Button>
-                <button type="button" onClick={() => { setAuthTab('recovery'); setRecoveryEmailSent(false); }} className="w-full text-center text-sm text-primary hover:underline">
+                <button type="button" onClick={() => { setAuthTab('recovery'); setRecoveryEmailSent(false); }} className="w-full text-center text-sm text-muted-foreground hover:text-primary transition-colors">
                   Esqueceu sua senha?
                 </button>
-                <div className="relative my-2">
+                <div className="relative my-3">
                   <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border"></div></div>
+                  <div className="relative flex justify-center text-xs"><span className="bg-background px-3 text-muted-foreground">ou continue com</span></div>
                 </div>
-                <div className="flex justify-center gap-4">
-                  <Button type="button" variant="outline" size="icon" className="h-11 w-11 rounded-xl border-secondary/30 hover:border-secondary/50" onClick={() => handleSocialSignIn('google')} disabled={isLoading} title="Continuar com Google">
-                    <GoogleIcon />
+                <div className="flex gap-3">
+                  <Button type="button" variant="outline" className="flex-1 h-11 rounded-xl border-border" onClick={() => handleSocialSignIn('google')} disabled={isLoading}>
+                    <GoogleIcon /> <span className="ml-2 text-sm">Google</span>
                   </Button>
-                  <Button type="button" variant="outline" size="icon" className="h-11 w-11 rounded-xl border-secondary/30 hover:border-secondary/50" onClick={() => handleSocialSignIn('apple')} disabled={isLoading} title="Continuar com Apple">
-                    <AppleIcon />
+                  <Button type="button" variant="outline" className="flex-1 h-11 rounded-xl border-border" onClick={() => handleSocialSignIn('apple')} disabled={isLoading}>
+                    <AppleIcon /> <span className="ml-2 text-sm">Apple</span>
                   </Button>
                 </div>
               </form>
@@ -878,10 +716,10 @@ export default function Landing() {
                   <form onSubmit={recoveryForm.handleSubmit(handleRecovery)} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="modal-recovery-email">Email</Label>
-                      <Input id="modal-recovery-email" type="email" placeholder="seu@email.com" {...recoveryForm.register('email')} className="h-11" />
+                      <Input id="modal-recovery-email" type="email" placeholder="seu@email.com" {...recoveryForm.register('email')} className="h-12 rounded-xl" />
                       {recoveryForm.formState.errors.email && <p className="text-sm text-destructive">{recoveryForm.formState.errors.email.message}</p>}
                     </div>
-                    <Button type="submit" className="w-full h-11 gradient-fresh text-white shadow-glow-sm transition-all" disabled={isLoading}>
+                    <Button type="submit" className="w-full h-12 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-semibold" disabled={isLoading}>
                       {isLoading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Enviando...</> : 'Enviar link de recuperação'}
                     </Button>
                   </form>
@@ -894,7 +732,7 @@ export default function Landing() {
                     <p className="text-sm text-muted-foreground">Verifique sua caixa de entrada e clique no link para redefinir sua senha.</p>
                   </div>
                 )}
-                <button type="button" onClick={() => setAuthTab('login')} className="w-full text-center text-sm text-primary hover:underline">
+                <button type="button" onClick={() => setAuthTab('login')} className="w-full text-center text-sm text-muted-foreground hover:text-primary transition-colors">
                   Voltar para o login
                 </button>
               </div>
@@ -910,21 +748,18 @@ export default function Landing() {
       {/* ── CONTACT MODAL ── */}
       <Dialog open={showContact} onOpenChange={(open) => { setShowContact(open); if (!open) setContactSent(false); }}>
         <DialogPortal>
-          <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-          <DialogPrimitive.Content className="fixed left-[50%] top-[50%] z-50 w-full max-w-md translate-x-[-50%] translate-y-[-50%] rounded-2xl border border-destructive/20 bg-card/95 backdrop-blur-xl p-6 shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]"
-            style={{ boxShadow: '0 0 60px hsl(0 70% 50% / 0.15), 0 25px 50px hsl(0 0% 0% / 0.25)' }}
-          >
+          <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+          <DialogPrimitive.Content className="fixed left-[50%] top-[50%] z-50 w-full max-w-sm translate-x-[-50%] translate-y-[-50%] rounded-3xl border border-border bg-background p-8 shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]">
             <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
               <X className="h-4 w-4" />
               <span className="sr-only">Fechar</span>
             </DialogPrimitive.Close>
 
-            {/* Red accent line */}
-            <div className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl bg-gradient-to-r from-destructive via-destructive/80 to-destructive/40" />
+            <div className="absolute top-0 left-0 right-0 h-1 rounded-t-3xl bg-gradient-to-r from-primary via-primary/60 to-secondary/40" />
 
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
-                <Mail className="w-5 h-5 text-destructive" />
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Mail className="w-5 h-5 text-primary" />
               </div>
               <div>
                 <span className="font-display text-xl font-bold text-foreground">Fale conosco</span>
@@ -936,17 +771,17 @@ export default function Landing() {
               <form onSubmit={contactForm.handleSubmit(handleContact)} className="space-y-4 animate-fade-in">
                 <div className="space-y-2">
                   <Label htmlFor="contact-name">Nome</Label>
-                  <Input id="contact-name" placeholder="Seu nome" {...contactForm.register('name')} className="h-11 border-destructive/15 focus-visible:ring-destructive/30" />
+                  <Input id="contact-name" placeholder="Seu nome" {...contactForm.register('name')} className="h-12 rounded-xl" />
                   {contactForm.formState.errors.name && <p className="text-sm text-destructive">{contactForm.formState.errors.name.message}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="contact-email">Email</Label>
-                  <Input id="contact-email" type="email" placeholder="seu@email.com" {...contactForm.register('email')} className="h-11 border-destructive/15 focus-visible:ring-destructive/30" />
+                  <Input id="contact-email" type="email" placeholder="seu@email.com" {...contactForm.register('email')} className="h-12 rounded-xl" />
                   {contactForm.formState.errors.email && <p className="text-sm text-destructive">{contactForm.formState.errors.email.message}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="contact-phone">Telefone</Label>
-                  <Input id="contact-phone" type="tel" placeholder="(00) 00000-0000" {...contactForm.register('phone')} className="h-11 border-destructive/15 focus-visible:ring-destructive/30" />
+                  <Input id="contact-phone" type="tel" placeholder="(00) 00000-0000" {...contactForm.register('phone')} className="h-12 rounded-xl" />
                   {contactForm.formState.errors.phone && <p className="text-sm text-destructive">{contactForm.formState.errors.phone.message}</p>}
                 </div>
                 <div className="space-y-2">
@@ -956,30 +791,26 @@ export default function Landing() {
                     placeholder="Escreva sua mensagem..."
                     rows={4}
                     {...contactForm.register('message')}
-                    className="flex w-full rounded-md border border-destructive/15 bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30 focus-visible:ring-offset-2 resize-none"
+                    className="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
                   />
                   {contactForm.formState.errors.message && <p className="text-sm text-destructive">{contactForm.formState.errors.message.message}</p>}
                 </div>
                 <Button
                   type="submit"
-                  className="w-full h-11 bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-all"
-                  style={{ boxShadow: '0 0 20px hsl(0 70% 50% / 0.25)' }}
+                  className="w-full h-12 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-base"
                   disabled={contactLoading}
                 >
                   {contactLoading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Enviando...</> : <><Send className="w-4 h-4 mr-2" />Enviar mensagem</>}
                 </Button>
-                <p className="text-center text-xs text-muted-foreground/50">
-                  Enviado para suport@leviescalas.com.br
-                </p>
               </form>
             ) : (
               <div className="text-center space-y-3 py-6 animate-fade-in">
-                <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto" style={{ boxShadow: '0 0 30px hsl(0 70% 50% / 0.2)' }}>
-                  <CheckCircle2 className="w-8 h-8 text-destructive" />
+                <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center mx-auto">
+                  <CheckCircle2 className="w-8 h-8 text-accent" />
                 </div>
                 <h3 className="text-lg font-semibold text-foreground">Mensagem enviada!</h3>
                 <p className="text-sm text-muted-foreground">Recebemos sua mensagem e responderemos em breve.</p>
-                <Button variant="outline" className="border-destructive/20 text-destructive hover:bg-destructive/10" onClick={() => setContactSent(false)}>
+                <Button variant="outline" className="rounded-xl" onClick={() => setContactSent(false)}>
                   Enviar outra mensagem
                 </Button>
               </div>
