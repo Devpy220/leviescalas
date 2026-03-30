@@ -2,9 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Calendar, Users, AlertCircle } from 'lucide-react';
+import { Loader2, Calendar, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getCurrentPeriodInfo, formatPeriodEnd } from '@/lib/periodUtils';
 import { createExtendedMemberColorMap, getMemberBackgroundStyle } from '@/lib/memberColors';
 import { FIXED_SLOTS } from '@/lib/fixedSlots';
 
@@ -24,7 +23,6 @@ interface SlotAvailabilityRecord {
   time_start: string;
   time_end: string;
   is_available: boolean;
-  period_start: string;
 }
 
 export default function LeaderSlotAvailabilityView({ departmentId }: LeaderSlotAvailabilityViewProps) {
@@ -32,7 +30,7 @@ export default function LeaderSlotAvailabilityView({ departmentId }: LeaderSlotA
   const [members, setMembers] = useState<MemberProfile[]>([]);
   const [availability, setAvailability] = useState<SlotAvailabilityRecord[]>([]);
   
-  const currentPeriod = useMemo(() => getCurrentPeriodInfo(), []);
+  
 
   const normalizeTime = (time: string) => time?.slice(0, 5);
 
@@ -52,10 +50,9 @@ export default function LeaderSlotAvailabilityView({ departmentId }: LeaderSlotA
 
       const { data: availabilityData, error: availabilityError } = await supabase
         .from('member_availability')
-        .select('user_id, day_of_week, time_start, time_end, is_available, period_start')
+        .select('user_id, day_of_week, time_start, time_end, is_available')
         .eq('department_id', departmentId)
-        .eq('is_available', true)
-        .eq('period_start', currentPeriod.periodStartStr);
+        .eq('is_available', true);
 
       if (availabilityError) throw availabilityError;
 
@@ -104,8 +101,6 @@ export default function LeaderSlotAvailabilityView({ departmentId }: LeaderSlotA
     );
   }
 
-  const periodEndFormatted = formatPeriodEnd(currentPeriod.periodEnd);
-
   return (
     <Card className="glass border-border/50">
       <CardHeader>
@@ -118,19 +113,6 @@ export default function LeaderSlotAvailabilityView({ departmentId }: LeaderSlotA
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Period notice */}
-        <div className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-lg">
-          <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-          <div className="text-sm">
-            <p className="font-medium text-amber-800 dark:text-amber-200">
-              {currentPeriod.label} — válido até {periodEndFormatted}
-            </p>
-            <p className="text-amber-700 dark:text-amber-300/80">
-              Após essa data, membros precisarão remarcar sua disponibilidade.
-            </p>
-          </div>
-        </div>
-
         {/* Slots Grid */}
         <div className="space-y-3">
           {FIXED_SLOTS.map(slot => {
