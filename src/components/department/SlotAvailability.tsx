@@ -177,7 +177,7 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
         <span className="text-xs text-muted-foreground">{availableCount}/{FIXED_SLOTS.length}</span>
       </div>
 
-      <div className="grid grid-cols-1 gap-1.5">
+      <div className="grid grid-cols-2 gap-1.5">
         {FIXED_SLOTS.map(slot => {
           const slotKey = getSlotKey(slot);
           const isAvailable = isSlotAvailable(slot);
@@ -188,37 +188,37 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
             <div 
               key={slotKey}
               className={cn(
-                "flex items-center justify-between px-3 py-2 rounded-md border transition-all",
+                "flex items-center justify-between px-2 py-1.5 rounded-md border transition-all",
                 isAvailable ? slot.borderColor : "border-transparent",
                 isAvailable ? slot.bgColor : "bg-muted/30",
                 isSaving && "opacity-70"
               )}
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 min-w-0">
                 <div className={cn(
-                  "w-7 h-7 rounded-full flex items-center justify-center",
+                  "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0",
                   isAvailable ? slot.activeColor : "bg-muted"
                 )}>
                   <Icon className={cn(
-                    "w-3.5 h-3.5",
+                    "w-3 h-3",
                     isAvailable ? "text-white" : "text-muted-foreground"
                   )} />
                 </div>
-                <div className="leading-tight">
-                  <Label className="text-sm font-medium text-foreground">{slot.label}</Label>
-                  <p className="text-xs text-muted-foreground">{slot.timeStart} - {slot.timeEnd}</p>
+                <div className="leading-tight min-w-0">
+                  <Label className="text-xs font-medium text-foreground truncate block">{slot.label}</Label>
+                  <p className="text-[10px] text-muted-foreground">{slot.timeStart}-{slot.timeEnd}</p>
                 </div>
               </div>
               
-              <div className="flex items-center">
+              <div className="flex items-center flex-shrink-0 ml-1">
                 {isSaving ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-3 h-3 animate-spin" />
                 ) : (
                   <Switch
                     checked={isAvailable}
                     onCheckedChange={() => toggleSlotAvailability(slot)}
                     disabled={!!saving}
-                    className="scale-90"
+                    className="scale-75"
                   />
                 )}
               </div>
