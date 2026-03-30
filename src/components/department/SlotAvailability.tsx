@@ -4,9 +4,8 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Calendar, AlertCircle } from 'lucide-react';
+import { Loader2, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getCurrentPeriodInfo, formatPeriodEnd } from '@/lib/periodUtils';
 import { FIXED_SLOTS, getSlotKey } from '@/lib/fixedSlots';
 
 interface SlotAvailabilityProps {
@@ -29,7 +28,7 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
   const [saving, setSaving] = useState<string | null>(null);
   const [availability, setAvailability] = useState<SlotAvailabilityRecord[]>([]);
 
-  const currentPeriod = useMemo(() => getCurrentPeriodInfo(), []);
+  
 
   const normalizeTime = (time: string) => time?.slice(0, 5);
 
@@ -46,10 +45,9 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
       
       const { data, error } = await supabase
         .from('member_availability')
-        .select('id, day_of_week, time_start, time_end, is_available, period_start')
+        .select('id, day_of_week, time_start, time_end, is_available')
         .eq('department_id', departmentId)
-        .eq('user_id', userId)
-        .eq('period_start', currentPeriod.periodStartStr);
+        .eq('user_id', userId);
 
       if (error) throw error;
       setAvailability(data || []);
@@ -121,7 +119,7 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
             time_start: formatTimeForDb(slot.timeStart),
             time_end: formatTimeForDb(slot.timeEnd),
             is_available: true,
-            period_start: currentPeriod.periodStartStr
+            
           })
           .select()
           .maybeSingle();
@@ -160,7 +158,6 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
   };
 
   const availableCount = FIXED_SLOTS.filter(slot => isSlotAvailable(slot)).length;
-  const periodEndFormatted = formatPeriodEnd(currentPeriod.periodEnd);
 
   if (loading) {
     return (
@@ -182,19 +179,6 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Period notice */}
-        <div className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-lg">
-          <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-          <div className="text-sm">
-            <p className="font-medium text-amber-800 dark:text-amber-200">
-              {currentPeriod.label} — válida até {periodEndFormatted}
-            </p>
-            <p className="text-amber-700 dark:text-amber-300/80">
-              Após essa data, você precisará marcar novamente sua disponibilidade.
-            </p>
-          </div>
-        </div>
-
         {/* Legend */}
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>{availableCount} de {FIXED_SLOTS.length} slots disponíveis</span>
@@ -257,7 +241,7 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
         {/* Tip */}
         <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
           <p className="text-sm text-muted-foreground">
-            <strong>Dica:</strong> O líder usará esta informação para gerar escalas automáticas. 
+          <strong>Dica:</strong> Sua disponibilidade é fixa e vale até você alterar. 
             Marque apenas os horários em que você realmente pode participar.
           </p>
         </div>
