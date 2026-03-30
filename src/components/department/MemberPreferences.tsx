@@ -131,117 +131,109 @@ export default function MemberPreferences({ departmentId, userId }: MemberPrefer
   }
 
   return (
-    <Card className="glass border-border/50">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Settings2 className="w-5 h-5 text-primary" />
-          Minhas Preferências
-        </CardTitle>
-        <CardDescription>
-          Configure suas preferências de escala para que o sistema considere ao gerar escalas automáticas.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="max-schedules">Máximo de escalas por mês</Label>
-            <Input
-              id="max-schedules"
-              type="number"
-              min={1}
-              max={31}
-              value={maxSchedules}
-              onChange={(e) => setMaxSchedules(e.target.value === '' ? '' : parseInt(e.target.value) || '')}
-            />
-            <p className="text-xs text-muted-foreground">
-              Limite de quantas vezes você pode ser escalado por mês.
-            </p>
-          </div>
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <Settings2 className="w-4 h-4 text-primary" />
+        <h3 className="text-sm font-semibold text-foreground">Minhas Preferências</h3>
+      </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="min-days">Mínimo de dias entre escalas</Label>
-            <Input
-              id="min-days"
-              type="number"
-              min={0}
-              max={30}
-              value={minDaysBetween}
-              onChange={(e) => setMinDaysBetween(e.target.value === '' ? '' : parseInt(e.target.value) || '')}
-            />
-            <p className="text-xs text-muted-foreground">
-              Intervalo mínimo entre uma escala e outra.
-            </p>
-          </div>
+      <div className="grid gap-2 grid-cols-2">
+        <div className="space-y-1">
+          <Label htmlFor="max-schedules" className="text-xs">Máx. escalas/mês</Label>
+          <Input
+            id="max-schedules"
+            type="number"
+            min={1}
+            max={31}
+            value={maxSchedules}
+            onChange={(e) => setMaxSchedules(e.target.value === '' ? '' : parseInt(e.target.value) || '')}
+            className="h-8 text-sm"
+          />
         </div>
 
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              Datas de Bloqueio
-            </Label>
-            <Badge variant="outline" className="text-xs">
-              {blackoutDates.length} de {maxBlackoutDates}
-            </Badge>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Adicione datas específicas em que você NÃO está disponível (férias, compromissos, etc.).
-          </p>
-          
-          <div className="flex gap-2">
-            <Input
-              type="date"
-              value={newBlackoutDate}
-              onChange={(e) => setNewBlackoutDate(e.target.value)}
-              className="flex-1"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleAddBlackoutDate}
-              disabled={!newBlackoutDate}
-            >
-              Adicionar
-            </Button>
-          </div>
+        <div className="space-y-1">
+          <Label htmlFor="min-days" className="text-xs">Mín. dias entre</Label>
+          <Input
+            id="min-days"
+            type="number"
+            min={0}
+            max={30}
+            value={minDaysBetween}
+            onChange={(e) => setMinDaysBetween(e.target.value === '' ? '' : parseInt(e.target.value) || '')}
+            className="h-8 text-sm"
+          />
+        </div>
+      </div>
 
-          {blackoutDates.length > 0 && (
-            <div className="flex flex-wrap gap-2 pt-2">
-              {blackoutDates.map(date => (
-                <Badge
-                  key={date}
-                  variant="secondary"
-                  className="gap-1 pr-1"
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label className="flex items-center gap-1.5 text-xs">
+            <Calendar className="w-3.5 h-3.5" />
+            Datas de Bloqueio
+          </Label>
+          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+            {blackoutDates.length}/{maxBlackoutDates}
+          </Badge>
+        </div>
+        
+        <div className="flex gap-1.5">
+          <Input
+            type="date"
+            value={newBlackoutDate}
+            onChange={(e) => setNewBlackoutDate(e.target.value)}
+            className="flex-1 h-8 text-sm"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleAddBlackoutDate}
+            disabled={!newBlackoutDate}
+            className="h-8 text-xs px-2"
+          >
+            Adicionar
+          </Button>
+        </div>
+
+        {blackoutDates.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {blackoutDates.map(date => (
+              <Badge
+                key={date}
+                variant="secondary"
+                className="gap-0.5 pr-0.5 text-[10px]"
+              >
+                {format(new Date(date + 'T12:00:00'), "dd 'de' MMM", { locale: ptBR })}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-3.5 w-3.5 hover:bg-destructive/20"
+                  onClick={() => handleRemoveBlackoutDate(date)}
                 >
-                  {format(new Date(date + 'T12:00:00'), "dd 'de' MMM", { locale: ptBR })}
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-4 w-4 hover:bg-destructive/20"
-                    onClick={() => handleRemoveBlackoutDate(date)}
-                  >
-                    <X className="w-3 h-3" />
-                  </Button>
-                </Badge>
-              ))}
-            </div>
-          )}
-        </div>
+                  <X className="w-2.5 h-2.5" />
+                </Button>
+              </Badge>
+            ))}
+          </div>
+        )}
+      </div>
 
+      <div className="flex justify-center pt-1">
         <Button
           onClick={handleSave}
           disabled={saving}
-          className="w-full gradient-vibrant text-white gap-2"
+          size="sm"
+          className="gradient-vibrant text-white gap-1.5 px-6 h-8 text-xs"
         >
           {saving ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
           ) : (
-            <Save className="w-4 h-4" />
+            <Save className="w-3.5 h-3.5" />
           )}
-          Salvar Preferências
+          Salvar
         </Button>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
