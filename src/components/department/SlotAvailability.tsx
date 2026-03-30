@@ -168,84 +168,68 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
   }
 
   return (
-    <Card className="glass border-border/50">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Calendar className="w-5 h-5 text-primary" />
-          Disponibilidade Semanal
-        </CardTitle>
-        <CardDescription>
-          Marque os dias/horários em que você pode ser escalado
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Legend */}
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>{availableCount} de {FIXED_SLOTS.length} slots disponíveis</span>
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-primary" />
+          <h3 className="text-sm font-semibold text-foreground">Disponibilidade Semanal</h3>
         </div>
+        <span className="text-xs text-muted-foreground">{availableCount}/{FIXED_SLOTS.length}</span>
+      </div>
 
-        {/* Slots Grid */}
-        <div className="space-y-3">
-          {FIXED_SLOTS.map(slot => {
-            const slotKey = getSlotKey(slot);
-            const isAvailable = isSlotAvailable(slot);
-            const isSaving = saving === slotKey;
-            const Icon = slot.icon;
+      <div className="grid grid-cols-1 gap-1.5">
+        {FIXED_SLOTS.map(slot => {
+          const slotKey = getSlotKey(slot);
+          const isAvailable = isSlotAvailable(slot);
+          const isSaving = saving === slotKey;
+          const Icon = slot.icon;
 
-            return (
-              <div 
-                key={slotKey}
-                className={cn(
-                  "flex items-center justify-between p-4 rounded-lg border-2 transition-all",
-                  slot.bgColor,
-                  isAvailable ? slot.borderColor : "border-transparent",
-                  isSaving && "opacity-70"
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={cn(
-                    "w-10 h-10 rounded-full flex items-center justify-center",
-                    isAvailable ? slot.activeColor : "bg-muted"
-                  )}>
-                    <Icon className={cn(
-                      "w-5 h-5",
-                      isAvailable ? "text-white" : "text-muted-foreground"
-                    )} />
-                  </div>
-                  <div>
-                    <Label className="font-medium text-foreground">
-                      {slot.label}
-                    </Label>
-                    <p className="text-sm text-muted-foreground">
-                      {slot.timeStart} - {slot.timeEnd}
-                    </p>
-                  </div>
+          return (
+            <div 
+              key={slotKey}
+              className={cn(
+                "flex items-center justify-between px-3 py-2 rounded-md border transition-all",
+                isAvailable ? slot.borderColor : "border-transparent",
+                isAvailable ? slot.bgColor : "bg-muted/30",
+                isSaving && "opacity-70"
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <div className={cn(
+                  "w-7 h-7 rounded-full flex items-center justify-center",
+                  isAvailable ? slot.activeColor : "bg-muted"
+                )}>
+                  <Icon className={cn(
+                    "w-3.5 h-3.5",
+                    isAvailable ? "text-white" : "text-muted-foreground"
+                  )} />
                 </div>
-                
-                <div className="flex items-center gap-2">
-                  {isSaving ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Switch
-                      checked={isAvailable}
-                      onCheckedChange={() => toggleSlotAvailability(slot)}
-                      disabled={!!saving}
-                    />
-                  )}
+                <div className="leading-tight">
+                  <Label className="text-sm font-medium text-foreground">{slot.label}</Label>
+                  <p className="text-xs text-muted-foreground">{slot.timeStart} - {slot.timeEnd}</p>
                 </div>
               </div>
-            );
-          })}
-        </div>
+              
+              <div className="flex items-center">
+                {isSaving ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Switch
+                    checked={isAvailable}
+                    onCheckedChange={() => toggleSlotAvailability(slot)}
+                    disabled={!!saving}
+                    className="scale-90"
+                  />
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
 
-        {/* Tip */}
-        <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-          <p className="text-sm text-muted-foreground">
-          <strong>Dica:</strong> Sua disponibilidade é fixa e vale até você alterar. 
-            Marque apenas os horários em que você realmente pode participar.
-          </p>
-        </div>
-      </CardContent>
-    </Card>
+      <p className="text-xs text-muted-foreground">
+        Sua disponibilidade é fixa até você alterar.
+      </p>
+    </div>
   );
 }
