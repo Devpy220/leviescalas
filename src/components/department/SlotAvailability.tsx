@@ -161,7 +161,7 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
     }
   };
 
-  const availableCount = FIXED_SLOTS.filter(slot => isSlotAvailable(slot)).length;
+  const blockedCount = FIXED_SLOTS.filter(slot => !isSlotAvailable(slot)).length;
 
   if (loading) {
     return (
