@@ -198,6 +198,18 @@ export default function Department() {
     return () => clearTimeout(safetyTimeout);
   }, [currentUser?.id, id, authLoading]);
 
+  // Listen for schedule updates from sidebar
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.departmentId === id) {
+        fetchSchedules();
+      }
+    };
+    window.addEventListener('schedules-updated', handler);
+    return () => window.removeEventListener('schedules-updated', handler);
+  }, [id]);
+
   const fetchDepartment = async () => {
     if (!id) return;
     

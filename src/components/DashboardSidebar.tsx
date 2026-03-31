@@ -563,7 +563,10 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
           onOpenChange={setShowAddSchedule}
           members={addScheduleMembers}
           selectedDate={null}
-          onScheduleCreated={() => setShowAddSchedule(false)}
+          onScheduleCreated={() => {
+            setShowAddSchedule(false);
+            window.dispatchEvent(new CustomEvent('schedules-updated', { detail: { departmentId: selectedDept.id } }));
+          }}
         />
       )}
 
