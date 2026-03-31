@@ -52,7 +52,7 @@ export default function LeaderSlotAvailabilityView({ departmentId }: LeaderSlotA
         .from('member_availability')
         .select('user_id, day_of_week, time_start, time_end, is_available')
         .eq('department_id', departmentId)
-        .eq('is_available', true);
+        .eq('is_available', false);
 
       if (availabilityError) throw availabilityError;
 
