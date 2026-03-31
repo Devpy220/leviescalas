@@ -97,7 +97,7 @@ export default function EditScheduleDialog({
             .from('member_availability')
             .select('user_id, day_of_week, time_start, time_end, is_available')
             .eq('department_id', departmentId)
-            .eq('is_available', true),
+            .eq('is_available', false),
           supabase
             .from('member_preferences')
             .select('user_id, blackout_dates')
