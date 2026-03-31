@@ -543,13 +543,6 @@ export default function Landing() {
               Contato
             </button>
             <ThemeToggle />
-            <Button
-              size="sm"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-5 text-sm font-medium"
-              onClick={() => openAuth('login')}
-            >
-              Entrar
-            </Button>
           </div>
         </div>
       </nav>
