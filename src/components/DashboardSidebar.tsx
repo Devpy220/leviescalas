@@ -197,6 +197,27 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
         setShowAnnouncements(true);
         break;
       case 'create-schedule':
+        try {
+          const { data: memberProfiles } = await supabase
+            .rpc('get_department_member_profiles', { dept_id: dept.id });
+          const { data: memberRows } = await supabase
+            .from('members')
+            .select('id, user_id, role')
+            .eq('department_id', dept.id);
+          const roleMap = new Map((memberRows || []).map((m: any) => [m.id, m]));
+          setAddScheduleMembers((memberProfiles || []).map((m: any) => {
+            const memberRow = Array.from(roleMap.values()).find((r: any) => r.user_id === m.id);
+            return {
+              id: memberRow?.id || m.id,
+              user_id: m.id,
+              role: m.role || 'member',
+              profile: { name: m.name, avatar_url: m.avatar_url },
+            };
+          }));
+        } catch (e) {
+          console.error('Error fetching members for schedule:', e);
+          setAddScheduleMembers([]);
+        }
         setShowAddSchedule(true);
         break;
       case 'sectors':
