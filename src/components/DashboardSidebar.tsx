@@ -170,6 +170,7 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
   const [deptSettingsData, setDeptSettingsData] = useState<any>(null);
   const [inviteCode, setInviteCode] = useState('');
   const [scheduleCountData, setScheduleCountData] = useState<{ members: any[]; schedules: any[] }>({ members: [], schedules: [] });
+  const [addScheduleMembers, setAddScheduleMembers] = useState<any[]>([]);
 
   const isActive = (path: string) => location.pathname === path;
 
