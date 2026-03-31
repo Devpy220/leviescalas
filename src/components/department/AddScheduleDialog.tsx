@@ -222,10 +222,22 @@ export default function AddScheduleDialog({
         setSundayConflicts({});
         return;
       }
+
+      // Check if department allows sunday double scheduling
+      const { data: deptData } = await supabase
+        .from('departments')
+        .select('allow_sunday_double')
+        .eq('id', departmentId)
+        .single();
+      
+      if (deptData?.allow_sunday_double) {
+        setSundayConflicts({});
+        setAllowSundayDouble(true);
+        return;
+      }
+
       // Determine if current slot is morning or night
       const isMorning = timeStart < '13:00';
-      const oppositeTimeStart = isMorning ? '13:00:00' : '00:00:00';
-      const oppositeTimeEnd = isMorning ? '23:59:59' : '12:59:59';
       
       const dateStr = format(date, 'yyyy-MM-dd');
       const userIds = members.map(m => m.user_id);
