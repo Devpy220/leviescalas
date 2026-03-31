@@ -117,12 +117,12 @@ export default function AddScheduleDialog({
       .filter(([_, dates]) => dates.includes(dateStr))
       .forEach(([userId]) => blocked.add(userId));
     
-    // Check slot availability - member must have explicitly marked as available
+    // Check slot availability - block only if explicitly marked as unavailable
     if (timeStart) {
       const normalizedTime = normalizeTime(timeStart);
       members.forEach(m => {
         const key = `${m.user_id}-${dayOfWeek}-${normalizedTime}`;
-        if (!slotAvailabilityMap[key]) {
+        if (slotAvailabilityMap[key] === false) {
           blocked.add(m.user_id);
         }
       });
