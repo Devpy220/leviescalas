@@ -98,6 +98,7 @@ export default function AddScheduleDialog({
   const [localRole, setLocalRole] = useState<string>('');
   const [crossDeptConflicts, setCrossDeptConflicts] = useState<Record<string, string>>({});
   const [sundayConflicts, setSundayConflicts] = useState<Record<string, string>>({});
+  const [allowSundayDouble, setAllowSundayDouble] = useState(false);
   
   const { toast } = useToast();
   const { user } = useAuth();
