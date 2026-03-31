@@ -94,15 +94,9 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
       const existingRecord = getSlotRecord(slot);
       const newValue = !isSlotAvailable(slot);
 
-      if (existingRecord) {
-        if (newValue) {
-          const { error } = await supabase
-            .from('member_availability')
-            .update({ is_available: true, updated_at: new Date().toISOString() })
-            .eq('id', existingRecord.id);
-          if (error) throw error;
-          setAvailability(prev => prev.map(a => a.id === existingRecord.id ? { ...a, is_available: true } : a));
-        } else {
+      if (newValue) {
+        // Ligando = disponível = deletar registro de bloqueio (volta ao padrão)
+        if (existingRecord) {
           const { error } = await supabase
             .from('member_availability')
             .delete()
@@ -110,33 +104,43 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
           if (error) throw error;
           setAvailability(prev => prev.filter(a => a.id !== existingRecord.id));
         }
-      } else if (newValue) {
-        const { data, error } = await supabase
-          .from('member_availability')
-          .upsert({
-            user_id: userId,
-            department_id: departmentId,
-            day_of_week: slot.dayOfWeek,
-            time_start: formatTimeForDb(slot.timeStart),
-            time_end: formatTimeForDb(slot.timeEnd),
-            is_available: true,
-            updated_at: new Date().toISOString(),
-          }, {
-            onConflict: 'user_id,department_id,day_of_week,time_start,time_end',
-          })
-          .select()
-          .maybeSingle();
-
-        if (error) throw error;
-
-        if (data) {
-          setAvailability(prev => [...prev.filter(a => 
-            !(a.day_of_week === slot.dayOfWeek && 
-              normalizeTime(a.time_start) === normalizeTime(slot.timeStart) &&
-              normalizeTime(a.time_end) === normalizeTime(slot.timeEnd))
-          ), data]);
+      } else {
+        // Desligando = bloqueado = inserir/atualizar registro com is_available = false
+        if (existingRecord) {
+          const { error } = await supabase
+            .from('member_availability')
+            .update({ is_available: false, updated_at: new Date().toISOString() })
+            .eq('id', existingRecord.id);
+          if (error) throw error;
+          setAvailability(prev => prev.map(a => a.id === existingRecord.id ? { ...a, is_available: false } : a));
         } else {
-          await fetchAvailability();
+          const { data, error } = await supabase
+            .from('member_availability')
+            .upsert({
+              user_id: userId,
+              department_id: departmentId,
+              day_of_week: slot.dayOfWeek,
+              time_start: formatTimeForDb(slot.timeStart),
+              time_end: formatTimeForDb(slot.timeEnd),
+              is_available: false,
+              updated_at: new Date().toISOString(),
+            }, {
+              onConflict: 'user_id,department_id,day_of_week,time_start,time_end',
+            })
+            .select()
+            .maybeSingle();
+
+          if (error) throw error;
+
+          if (data) {
+            setAvailability(prev => [...prev.filter(a => 
+              !(a.day_of_week === slot.dayOfWeek && 
+                normalizeTime(a.time_start) === normalizeTime(slot.timeStart) &&
+                normalizeTime(a.time_end) === normalizeTime(slot.timeEnd))
+            ), data]);
+          } else {
+            await fetchAvailability();
+          }
         }
       }
 
