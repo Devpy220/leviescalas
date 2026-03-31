@@ -178,7 +178,7 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
           <Calendar className="w-4 h-4 text-primary" />
           <h3 className="text-sm font-semibold text-foreground">Disponibilidade Semanal</h3>
         </div>
-        <span className="text-xs text-muted-foreground">{availableCount}/{FIXED_SLOTS.length}</span>
+        <span className="text-xs text-muted-foreground">{blockedCount} bloqueado{blockedCount !== 1 ? 's' : ''}</span>
       </div>
 
       <div className="grid grid-cols-2 gap-1.5">
