@@ -561,7 +561,7 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
           departmentId={selectedDept.id}
           open={showAddSchedule}
           onOpenChange={setShowAddSchedule}
-          members={[]}
+          members={addScheduleMembers}
           selectedDate={null}
           onScheduleCreated={() => setShowAddSchedule(false)}
         />
