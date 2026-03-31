@@ -52,7 +52,7 @@ export default function LeaderSlotAvailabilityView({ departmentId }: LeaderSlotA
         .from('member_availability')
         .select('user_id, day_of_week, time_start, time_end, is_available')
         .eq('department_id', departmentId)
-        .eq('is_available', true);
+        .eq('is_available', false);
 
       if (availabilityError) throw availabilityError;
 
@@ -66,16 +66,17 @@ export default function LeaderSlotAvailabilityView({ departmentId }: LeaderSlotA
   };
 
   const getMembersForSlot = (slot: typeof FIXED_SLOTS[0]) => {
-    const availableUserIds = availability
+    // Blocked = explicit record with is_available = false
+    const blockedUserIds = availability
       .filter(a => 
         a.day_of_week === slot.dayOfWeek &&
         normalizeTime(a.time_start) === normalizeTime(slot.timeStart) &&
-        normalizeTime(a.time_end) === normalizeTime(slot.timeEnd) &&
-        a.is_available
+        normalizeTime(a.time_end) === normalizeTime(slot.timeEnd)
       )
       .map(a => a.user_id);
 
-    return members.filter(m => availableUserIds.includes(m.id));
+    // All members are available EXCEPT explicitly blocked ones
+    return members.filter(m => !blockedUserIds.includes(m.id));
   };
 
   const getInitials = (name: string) => {

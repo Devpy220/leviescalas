@@ -97,7 +97,7 @@ export default function EditScheduleDialog({
             .from('member_availability')
             .select('user_id, day_of_week, time_start, time_end, is_available')
             .eq('department_id', departmentId)
-            .eq('is_available', true),
+            .eq('is_available', false),
           supabase
             .from('member_preferences')
             .select('user_id, blackout_dates')
@@ -109,12 +109,12 @@ export default function EditScheduleDialog({
             .eq('is_available', false),
         ]);
 
-        // Build availability map: "userId-dayOfWeek-timeStart" -> true
+        // Build block map: key -> false means explicitly blocked
         const aMap: Record<string, boolean> = {};
         if (availRes.data) {
           for (const row of availRes.data) {
             const key = `${row.user_id}-${row.day_of_week}-${normalizeTime(row.time_start)}`;
-            aMap[key] = true;
+            aMap[key] = false;
           }
         }
         setAvailabilityMap(aMap);
@@ -171,9 +171,9 @@ export default function EditScheduleDialog({
     // Check blackout dates
     if (blackoutMap[userId]?.includes(dateStr)) return false;
     
-    // Member must have explicitly marked this slot as available
+    // Block only if explicitly marked as unavailable
     const key = `${userId}-${dayOfWeek}-${normalizeTime(timeStart)}`;
-    return !!availabilityMap[key];
+    return availabilityMap[key] !== false;
   };
 
   const availableMembers = useMemo(() => {

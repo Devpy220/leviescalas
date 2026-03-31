@@ -117,12 +117,12 @@ export default function AddScheduleDialog({
       .filter(([_, dates]) => dates.includes(dateStr))
       .forEach(([userId]) => blocked.add(userId));
     
-    // Check slot availability - member must have explicitly marked as available
+    // Check slot availability - block only if explicitly marked as unavailable
     if (timeStart) {
       const normalizedTime = normalizeTime(timeStart);
       members.forEach(m => {
         const key = `${m.user_id}-${dayOfWeek}-${normalizedTime}`;
-        if (!slotAvailabilityMap[key]) {
+        if (slotAvailabilityMap[key] === false) {
           blocked.add(m.user_id);
         }
       });
@@ -284,7 +284,7 @@ export default function AddScheduleDialog({
           .from('member_availability')
           .select('user_id, day_of_week, time_start, is_available')
           .eq('department_id', departmentId)
-          .eq('is_available', true),
+          .eq('is_available', false),
       ]);
 
       if (prefsRes.error) throw prefsRes.error;
@@ -297,12 +297,12 @@ export default function AddScheduleDialog({
       });
       setMemberBlackouts(blackouts);
 
-      // Build slot availability map
+      // Build slot block map: key -> false means explicitly blocked
       const aMap: Record<string, boolean> = {};
       if (availRes.data) {
         for (const row of availRes.data) {
           const key = `${row.user_id}-${row.day_of_week}-${normalizeTime(row.time_start)}`;
-          aMap[key] = true;
+          aMap[key] = false;
         }
       }
       setSlotAvailabilityMap(aMap);

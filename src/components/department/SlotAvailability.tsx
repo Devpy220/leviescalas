@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
+
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
@@ -64,7 +64,8 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
       normalizeTime(a.time_start) === normalizeTime(slot.timeStart) &&
       normalizeTime(a.time_end) === normalizeTime(slot.timeEnd)
     );
-    return record?.is_available ?? false;
+    // Sem registro = disponível por padrão. Só bloqueia se is_available === false
+    return record ? record.is_available : true;
   };
 
   const getSlotRecord = (slot: typeof FIXED_SLOTS[0]) => {
@@ -93,15 +94,9 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
       const existingRecord = getSlotRecord(slot);
       const newValue = !isSlotAvailable(slot);
 
-      if (existingRecord) {
-        if (newValue) {
-          const { error } = await supabase
-            .from('member_availability')
-            .update({ is_available: true, updated_at: new Date().toISOString() })
-            .eq('id', existingRecord.id);
-          if (error) throw error;
-          setAvailability(prev => prev.map(a => a.id === existingRecord.id ? { ...a, is_available: true } : a));
-        } else {
+      if (newValue) {
+        // Ligando = disponível = deletar registro de bloqueio (volta ao padrão)
+        if (existingRecord) {
           const { error } = await supabase
             .from('member_availability')
             .delete()
@@ -109,33 +104,43 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
           if (error) throw error;
           setAvailability(prev => prev.filter(a => a.id !== existingRecord.id));
         }
-      } else if (newValue) {
-        const { data, error } = await supabase
-          .from('member_availability')
-          .upsert({
-            user_id: userId,
-            department_id: departmentId,
-            day_of_week: slot.dayOfWeek,
-            time_start: formatTimeForDb(slot.timeStart),
-            time_end: formatTimeForDb(slot.timeEnd),
-            is_available: true,
-            updated_at: new Date().toISOString(),
-          }, {
-            onConflict: 'user_id,department_id,day_of_week,time_start,time_end',
-          })
-          .select()
-          .maybeSingle();
-
-        if (error) throw error;
-
-        if (data) {
-          setAvailability(prev => [...prev.filter(a => 
-            !(a.day_of_week === slot.dayOfWeek && 
-              normalizeTime(a.time_start) === normalizeTime(slot.timeStart) &&
-              normalizeTime(a.time_end) === normalizeTime(slot.timeEnd))
-          ), data]);
+      } else {
+        // Desligando = bloqueado = inserir/atualizar registro com is_available = false
+        if (existingRecord) {
+          const { error } = await supabase
+            .from('member_availability')
+            .update({ is_available: false, updated_at: new Date().toISOString() })
+            .eq('id', existingRecord.id);
+          if (error) throw error;
+          setAvailability(prev => prev.map(a => a.id === existingRecord.id ? { ...a, is_available: false } : a));
         } else {
-          await fetchAvailability();
+          const { data, error } = await supabase
+            .from('member_availability')
+            .upsert({
+              user_id: userId,
+              department_id: departmentId,
+              day_of_week: slot.dayOfWeek,
+              time_start: formatTimeForDb(slot.timeStart),
+              time_end: formatTimeForDb(slot.timeEnd),
+              is_available: false,
+              updated_at: new Date().toISOString(),
+            }, {
+              onConflict: 'user_id,department_id,day_of_week,time_start,time_end',
+            })
+            .select()
+            .maybeSingle();
+
+          if (error) throw error;
+
+          if (data) {
+            setAvailability(prev => [...prev.filter(a => 
+              !(a.day_of_week === slot.dayOfWeek && 
+                normalizeTime(a.time_start) === normalizeTime(slot.timeStart) &&
+                normalizeTime(a.time_end) === normalizeTime(slot.timeEnd))
+            ), data]);
+          } else {
+            await fetchAvailability();
+          }
         }
       }
 
@@ -156,7 +161,7 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
     }
   };
 
-  const availableCount = FIXED_SLOTS.filter(slot => isSlotAvailable(slot)).length;
+  const blockedCount = FIXED_SLOTS.filter(slot => !isSlotAvailable(slot)).length;
 
   if (loading) {
     return (
@@ -173,7 +178,7 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
           <Calendar className="w-4 h-4 text-primary" />
           <h3 className="text-sm font-semibold text-foreground">Disponibilidade Semanal</h3>
         </div>
-        <span className="text-xs text-muted-foreground">{availableCount}/{FIXED_SLOTS.length}</span>
+        <span className="text-xs text-muted-foreground">{blockedCount} bloqueado{blockedCount !== 1 ? 's' : ''}</span>
       </div>
 
       <div className="grid grid-cols-2 gap-1.5">
@@ -227,7 +232,7 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Sua disponibilidade é fixa até você alterar.
+        Desative os dias que você <strong>NÃO</strong> pode servir.
       </p>
     </div>
   );
