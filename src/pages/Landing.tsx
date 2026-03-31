@@ -528,12 +528,14 @@ export default function Landing() {
       {/* ── NAV ── */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-background/80 backdrop-blur-xl border-b border-border shadow-sm' : 'bg-transparent'}`}>
         <div className="container mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="flex flex-col items-center gap-0.5">
+          <div className="flex items-center gap-1.5 min-w-0 flex-1">
+            <div className="flex flex-col items-center gap-0.5 shrink-0">
               <LeviLogo size="sm" className="transition-all duration-300" />
               <span className="text-[9px] font-bold tracking-widest text-secondary">LEVI</span>
             </div>
-            <LeviTypewriter />
+            <div className="min-w-0 overflow-hidden">
+              <LeviTypewriter />
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <button

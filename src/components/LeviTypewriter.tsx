@@ -43,7 +43,7 @@ export function LeviTypewriter({ className = '' }: LeviTypewriterProps) {
           return (
             <span
               key={i}
-              className={isHighlight ? 'font-extrabold text-sm sm:text-base' : ''}
+              className={isHighlight ? 'font-extrabold text-[10px] sm:text-base' : ''}
               style={isHighlight ? { 
                 color: 'hsl(var(--secondary))', 
                 textShadow: '0 0 6px hsla(var(--secondary), 0.4)' 
