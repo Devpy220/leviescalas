@@ -112,29 +112,28 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
       } else if (newValue) {
         const { data, error } = await supabase
           .from('member_availability')
-          .insert({
+          .upsert({
             user_id: userId,
             department_id: departmentId,
             day_of_week: slot.dayOfWeek,
             time_start: formatTimeForDb(slot.timeStart),
             time_end: formatTimeForDb(slot.timeEnd),
             is_available: true,
-            
+            updated_at: new Date().toISOString(),
+          }, {
+            onConflict: 'user_id,department_id,day_of_week,time_start,time_end',
           })
           .select()
           .maybeSingle();
 
-        if (error) {
-          if (error.code === '23505') {
-            await fetchAvailability();
-            toast({ title: 'Tente novamente', description: 'O registro foi atualizado. Clique novamente para salvar.' });
-            return;
-          }
-          throw error;
-        }
+        if (error) throw error;
 
         if (data) {
-          setAvailability(prev => [...prev, data]);
+          setAvailability(prev => [...prev.filter(a => 
+            !(a.day_of_week === slot.dayOfWeek && 
+              normalizeTime(a.time_start) === normalizeTime(slot.timeStart) &&
+              normalizeTime(a.time_end) === normalizeTime(slot.timeEnd))
+          ), data]);
         } else {
           await fetchAvailability();
         }
