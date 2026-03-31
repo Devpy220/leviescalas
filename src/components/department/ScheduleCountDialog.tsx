@@ -35,6 +35,13 @@ interface Schedule {
   id: string;
   user_id: string;
   date: string;
+  assignment_role?: string | null;
+}
+
+interface AssignmentRoleInfo {
+  id: string;
+  name: string;
+  icon: string;
 }
 
 interface ScheduleCountDialogProps {
@@ -42,6 +49,7 @@ interface ScheduleCountDialogProps {
   onOpenChange: (open: boolean) => void;
   schedules: Schedule[];
   members: Member[];
+  departmentId?: string;
 }
 
 type WorkloadStatus = 'overload' | 'warning' | 'normal' | 'low';

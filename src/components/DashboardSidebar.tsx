@@ -232,7 +232,7 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
             .rpc('get_department_member_profiles', { dept_id: dept.id });
           const { data: schedules } = await supabase
             .from('schedules')
-            .select('id, user_id, date')
+            .select('id, user_id, date, assignment_role')
             .eq('department_id', dept.id);
           setScheduleCountData({
             members: (members || []).map((m: any) => ({
