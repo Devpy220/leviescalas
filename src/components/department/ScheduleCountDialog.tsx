@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { BarChart2, ChevronLeft, ChevronRight } from 'lucide-react';
-import {
+import { supabase } from '@/integrations/supabase/client';
   Dialog,
   DialogContent,
   DialogHeader,
