@@ -171,9 +171,9 @@ export default function EditScheduleDialog({
     // Check blackout dates
     if (blackoutMap[userId]?.includes(dateStr)) return false;
     
-    // Member must have explicitly marked this slot as available
+    // Block only if explicitly marked as unavailable
     const key = `${userId}-${dayOfWeek}-${normalizeTime(timeStart)}`;
-    return !!availabilityMap[key];
+    return availabilityMap[key] !== false;
   };
 
   const availableMembers = useMemo(() => {

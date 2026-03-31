@@ -297,12 +297,12 @@ export default function AddScheduleDialog({
       });
       setMemberBlackouts(blackouts);
 
-      // Build slot availability map
+      // Build slot block map: key -> false means explicitly blocked
       const aMap: Record<string, boolean> = {};
       if (availRes.data) {
         for (const row of availRes.data) {
           const key = `${row.user_id}-${row.day_of_week}-${normalizeTime(row.time_start)}`;
-          aMap[key] = true;
+          aMap[key] = false;
         }
       }
       setSlotAvailabilityMap(aMap);

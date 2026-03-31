@@ -232,7 +232,7 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Sua disponibilidade é fixa até você alterar.
+        Desative os dias que você <strong>NÃO</strong> pode servir.
       </p>
     </div>
   );
