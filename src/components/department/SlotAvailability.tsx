@@ -64,7 +64,8 @@ export default function SlotAvailability({ departmentId, userId }: SlotAvailabil
       normalizeTime(a.time_start) === normalizeTime(slot.timeStart) &&
       normalizeTime(a.time_end) === normalizeTime(slot.timeEnd)
     );
-    return record?.is_available ?? false;
+    // Sem registro = disponível por padrão. Só bloqueia se is_available === false
+    return record ? record.is_available : true;
   };
 
   const getSlotRecord = (slot: typeof FIXED_SLOTS[0]) => {
