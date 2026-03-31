@@ -50,6 +50,7 @@ interface ScheduleCountDialogProps {
   schedules: Schedule[];
   members: Member[];
   departmentId?: string;
+  roleCounts: Record<string, number>;
 }
 
 type WorkloadStatus = 'overload' | 'warning' | 'normal' | 'low';
