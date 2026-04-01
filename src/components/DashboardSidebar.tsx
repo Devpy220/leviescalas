@@ -38,6 +38,8 @@ import DepartmentSettingsDialog from '@/components/department/DepartmentSettings
 import AssignmentRoleManagement from '@/components/department/AssignmentRoleManagement';
 import InviteMemberDialog from '@/components/department/InviteMemberDialog';
 import ScheduleCountDialog from '@/components/department/ScheduleCountDialog';
+import LeaderSlotAvailabilityView from '@/components/department/LeaderSlotAvailabilityView';
+import LeaderBlackoutDatesView from '@/components/department/LeaderBlackoutDatesView';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { exportToPDF, exportToExcel } from '@/lib/exportSchedules';
