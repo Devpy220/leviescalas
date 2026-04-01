@@ -598,6 +598,7 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
           onOpenChange={setShowScheduleCount}
           members={scheduleCountData.members}
           schedules={scheduleCountData.schedules}
+          departmentId={selectedDept.id}
         />
       )}
 
