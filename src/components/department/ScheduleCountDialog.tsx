@@ -159,9 +159,18 @@ export default function ScheduleCountDialog({
 
   const { memberCounts, average, maxCount } = useMemo(() => {
     const countMap = new Map<string, number>();
+    const roleCountMap = new Map<string, Record<string, number>>();
+    
     filteredSchedules.forEach(schedule => {
       const current = countMap.get(schedule.user_id) || 0;
       countMap.set(schedule.user_id, current + 1);
+      
+      // Track per-role counts
+      if (schedule.assignment_role) {
+        const userRoles = roleCountMap.get(schedule.user_id) || {};
+        userRoles[schedule.assignment_role] = (userRoles[schedule.assignment_role] || 0) + 1;
+        roleCountMap.set(schedule.user_id, userRoles);
+      }
     });
 
     const totalSchedules = filteredSchedules.length;
@@ -176,6 +185,7 @@ export default function ScheduleCountDialog({
         avatarUrl: member.profile.avatar_url,
         count,
         status: getWorkloadStatus(count, avg),
+        roleCounts: roleCountMap.get(member.user_id) || {},
       };
     });
 
