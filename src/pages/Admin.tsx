@@ -29,6 +29,9 @@ interface Department {
   leader_name: string | null;
   member_count: number;
   created_at: string;
+  church_id?: string | null;
+  church_name?: string | null;
+  church_logo_url?: string | null;
 }
 
 interface Member {
@@ -466,7 +469,32 @@ export default function Admin() {
       const { data, error } = await supabase.rpc('get_all_departments_admin');
       
       if (error) throw error;
-      setDepartments(data || []);
+
+      // Fetch church info for each department
+      const { data: deptChurches } = await supabase
+        .from('departments')
+        .select('id, church_id, churches:church_id(name, logo_url)')
+        .not('church_id', 'is', null);
+
+      const churchMap = new Map<string, { church_name: string | null; church_logo_url: string | null }>();
+      if (deptChurches) {
+        for (const dc of deptChurches) {
+          const church = dc.churches as any;
+          if (church) {
+            churchMap.set(dc.id, {
+              church_name: church.name || null,
+              church_logo_url: church.logo_url || null,
+            });
+          }
+        }
+      }
+
+      const enriched = (data || []).map((dept: Department) => ({
+        ...dept,
+        ...(churchMap.get(dept.id) || {}),
+      }));
+
+      setDepartments(enriched);
     } catch (error) {
       console.error('Error fetching departments:', error);
       toast({
@@ -1819,16 +1847,29 @@ export default function Admin() {
                       className="flex items-center justify-between p-4 bg-card hover:bg-muted/50 cursor-pointer"
                       onClick={() => toggleDepartment(dept.id)}
                     >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-foreground">{dept.name}</h3>
-                          <Badge variant="secondary">
-                            {dept.member_count} membro{dept.member_count !== 1 ? 's' : ''}
-                          </Badge>
+                      <div className="flex items-center gap-3 flex-1">
+                        {dept.church_logo_url ? (
+                          <img 
+                            src={dept.church_logo_url} 
+                            alt={dept.church_name || ''} 
+                            className="w-8 h-8 rounded-lg object-cover border border-border shrink-0"
+                          />
+                        ) : dept.church_name ? (
+                          <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                            <Church className="w-4 h-4 text-muted-foreground" />
+                          </div>
+                        ) : null}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold text-foreground">{dept.name}</h3>
+                            <Badge variant="secondary">
+                              {dept.member_count} membro{dept.member_count !== 1 ? 's' : ''}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {dept.church_name ? `${dept.church_name} • ` : ''}Líder: {dept.leader_name || 'N/A'} • Criado em {format(new Date(dept.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                          </p>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          Líder: {dept.leader_name || 'N/A'} • Criado em {format(new Date(dept.created_at), "dd/MM/yyyy", { locale: ptBR })}
-                        </p>
                       </div>
                       <div className="flex items-center gap-2">
                         <AlertDialog>
