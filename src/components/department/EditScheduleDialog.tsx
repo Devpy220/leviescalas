@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { format, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar as CalendarIcon, Clock, User, Pencil, AlertTriangle } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, User, Pencil, AlertTriangle, Layers, UserCog } from 'lucide-react';
 import { SIMPLE_SLOTS, getAvailableSlotsForDay, normalizeTime } from '@/lib/fixedSlots';
 import {
   Dialog,
