@@ -1847,16 +1847,29 @@ export default function Admin() {
                       className="flex items-center justify-between p-4 bg-card hover:bg-muted/50 cursor-pointer"
                       onClick={() => toggleDepartment(dept.id)}
                     >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-foreground">{dept.name}</h3>
-                          <Badge variant="secondary">
-                            {dept.member_count} membro{dept.member_count !== 1 ? 's' : ''}
-                          </Badge>
+                      <div className="flex items-center gap-3 flex-1">
+                        {dept.church_logo_url ? (
+                          <img 
+                            src={dept.church_logo_url} 
+                            alt={dept.church_name || ''} 
+                            className="w-8 h-8 rounded-lg object-cover border border-border shrink-0"
+                          />
+                        ) : dept.church_name ? (
+                          <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                            <Church className="w-4 h-4 text-muted-foreground" />
+                          </div>
+                        ) : null}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold text-foreground">{dept.name}</h3>
+                            <Badge variant="secondary">
+                              {dept.member_count} membro{dept.member_count !== 1 ? 's' : ''}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {dept.church_name ? `${dept.church_name} • ` : ''}Líder: {dept.leader_name || 'N/A'} • Criado em {format(new Date(dept.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                          </p>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          Líder: {dept.leader_name || 'N/A'} • Criado em {format(new Date(dept.created_at), "dd/MM/yyyy", { locale: ptBR })}
-                        </p>
                       </div>
                       <div className="flex items-center gap-2">
                         <AlertDialog>
