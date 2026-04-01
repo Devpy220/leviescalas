@@ -100,8 +100,27 @@ export default function ScheduleCountDialog({
   onOpenChange,
   schedules,
   members,
+  departmentId,
 }: ScheduleCountDialogProps) {
   const isMobile = useIsMobile();
+
+  // Fetch assignment roles for the department
+  const [assignmentRoles, setAssignmentRoles] = useState<Record<string, { name: string; icon: string }>>({});
+
+  useEffect(() => {
+    if (!departmentId || !open) return;
+    supabase
+      .from('assignment_roles')
+      .select('id, name, icon')
+      .eq('department_id', departmentId)
+      .then(({ data }) => {
+        const map: Record<string, { name: string; icon: string }> = {};
+        (data || []).forEach((r: any) => {
+          map[r.id] = { name: r.name, icon: r.icon };
+        });
+        setAssignmentRoles(map);
+      });
+  }, [departmentId, open]);
 
   // Get available months from schedules
   const availableMonths = useMemo(() => {
