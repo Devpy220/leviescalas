@@ -289,6 +289,23 @@ export default function ScheduleCountDialog({
                         style={{ width: `${progressValue}%` }}
                       />
                     </div>
+                    {/* Role breakdown */}
+                    {Object.keys(member.roleCounts).length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-1.5">
+                        {Object.entries(member.roleCounts).map(([roleId, roleCount]) => {
+                          const roleInfo = assignmentRoles[roleId];
+                          const label = roleInfo ? `${roleInfo.icon} ${roleInfo.name}` : roleId;
+                          return (
+                            <span
+                              key={roleId}
+                              className="text-xs text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded"
+                            >
+                              {label}: {roleCount}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
