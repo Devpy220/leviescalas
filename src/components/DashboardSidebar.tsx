@@ -655,6 +655,23 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
           onDepartmentUpdated={() => setShowDeptSettings(false)}
         />
       )}
+
+      {showTeamAvailability && selectedDept && (
+        <Dialog open={showTeamAvailability} onOpenChange={setShowTeamAvailability}>
+          <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Eye className="w-5 h-5 text-primary" />
+                Disponibilidade da Equipe - {selectedDept.name}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6">
+              <LeaderSlotAvailabilityView departmentId={selectedDept.id} />
+              <LeaderBlackoutDatesView departmentId={selectedDept.id} />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 }
