@@ -89,14 +89,14 @@ export default function EditScheduleDialog({
   const [sectors, setSectors] = useState<{ id: string; name: string; color: string }[]>([]);
   const [assignmentRoles, setAssignmentRoles] = useState<{ id: string; name: string; icon: string }[]>([]);
 
-  // Fetch availability for all members in this department
+  // Fetch availability + sectors + assignment roles
   useEffect(() => {
     if (!open || !departmentId) return;
     
-    const fetchAvailability = async () => {
+    const fetchData = async () => {
       setLoadingAvailability(true);
       try {
-        const [availRes, prefsRes, dateAvailRes] = await Promise.all([
+        const [availRes, prefsRes, dateAvailRes, sectorsRes, rolesRes] = await Promise.all([
           supabase
             .from('member_availability')
             .select('user_id, day_of_week, time_start, time_end, is_available')
@@ -111,9 +111,18 @@ export default function EditScheduleDialog({
             .select('user_id, date, is_available')
             .eq('department_id', departmentId)
             .eq('is_available', false),
+          supabase
+            .from('sectors')
+            .select('id, name, color')
+            .eq('department_id', departmentId)
+            .order('name'),
+          supabase
+            .from('assignment_roles')
+            .select('id, name, icon')
+            .eq('department_id', departmentId)
+            .order('name'),
         ]);
 
-        // Build block map: key -> false means explicitly blocked
         const aMap: Record<string, boolean> = {};
         if (availRes.data) {
           for (const row of availRes.data) {
@@ -123,7 +132,6 @@ export default function EditScheduleDialog({
         }
         setAvailabilityMap(aMap);
 
-        // Build blackout map: userId -> [date strings]
         const bMap: Record<string, string[]> = {};
         if (prefsRes.data) {
           for (const row of prefsRes.data) {
@@ -132,7 +140,6 @@ export default function EditScheduleDialog({
             }
           }
         }
-        // Also add date-specific unavailability
         if (dateAvailRes.data) {
           for (const row of dateAvailRes.data) {
             if (!bMap[row.user_id]) bMap[row.user_id] = [];
@@ -140,14 +147,16 @@ export default function EditScheduleDialog({
           }
         }
         setBlackoutMap(bMap);
+        setSectors(sectorsRes.data || []);
+        setAssignmentRoles(rolesRes.data || []);
       } catch (err) {
-        console.error('Error fetching availability:', err);
+        console.error('Error fetching data:', err);
       } finally {
         setLoadingAvailability(false);
       }
     };
 
-    fetchAvailability();
+    fetchData();
   }, [open, departmentId]);
 
   // Initialize form when schedule changes
