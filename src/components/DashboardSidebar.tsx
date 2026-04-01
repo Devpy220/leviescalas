@@ -56,7 +56,7 @@ function getInitials(name: string) {
   return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 }
 
-type ContextualAction = 'availability' | 'announcements' | 'create-schedule' | 'sectors' | 'roles' | 'schedule-count' | 'invite' | 'export' | 'dept-settings';
+type ContextualAction = 'availability' | 'team-availability' | 'announcements' | 'create-schedule' | 'sectors' | 'roles' | 'schedule-count' | 'invite' | 'export' | 'dept-settings';
 type SidebarItemVariant = 'nav' | 'action' | 'danger';
 
 // Sidebar item with tooltip (collapsed) or label (expanded)
