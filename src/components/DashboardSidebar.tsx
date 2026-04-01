@@ -171,6 +171,7 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
   const [showInvite, setShowInvite] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [showDeptSettings, setShowDeptSettings] = useState(false);
+  const [showTeamAvailability, setShowTeamAvailability] = useState(false);
   const [deptSettingsData, setDeptSettingsData] = useState<any>(null);
   const [inviteCode, setInviteCode] = useState('');
   const [scheduleCountData, setScheduleCountData] = useState<{ members: any[]; schedules: any[] }>({ members: [], schedules: [] });
