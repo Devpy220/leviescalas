@@ -466,6 +466,9 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
                 <SectionLabel label="Gestão" expanded={expanded} />
                 <ul className="space-y-0.5">
                   <li>
+                    <SidebarItem expanded={expanded} icon={Eye} label="Disponib. Equipe" variant="action" onClick={() => handleContextualAction('team-availability')} />
+                  </li>
+                  <li>
                     <SidebarItem expanded={expanded} icon={CalendarPlus} label="Criar Escala" variant="action" onClick={() => handleContextualAction('create-schedule')} />
                   </li>
                   <li>
