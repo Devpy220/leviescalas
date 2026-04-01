@@ -438,6 +438,55 @@ export default function EditScheduleDialog({
               </div>
             )}
           </div>
+
+          {/* Sector */}
+          {sectors.length > 0 && (
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-muted-foreground" />
+                Setor
+              </Label>
+              <Select value={selectedSectorId || 'none'} onValueChange={setSelectedSectorId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar setor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhum</SelectItem>
+                  {sectors.map(s => (
+                    <SelectItem key={s.id} value={s.id}>
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }} />
+                        {s.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Assignment Role */}
+          {assignmentRoles.length > 0 && (
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <UserCog className="w-4 h-4 text-muted-foreground" />
+                Função
+              </Label>
+              <Select value={selectedAssignmentRole || 'none'} onValueChange={setSelectedAssignmentRole}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar função" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhuma</SelectItem>
+                  {assignmentRoles.map(r => (
+                    <SelectItem key={r.id} value={r.id}>
+                      <span>{r.icon} {r.name}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0">
