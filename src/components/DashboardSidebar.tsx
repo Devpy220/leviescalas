@@ -540,7 +540,7 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
       {/* Modals — all logic preserved */}
       {pendingAction && (
         <DepartmentPicker
-          departments={['create-schedule', 'sectors', 'roles', 'schedule-count', 'invite', 'export', 'dept-settings'].includes(pendingAction) ? leaderDepartments : departments}
+          departments={['team-availability', 'create-schedule', 'sectors', 'roles', 'schedule-count', 'invite', 'export', 'dept-settings'].includes(pendingAction) ? leaderDepartments : departments}
           onSelect={handleDeptSelect}
           onClose={() => setPendingAction(null)}
           title="Escolher Departamento"
