@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
+
 import { 
   CalendarDays, 
   LogOut, 
@@ -15,6 +16,7 @@ import {
   ChevronLeft,
   Layers,
   UserCog,
+  Eye,
   UserPlus,
   FileDown,
   type LucideIcon
@@ -36,6 +38,8 @@ import DepartmentSettingsDialog from '@/components/department/DepartmentSettings
 import AssignmentRoleManagement from '@/components/department/AssignmentRoleManagement';
 import InviteMemberDialog from '@/components/department/InviteMemberDialog';
 import ScheduleCountDialog from '@/components/department/ScheduleCountDialog';
+import LeaderSlotAvailabilityView from '@/components/department/LeaderSlotAvailabilityView';
+import LeaderBlackoutDatesView from '@/components/department/LeaderBlackoutDatesView';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { exportToPDF, exportToExcel } from '@/lib/exportSchedules';
@@ -52,7 +56,7 @@ function getInitials(name: string) {
   return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 }
 
-type ContextualAction = 'availability' | 'announcements' | 'create-schedule' | 'sectors' | 'roles' | 'schedule-count' | 'invite' | 'export' | 'dept-settings';
+type ContextualAction = 'availability' | 'team-availability' | 'announcements' | 'create-schedule' | 'sectors' | 'roles' | 'schedule-count' | 'invite' | 'export' | 'dept-settings';
 type SidebarItemVariant = 'nav' | 'action' | 'danger';
 
 // Sidebar item with tooltip (collapsed) or label (expanded)
@@ -167,6 +171,7 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
   const [showInvite, setShowInvite] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [showDeptSettings, setShowDeptSettings] = useState(false);
+  const [showTeamAvailability, setShowTeamAvailability] = useState(false);
   const [deptSettingsData, setDeptSettingsData] = useState<any>(null);
   const [inviteCode, setInviteCode] = useState('');
   const [scheduleCountData, setScheduleCountData] = useState<{ members: any[]; schedules: any[] }>({ members: [], schedules: [] });
@@ -175,7 +180,7 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
   const isActive = (path: string) => location.pathname === path;
 
   const handleContextualAction = (action: ContextualAction) => {
-    const isLeaderAction = ['create-schedule', 'sectors', 'roles', 'schedule-count', 'invite', 'export', 'dept-settings'].includes(action);
+    const isLeaderAction = ['team-availability', 'create-schedule', 'sectors', 'roles', 'schedule-count', 'invite', 'export', 'dept-settings'].includes(action);
     const targetDepts = isLeaderAction ? leaderDepartments : departments;
     if (targetDepts.length === 0) return;
 
@@ -192,6 +197,9 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
     switch (action) {
       case 'availability':
         setShowAvailability(true);
+        break;
+      case 'team-availability':
+        setShowTeamAvailability(true);
         break;
       case 'announcements':
         setShowAnnouncements(true);
@@ -458,6 +466,9 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
                 <SectionLabel label="Gestão" expanded={expanded} />
                 <ul className="space-y-0.5">
                   <li>
+                    <SidebarItem expanded={expanded} icon={Eye} label="Disponib. Equipe" variant="action" onClick={() => handleContextualAction('team-availability')} />
+                  </li>
+                  <li>
                     <SidebarItem expanded={expanded} icon={CalendarPlus} label="Criar Escala" variant="action" onClick={() => handleContextualAction('create-schedule')} />
                   </li>
                   <li>
@@ -529,7 +540,7 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
       {/* Modals — all logic preserved */}
       {pendingAction && (
         <DepartmentPicker
-          departments={['create-schedule', 'sectors', 'roles', 'schedule-count', 'invite', 'export', 'dept-settings'].includes(pendingAction) ? leaderDepartments : departments}
+          departments={['team-availability', 'create-schedule', 'sectors', 'roles', 'schedule-count', 'invite', 'export', 'dept-settings'].includes(pendingAction) ? leaderDepartments : departments}
           onSelect={handleDeptSelect}
           onClose={() => setPendingAction(null)}
           title="Escolher Departamento"
@@ -643,6 +654,23 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
           department={deptSettingsData}
           onDepartmentUpdated={() => setShowDeptSettings(false)}
         />
+      )}
+
+      {showTeamAvailability && selectedDept && (
+        <Dialog open={showTeamAvailability} onOpenChange={setShowTeamAvailability}>
+          <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Eye className="w-5 h-5 text-primary" />
+                Disponibilidade da Equipe - {selectedDept.name}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6">
+              <LeaderSlotAvailabilityView departmentId={selectedDept.id} />
+              <LeaderBlackoutDatesView departmentId={selectedDept.id} />
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </>
   );
