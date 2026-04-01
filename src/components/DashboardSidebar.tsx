@@ -180,7 +180,7 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
   const isActive = (path: string) => location.pathname === path;
 
   const handleContextualAction = (action: ContextualAction) => {
-    const isLeaderAction = ['create-schedule', 'sectors', 'roles', 'schedule-count', 'invite', 'export', 'dept-settings'].includes(action);
+    const isLeaderAction = ['team-availability', 'create-schedule', 'sectors', 'roles', 'schedule-count', 'invite', 'export', 'dept-settings'].includes(action);
     const targetDepts = isLeaderAction ? leaderDepartments : departments;
     if (targetDepts.length === 0) return;
 
