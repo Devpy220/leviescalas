@@ -29,6 +29,9 @@ interface Department {
   leader_name: string | null;
   member_count: number;
   created_at: string;
+  church_id?: string | null;
+  church_name?: string | null;
+  church_logo_url?: string | null;
 }
 
 interface Member {
