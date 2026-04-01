@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { format, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar as CalendarIcon, Clock, User, Pencil, AlertTriangle } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, User, Pencil, AlertTriangle, Layers, UserCog } from 'lucide-react';
 import { SIMPLE_SLOTS, getAvailableSlotsForDay, normalizeTime } from '@/lib/fixedSlots';
 import {
   Dialog,
@@ -84,15 +84,19 @@ export default function EditScheduleDialog({
   const [availabilityMap, setAvailabilityMap] = useState<Record<string, boolean>>({});
   const [blackoutMap, setBlackoutMap] = useState<Record<string, string[]>>({});
   const [loadingAvailability, setLoadingAvailability] = useState(false);
+  const [selectedSectorId, setSelectedSectorId] = useState<string>('');
+  const [selectedAssignmentRole, setSelectedAssignmentRole] = useState<string>('');
+  const [sectors, setSectors] = useState<{ id: string; name: string; color: string }[]>([]);
+  const [assignmentRoles, setAssignmentRoles] = useState<{ id: string; name: string; icon: string }[]>([]);
 
-  // Fetch availability for all members in this department
+  // Fetch availability + sectors + assignment roles
   useEffect(() => {
     if (!open || !departmentId) return;
     
-    const fetchAvailability = async () => {
+    const fetchData = async () => {
       setLoadingAvailability(true);
       try {
-        const [availRes, prefsRes, dateAvailRes] = await Promise.all([
+        const [availRes, prefsRes, dateAvailRes, sectorsRes, rolesRes] = await Promise.all([
           supabase
             .from('member_availability')
             .select('user_id, day_of_week, time_start, time_end, is_available')
@@ -107,9 +111,18 @@ export default function EditScheduleDialog({
             .select('user_id, date, is_available')
             .eq('department_id', departmentId)
             .eq('is_available', false),
+          supabase
+            .from('sectors')
+            .select('id, name, color')
+            .eq('department_id', departmentId)
+            .order('name'),
+          supabase
+            .from('assignment_roles')
+            .select('id, name, icon')
+            .eq('department_id', departmentId)
+            .order('name'),
         ]);
 
-        // Build block map: key -> false means explicitly blocked
         const aMap: Record<string, boolean> = {};
         if (availRes.data) {
           for (const row of availRes.data) {
@@ -119,7 +132,6 @@ export default function EditScheduleDialog({
         }
         setAvailabilityMap(aMap);
 
-        // Build blackout map: userId -> [date strings]
         const bMap: Record<string, string[]> = {};
         if (prefsRes.data) {
           for (const row of prefsRes.data) {
@@ -128,7 +140,6 @@ export default function EditScheduleDialog({
             }
           }
         }
-        // Also add date-specific unavailability
         if (dateAvailRes.data) {
           for (const row of dateAvailRes.data) {
             if (!bMap[row.user_id]) bMap[row.user_id] = [];
@@ -136,14 +147,16 @@ export default function EditScheduleDialog({
           }
         }
         setBlackoutMap(bMap);
+        setSectors(sectorsRes.data || []);
+        setAssignmentRoles(rolesRes.data || []);
       } catch (err) {
-        console.error('Error fetching availability:', err);
+        console.error('Error fetching data:', err);
       } finally {
         setLoadingAvailability(false);
       }
     };
 
-    fetchAvailability();
+    fetchData();
   }, [open, departmentId]);
 
   // Initialize form when schedule changes
@@ -153,6 +166,8 @@ export default function EditScheduleDialog({
       setTimeStart(schedule.time_start.slice(0, 5));
       setTimeEnd(schedule.time_end.slice(0, 5));
       setSelectedMemberId(schedule.user_id);
+      setSelectedSectorId(schedule.sector_id || '');
+      setSelectedAssignmentRole(schedule.assignment_role || '');
     }
   }, [schedule, open]);
 
@@ -227,6 +242,8 @@ export default function EditScheduleDialog({
           time_start: timeStart,
           time_end: timeEnd,
           user_id: selectedMemberId,
+          sector_id: selectedSectorId && selectedSectorId !== 'none' ? selectedSectorId : null,
+          assignment_role: selectedAssignmentRole && selectedAssignmentRole !== 'none' ? selectedAssignmentRole : null,
         })
         .eq('id', schedule.id)
         .select();
@@ -421,6 +438,55 @@ export default function EditScheduleDialog({
               </div>
             )}
           </div>
+
+          {/* Sector */}
+          {sectors.length > 0 && (
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-muted-foreground" />
+                Setor
+              </Label>
+              <Select value={selectedSectorId || 'none'} onValueChange={setSelectedSectorId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar setor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhum</SelectItem>
+                  {sectors.map(s => (
+                    <SelectItem key={s.id} value={s.id}>
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }} />
+                        {s.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Assignment Role */}
+          {assignmentRoles.length > 0 && (
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <UserCog className="w-4 h-4 text-muted-foreground" />
+                Função
+              </Label>
+              <Select value={selectedAssignmentRole || 'none'} onValueChange={setSelectedAssignmentRole}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar função" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhuma</SelectItem>
+                  {assignmentRoles.map(r => (
+                    <SelectItem key={r.id} value={r.id}>
+                      <span>{r.icon} {r.name}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0">

@@ -406,6 +406,34 @@ export default function AddScheduleDialog({
 
     setLoading(true);
     try {
+      // Check for duplicates: same person already scheduled on same date+time
+      const dateStr = format(date, 'yyyy-MM-dd');
+      const { data: existingSchedules } = await supabase
+        .from('schedules')
+        .select('user_id')
+        .eq('department_id', departmentId)
+        .eq('date', dateStr)
+        .eq('time_start', timeStart)
+        .eq('time_end', timeEnd);
+
+      if (existingSchedules && existingSchedules.length > 0) {
+        const alreadyScheduledIds = new Set(existingSchedules.map(s => s.user_id));
+        const duplicates = selectedMembers.filter(id => alreadyScheduledIds.has(id));
+        if (duplicates.length > 0) {
+          const dupNames = duplicates.map(id => {
+            const m = members.find(mb => mb.user_id === id);
+            return m?.profile?.name || 'Membro';
+          }).join(', ');
+          toast({
+            variant: 'destructive',
+            title: 'Membro já escalado',
+            description: `${dupNames} já está escalado(a) neste dia e horário.`,
+          });
+          setLoading(false);
+          return;
+        }
+      }
+
       // Create schedules for all selected members
       const schedulesToInsert = selectedMembers.map(userId => {
         const config = memberConfigs[userId] || { sector_id: '', assignment_role: '' };
