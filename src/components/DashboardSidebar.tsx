@@ -198,6 +198,9 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
       case 'availability':
         setShowAvailability(true);
         break;
+      case 'team-availability':
+        setShowTeamAvailability(true);
+        break;
       case 'announcements':
         setShowAnnouncements(true);
         break;
