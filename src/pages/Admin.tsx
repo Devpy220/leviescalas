@@ -469,7 +469,32 @@ export default function Admin() {
       const { data, error } = await supabase.rpc('get_all_departments_admin');
       
       if (error) throw error;
-      setDepartments(data || []);
+
+      // Fetch church info for each department
+      const { data: deptChurches } = await supabase
+        .from('departments')
+        .select('id, church_id, churches:church_id(name, logo_url)')
+        .not('church_id', 'is', null);
+
+      const churchMap = new Map<string, { church_name: string | null; church_logo_url: string | null }>();
+      if (deptChurches) {
+        for (const dc of deptChurches) {
+          const church = dc.churches as any;
+          if (church) {
+            churchMap.set(dc.id, {
+              church_name: church.name || null,
+              church_logo_url: church.logo_url || null,
+            });
+          }
+        }
+      }
+
+      const enriched = (data || []).map((dept: Department) => ({
+        ...dept,
+        ...(churchMap.get(dept.id) || {}),
+      }));
+
+      setDepartments(enriched);
     } catch (error) {
       console.error('Error fetching departments:', error);
       toast({
