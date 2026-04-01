@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { BarChart2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog,
   DialogContent,
@@ -35,6 +36,7 @@ interface Schedule {
   id: string;
   user_id: string;
   date: string;
+  assignment_role?: string | null;
 }
 
 interface ScheduleCountDialogProps {
@@ -42,6 +44,7 @@ interface ScheduleCountDialogProps {
   onOpenChange: (open: boolean) => void;
   schedules: Schedule[];
   members: Member[];
+  departmentId?: string;
 }
 
 type WorkloadStatus = 'overload' | 'warning' | 'normal' | 'low';
@@ -52,6 +55,7 @@ interface MemberCount {
   avatarUrl: string | null;
   count: number;
   status: WorkloadStatus;
+  roleCounts: Record<string, number>;
 }
 
 function getWorkloadStatus(count: number, average: number): WorkloadStatus {
@@ -96,8 +100,27 @@ export default function ScheduleCountDialog({
   onOpenChange,
   schedules,
   members,
+  departmentId,
 }: ScheduleCountDialogProps) {
   const isMobile = useIsMobile();
+
+  // Fetch assignment roles for the department
+  const [assignmentRoles, setAssignmentRoles] = useState<Record<string, { name: string; icon: string }>>({});
+
+  useEffect(() => {
+    if (!departmentId || !open) return;
+    supabase
+      .from('assignment_roles')
+      .select('id, name, icon')
+      .eq('department_id', departmentId)
+      .then(({ data }) => {
+        const map: Record<string, { name: string; icon: string }> = {};
+        (data || []).forEach((r: any) => {
+          map[r.id] = { name: r.name, icon: r.icon };
+        });
+        setAssignmentRoles(map);
+      });
+  }, [departmentId, open]);
 
   // Get available months from schedules
   const availableMonths = useMemo(() => {
@@ -136,9 +159,18 @@ export default function ScheduleCountDialog({
 
   const { memberCounts, average, maxCount } = useMemo(() => {
     const countMap = new Map<string, number>();
+    const roleCountMap = new Map<string, Record<string, number>>();
+    
     filteredSchedules.forEach(schedule => {
       const current = countMap.get(schedule.user_id) || 0;
       countMap.set(schedule.user_id, current + 1);
+      
+      // Track per-role counts
+      if (schedule.assignment_role) {
+        const userRoles = roleCountMap.get(schedule.user_id) || {};
+        userRoles[schedule.assignment_role] = (userRoles[schedule.assignment_role] || 0) + 1;
+        roleCountMap.set(schedule.user_id, userRoles);
+      }
     });
 
     const totalSchedules = filteredSchedules.length;
@@ -153,6 +185,7 @@ export default function ScheduleCountDialog({
         avatarUrl: member.profile.avatar_url,
         count,
         status: getWorkloadStatus(count, avg),
+        roleCounts: roleCountMap.get(member.user_id) || {},
       };
     });
 
@@ -256,6 +289,23 @@ export default function ScheduleCountDialog({
                         style={{ width: `${progressValue}%` }}
                       />
                     </div>
+                    {/* Role breakdown */}
+                    {Object.keys(member.roleCounts).length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-1.5">
+                        {Object.entries(member.roleCounts).map(([roleId, roleCount]) => {
+                          const roleInfo = assignmentRoles[roleId];
+                          const label = roleInfo ? `${roleInfo.icon} ${roleInfo.name}` : roleId;
+                          return (
+                            <span
+                              key={roleId}
+                              className="text-xs text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded"
+                            >
+                              {label}: {roleCount}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
               );

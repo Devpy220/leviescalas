@@ -691,6 +691,7 @@ export default function Department() {
         onOpenChange={setShowScheduleCount}
         schedules={schedules}
         members={members}
+        departmentId={id}
       />
 
       {/* Calendar Sync Dialog */}
