@@ -382,8 +382,7 @@ export default function EditScheduleDialog({
               <SelectTrigger>
                 <SelectValue placeholder="Selecionar membro" />
               </SelectTrigger>
-              <SelectContent>
-                <ScrollArea className="max-h-[200px]">
+              <SelectContent className="max-h-[240px] overflow-y-auto">
                   {availableMembers.length > 0 && (
                     <>
                       <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
@@ -428,7 +427,6 @@ export default function EditScheduleDialog({
                       Nenhum membro encontrado
                     </div>
                   )}
-                </ScrollArea>
               </SelectContent>
             </Select>
             {selectedMemberId && !isMemberAvailable(selectedMemberId) && (
