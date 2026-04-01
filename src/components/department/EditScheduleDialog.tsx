@@ -84,6 +84,10 @@ export default function EditScheduleDialog({
   const [availabilityMap, setAvailabilityMap] = useState<Record<string, boolean>>({});
   const [blackoutMap, setBlackoutMap] = useState<Record<string, string[]>>({});
   const [loadingAvailability, setLoadingAvailability] = useState(false);
+  const [selectedSectorId, setSelectedSectorId] = useState<string>('');
+  const [selectedAssignmentRole, setSelectedAssignmentRole] = useState<string>('');
+  const [sectors, setSectors] = useState<{ id: string; name: string; color: string }[]>([]);
+  const [assignmentRoles, setAssignmentRoles] = useState<{ id: string; name: string; icon: string }[]>([]);
 
   // Fetch availability for all members in this department
   useEffect(() => {
