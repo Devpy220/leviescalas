@@ -16,6 +16,7 @@ import {
   ChevronLeft,
   Layers,
   UserCog,
+  Eye,
   UserPlus,
   FileDown,
   type LucideIcon
