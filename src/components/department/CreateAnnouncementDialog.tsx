@@ -88,15 +88,16 @@ export default function CreateAnnouncementDialog({
             is_pinned: isPinned,
           } as any);
         if (error) throw error;
-        toast({ title: 'Aviso publicado!' });
+        toast({ title: 'Aviso publicado!', description: 'WhatsApp será enviado em 30 minutos.' });
 
-        // Send push + in-app notifications to members
+        // In-app notifications only (WhatsApp will be sent after 30 min by cron)
         if (departmentName) {
           supabase.functions.invoke('send-announcement-notification', {
             body: {
               department_id: departmentId,
               department_name: departmentName,
               announcement_title: title.trim(),
+              skip_whatsapp: true,
             },
           }).catch((err) => console.error('Notification error:', err));
         }
