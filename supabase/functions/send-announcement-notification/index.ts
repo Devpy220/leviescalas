@@ -31,7 +31,7 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    const { department_id, department_name, announcement_title } = await req.json();
+    const { department_id, department_name, announcement_title, skip_whatsapp } = await req.json();
     if (!department_id || !department_name || !announcement_title) {
       return new Response(JSON.stringify({ error: "Missing fields" }), {
         status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -81,29 +81,31 @@ serve(async (req: Request): Promise<Response> => {
       .from("notifications")
       .insert(notifications as any);
 
-    // Send WhatsApp to each member
+    // Send WhatsApp to each member (unless skip_whatsapp is true — delayed sending)
     let whatsappSent = 0;
 
-    const whatsappResults = await Promise.allSettled(
-      (memberProfiles || [])
-        .filter((p: any) => p.whatsapp)
-        .map(async (p: any) => {
-          const msg = `📢 *Aviso — ${department_name}*\n\nOlá, *${p.name}*!\n\n${announcement_title}\n\n_LEVI — Escalas Inteligentes_`;
+    if (!skip_whatsapp) {
+      const whatsappResults = await Promise.allSettled(
+        (memberProfiles || [])
+          .filter((p: any) => p.whatsapp)
+          .map(async (p: any) => {
+            const msg = `📢 *Aviso — ${department_name}*\n\nOlá, *${p.name}*!\n\n${announcement_title}\n\n_LEVI — Escalas Inteligentes_`;
 
-          const res = await fetch(`${supabaseUrl}/functions/v1/send-whatsapp-notification`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceRoleKey}` },
-            body: JSON.stringify({
-              phone: p.whatsapp,
-              message: msg,
-            }),
-          });
-          const data = await res.json();
-          return data.sent === true;
-        })
-    );
+            const res = await fetch(`${supabaseUrl}/functions/v1/send-whatsapp-notification`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceRoleKey}` },
+              body: JSON.stringify({
+                phone: p.whatsapp,
+                message: msg,
+              }),
+            });
+            const data = await res.json();
+            return data.sent === true;
+          })
+      );
 
-    whatsappSent = whatsappResults.filter(r => r.status === "fulfilled" && r.value === true).length;
+      whatsappSent = whatsappResults.filter(r => r.status === "fulfilled" && r.value === true).length;
+    }
     console.log(`Announcement: ${memberIds.length} notified, ${whatsappSent} WhatsApp`);
 
     return new Response(
