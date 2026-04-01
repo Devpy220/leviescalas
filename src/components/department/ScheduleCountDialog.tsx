@@ -294,7 +294,11 @@ export default function ScheduleCountDialog({
                       <div className="flex flex-wrap gap-1.5 mt-1.5">
                         {Object.entries(member.roleCounts).map(([roleId, roleCount]) => {
                           const roleInfo = assignmentRoles[roleId];
-                          const label = roleInfo ? `${roleInfo.icon} ${roleInfo.name}` : roleId;
+                          const legacyLabels: Record<string, string> = {
+                            on_duty: '🚗 Plantão',
+                            participant: '⛪ Culto',
+                          };
+                          const label = roleInfo ? `${roleInfo.icon} ${roleInfo.name}` : (legacyLabels[roleId] || roleId);
                           return (
                             <span
                               key={roleId}
