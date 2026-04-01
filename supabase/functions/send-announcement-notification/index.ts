@@ -31,7 +31,7 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    const { department_id, department_name, announcement_title } = await req.json();
+    const { department_id, department_name, announcement_title, skip_whatsapp } = await req.json();
     if (!department_id || !department_name || !announcement_title) {
       return new Response(JSON.stringify({ error: "Missing fields" }), {
         status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
