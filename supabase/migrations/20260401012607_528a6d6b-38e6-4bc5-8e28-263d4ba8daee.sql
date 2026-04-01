@@ -1,0 +1,1 @@
+ALTER TABLE public.department_announcements ADD COLUMN whatsapp_notified boolean NOT NULL DEFAULT false;

@@ -247,6 +247,7 @@ export type Database = {
           is_pinned: boolean
           title: string
           updated_at: string
+          whatsapp_notified: boolean
         }
         Insert: {
           author_id: string
@@ -257,6 +258,7 @@ export type Database = {
           is_pinned?: boolean
           title: string
           updated_at?: string
+          whatsapp_notified?: boolean
         }
         Update: {
           author_id?: string
@@ -267,6 +269,7 @@ export type Database = {
           is_pinned?: boolean
           title?: string
           updated_at?: string
+          whatsapp_notified?: boolean
         }
         Relationships: [
           {
