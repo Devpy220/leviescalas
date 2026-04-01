@@ -55,6 +55,7 @@ interface MemberCount {
   avatarUrl: string | null;
   count: number;
   status: WorkloadStatus;
+  roleCounts: Record<string, number>;
 }
 
 function getWorkloadStatus(count: number, average: number): WorkloadStatus {
