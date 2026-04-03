@@ -144,7 +144,7 @@ const handler = async (req: Request): Promise<Response> => {
           const detailsParts = [sectorName, roleLabel].filter(Boolean).join(' - ');
           const detailsSuffix = detailsParts ? ` | ${detailsParts}` : '';
 
-          const body = `Escala ${window.label}: ${weekday.split('-')[0]}, ${dayNum}/${monthShort} às ${formatTime(schedule.time_start)} - ${dept.name}${detailsSuffix}`;
+          const body = `${dept.name}: ${weekday.split('-')[0]}, ${dayNum}/${monthShort} às ${formatTime(schedule.time_start)}${detailsSuffix}`;
 
           const metadata = {
             user_name: profile.name,
