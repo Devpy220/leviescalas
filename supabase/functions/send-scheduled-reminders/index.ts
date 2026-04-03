@@ -144,7 +144,7 @@ const handler = async (req: Request): Promise<Response> => {
           const detailsParts = [sectorName, roleLabel].filter(Boolean).join(' - ');
           const detailsSuffix = detailsParts ? ` | ${detailsParts}` : '';
 
-          const body = `Escala ${window.label}: ${weekday.split('-')[0]}, ${dayNum}/${monthShort} às ${formatTime(schedule.time_start)} - ${dept.name}${detailsSuffix}`;
+          const body = `${dept.name}: ${weekday.split('-')[0]}, ${dayNum}/${monthShort} às ${formatTime(schedule.time_start)}${detailsSuffix}`;
 
           const metadata = {
             user_name: profile.name,
@@ -177,7 +177,7 @@ const handler = async (req: Request): Promise<Response> => {
           if ((profile as any).whatsapp) {
             const sectorSuffix = sectorName ? `\n📍 ${sectorName}` : '';
             const roleSuffix = roleLabel ? `\n💼 ${roleLabel}` : '';
-            const whatsappMsg = `🔔 *Lembrete — ${dept.name}*\n\nOlá, *${profile.name}*! Sua escala é ${window.label}.\n\n📆 ${weekday}, ${dayNum} de ${monthFull}\n⏰ ${formatTime(schedule.time_start)} às ${formatTime(schedule.time_end)}${sectorSuffix}${roleSuffix}\n\n_LEVI — Escalas Inteligentes_`;
+            const whatsappMsg = `🔔 *Lembrete — ${dept.name}*\n\nOlá, *${profile.name}*!\n\n📆 ${weekday}, ${dayNum} de ${monthFull}\n⏰ ${formatTime(schedule.time_start)} às ${formatTime(schedule.time_end)}${sectorSuffix}${roleSuffix}\n\n_LEVI — Escalas Inteligentes_`;
 
             try {
               await fetch(`${supabaseUrl}/functions/v1/send-whatsapp-notification`, {
