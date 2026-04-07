@@ -672,7 +672,7 @@ export default function Auth() {
       }
 
       // Se é o email do admin principal, torná-lo admin automaticamente
-      const ADMIN_EMAIL = 'leviescalas@gmail.com';
+      const ADMIN_EMAIL = 'elsdigital@elsdigital.tech';
       
       if (data.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
         try {
@@ -1152,20 +1152,15 @@ export default function Auth() {
               )}
 
               {/* No church context - show error */}
-              {!hasChurchContext && !churchValidated.valid && (
+              {!hasChurchContext && !churchValidated.valid && !isDepartmentInvite && (
                 <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 mb-4">
                   <p className="text-sm text-foreground">
-                    <span className="font-medium text-destructive">Código da igreja necessário</span>
+                    <span className="font-medium text-destructive">Acesso somente por convite</span>
                     <br />
                     <span className="text-muted-foreground">
-                      Para criar uma conta, você precisa do código da sua igreja ou um link de convite.
+                      Para criar uma conta, você precisa de um link de convite da sua igreja ou do seu departamento. Solicite ao seu líder ou administrador.
                     </span>
                   </p>
-                  <Link to="/" className="inline-block mt-2">
-                    <Button variant="outline" size="sm">
-                      Digitar código da igreja
-                    </Button>
-                  </Link>
                 </div>
               )}
 
@@ -1295,12 +1290,12 @@ export default function Auth() {
               </p>
 
               {/* Info for users without church context */}
-              {!hasChurchContext && (
+              {!hasChurchContext && !isDepartmentInvite && (
                 <div className="p-4 rounded-xl glass border border-border/50">
                   <p className="text-sm text-muted-foreground">
-                    <span className="font-medium text-foreground">Não tem o código da igreja?</span>
+                    <span className="font-medium text-foreground">Como criar conta?</span>
                     <br />
-                    Solicite ao administrador da sua igreja. Igrejas são cadastradas apenas por administradores autorizados.
+                    Peça ao líder do seu departamento o link de convite, ou solicite ao administrador da sua igreja o link de cadastro.
                   </p>
                 </div>
               )}
