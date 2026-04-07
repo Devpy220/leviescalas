@@ -686,18 +686,6 @@ export default function Landing() {
                 <button type="button" onClick={() => { setAuthTab('recovery'); setRecoveryEmailSent(false); }} className="w-full text-center text-sm text-muted-foreground hover:text-primary transition-colors">
                   Esqueceu sua senha?
                 </button>
-                <div className="relative my-3">
-                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border"></div></div>
-                  <div className="relative flex justify-center text-xs"><span className="bg-background px-3 text-muted-foreground">ou continue com</span></div>
-                </div>
-                <div className="flex gap-3">
-                  <Button type="button" variant="outline" className="flex-1 h-11 rounded-xl border-border" onClick={() => handleSocialSignIn('google')} disabled={isLoading}>
-                    <GoogleIcon /> <span className="ml-2 text-sm">Google</span>
-                  </Button>
-                  <Button type="button" variant="outline" className="flex-1 h-11 rounded-xl border-border" onClick={() => handleSocialSignIn('apple')} disabled={isLoading}>
-                    <AppleIcon /> <span className="ml-2 text-sm">Apple</span>
-                  </Button>
-                </div>
               </form>
             )}
 
