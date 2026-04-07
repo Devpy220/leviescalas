@@ -84,7 +84,9 @@ type ResetPasswordForm = z.infer<typeof resetPasswordSchema>;
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
-  const initialTab = searchParams.get('tab') === 'register' ? 'register' : 'login';
+  // Only allow register tab when coming from an invite link (church or department)
+  const hasInviteContext = !!searchParams.get('church') || !!searchParams.get('churchCode') || searchParams.get('redirect')?.startsWith('/join/');
+  const initialTab = (searchParams.get('tab') === 'register' && hasInviteContext) ? 'register' : 'login';
   const [activeTab, setActiveTab] = useState<'login' | 'register' | 'recovery' | 'reset-password' | '2fa-verify' | '2fa-verify-password-reset'>(initialTab);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -978,8 +980,8 @@ export default function Auth() {
             </div>
           </div>
 
-          {/* Tabs */}
-          {activeTab !== 'recovery' && activeTab !== 'reset-password' && activeTab !== '2fa-verify' && activeTab !== '2fa-verify-password-reset' && (
+          {/* Tabs - only show when coming from invite link */}
+          {activeTab !== 'recovery' && activeTab !== 'reset-password' && activeTab !== '2fa-verify' && activeTab !== '2fa-verify-password-reset' && hasInviteContext && (
             <div className="flex gap-1 p-1 bg-muted rounded-xl mb-8">
               <button
                 onClick={() => setActiveTab('login')}
@@ -1090,38 +1092,6 @@ export default function Auth() {
                 Esqueceu sua senha?
               </button>
 
-              {/* Social Login Divider */}
-              <div className="relative my-4">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-border"></div>
-                </div>
-              </div>
-
-              {/* Social Login Buttons - Icon Only */}
-              <div className="flex justify-center gap-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-12 w-12 rounded-xl border-secondary/30 hover:border-secondary/50"
-                  onClick={handleGoogleSignIn}
-                  disabled={isLoading}
-                  title="Continuar com Google"
-                >
-                  <GoogleIcon />
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-12 w-12 rounded-xl border-secondary/30 hover:border-secondary/50"
-                  onClick={handleAppleSignIn}
-                  disabled={isLoading}
-                  title="Continuar com Apple"
-                >
-                  <AppleIcon />
-                </Button>
-              </div>
             </form>
           )}
 
@@ -1300,40 +1270,6 @@ export default function Auth() {
                 </div>
               )}
 
-              {/* Social Login Divider */}
-              {isFormReadyToSubmit && (
-                <>
-                  <div className="relative my-4">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-border"></div>
-                    </div>
-                  </div>
-
-                  {/* Social Login Buttons */}
-                  <div className="flex flex-col gap-3">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full h-12 rounded-xl gap-3"
-                      onClick={handleGoogleSignIn}
-                      disabled={isLoading}
-                    >
-                      <GoogleIcon />
-                      Continuar com Google
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full h-12 rounded-xl gap-3"
-                      onClick={handleAppleSignIn}
-                      disabled={isLoading}
-                    >
-                      <AppleIcon />
-                      Continuar com Apple
-                    </Button>
-                  </div>
-                </>
-              )}
             </form>
           )}
 
