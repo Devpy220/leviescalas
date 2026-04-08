@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 import { 
   CalendarDays, 
@@ -22,6 +23,7 @@ import {
   type LucideIcon
 } from 'lucide-react';
 import { LeviLogo } from '@/components/LeviLogo';
+import { LanguageSelector } from '@/components/LanguageSelector';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { NotificationBell } from '@/components/NotificationBell';
