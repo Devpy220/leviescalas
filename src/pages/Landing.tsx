@@ -572,17 +572,17 @@ export default function Landing() {
               <div className="animate-slide-up-1 flex flex-col items-center lg:items-start gap-3">
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/8 text-primary text-sm font-medium border border-primary/15">
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>Gestão de escalas para igrejas</span>
+                  <span>{t('landing.tagline')}</span>
                 </div>
               </div>
 
               <h1 className="animate-slide-up-2 font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground leading-tight">
-                Organize suas<br />escalas com<br />
-                <Typewriter words={['facilidade', 'agilidade', 'amor', 'inteligência']} />
+                {t('landing.heroTitle1')}<br />{t('landing.heroTitle2')}<br />
+                <Typewriter words={t('landing.typewriterWords', { returnObjects: true }) as string[]} />
               </h1>
 
               <p className="animate-slide-up-3 text-base sm:text-lg text-muted-foreground max-w-lg mx-auto lg:mx-0 leading-relaxed">
-                Calendário visual, notificações automáticas e sincronização em tempo real para voluntários da sua igreja.
+                {t('landing.heroDescription')}
               </p>
 
               <div className="animate-slide-up-4 flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
