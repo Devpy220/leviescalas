@@ -187,9 +187,12 @@ export default function ChurchSetup() {
           address: data.address || null,
           city: data.city || null,
           state: data.state || null,
+          registrant_name: data.registrantName,
+          registrant_email: data.registrantEmail,
+          registrant_phone: data.registrantPhone,
           code: codeData,
           leader_id: user!.id,
-        })
+        } as any)
         .select()
         .single();
 
