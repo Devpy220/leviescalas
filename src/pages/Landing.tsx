@@ -721,7 +721,7 @@ export default function Landing() {
                       {recoveryForm.formState.errors.email && <p className="text-sm text-destructive">{recoveryForm.formState.errors.email.message}</p>}
                     </div>
                     <Button type="submit" className="w-full h-12 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-semibold" disabled={isLoading}>
-                      {isLoading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Enviando...</> : 'Enviar link de recuperação'}
+                      {isLoading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />{t('auth.sending')}</> : t('auth.sendRecoveryLink')}
                     </Button>
                   </form>
                 ) : (
@@ -729,12 +729,12 @@ export default function Landing() {
                     <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
                       <Sparkles className="w-7 h-7 text-primary" />
                     </div>
-                    <h3 className="text-lg font-semibold text-foreground">Email enviado!</h3>
-                    <p className="text-sm text-muted-foreground">Verifique sua caixa de entrada e clique no link para redefinir sua senha.</p>
+                    <h3 className="text-lg font-semibold text-foreground">{t('auth.emailSent')}</h3>
+                    <p className="text-sm text-muted-foreground">{t('auth.checkInbox')}</p>
                   </div>
                 )}
                 <button type="button" onClick={() => setAuthTab('login')} className="w-full text-center text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Voltar para o login
+                  {t('auth.backToLogin')}
                 </button>
               </div>
             )}
