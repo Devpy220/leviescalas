@@ -9,7 +9,6 @@ const corsHeaders = {
 
 const BodySchema = z.object({
   amount: z.number().int().min(100, "Valor mínimo: R$ 1,00"),
-  payment_method: z.enum(["card", "pix"]).default("card"),
 });
 
 serve(async (req) => {
@@ -26,7 +25,7 @@ serve(async (req) => {
       );
     }
 
-    const { amount, payment_method } = parsed.data;
+    const { amount } = parsed.data;
     const origin = req.headers.get("origin") || "https://leviescalas.lovable.app";
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
@@ -48,15 +47,10 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
+      payment_method_types: ["card"],
       success_url: `${origin}/payment-success`,
       cancel_url: `${origin}/payment`,
     };
-
-    if (payment_method === "pix") {
-      sessionConfig.payment_method_types = ["pix", "card"];
-    } else {
-      sessionConfig.payment_method_types = ["card"];
-    }
 
     const session = await stripe.checkout.sessions.create(sessionConfig);
 
