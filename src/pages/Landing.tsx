@@ -625,7 +625,7 @@ export default function Landing() {
                   <span className="text-xl font-bold text-foreground">
                     {countLoading ? '...' : <AnimatedCounter target={count || 0} suffix="+" />}
                   </span>
-                  <p className="text-xs text-muted-foreground">voluntários cadastrados</p>
+                  <p className="text-xs text-muted-foreground">{t('landing.volunteersRegistered')}</p>
                 </div>
               </div>
             </div>
@@ -656,7 +656,7 @@ export default function Landing() {
           </div>
           <div className="flex items-center gap-3">
             <img src={elsdigitalLogo} alt="ELSDIGITAL" className="w-5 h-5 rounded-full object-cover" />
-            <span className="text-xs text-muted-foreground">Desenvolvendo Soluções</span>
+            <span className="text-xs text-muted-foreground">{t('landing.developingSolutions')}</span>
           </div>
         </div>
       </footer>
