@@ -90,8 +90,9 @@ const Payment = () => {
           <div className="max-w-lg mx-auto">
 
             <div className="text-center mb-8">
-              <div className="mx-auto w-16 h-16 bg-rose-500/10 rounded-full flex items-center justify-center mb-4">
-                <Heart className="h-8 w-8 text-rose-500" />
+              <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 relative">
+                <Heart className="h-8 w-8 text-primary" fill="hsl(var(--primary))" />
+                <Heart className="h-4 w-4 text-amber-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" fill="#fbbf24" />
               </div>
               <h1 className="text-3xl font-bold text-foreground mb-2">
                 Apoie o Projeto
