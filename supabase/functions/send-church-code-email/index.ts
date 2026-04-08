@@ -143,7 +143,8 @@ serve(async (req) => {
         <h2 style="margin: 0 0 16px; color: #111827;">Bem-vindo ao LEVI!</h2>
         
         <p style="margin: 0 0 16px; color: #374151;">
-          A igreja <strong>${church.name}</strong> foi cadastrada com sucesso no sistema LEVI.
+          A igreja <strong>${church.name}</strong> foi cadastrada com sucesso no sistema LEVI
+          por <strong>${registrantName}</strong>.
         </p>
 
         <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin: 16px 0;">
