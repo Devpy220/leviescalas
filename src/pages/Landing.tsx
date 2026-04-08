@@ -35,6 +35,7 @@ import {
   ArrowRight,
   Mail,
   Send,
+  Church,
 } from 'lucide-react';
 import { LeviLogo } from '@/components/LeviLogo';
 import { LeviTypewriter } from '@/components/LeviTypewriter';
@@ -587,7 +588,16 @@ export default function Landing() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="border-border text-foreground hover:bg-muted rounded-full px-8"
+                  className="border-primary/30 text-primary hover:bg-primary/10 rounded-full px-8"
+                  onClick={() => navigate('/church-setup')}
+                >
+                  <Church className="w-4 h-4 mr-2" />
+                  Cadastrar minha Igreja
+                </Button>
+                <Button
+                  size="lg"
+                  variant="ghost"
+                  className="text-muted-foreground hover:text-foreground rounded-full px-8"
                   onClick={() => { setShowContact(true); setContactSent(false); }}
                 >
                   Fale conosco

@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.create-donation-checkout]
 verify_jwt = false
+
+[functions.cleanup-inactive-churches]
+verify_jwt = false
