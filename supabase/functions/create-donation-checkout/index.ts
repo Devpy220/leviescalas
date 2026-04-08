@@ -53,7 +53,7 @@ serve(async (req) => {
     };
 
     if (payment_method === "pix") {
-      sessionConfig.payment_method_types = ["boleto", "card"];
+      sessionConfig.payment_method_types = ["pix", "card"];
     } else {
       sessionConfig.payment_method_types = ["card"];
     }
