@@ -753,7 +753,7 @@ export default function Landing() {
           <DialogPrimitive.Content className="fixed left-[50%] top-[50%] z-50 w-full max-w-sm translate-x-[-50%] translate-y-[-50%] rounded-3xl border border-border bg-background p-8 shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]">
             <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
               <X className="h-4 w-4" />
-              <span className="sr-only">Fechar</span>
+              <span className="sr-only">{t('common.close')}</span>
             </DialogPrimitive.Close>
 
             <div className="absolute top-0 left-0 right-0 h-1 rounded-t-3xl bg-gradient-to-r from-primary via-primary/60 to-secondary/40" />
@@ -763,16 +763,16 @@ export default function Landing() {
                 <Mail className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <span className="font-display text-xl font-bold text-foreground">Fale conosco</span>
-                <p className="text-xs text-muted-foreground">Envie sua dúvida ou sugestão</p>
+                <span className="font-display text-xl font-bold text-foreground">{t('contact.title')}</span>
+                <p className="text-xs text-muted-foreground">{t('contact.subtitle')}</p>
               </div>
             </div>
 
             {!contactSent ? (
               <form onSubmit={contactForm.handleSubmit(handleContact)} className="space-y-4 animate-fade-in">
                 <div className="space-y-2">
-                  <Label htmlFor="contact-name">Nome</Label>
-                  <Input id="contact-name" placeholder="Seu nome" {...contactForm.register('name')} className="h-12 rounded-xl" />
+                  <Label htmlFor="contact-name">{t('common.name')}</Label>
+                  <Input id="contact-name" placeholder={t('contact.yourName')} {...contactForm.register('name')} className="h-12 rounded-xl" />
                   {contactForm.formState.errors.name && <p className="text-sm text-destructive">{contactForm.formState.errors.name.message}</p>}
                 </div>
                 <div className="space-y-2">
@@ -781,15 +781,15 @@ export default function Landing() {
                   {contactForm.formState.errors.email && <p className="text-sm text-destructive">{contactForm.formState.errors.email.message}</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="contact-phone">Telefone</Label>
+                  <Label htmlFor="contact-phone">{t('common.phone')}</Label>
                   <Input id="contact-phone" type="tel" placeholder="(00) 00000-0000" {...contactForm.register('phone')} className="h-12 rounded-xl" />
                   {contactForm.formState.errors.phone && <p className="text-sm text-destructive">{contactForm.formState.errors.phone.message}</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="contact-message">Mensagem</Label>
+                  <Label htmlFor="contact-message">{t('common.message')}</Label>
                   <textarea
                     id="contact-message"
-                    placeholder="Escreva sua mensagem..."
+                    placeholder={t('contact.writeMessage')}
                     rows={4}
                     {...contactForm.register('message')}
                     className="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
@@ -801,7 +801,7 @@ export default function Landing() {
                   className="w-full h-12 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-base"
                   disabled={contactLoading}
                 >
-                  {contactLoading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Enviando...</> : <><Send className="w-4 h-4 mr-2" />Enviar mensagem</>}
+                  {contactLoading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />{t('auth.sending')}</> : <><Send className="w-4 h-4 mr-2" />{t('contact.sendMessage')}</>}
                 </Button>
               </form>
             ) : (
@@ -809,10 +809,10 @@ export default function Landing() {
                 <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center mx-auto">
                   <CheckCircle2 className="w-8 h-8 text-accent" />
                 </div>
-                <h3 className="text-lg font-semibold text-foreground">Mensagem enviada!</h3>
-                <p className="text-sm text-muted-foreground">Recebemos sua mensagem e responderemos em breve.</p>
+                <h3 className="text-lg font-semibold text-foreground">{t('contact.messageSent')}</h3>
+                <p className="text-sm text-muted-foreground">{t('contact.messageSentDesc')}</p>
                 <Button variant="outline" className="rounded-xl" onClick={() => setContactSent(false)}>
-                  Enviar outra mensagem
+                  {t('contact.sendAnother')}
                 </Button>
               </div>
             )}
