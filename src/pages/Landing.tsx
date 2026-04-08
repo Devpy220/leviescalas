@@ -35,6 +35,7 @@ import {
   ArrowRight,
   Mail,
   Send,
+  Church,
 } from 'lucide-react';
 import { LeviLogo } from '@/components/LeviLogo';
 import { LeviTypewriter } from '@/components/LeviTypewriter';
