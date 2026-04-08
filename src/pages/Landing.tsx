@@ -360,6 +360,7 @@ type ContactForm = z.infer<typeof contactSchema>;
 
 // ══════════════════════════════════════════════════════════════════════════════
 export default function Landing() {
+  const { t } = useTranslation();
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [showContact, setShowContact] = useState(false);
@@ -549,8 +550,9 @@ export default function Landing() {
               onClick={() => { setShowContact(true); setContactSent(false); }}
               className="hidden md:inline-flex px-3 py-2 text-sm text-muted-foreground hover:text-foreground rounded-lg transition-colors"
             >
-              Contato
+              {t('landing.contact')}
             </button>
+            <LanguageSelector />
             <ThemeToggle />
           </div>
         </div>
