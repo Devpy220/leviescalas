@@ -666,7 +666,7 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Eye className="w-5 h-5 text-primary" />
-                Disponibilidade da Equipe - {selectedDept.name}
+                {t('sidebar.teamAvailabilityTitle')} - {selectedDept.name}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-6">
