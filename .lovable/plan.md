@@ -1,36 +1,39 @@
+## Plano: Página de Checkout Stripe com valor livre
 
+### Resumo
 
-## Plano: Inverter lógica de disponibilidade para "disponível por padrão"
+Criar uma Edge Function que gera uma sessão de checkout do Stripe onde o **usuário define o valor** (sem preço fixo). Na página `/payment`, adicionar um campo de valor + botão que redireciona para o Stripe Checkout.
 
-**Mudança principal**: Hoje o membro precisa ligar o switch para ficar disponível (opt-in). A nova lógica: todos os switches ligados por padrão. O membro só desliga o que NÃO pode.
+### Como funciona
 
-No banco de dados, um registro na tabela `member_availability` com `is_available = true` significa "disponível". A ausência de registro significa "indisponível". Vamos inverter: a **ausência** de registro significa "disponível", e um registro com `is_available = false` significa "bloqueado".
+O Stripe não permite `mode: "payment"` sem um `price`. A solução é usar `price_data` com o valor informado pelo usuário, criando um preço dinâmico por sessão.
 
-### Arquivos alterados
+### Etapas
 
-**1. `src/components/department/SlotAvailability.tsx`**
-- `isSlotAvailable()`: retorna `true` por padrão (sem registro = disponível). Só retorna `false` se existir registro com `is_available = false`
-- `toggleSlotAvailability()`: ao desligar, insere/atualiza registro com `is_available = false`. Ao ligar, deleta o registro (volta ao padrão disponível)
-- Contador: mostrar bloqueados em vez de disponíveis
-- Texto explicativo: "Desative os dias que você NÃO pode servir"
+**1. Criar Edge Function `create-donation-checkout**`
 
-**2. `src/components/department/AddScheduleDialog.tsx`** (linhas 120-128)
-- Inverter a lógica do `blockedMembers`: bloqueia se `slotAvailabilityMap[key] === false` (registro explícito de bloqueio), em vez de bloquear quando não existe registro
-- Buscar registros com `is_available = false` em vez de `true`
+- Recebe `amount` (em centavos BRL) do frontend
+- Valida valor mínimo (ex: R$ 1,00 = 100 centavos)
+- Cria sessão Stripe Checkout com `price_data` dinâmico (moeda BRL, nome "Apoio voluntário")
+- `mode: "payment"` (pagamento único)
+- Não exige autenticação (qualquer pessoa pode doar)
+- Retorna URL do checkout
 
-**3. `src/components/department/EditScheduleDialog.tsx`** (linhas 95-100, 166-176)
-- Mesma inversão: buscar `is_available = false` e construir mapa de bloqueio
-- `isMemberAvailable()`: retorna `true` por padrão, `false` apenas se existir no mapa de bloqueio
+**2. Atualizar página `/payment` (Payment.tsx)**
 
-**4. `src/components/department/LeaderSlotAvailabilityView.tsx`** (linhas 51-78)
-- Inverter: buscar registros `is_available = false` como mapa de bloqueio
-- `getMembersForSlot()`: retornar todos os membros EXCETO os que têm bloqueio explícito para aquele slot
+- Botão "Apoiar via cartão" que chama a Edge Function com o valor
+- Redireciona para o Stripe Checkout em nova aba
+- fazer uma alternativa de pix do stribe se tiver
 
-### Sem mudança no banco
-Nenhuma migration necessária. A coluna `is_available` já suporta `false`. Apenas a interpretação muda no frontend.
+**3. Criar página de sucesso `/payment-success**`
 
-### Resultado
-- Membro novo entra com todos os dias disponíveis automaticamente
-- Só precisa desligar os dias que não pode
-- Texto na tela de disponibilidade: "Desative os dias que você NÃO pode servir"
+- Mensagem simples de agradecimento após pagamento bem-sucedido
+- Botão para voltar ao dashboard
 
+### Detalhes técnicos
+
+- Edge Function: `supabase/functions/create-donation-checkout/index.ts`
+- Stripe API: `stripe.checkout.sessions.create()` com `price_data` inline
+- Moeda: BRL
+- `STRIPE_SECRET_KEY` já está configurada nos secrets
+- Sem webhook necessário
