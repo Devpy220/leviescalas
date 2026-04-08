@@ -48,7 +48,7 @@ const Payment = () => {
     setLoadingCheckout(true);
     try {
       const { data, error } = await supabase.functions.invoke("create-donation-checkout", {
-        body: { amount, payment_method: "card" },
+        body: { amount },
       });
 
       if (error) throw error;
