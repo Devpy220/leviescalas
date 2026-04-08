@@ -123,7 +123,7 @@ const Payment = () => {
                   <Input
                     type="text"
                     inputMode="decimal"
-                    placeholder="10,00"
+                    placeholder="0,00"
                     value={cardAmount}
                     onChange={(e) => setCardAmount(e.target.value)}
                   />
