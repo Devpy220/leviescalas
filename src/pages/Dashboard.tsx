@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import Footer from '@/components/Footer';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
