@@ -629,7 +629,7 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
         <Dialog open={showExport} onOpenChange={setShowExport}>
           <DialogContent className="sm:max-w-xs">
             <DialogHeader>
-              <DialogTitle>Exportar - {selectedDept.name}</DialogTitle>
+              <DialogTitle>{t('sidebar.export')} - {selectedDept.name}</DialogTitle>
             </DialogHeader>
             <div className="flex flex-col gap-3">
               <button
@@ -637,14 +637,14 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all hover:bg-accent text-foreground"
               >
                 <FileDown className="w-5 h-5" />
-                <span>Exportar PDF</span>
+                <span>{t('sidebar.exportPDF')}</span>
               </button>
               <button
                 onClick={handleExportExcel}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all hover:bg-accent text-foreground"
               >
                 <FileDown className="w-5 h-5" />
-                <span>Exportar Excel</span>
+                <span>{t('sidebar.exportExcel')}</span>
               </button>
             </div>
           </DialogContent>
