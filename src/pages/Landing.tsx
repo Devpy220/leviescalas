@@ -591,7 +591,7 @@ export default function Landing() {
                   className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-10 py-6 text-base font-semibold btn-glow transition-all hover:scale-[1.02]"
                   onClick={() => openAuth('login')}
                 >
-                  Entrar <ArrowRight className="w-4 h-4 ml-2" />
+                  {t('landing.enter')} <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
                 <Button
                   size="lg"
@@ -600,7 +600,7 @@ export default function Landing() {
                   onClick={() => navigate('/church-setup')}
                 >
                   <Church className="w-4 h-4 mr-2" />
-                  Cadastrar minha Igreja
+                  {t('landing.registerChurch')}
                 </Button>
                 <Button
                   size="lg"
@@ -608,7 +608,7 @@ export default function Landing() {
                   className="text-muted-foreground hover:text-foreground rounded-full px-8"
                   onClick={() => { setShowContact(true); setContactSent(false); }}
                 >
-                  Fale conosco
+                  {t('landing.contactUs')}
                 </Button>
               </div>
 
