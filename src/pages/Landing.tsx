@@ -282,8 +282,8 @@ function FeatureCarousel() {
       onMouseLeave={() => setPaused(false)}
     >
       <div className="text-center">
-        <p className="text-primary text-xs font-semibold uppercase tracking-[0.15em] mb-2">Funcionalidades</p>
-        <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">Tudo que sua igreja precisa</h2>
+        <p className="text-primary text-xs font-semibold uppercase tracking-[0.15em] mb-2">{t('landing.features')}</p>
+        <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">{t('landing.allYourChurchNeeds')}</h2>
       </div>
 
       <div className="relative w-full max-w-md h-[220px] sm:h-[200px]">
