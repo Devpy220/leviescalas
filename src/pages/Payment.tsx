@@ -15,7 +15,6 @@ import pixQrCode from "@/assets/pix-qrcode-levi.jpg";
 import Footer from "@/components/Footer";
 
 const PIX_KEY = "suport@leviescalas.com.br";
-const SUGGESTED_VALUE = "R$ 10,00";
 
 const Payment = () => {
   const navigate = useNavigate();
@@ -24,7 +23,7 @@ const Payment = () => {
   const { shouldShowInstallPrompt, install } = usePWAInstall();
   const [copied, setCopied] = useState(false);
   const { expanded: sidebarExpanded } = useSidebarExpanded();
-  const [cardAmount, setCardAmount] = useState("10");
+  const [cardAmount, setCardAmount] = useState("");
   const [loadingCheckout, setLoadingCheckout] = useState(false);
 
   const copyPixKey = async () => {
@@ -103,7 +102,7 @@ const Payment = () => {
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
                 <Sparkles className="w-4 h-4 text-primary" />
                 <span className="text-sm font-medium text-primary">
-                  Sugestão: {SUGGESTED_VALUE}
+                  Informe o valor que deseja contribuir
                 </span>
               </div>
             </div>
