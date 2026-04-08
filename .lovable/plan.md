@@ -1,39 +1,48 @@
-## Plano: Página de Checkout Stripe com valor livre
+## Plano: Cadastro de igrejas self-service com auto-exclusão
 
 ### Resumo
 
-Criar uma Edge Function que gera uma sessão de checkout do Stripe onde o **usuário define o valor** (sem preço fixo). Na página `/payment`, adicionar um campo de valor + botão que redireciona para o Stripe Checkout.
+Permitir que qualquer usuário cadastre sua igreja. Após o cadastro, enviar um email para o email da igreja com um link para criar departamentos (não mais o código). Igrejas sem nenhum departamento criado em 5 dias são excluídas automaticamente.
 
-### Como funciona
+### Mudanças
 
-O Stripe não permite `mode: "payment"` sem um `price`. A solução é usar `price_data` com o valor informado pelo usuário, criando um preço dinâmico por sessão.
+**1. Tornar `/church-setup` público (sem restrição de admin)**
 
-### Etapas
+- Remover a aba "Entrar com código" — agora só terá o formulário de cadastro de igreja
+- Qualquer usuário autenticado pode cadastrar (redirecionar para `/auth` se não logado)
+- Após cadastro, mostrar dialog de sucesso com mensagem explicativa
+- colocar cadastrar sua Igreja separado do entrar e deixar o fale conosco  
 
-**1. Criar Edge Function `create-donation-checkout**`
+**2. Atualizar email enviado (`send-church-code-email`)**
 
-- Recebe `amount` (em centavos BRL) do frontend
-- Valida valor mínimo (ex: R$ 1,00 = 100 centavos)
-- Cria sessão Stripe Checkout com `price_data` dinâmico (moeda BRL, nome "Apoio voluntário")
-- `mode: "payment"` (pagamento único)
-- Não exige autenticação (qualquer pessoa pode doar)
-- Retorna URL do checkout
+- Remover a restrição de admin (qualquer criador pode disparar)
+- Mudar o conteúdo do email:
+  - Link direto para `/departments/new?churchCode=CODIGO` em vez de apenas o código
+  - Explicar que o link serve para **criar departamentos/ministérios**
+  - Informar que dentro do departamento haverá um link para convidar voluntários
+  - Avisar que se nenhum departamento for criado em 5 dias, a igreja será excluída
 
-**2. Atualizar página `/payment` (Payment.tsx)**
+**3. Mensagem explicativa na página de criar departamento (`CreateDepartment.tsx`)**
 
-- Botão "Apoiar via cartão" que chama a Edge Function com o valor
-- Redireciona para o Stripe Checkout em nova aba
-- fazer uma alternativa de pix do stribe se tiver
+- Adicionar um card/alerta no topo explicando:
+  - "Aqui você cria os departamentos/ministérios da sua igreja"
+  - "Após criar, você receberá um link de convite para adicionar voluntários"
 
-**3. Criar página de sucesso `/payment-success**`
+**4. Edge Function de limpeza automática (`cleanup-inactive-churches`)**
 
-- Mensagem simples de agradecimento após pagamento bem-sucedido
-- Botão para voltar ao dashboard
+- Nova Edge Function que roda via cron (1x por dia)
+- Query: igrejas criadas há mais de 5 dias SEM nenhum departamento vinculado
+- Deletar essas igrejas automaticamente
+- Configurar cron job com `pg_cron` para executar diariamente
+
+**5. Adicionar link para `/church-setup` na Landing page**
+
+- Botão "Cadastrar minha Igreja" visível na landing
 
 ### Detalhes técnicos
 
-- Edge Function: `supabase/functions/create-donation-checkout/index.ts`
-- Stripe API: `stripe.checkout.sessions.create()` com `price_data` inline
-- Moeda: BRL
-- `STRIPE_SECRET_KEY` já está configurada nos secrets
-- Sem webhook necessário
+- **Migration**: nenhuma (tabelas já existem)
+- **Edge Function nova**: `supabase/functions/cleanup-inactive-churches/index.ts`
+- **Cron job**: `cron.schedule('cleanup-churches', '0 3 * * *', ...)` — roda às 3h da manhã
+- **Arquivos editados**: `ChurchSetup.tsx`, `CreateDepartment.tsx`, `Landing.tsx`, `send-church-code-email/index.ts`
+- **Config**: adicionar `cleanup-inactive-churches` ao `config.toml` com `verify_jwt = false`
