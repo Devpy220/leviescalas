@@ -284,6 +284,16 @@ export default function CreateDepartment() {
                 </div>
               </div>
 
+              {/* Info card */}
+              <Alert className="mb-6 border-primary/20 bg-primary/5">
+                <AlertCircle className="h-4 w-4 text-primary" />
+                <AlertDescription className="text-sm text-muted-foreground">
+                  <strong className="text-foreground">Aqui você cria os departamentos/ministérios da sua igreja.</strong>
+                  <br />
+                  Após criar, você receberá um <strong className="text-foreground">link de convite</strong> para adicionar os voluntários ao departamento.
+                </AlertDescription>
+              </Alert>
+
               {/* Free badge */}
               <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
                 <div className="flex items-center gap-2">
