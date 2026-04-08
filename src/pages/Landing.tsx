@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useIsMobile } from '@/hooks/use-mobile';
 import elsdigitalLogo from '@/assets/elsdigital-logo.jpeg';
 import { useNavigate } from 'react-router-dom';
@@ -42,6 +43,7 @@ import { LeviTypewriter } from '@/components/LeviTypewriter';
 import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable';
 import { TwoFactorVerify } from '@/components/auth/TwoFactorVerify';
+import { LanguageSelector } from '@/components/LanguageSelector';
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 const GoogleIcon = () => (
@@ -125,6 +127,7 @@ function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: str
 
 // ── 3D Rotating Cube ─────────────────────────────────────────────────────────
 function FeatureCube() {
+  const { t } = useTranslation();
   const cubeRef = useRef<HTMLDivElement>(null);
   const rotRef = useRef({ x: -25, y: 0 });
   const rafRef = useRef<number>(0);
@@ -137,12 +140,12 @@ function FeatureCube() {
   const lastInteraction = useRef(0);
 
   const faces = [
-    { Icon: Calendar, label: 'Calendário', pill: '⚡ Ao vivo', face: 'front' },
-    { Icon: Users, label: 'Membros', pill: '✓ Organizado', face: 'right' },
-    { Icon: Bell, label: 'Notificações', pill: '📲 Auto', face: 'back' },
-    { Icon: RefreshCw, label: 'Trocas', pill: '🔄 Fácil', face: 'left' },
-    { Icon: Zap, label: 'Tempo Real', pill: '🔴 Online', face: 'top' },
-    { Icon: CheckCircle2, label: 'Confirmações', pill: '✅ Real-time', face: 'bottom' },
+    { Icon: Calendar, labelKey: 'landing.cube.calendar', pillKey: 'landing.cube.live', face: 'front' },
+    { Icon: Users, labelKey: 'landing.cube.members', pillKey: 'landing.cube.organized', face: 'right' },
+    { Icon: Bell, labelKey: 'landing.cube.notifications', pillKey: 'landing.cube.auto', face: 'back' },
+    { Icon: RefreshCw, labelKey: 'landing.cube.swaps', pillKey: 'landing.cube.easy', face: 'left' },
+    { Icon: Zap, labelKey: 'landing.cube.realtime', pillKey: 'landing.cube.online', face: 'top' },
+    { Icon: CheckCircle2, labelKey: 'landing.cube.confirmations', pillKey: 'landing.cube.realtimePill', face: 'bottom' },
   ];
 
   const size = isMobile ? 100 : 170;
@@ -227,38 +230,41 @@ function FeatureCube() {
               <div className={`${isMobile ? 'w-8 h-8' : 'w-12 h-12'} rounded-xl bg-primary/10 flex items-center justify-center`}>
                 <item.Icon className={`${isMobile ? 'w-4 h-4' : 'w-6 h-6'} text-primary`} />
               </div>
-              <span className={`${isMobile ? 'text-[10px]' : 'text-sm'} font-semibold text-foreground`}>{item.label}</span>
+              <span className={`${isMobile ? 'text-[10px]' : 'text-sm'} font-semibold text-foreground`}>{t(item.labelKey)}</span>
               <span className={`${isMobile ? 'text-[8px] px-1.5' : 'text-xs px-2.5'} py-0.5 rounded-full border border-border bg-muted/50 text-muted-foreground`}>
-                {item.pill}
+                {t(item.pillKey)}
               </span>
             </div>
           ))}
         </div>
       </div>
-      <span className="text-[11px] text-muted-foreground/50 tracking-wider select-none">↻ arraste para girar</span>
+      <span className="text-[11px] text-muted-foreground/50 tracking-wider select-none">{t('common.dragToRotate')}</span>
     </div>
   );
 }
 
 // ── Feature data ─────────────────────────────────────────────────────────────
-const allSlides = [
-  { type: 'feature' as const, icon: Calendar, title: 'Escalas inteligentes', desc: 'Crie escalas semanais ou mensais com poucos cliques. O sistema distribui os voluntários automaticamente.', color: 'bg-primary/10 text-primary' },
-  { type: 'feature' as const, icon: Bell, title: 'Notificações automáticas', desc: 'Voluntários recebem lembrete via WhatsApp antes do compromisso, sem você precisar fazer nada.', color: 'bg-accent/10 text-accent' },
-  { type: 'feature' as const, icon: CheckCircle2, title: 'Confirmações em tempo real', desc: 'Acompanhe quem confirmou, quem pediu troca e quem ainda não respondeu — tudo num painel.', color: 'bg-accent/10 text-accent' },
-  { type: 'feature' as const, icon: RefreshCw, title: 'Troca de horários', desc: 'Voluntários solicitam trocas direto no app, sem precisar falar com o líder a cada pedido.', color: 'bg-secondary/10 text-secondary' },
-  { type: 'feature' as const, icon: LayoutGrid, title: 'Múltiplas equipes', desc: 'Louvor, recepção, mídia, infantil — gerencie quantas equipes precisar em um único lugar.', color: 'bg-primary/10 text-primary' },
-  { type: 'feature' as const, icon: Users, title: 'Setores e funções', desc: 'Organize membros por setores e atribua funções específicas para cada escala.', color: 'bg-secondary/10 text-secondary' },
-  { type: 'step' as const, step: 1, title: 'Crie sua conta', desc: 'Cadastre-se em menos de 2 minutos. Totalmente gratuito.' },
-  { type: 'step' as const, step: 2, title: 'Monte sua equipe', desc: 'Cadastre os voluntários e organize por ministério ou setor.' },
-  { type: 'step' as const, step: 3, title: 'Gere a escala', desc: 'Defina datas e o sistema cuida do resto automaticamente.' },
-  { type: 'step' as const, step: 4, title: 'Acompanhe ao vivo', desc: 'Confirmações e pendências em tempo real no painel.' },
-  { type: 'cta' as const, title: 'Comece hoje, gratuitamente', desc: 'Junte-se aos voluntários que já simplificaram a gestão das escalas na sua igreja. 100% gratuito · Suporte em português' },
-];
+// slides are now built dynamically in FeatureCarousel using t()
 
 // ── Feature Carousel ────────────────────────────────────────────────────────
 function FeatureCarousel() {
+  const { t } = useTranslation();
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
+
+  const allSlides = [
+    { type: 'feature' as const, icon: Calendar, title: t('landing.slides.smartSchedules'), desc: t('landing.slides.smartSchedulesDesc'), color: 'bg-primary/10 text-primary' },
+    { type: 'feature' as const, icon: Bell, title: t('landing.slides.autoNotifications'), desc: t('landing.slides.autoNotificationsDesc'), color: 'bg-accent/10 text-accent' },
+    { type: 'feature' as const, icon: CheckCircle2, title: t('landing.slides.realtimeConfirmations'), desc: t('landing.slides.realtimeConfirmationsDesc'), color: 'bg-accent/10 text-accent' },
+    { type: 'feature' as const, icon: RefreshCw, title: t('landing.slides.scheduleSwaps'), desc: t('landing.slides.scheduleSwapsDesc'), color: 'bg-secondary/10 text-secondary' },
+    { type: 'feature' as const, icon: LayoutGrid, title: t('landing.slides.multipleTeams'), desc: t('landing.slides.multipleTeamsDesc'), color: 'bg-primary/10 text-primary' },
+    { type: 'feature' as const, icon: Users, title: t('landing.slides.sectorsAndRoles'), desc: t('landing.slides.sectorsAndRolesDesc'), color: 'bg-secondary/10 text-secondary' },
+    { type: 'step' as const, step: 1, title: t('landing.slides.step1'), desc: t('landing.slides.step1Desc') },
+    { type: 'step' as const, step: 2, title: t('landing.slides.step2'), desc: t('landing.slides.step2Desc') },
+    { type: 'step' as const, step: 3, title: t('landing.slides.step3'), desc: t('landing.slides.step3Desc') },
+    { type: 'step' as const, step: 4, title: t('landing.slides.step4'), desc: t('landing.slides.step4Desc') },
+    { type: 'cta' as const, title: t('landing.slides.ctaTitle'), desc: t('landing.slides.ctaDesc') },
+  ];
   const total = allSlides.length;
 
   useEffect(() => {
@@ -276,8 +282,8 @@ function FeatureCarousel() {
       onMouseLeave={() => setPaused(false)}
     >
       <div className="text-center">
-        <p className="text-primary text-xs font-semibold uppercase tracking-[0.15em] mb-2">Funcionalidades</p>
-        <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">Tudo que sua igreja precisa</h2>
+        <p className="text-primary text-xs font-semibold uppercase tracking-[0.15em] mb-2">{t('landing.features')}</p>
+        <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">{t('landing.allYourChurchNeeds')}</h2>
       </div>
 
       <div className="relative w-full max-w-md h-[220px] sm:h-[200px]">
@@ -354,6 +360,7 @@ type ContactForm = z.infer<typeof contactSchema>;
 
 // ══════════════════════════════════════════════════════════════════════════════
 export default function Landing() {
+  const { t } = useTranslation();
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [showContact, setShowContact] = useState(false);
@@ -543,8 +550,9 @@ export default function Landing() {
               onClick={() => { setShowContact(true); setContactSent(false); }}
               className="hidden md:inline-flex px-3 py-2 text-sm text-muted-foreground hover:text-foreground rounded-lg transition-colors"
             >
-              Contato
+              {t('landing.contact')}
             </button>
+            <LanguageSelector />
             <ThemeToggle />
           </div>
         </div>
@@ -564,17 +572,17 @@ export default function Landing() {
               <div className="animate-slide-up-1 flex flex-col items-center lg:items-start gap-3">
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/8 text-primary text-sm font-medium border border-primary/15">
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>Gestão de escalas para igrejas</span>
+                  <span>{t('landing.tagline')}</span>
                 </div>
               </div>
 
               <h1 className="animate-slide-up-2 font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground leading-tight">
-                Organize suas<br />escalas com<br />
-                <Typewriter words={['facilidade', 'agilidade', 'amor', 'inteligência']} />
+                {t('landing.heroTitle1')}<br />{t('landing.heroTitle2')}<br />
+                <Typewriter words={t('landing.typewriterWords', { returnObjects: true }) as string[]} />
               </h1>
 
               <p className="animate-slide-up-3 text-base sm:text-lg text-muted-foreground max-w-lg mx-auto lg:mx-0 leading-relaxed">
-                Calendário visual, notificações automáticas e sincronização em tempo real para voluntários da sua igreja.
+                {t('landing.heroDescription')}
               </p>
 
               <div className="animate-slide-up-4 flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
@@ -583,7 +591,7 @@ export default function Landing() {
                   className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-10 py-6 text-base font-semibold btn-glow transition-all hover:scale-[1.02]"
                   onClick={() => openAuth('login')}
                 >
-                  Entrar <ArrowRight className="w-4 h-4 ml-2" />
+                  {t('landing.enter')} <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
                 <Button
                   size="lg"
@@ -592,7 +600,7 @@ export default function Landing() {
                   onClick={() => navigate('/church-setup')}
                 >
                   <Church className="w-4 h-4 mr-2" />
-                  Cadastrar minha Igreja
+                  {t('landing.registerChurch')}
                 </Button>
                 <Button
                   size="lg"
@@ -600,7 +608,7 @@ export default function Landing() {
                   className="text-muted-foreground hover:text-foreground rounded-full px-8"
                   onClick={() => { setShowContact(true); setContactSent(false); }}
                 >
-                  Fale conosco
+                  {t('landing.contactUs')}
                 </Button>
               </div>
 
@@ -617,7 +625,7 @@ export default function Landing() {
                   <span className="text-xl font-bold text-foreground">
                     {countLoading ? '...' : <AnimatedCounter target={count || 0} suffix="+" />}
                   </span>
-                  <p className="text-xs text-muted-foreground">voluntários cadastrados</p>
+                  <p className="text-xs text-muted-foreground">{t('landing.volunteersRegistered')}</p>
                 </div>
               </div>
             </div>
@@ -648,7 +656,7 @@ export default function Landing() {
           </div>
           <div className="flex items-center gap-3">
             <img src={elsdigitalLogo} alt="ELSDIGITAL" className="w-5 h-5 rounded-full object-cover" />
-            <span className="text-xs text-muted-foreground">Desenvolvendo Soluções</span>
+            <span className="text-xs text-muted-foreground">{t('landing.developingSolutions')}</span>
           </div>
         </div>
       </footer>
@@ -660,7 +668,7 @@ export default function Landing() {
           <DialogPrimitive.Content className="fixed left-[50%] top-[50%] z-50 w-full max-w-sm translate-x-[-50%] translate-y-[-50%] rounded-3xl border border-border bg-background p-8 shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]">
             <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
               <X className="h-4 w-4" />
-              <span className="sr-only">Fechar</span>
+              <span className="sr-only">{t('common.close')}</span>
             </DialogPrimitive.Close>
 
             <div className="flex items-center gap-3 mb-6">
@@ -669,7 +677,7 @@ export default function Landing() {
               </div>
               <div>
                 <span className="font-display text-xl font-bold text-foreground">LEVI</span>
-                <p className="text-xs text-muted-foreground">Gestão de Escalas</p>
+                <p className="text-xs text-muted-foreground">{t('landing.scheduleManagement')}</p>
               </div>
             </div>
 
@@ -681,7 +689,7 @@ export default function Landing() {
                   {loginForm.formState.errors.email && <p className="text-sm text-destructive">{loginForm.formState.errors.email.message}</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="modal-password">Senha</Label>
+                  <Label htmlFor="modal-password">{t('common.password')}</Label>
                   <div className="relative">
                     <Input id="modal-password" type={showPassword ? 'text' : 'password'} placeholder="••••••••" {...loginForm.register('password')} className="h-12 pr-12 rounded-xl" />
                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
@@ -691,10 +699,10 @@ export default function Landing() {
                   {loginForm.formState.errors.password && <p className="text-sm text-destructive">{loginForm.formState.errors.password.message}</p>}
                 </div>
                 <Button type="submit" className="w-full h-12 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-base" disabled={isLoading}>
-                  {isLoading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Entrando...</> : 'Entrar'}
+                  {isLoading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />{t('auth.loggingIn')}</> : t('auth.login')}
                 </Button>
                 <button type="button" onClick={() => { setAuthTab('recovery'); setRecoveryEmailSent(false); }} className="w-full text-center text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Esqueceu sua senha?
+                  {t('auth.forgotPassword')}
                 </button>
               </form>
             )}
@@ -702,8 +710,8 @@ export default function Landing() {
             {authTab === 'recovery' && (
               <div className="space-y-4 animate-fade-in">
                 <div className="mb-2">
-                  <h2 className="text-xl font-bold text-foreground mb-1">Recuperar senha</h2>
-                  <p className="text-sm text-muted-foreground">Digite seu email para receber o link de recuperação.</p>
+                  <h2 className="text-xl font-bold text-foreground mb-1">{t('auth.recoverPassword')}</h2>
+                  <p className="text-sm text-muted-foreground">{t('auth.recoverDescription')}</p>
                 </div>
                 {!recoveryEmailSent ? (
                   <form onSubmit={recoveryForm.handleSubmit(handleRecovery)} className="space-y-4">
@@ -713,7 +721,7 @@ export default function Landing() {
                       {recoveryForm.formState.errors.email && <p className="text-sm text-destructive">{recoveryForm.formState.errors.email.message}</p>}
                     </div>
                     <Button type="submit" className="w-full h-12 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-semibold" disabled={isLoading}>
-                      {isLoading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Enviando...</> : 'Enviar link de recuperação'}
+                      {isLoading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />{t('auth.sending')}</> : t('auth.sendRecoveryLink')}
                     </Button>
                   </form>
                 ) : (
@@ -721,12 +729,12 @@ export default function Landing() {
                     <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
                       <Sparkles className="w-7 h-7 text-primary" />
                     </div>
-                    <h3 className="text-lg font-semibold text-foreground">Email enviado!</h3>
-                    <p className="text-sm text-muted-foreground">Verifique sua caixa de entrada e clique no link para redefinir sua senha.</p>
+                    <h3 className="text-lg font-semibold text-foreground">{t('auth.emailSent')}</h3>
+                    <p className="text-sm text-muted-foreground">{t('auth.checkInbox')}</p>
                   </div>
                 )}
                 <button type="button" onClick={() => setAuthTab('login')} className="w-full text-center text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Voltar para o login
+                  {t('auth.backToLogin')}
                 </button>
               </div>
             )}
@@ -745,7 +753,7 @@ export default function Landing() {
           <DialogPrimitive.Content className="fixed left-[50%] top-[50%] z-50 w-full max-w-sm translate-x-[-50%] translate-y-[-50%] rounded-3xl border border-border bg-background p-8 shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]">
             <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
               <X className="h-4 w-4" />
-              <span className="sr-only">Fechar</span>
+              <span className="sr-only">{t('common.close')}</span>
             </DialogPrimitive.Close>
 
             <div className="absolute top-0 left-0 right-0 h-1 rounded-t-3xl bg-gradient-to-r from-primary via-primary/60 to-secondary/40" />
@@ -755,16 +763,16 @@ export default function Landing() {
                 <Mail className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <span className="font-display text-xl font-bold text-foreground">Fale conosco</span>
-                <p className="text-xs text-muted-foreground">Envie sua dúvida ou sugestão</p>
+                <span className="font-display text-xl font-bold text-foreground">{t('contact.title')}</span>
+                <p className="text-xs text-muted-foreground">{t('contact.subtitle')}</p>
               </div>
             </div>
 
             {!contactSent ? (
               <form onSubmit={contactForm.handleSubmit(handleContact)} className="space-y-4 animate-fade-in">
                 <div className="space-y-2">
-                  <Label htmlFor="contact-name">Nome</Label>
-                  <Input id="contact-name" placeholder="Seu nome" {...contactForm.register('name')} className="h-12 rounded-xl" />
+                  <Label htmlFor="contact-name">{t('common.name')}</Label>
+                  <Input id="contact-name" placeholder={t('contact.yourName')} {...contactForm.register('name')} className="h-12 rounded-xl" />
                   {contactForm.formState.errors.name && <p className="text-sm text-destructive">{contactForm.formState.errors.name.message}</p>}
                 </div>
                 <div className="space-y-2">
@@ -773,15 +781,15 @@ export default function Landing() {
                   {contactForm.formState.errors.email && <p className="text-sm text-destructive">{contactForm.formState.errors.email.message}</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="contact-phone">Telefone</Label>
+                  <Label htmlFor="contact-phone">{t('common.phone')}</Label>
                   <Input id="contact-phone" type="tel" placeholder="(00) 00000-0000" {...contactForm.register('phone')} className="h-12 rounded-xl" />
                   {contactForm.formState.errors.phone && <p className="text-sm text-destructive">{contactForm.formState.errors.phone.message}</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="contact-message">Mensagem</Label>
+                  <Label htmlFor="contact-message">{t('common.message')}</Label>
                   <textarea
                     id="contact-message"
-                    placeholder="Escreva sua mensagem..."
+                    placeholder={t('contact.writeMessage')}
                     rows={4}
                     {...contactForm.register('message')}
                     className="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
@@ -793,7 +801,7 @@ export default function Landing() {
                   className="w-full h-12 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-base"
                   disabled={contactLoading}
                 >
-                  {contactLoading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Enviando...</> : <><Send className="w-4 h-4 mr-2" />Enviar mensagem</>}
+                  {contactLoading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />{t('auth.sending')}</> : <><Send className="w-4 h-4 mr-2" />{t('contact.sendMessage')}</>}
                 </Button>
               </form>
             ) : (
@@ -801,10 +809,10 @@ export default function Landing() {
                 <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center mx-auto">
                   <CheckCircle2 className="w-8 h-8 text-accent" />
                 </div>
-                <h3 className="text-lg font-semibold text-foreground">Mensagem enviada!</h3>
-                <p className="text-sm text-muted-foreground">Recebemos sua mensagem e responderemos em breve.</p>
+                <h3 className="text-lg font-semibold text-foreground">{t('contact.messageSent')}</h3>
+                <p className="text-sm text-muted-foreground">{t('contact.messageSentDesc')}</p>
                 <Button variant="outline" className="rounded-xl" onClick={() => setContactSent(false)}>
-                  Enviar outra mensagem
+                  {t('contact.sendAnother')}
                 </Button>
               </div>
             )}

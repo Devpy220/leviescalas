@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import Footer from '@/components/Footer';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
@@ -52,6 +53,7 @@ interface DepartmentWithRole extends Department {
 
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const [departments, setDepartments] = useState<DepartmentWithRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFirstLogin, setIsFirstLogin] = useState(false);
@@ -322,14 +324,14 @@ export default function Dashboard() {
               </AvatarFallback>
             </Avatar>
             <div>
-              <h1 className="font-display text-2xl font-bold text-foreground">{userName || 'Meu Perfil'}</h1>
+              <h1 className="font-display text-2xl font-bold text-foreground">{userName || t('dashboard.myProfile')}</h1>
               <p className="text-muted-foreground text-sm">{currentUser?.email}</p>
             </div>
           </div>
         </div>
 
         {/* Departments Section */}
-        <h2 className="font-display text-xl font-semibold text-foreground mb-6">Meus Departamentos</h2>
+        <h2 className="font-display text-xl font-semibold text-foreground mb-6">{t('dashboard.myDepartments')}</h2>
 
         {/* Department Cards Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
@@ -345,10 +347,10 @@ export default function Dashboard() {
                     </div>
                     <div className="flex-1">
                       <h3 className="font-display text-xl font-semibold text-foreground mb-1">
-                        Criar Novo Departamento
+                        {t('dashboard.createNewDepartment')}
                       </h3>
                       <p className="text-muted-foreground">
-                        100% Gratuito • Apoie o projeto
+                        {t('dashboard.freeSupport')}
                       </p>
                     </div>
                     <ChevronRight className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -366,10 +368,10 @@ export default function Dashboard() {
                   </div>
                   <div className="flex-1">
                     <h3 className="font-display text-lg font-semibold text-foreground mb-1">
-                      Conta de Membro
+                      {t('dashboard.memberAccount')}
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      Para criar departamentos, registre uma nova conta.
+                      {t('dashboard.memberAccountDesc')}
                     </p>
                   </div>
                 </div>
@@ -398,18 +400,18 @@ export default function Dashboard() {
               <Calendar className="w-10 h-10 text-white" />
             </div>
             <h3 className="font-display text-xl font-semibold text-foreground mb-2">
-              Nenhum departamento ainda
+              {t('dashboard.noDepartments')}
             </h3>
             <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
               {canCreateDepartment 
-                ? 'Crie seu primeiro departamento ou peça um convite para participar de um existente.'
-                : 'Peça um convite para participar de um departamento existente.'}
+                ? t('dashboard.noDepartmentsDescLeader')
+                : t('dashboard.noDepartmentsDescMember')}
             </p>
             {canCreateDepartment && (
               <Link to="/departments/new">
                 <Button className="gradient-vibrant text-white shadow-glow-sm hover:shadow-glow transition-all">
                   <Plus className="w-5 h-5 mr-2" />
-                  Criar Departamento
+                  {t('dashboard.createDepartment')}
                 </Button>
               </Link>
             )}
@@ -432,12 +434,13 @@ export default function Dashboard() {
 }
 
 function DepartmentCard({ department }: { department: DepartmentWithRole }) {
+  const { t } = useTranslation();
   const statusConfig = {
-    active: { bg: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400', label: 'Ativo' },
-    trial: { bg: 'bg-amber-500/10 text-amber-600 dark:text-amber-400', label: 'Teste' },
-    pending: { bg: 'bg-muted text-muted-foreground', label: 'Pendente' },
-    expired: { bg: 'bg-destructive/10 text-destructive', label: 'Expirado' },
-    cancelled: { bg: 'bg-destructive/10 text-destructive', label: 'Cancelado' },
+    active: { bg: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400', label: t('status.active') },
+    trial: { bg: 'bg-amber-500/10 text-amber-600 dark:text-amber-400', label: t('status.trial') },
+    pending: { bg: 'bg-muted text-muted-foreground', label: t('status.pending') },
+    expired: { bg: 'bg-destructive/10 text-destructive', label: t('status.expired') },
+    cancelled: { bg: 'bg-destructive/10 text-destructive', label: t('status.cancelled') },
   };
 
   const status = department.subscription_status 
@@ -511,7 +514,7 @@ function DepartmentCard({ department }: { department: DepartmentWithRole }) {
           
           <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between">
             <span className="text-xs text-muted-foreground">
-              Criado em {new Date(department.created_at).toLocaleDateString('pt-BR')}
+              {t('dashboard.createdAt')} {new Date(department.created_at).toLocaleDateString()}
             </span>
             <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
           </div>

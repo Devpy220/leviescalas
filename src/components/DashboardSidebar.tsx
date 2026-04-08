@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 import { 
   CalendarDays, 
@@ -22,6 +23,7 @@ import {
   type LucideIcon
 } from 'lucide-react';
 import { LeviLogo } from '@/components/LeviLogo';
+import { LanguageSelector } from '@/components/LanguageSelector';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { NotificationBell } from '@/components/NotificationBell';
@@ -152,6 +154,7 @@ function DepartmentPicker({
 
 export function DashboardSidebar(props: DashboardSidebarProps) {
   const { isAdmin, shouldShowInstallPrompt, onInstallClick, onSignOut } = props;
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const { departments, leaderDepartments, isLeader, userName, userAvatarUrl } = useUserDepartments();
@@ -438,23 +441,23 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
             {/* Navigation section */}
             <ul className="space-y-0.5">
               <li>
-                <SidebarItem expanded={expanded} icon={CalendarDays} label="Minhas Escalas" variant="nav" active={isActive('/my-schedules')} onClick={() => navigate('/my-schedules')} />
+                <SidebarItem expanded={expanded} icon={CalendarDays} label={t('sidebar.mySchedules')} variant="nav" active={isActive('/my-schedules')} onClick={() => navigate('/my-schedules')} />
               </li>
               <li>
-                <SidebarItem expanded={expanded} icon={Settings} label="Configurações" variant="nav" active={isActive('/security')} onClick={() => navigate('/security')} />
+                <SidebarItem expanded={expanded} icon={Settings} label={t('sidebar.settings')} variant="nav" active={isActive('/security')} onClick={() => navigate('/security')} />
               </li>
             </ul>
 
             {/* Department section — visible when user has departments */}
             {hasDepartments && (
               <>
-                <SectionLabel label="Departamento" expanded={expanded} />
+                <SectionLabel label={t('sidebar.department')} expanded={expanded} />
                 <ul className="space-y-0.5">
                   <li>
-                    <SidebarItem expanded={expanded} icon={Clock} label="Disponibilidade" variant="action" onClick={() => handleContextualAction('availability')} />
+                    <SidebarItem expanded={expanded} icon={Clock} label={t('sidebar.availability')} variant="action" onClick={() => handleContextualAction('availability')} />
                   </li>
                   <li>
-                    <SidebarItem expanded={expanded} icon={Megaphone} label="Mural de Avisos" variant="action" onClick={() => handleContextualAction('announcements')} />
+                    <SidebarItem expanded={expanded} icon={Megaphone} label={t('sidebar.announcements')} variant="action" onClick={() => handleContextualAction('announcements')} />
                   </li>
                 </ul>
               </>
@@ -463,31 +466,31 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
             {/* Leader management section */}
             {isLeader && (
               <>
-                <SectionLabel label="Gestão" expanded={expanded} />
+                <SectionLabel label={t('sidebar.management')} expanded={expanded} />
                 <ul className="space-y-0.5">
                   <li>
-                    <SidebarItem expanded={expanded} icon={Eye} label="Disponib. Equipe" variant="action" onClick={() => handleContextualAction('team-availability')} />
+                    <SidebarItem expanded={expanded} icon={Eye} label={t('sidebar.teamAvailability')} variant="action" onClick={() => handleContextualAction('team-availability')} />
                   </li>
                   <li>
-                    <SidebarItem expanded={expanded} icon={CalendarPlus} label="Criar Escala" variant="action" onClick={() => handleContextualAction('create-schedule')} />
+                    <SidebarItem expanded={expanded} icon={CalendarPlus} label={t('sidebar.createSchedule')} variant="action" onClick={() => handleContextualAction('create-schedule')} />
                   </li>
                   <li>
-                    <SidebarItem expanded={expanded} icon={Layers} label="Setores" variant="action" onClick={() => handleContextualAction('sectors')} />
+                    <SidebarItem expanded={expanded} icon={Layers} label={t('sidebar.sectors')} variant="action" onClick={() => handleContextualAction('sectors')} />
                   </li>
                   <li>
-                    <SidebarItem expanded={expanded} icon={UserCog} label="Funções" variant="action" onClick={() => handleContextualAction('roles')} />
+                    <SidebarItem expanded={expanded} icon={UserCog} label={t('sidebar.roles')} variant="action" onClick={() => handleContextualAction('roles')} />
                   </li>
                   <li>
-                    <SidebarItem expanded={expanded} icon={Users} label="Resumo Equipe" variant="action" onClick={() => handleContextualAction('schedule-count')} />
+                    <SidebarItem expanded={expanded} icon={Users} label={t('sidebar.teamSummary')} variant="action" onClick={() => handleContextualAction('schedule-count')} />
                   </li>
                   <li>
-                    <SidebarItem expanded={expanded} icon={UserPlus} label="Convidar Membro" variant="action" onClick={() => handleContextualAction('invite')} />
+                    <SidebarItem expanded={expanded} icon={UserPlus} label={t('sidebar.inviteMember')} variant="action" onClick={() => handleContextualAction('invite')} />
                   </li>
                   <li>
-                    <SidebarItem expanded={expanded} icon={FileDown} label="Exportar" variant="action" onClick={() => handleContextualAction('export')} />
+                    <SidebarItem expanded={expanded} icon={FileDown} label={t('sidebar.export')} variant="action" onClick={() => handleContextualAction('export')} />
                   </li>
                   <li>
-                    <SidebarItem expanded={expanded} icon={Wrench} label="Config. Departamento" variant="action" onClick={() => handleContextualAction('dept-settings')} />
+                    <SidebarItem expanded={expanded} icon={Wrench} label={t('sidebar.deptSettings')} variant="action" onClick={() => handleContextualAction('dept-settings')} />
                   </li>
                 </ul>
               </>
@@ -496,25 +499,26 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
 
           {/* Footer */}
           <div className="p-2 space-y-0.5 border-t border-sidebar-border">
-            <SidebarItem expanded={expanded} icon={Heart} label="Apoie o LEVI" variant="nav" active={isActive('/payment')} onClick={() => navigate('/payment')} />
+            <SidebarItem expanded={expanded} icon={Heart} label={t('sidebar.supportLevi')} variant="nav" active={isActive('/payment')} onClick={() => navigate('/payment')} />
             
             <div className={`flex ${expanded ? 'flex-row justify-center' : 'flex-col'} items-center gap-1 py-1`}>
               <ThemeToggle />
+              <LanguageSelector />
               <NotificationBell />
             </div>
 
             {isAdmin && (
-              <SidebarItem expanded={expanded} icon={Shield} label="Painel Admin" variant="nav" active={isActive('/admin')} onClick={() => navigate('/admin')} />
+              <SidebarItem expanded={expanded} icon={Shield} label={t('sidebar.adminPanel')} variant="nav" active={isActive('/admin')} onClick={() => navigate('/admin')} />
             )}
 
             {shouldShowInstallPrompt && (
-              <SidebarItem expanded={expanded} icon={Download} label="Instalar App" variant="action" onClick={onInstallClick} />
+              <SidebarItem expanded={expanded} icon={Download} label={t('sidebar.installApp')} variant="action" onClick={onInstallClick} />
             )}
             
             <SidebarItem 
               expanded={expanded}
               icon={LogOut} 
-              label="Sair" 
+              label={t('sidebar.signOut')} 
               variant="danger"
               onClick={onSignOut}
             />
@@ -530,7 +534,7 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="right">Expandir menu</TooltipContent>
+                <TooltipContent side="right">{t('sidebar.expandMenu')}</TooltipContent>
               </Tooltip>
             )}
           </div>
@@ -543,7 +547,7 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
           departments={['team-availability', 'create-schedule', 'sectors', 'roles', 'schedule-count', 'invite', 'export', 'dept-settings'].includes(pendingAction) ? leaderDepartments : departments}
           onSelect={handleDeptSelect}
           onClose={() => setPendingAction(null)}
-          title="Escolher Departamento"
+          title={t('sidebar.chooseDepartment')}
         />
       )}
 
@@ -625,7 +629,7 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
         <Dialog open={showExport} onOpenChange={setShowExport}>
           <DialogContent className="sm:max-w-xs">
             <DialogHeader>
-              <DialogTitle>Exportar - {selectedDept.name}</DialogTitle>
+              <DialogTitle>{t('sidebar.export')} - {selectedDept.name}</DialogTitle>
             </DialogHeader>
             <div className="flex flex-col gap-3">
               <button
@@ -633,14 +637,14 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all hover:bg-accent text-foreground"
               >
                 <FileDown className="w-5 h-5" />
-                <span>Exportar PDF</span>
+                <span>{t('sidebar.exportPDF')}</span>
               </button>
               <button
                 onClick={handleExportExcel}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all hover:bg-accent text-foreground"
               >
                 <FileDown className="w-5 h-5" />
-                <span>Exportar Excel</span>
+                <span>{t('sidebar.exportExcel')}</span>
               </button>
             </div>
           </DialogContent>
@@ -662,7 +666,7 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Eye className="w-5 h-5 text-primary" />
-                Disponibilidade da Equipe - {selectedDept.name}
+                {t('sidebar.teamAvailabilityTitle')} - {selectedDept.name}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-6">
