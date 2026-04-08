@@ -154,6 +154,7 @@ function DepartmentPicker({
 
 export function DashboardSidebar(props: DashboardSidebarProps) {
   const { isAdmin, shouldShowInstallPrompt, onInstallClick, onSignOut } = props;
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const { departments, leaderDepartments, isLeader, userName, userAvatarUrl } = useUserDepartments();
@@ -440,23 +441,23 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
             {/* Navigation section */}
             <ul className="space-y-0.5">
               <li>
-                <SidebarItem expanded={expanded} icon={CalendarDays} label="Minhas Escalas" variant="nav" active={isActive('/my-schedules')} onClick={() => navigate('/my-schedules')} />
+                <SidebarItem expanded={expanded} icon={CalendarDays} label={t('sidebar.mySchedules')} variant="nav" active={isActive('/my-schedules')} onClick={() => navigate('/my-schedules')} />
               </li>
               <li>
-                <SidebarItem expanded={expanded} icon={Settings} label="Configurações" variant="nav" active={isActive('/security')} onClick={() => navigate('/security')} />
+                <SidebarItem expanded={expanded} icon={Settings} label={t('sidebar.settings')} variant="nav" active={isActive('/security')} onClick={() => navigate('/security')} />
               </li>
             </ul>
 
             {/* Department section — visible when user has departments */}
             {hasDepartments && (
               <>
-                <SectionLabel label="Departamento" expanded={expanded} />
+                <SectionLabel label={t('sidebar.department')} expanded={expanded} />
                 <ul className="space-y-0.5">
                   <li>
-                    <SidebarItem expanded={expanded} icon={Clock} label="Disponibilidade" variant="action" onClick={() => handleContextualAction('availability')} />
+                    <SidebarItem expanded={expanded} icon={Clock} label={t('sidebar.availability')} variant="action" onClick={() => handleContextualAction('availability')} />
                   </li>
                   <li>
-                    <SidebarItem expanded={expanded} icon={Megaphone} label="Mural de Avisos" variant="action" onClick={() => handleContextualAction('announcements')} />
+                    <SidebarItem expanded={expanded} icon={Megaphone} label={t('sidebar.announcements')} variant="action" onClick={() => handleContextualAction('announcements')} />
                   </li>
                 </ul>
               </>
@@ -465,31 +466,31 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
             {/* Leader management section */}
             {isLeader && (
               <>
-                <SectionLabel label="Gestão" expanded={expanded} />
+                <SectionLabel label={t('sidebar.management')} expanded={expanded} />
                 <ul className="space-y-0.5">
                   <li>
-                    <SidebarItem expanded={expanded} icon={Eye} label="Disponib. Equipe" variant="action" onClick={() => handleContextualAction('team-availability')} />
+                    <SidebarItem expanded={expanded} icon={Eye} label={t('sidebar.teamAvailability')} variant="action" onClick={() => handleContextualAction('team-availability')} />
                   </li>
                   <li>
-                    <SidebarItem expanded={expanded} icon={CalendarPlus} label="Criar Escala" variant="action" onClick={() => handleContextualAction('create-schedule')} />
+                    <SidebarItem expanded={expanded} icon={CalendarPlus} label={t('sidebar.createSchedule')} variant="action" onClick={() => handleContextualAction('create-schedule')} />
                   </li>
                   <li>
-                    <SidebarItem expanded={expanded} icon={Layers} label="Setores" variant="action" onClick={() => handleContextualAction('sectors')} />
+                    <SidebarItem expanded={expanded} icon={Layers} label={t('sidebar.sectors')} variant="action" onClick={() => handleContextualAction('sectors')} />
                   </li>
                   <li>
-                    <SidebarItem expanded={expanded} icon={UserCog} label="Funções" variant="action" onClick={() => handleContextualAction('roles')} />
+                    <SidebarItem expanded={expanded} icon={UserCog} label={t('sidebar.roles')} variant="action" onClick={() => handleContextualAction('roles')} />
                   </li>
                   <li>
-                    <SidebarItem expanded={expanded} icon={Users} label="Resumo Equipe" variant="action" onClick={() => handleContextualAction('schedule-count')} />
+                    <SidebarItem expanded={expanded} icon={Users} label={t('sidebar.teamSummary')} variant="action" onClick={() => handleContextualAction('schedule-count')} />
                   </li>
                   <li>
-                    <SidebarItem expanded={expanded} icon={UserPlus} label="Convidar Membro" variant="action" onClick={() => handleContextualAction('invite')} />
+                    <SidebarItem expanded={expanded} icon={UserPlus} label={t('sidebar.inviteMember')} variant="action" onClick={() => handleContextualAction('invite')} />
                   </li>
                   <li>
-                    <SidebarItem expanded={expanded} icon={FileDown} label="Exportar" variant="action" onClick={() => handleContextualAction('export')} />
+                    <SidebarItem expanded={expanded} icon={FileDown} label={t('sidebar.export')} variant="action" onClick={() => handleContextualAction('export')} />
                   </li>
                   <li>
-                    <SidebarItem expanded={expanded} icon={Wrench} label="Config. Departamento" variant="action" onClick={() => handleContextualAction('dept-settings')} />
+                    <SidebarItem expanded={expanded} icon={Wrench} label={t('sidebar.deptSettings')} variant="action" onClick={() => handleContextualAction('dept-settings')} />
                   </li>
                 </ul>
               </>
