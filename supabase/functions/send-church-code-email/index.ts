@@ -93,6 +93,14 @@ serve(async (req) => {
       .eq("id", parsed.data.churchId)
       .maybeSingle();
 
+    // Get registrant profile name
+    const { data: registrantProfile } = await serviceClient
+      .from("profiles")
+      .select("name")
+      .eq("id", userData.user.id)
+      .maybeSingle();
+    const registrantName = registrantProfile?.name || "Não informado";
+
     if (churchErr) throw churchErr;
     if (!church) {
       return new Response(JSON.stringify({ error: "Church not found" }), {
