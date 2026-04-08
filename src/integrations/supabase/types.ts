@@ -351,6 +351,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "departments_church_id_fkey"
+            columns: ["church_id"]
+            isOneToOne: false
+            referencedRelation: "churches_member_view"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "departments_leader_id_fkey"
             columns: ["leader_id"]
             isOneToOne: false
@@ -1127,6 +1134,51 @@ export type Database = {
       }
     }
     Views: {
+      churches_member_view: {
+        Row: {
+          address: string | null
+          city: string | null
+          code: string | null
+          created_at: string | null
+          description: string | null
+          id: string | null
+          leader_id: string | null
+          logo_url: string | null
+          name: string | null
+          slug: string | null
+          state: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          code?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          leader_id?: string | null
+          logo_url?: string | null
+          name?: string | null
+          slug?: string | null
+          state?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          code?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          leader_id?: string | null
+          logo_url?: string | null
+          name?: string | null
+          slug?: string | null
+          state?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       schedules_public: {
         Row: {
           assignment_role: string | null
