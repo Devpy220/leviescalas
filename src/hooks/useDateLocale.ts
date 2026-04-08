@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ptBR, enUS, es } from 'date-fns/locale';
+import { ptBR, enUS, es, type Locale } from 'date-fns/locale';
 
 const localeMap: Record<string, Locale> = {
   pt: ptBR,
