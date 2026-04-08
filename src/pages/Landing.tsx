@@ -244,24 +244,27 @@ function FeatureCube() {
 }
 
 // ── Feature data ─────────────────────────────────────────────────────────────
-const allSlides = [
-  { type: 'feature' as const, icon: Calendar, title: 'Escalas inteligentes', desc: 'Crie escalas semanais ou mensais com poucos cliques. O sistema distribui os voluntários automaticamente.', color: 'bg-primary/10 text-primary' },
-  { type: 'feature' as const, icon: Bell, title: 'Notificações automáticas', desc: 'Voluntários recebem lembrete via WhatsApp antes do compromisso, sem você precisar fazer nada.', color: 'bg-accent/10 text-accent' },
-  { type: 'feature' as const, icon: CheckCircle2, title: 'Confirmações em tempo real', desc: 'Acompanhe quem confirmou, quem pediu troca e quem ainda não respondeu — tudo num painel.', color: 'bg-accent/10 text-accent' },
-  { type: 'feature' as const, icon: RefreshCw, title: 'Troca de horários', desc: 'Voluntários solicitam trocas direto no app, sem precisar falar com o líder a cada pedido.', color: 'bg-secondary/10 text-secondary' },
-  { type: 'feature' as const, icon: LayoutGrid, title: 'Múltiplas equipes', desc: 'Louvor, recepção, mídia, infantil — gerencie quantas equipes precisar em um único lugar.', color: 'bg-primary/10 text-primary' },
-  { type: 'feature' as const, icon: Users, title: 'Setores e funções', desc: 'Organize membros por setores e atribua funções específicas para cada escala.', color: 'bg-secondary/10 text-secondary' },
-  { type: 'step' as const, step: 1, title: 'Crie sua conta', desc: 'Cadastre-se em menos de 2 minutos. Totalmente gratuito.' },
-  { type: 'step' as const, step: 2, title: 'Monte sua equipe', desc: 'Cadastre os voluntários e organize por ministério ou setor.' },
-  { type: 'step' as const, step: 3, title: 'Gere a escala', desc: 'Defina datas e o sistema cuida do resto automaticamente.' },
-  { type: 'step' as const, step: 4, title: 'Acompanhe ao vivo', desc: 'Confirmações e pendências em tempo real no painel.' },
-  { type: 'cta' as const, title: 'Comece hoje, gratuitamente', desc: 'Junte-se aos voluntários que já simplificaram a gestão das escalas na sua igreja. 100% gratuito · Suporte em português' },
-];
+// slides are now built dynamically in FeatureCarousel using t()
 
 // ── Feature Carousel ────────────────────────────────────────────────────────
 function FeatureCarousel() {
+  const { t } = useTranslation();
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
+
+  const allSlides = [
+    { type: 'feature' as const, icon: Calendar, title: t('landing.slides.smartSchedules'), desc: t('landing.slides.smartSchedulesDesc'), color: 'bg-primary/10 text-primary' },
+    { type: 'feature' as const, icon: Bell, title: t('landing.slides.autoNotifications'), desc: t('landing.slides.autoNotificationsDesc'), color: 'bg-accent/10 text-accent' },
+    { type: 'feature' as const, icon: CheckCircle2, title: t('landing.slides.realtimeConfirmations'), desc: t('landing.slides.realtimeConfirmationsDesc'), color: 'bg-accent/10 text-accent' },
+    { type: 'feature' as const, icon: RefreshCw, title: t('landing.slides.scheduleSwaps'), desc: t('landing.slides.scheduleSwapsDesc'), color: 'bg-secondary/10 text-secondary' },
+    { type: 'feature' as const, icon: LayoutGrid, title: t('landing.slides.multipleTeams'), desc: t('landing.slides.multipleTeamsDesc'), color: 'bg-primary/10 text-primary' },
+    { type: 'feature' as const, icon: Users, title: t('landing.slides.sectorsAndRoles'), desc: t('landing.slides.sectorsAndRolesDesc'), color: 'bg-secondary/10 text-secondary' },
+    { type: 'step' as const, step: 1, title: t('landing.slides.step1'), desc: t('landing.slides.step1Desc') },
+    { type: 'step' as const, step: 2, title: t('landing.slides.step2'), desc: t('landing.slides.step2Desc') },
+    { type: 'step' as const, step: 3, title: t('landing.slides.step3'), desc: t('landing.slides.step3Desc') },
+    { type: 'step' as const, step: 4, title: t('landing.slides.step4'), desc: t('landing.slides.step4Desc') },
+    { type: 'cta' as const, title: t('landing.slides.ctaTitle'), desc: t('landing.slides.ctaDesc') },
+  ];
   const total = allSlides.length;
 
   useEffect(() => {
