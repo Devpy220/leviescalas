@@ -499,25 +499,26 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
 
           {/* Footer */}
           <div className="p-2 space-y-0.5 border-t border-sidebar-border">
-            <SidebarItem expanded={expanded} icon={Heart} label="Apoie o LEVI" variant="nav" active={isActive('/payment')} onClick={() => navigate('/payment')} />
+            <SidebarItem expanded={expanded} icon={Heart} label={t('sidebar.supportLevi')} variant="nav" active={isActive('/payment')} onClick={() => navigate('/payment')} />
             
             <div className={`flex ${expanded ? 'flex-row justify-center' : 'flex-col'} items-center gap-1 py-1`}>
               <ThemeToggle />
+              <LanguageSelector />
               <NotificationBell />
             </div>
 
             {isAdmin && (
-              <SidebarItem expanded={expanded} icon={Shield} label="Painel Admin" variant="nav" active={isActive('/admin')} onClick={() => navigate('/admin')} />
+              <SidebarItem expanded={expanded} icon={Shield} label={t('sidebar.adminPanel')} variant="nav" active={isActive('/admin')} onClick={() => navigate('/admin')} />
             )}
 
             {shouldShowInstallPrompt && (
-              <SidebarItem expanded={expanded} icon={Download} label="Instalar App" variant="action" onClick={onInstallClick} />
+              <SidebarItem expanded={expanded} icon={Download} label={t('sidebar.installApp')} variant="action" onClick={onInstallClick} />
             )}
             
             <SidebarItem 
               expanded={expanded}
               icon={LogOut} 
-              label="Sair" 
+              label={t('sidebar.signOut')} 
               variant="danger"
               onClick={onSignOut}
             />
@@ -533,7 +534,7 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="right">Expandir menu</TooltipContent>
+                <TooltipContent side="right">{t('sidebar.expandMenu')}</TooltipContent>
               </Tooltip>
             )}
           </div>
@@ -546,7 +547,7 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
           departments={['team-availability', 'create-schedule', 'sectors', 'roles', 'schedule-count', 'invite', 'export', 'dept-settings'].includes(pendingAction) ? leaderDepartments : departments}
           onSelect={handleDeptSelect}
           onClose={() => setPendingAction(null)}
-          title="Escolher Departamento"
+          title={t('sidebar.chooseDepartment')}
         />
       )}
 
