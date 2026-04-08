@@ -197,6 +197,9 @@ export type Database = {
           logo_url: string | null
           name: string
           phone: string | null
+          registrant_email: string | null
+          registrant_name: string | null
+          registrant_phone: string | null
           slug: string | null
           state: string | null
           updated_at: string
@@ -214,6 +217,9 @@ export type Database = {
           logo_url?: string | null
           name: string
           phone?: string | null
+          registrant_email?: string | null
+          registrant_name?: string | null
+          registrant_phone?: string | null
           slug?: string | null
           state?: string | null
           updated_at?: string
@@ -231,6 +237,9 @@ export type Database = {
           logo_url?: string | null
           name?: string
           phone?: string | null
+          registrant_email?: string | null
+          registrant_name?: string | null
+          registrant_phone?: string | null
           slug?: string | null
           state?: string | null
           updated_at?: string
