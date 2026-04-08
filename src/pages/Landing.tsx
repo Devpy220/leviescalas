@@ -668,7 +668,7 @@ export default function Landing() {
           <DialogPrimitive.Content className="fixed left-[50%] top-[50%] z-50 w-full max-w-sm translate-x-[-50%] translate-y-[-50%] rounded-3xl border border-border bg-background p-8 shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]">
             <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
               <X className="h-4 w-4" />
-              <span className="sr-only">Fechar</span>
+              <span className="sr-only">{t('common.close')}</span>
             </DialogPrimitive.Close>
 
             <div className="flex items-center gap-3 mb-6">
@@ -677,7 +677,7 @@ export default function Landing() {
               </div>
               <div>
                 <span className="font-display text-xl font-bold text-foreground">LEVI</span>
-                <p className="text-xs text-muted-foreground">Gestão de Escalas</p>
+                <p className="text-xs text-muted-foreground">{t('landing.scheduleManagement')}</p>
               </div>
             </div>
 
@@ -689,7 +689,7 @@ export default function Landing() {
                   {loginForm.formState.errors.email && <p className="text-sm text-destructive">{loginForm.formState.errors.email.message}</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="modal-password">Senha</Label>
+                  <Label htmlFor="modal-password">{t('common.password')}</Label>
                   <div className="relative">
                     <Input id="modal-password" type={showPassword ? 'text' : 'password'} placeholder="••••••••" {...loginForm.register('password')} className="h-12 pr-12 rounded-xl" />
                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
@@ -699,10 +699,10 @@ export default function Landing() {
                   {loginForm.formState.errors.password && <p className="text-sm text-destructive">{loginForm.formState.errors.password.message}</p>}
                 </div>
                 <Button type="submit" className="w-full h-12 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-base" disabled={isLoading}>
-                  {isLoading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Entrando...</> : 'Entrar'}
+                  {isLoading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />{t('auth.loggingIn')}</> : t('auth.login')}
                 </Button>
                 <button type="button" onClick={() => { setAuthTab('recovery'); setRecoveryEmailSent(false); }} className="w-full text-center text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Esqueceu sua senha?
+                  {t('auth.forgotPassword')}
                 </button>
               </form>
             )}
@@ -710,8 +710,8 @@ export default function Landing() {
             {authTab === 'recovery' && (
               <div className="space-y-4 animate-fade-in">
                 <div className="mb-2">
-                  <h2 className="text-xl font-bold text-foreground mb-1">Recuperar senha</h2>
-                  <p className="text-sm text-muted-foreground">Digite seu email para receber o link de recuperação.</p>
+                  <h2 className="text-xl font-bold text-foreground mb-1">{t('auth.recoverPassword')}</h2>
+                  <p className="text-sm text-muted-foreground">{t('auth.recoverDescription')}</p>
                 </div>
                 {!recoveryEmailSent ? (
                   <form onSubmit={recoveryForm.handleSubmit(handleRecovery)} className="space-y-4">
