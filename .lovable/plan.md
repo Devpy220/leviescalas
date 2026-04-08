@@ -1,48 +1,35 @@
-## Plano: Cadastro de igrejas self-service com auto-exclusão
-
-### Resumo
-
-Permitir que qualquer usuário cadastre sua igreja. Após o cadastro, enviar um email para o email da igreja com um link para criar departamentos (não mais o código). Igrejas sem nenhum departamento criado em 5 dias são excluídas automaticamente.
+## Plano: Disclaimer de responsabilidade, validação de CNPJ e dados do cadastrante
 
 ### Mudanças
 
-**1. Tornar `/church-setup` público (sem restrição de admin)**
+**1. Adicionar campos "Responsável pelo cadastro" no formulário**
 
-- Remover a aba "Entrar com código" — agora só terá o formulário de cadastro de igreja
-- Qualquer usuário autenticado pode cadastrar (redirecionar para `/auth` se não logado)
-- Após cadastro, mostrar dialog de sucesso com mensagem explicativa
-- colocar cadastrar sua Igreja separado do entrar e deixar o fale conosco  
+- Novo grupo de campos no topo: Nome do responsável, Email do responsável, Telefone do responsável
+- Esses dados são apenas informativos (salvos no campo `description` ou em metadata) — o link continua sendo enviado apenas para o email da igreja
+- Preencher automaticamente com os dados do perfil do usuário logado (se disponível)
 
-**2. Atualizar email enviado (`send-church-code-email`)**
+**2. Validação de CNPJ real**
 
-- Remover a restrição de admin (qualquer criador pode disparar)
-- Mudar o conteúdo do email:
-  - Link direto para `/departments/new?churchCode=CODIGO` em vez de apenas o código
-  - Explicar que o link serve para **criar departamentos/ministérios**
-  - Informar que dentro do departamento haverá um link para convidar voluntários
-  - Avisar que se nenhum departamento for criado em 5 dias, a igreja será excluída
+- Implementar validação algorítmica do CNPJ (dígitos verificadores) no schema Zod
+- Máscara de formatação no input (XX.XXX.XXX/XXXX-XX)
+- CNPJ obrigatório
 
-**3. Mensagem explicativa na página de criar departamento (`CreateDepartment.tsx`)**
+**3. Disclaimer de responsabilidade**
 
-- Adicionar um card/alerta no topo explicando:
-  - "Aqui você cria os departamentos/ministérios da sua igreja"
-  - "Após criar, você receberá um link de convite para adicionar voluntários"
+- Adicionar um texto claro antes do botão de envio:
+  > "Ao cadastrar, você declara que os dados fornecidos são verdadeiros. O LEVI não se responsabiliza por informações incorretas ou fornecidas por terceiros."
+- Adicionar checkbox obrigatório de aceite dos termos
 
-**4. Edge Function de limpeza automática (`cleanup-inactive-churches`)**
+**4. Ajustar email enviado**
 
-- Nova Edge Function que roda via cron (1x por dia)
-- Query: igrejas criadas há mais de 5 dias SEM nenhum departamento vinculado
-- Deletar essas igrejas automaticamente
-- Configurar cron job com `pg_cron` para executar diariamente
+- O link continua sendo enviado **somente** para o email da igreja (já funciona assim)
+- Incluir o nome do responsável pelo cadastro no email para referência
 
-**5. Adicionar link para `/church-setup` na Landing page**
+### Arquivos editados
 
-- Botão "Cadastrar minha Igreja" visível na landing
+- `src/pages/ChurchSetup.tsx` — novos campos, validação CNPJ, disclaimer com checkbox
+- `supabase/functions/send-church-code-email/index.ts` — incluir nome do responsável no corpo do email
 
-### Detalhes técnicos
+### Sem migration
 
-- **Migration**: nenhuma (tabelas já existem)
-- **Edge Function nova**: `supabase/functions/cleanup-inactive-churches/index.ts`
-- **Cron job**: `cron.schedule('cleanup-churches', '0 3 * * *', ...)` — roda às 3h da manhã
-- **Arquivos editados**: `ChurchSetup.tsx`, `CreateDepartment.tsx`, `Landing.tsx`, `send-church-code-email/index.ts`
-- **Config**: adicionar `cleanup-inactive-churches` ao `config.toml` com `verify_jwt = false`
+Os dados do responsável já existem na tabela `profiles` do usuário logado. Nenhuma coluna nova necessária.
