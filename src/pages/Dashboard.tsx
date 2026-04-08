@@ -434,12 +434,13 @@ export default function Dashboard() {
 }
 
 function DepartmentCard({ department }: { department: DepartmentWithRole }) {
+  const { t } = useTranslation();
   const statusConfig = {
-    active: { bg: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400', label: 'Ativo' },
-    trial: { bg: 'bg-amber-500/10 text-amber-600 dark:text-amber-400', label: 'Teste' },
-    pending: { bg: 'bg-muted text-muted-foreground', label: 'Pendente' },
-    expired: { bg: 'bg-destructive/10 text-destructive', label: 'Expirado' },
-    cancelled: { bg: 'bg-destructive/10 text-destructive', label: 'Cancelado' },
+    active: { bg: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400', label: t('status.active') },
+    trial: { bg: 'bg-amber-500/10 text-amber-600 dark:text-amber-400', label: t('status.trial') },
+    pending: { bg: 'bg-muted text-muted-foreground', label: t('status.pending') },
+    expired: { bg: 'bg-destructive/10 text-destructive', label: t('status.expired') },
+    cancelled: { bg: 'bg-destructive/10 text-destructive', label: t('status.cancelled') },
   };
 
   const status = department.subscription_status 
@@ -513,7 +514,7 @@ function DepartmentCard({ department }: { department: DepartmentWithRole }) {
           
           <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between">
             <span className="text-xs text-muted-foreground">
-              Criado em {new Date(department.created_at).toLocaleDateString('pt-BR')}
+              {t('dashboard.createdAt')} {new Date(department.created_at).toLocaleDateString()}
             </span>
             <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
           </div>
