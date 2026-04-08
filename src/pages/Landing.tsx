@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useIsMobile } from '@/hooks/use-mobile';
 import elsdigitalLogo from '@/assets/elsdigital-logo.jpeg';
 import { useNavigate } from 'react-router-dom';
@@ -42,6 +43,7 @@ import { LeviTypewriter } from '@/components/LeviTypewriter';
 import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable';
 import { TwoFactorVerify } from '@/components/auth/TwoFactorVerify';
+import { LanguageSelector } from '@/components/LanguageSelector';
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 const GoogleIcon = () => (
@@ -137,12 +139,12 @@ function FeatureCube() {
   const lastInteraction = useRef(0);
 
   const faces = [
-    { Icon: Calendar, label: 'Calendário', pill: '⚡ Ao vivo', face: 'front' },
-    { Icon: Users, label: 'Membros', pill: '✓ Organizado', face: 'right' },
-    { Icon: Bell, label: 'Notificações', pill: '📲 Auto', face: 'back' },
-    { Icon: RefreshCw, label: 'Trocas', pill: '🔄 Fácil', face: 'left' },
-    { Icon: Zap, label: 'Tempo Real', pill: '🔴 Online', face: 'top' },
-    { Icon: CheckCircle2, label: 'Confirmações', pill: '✅ Real-time', face: 'bottom' },
+    { Icon: Calendar, labelKey: 'landing.cube.calendar', pillKey: 'landing.cube.live', face: 'front' },
+    { Icon: Users, labelKey: 'landing.cube.members', pillKey: 'landing.cube.organized', face: 'right' },
+    { Icon: Bell, labelKey: 'landing.cube.notifications', pillKey: 'landing.cube.auto', face: 'back' },
+    { Icon: RefreshCw, labelKey: 'landing.cube.swaps', pillKey: 'landing.cube.easy', face: 'left' },
+    { Icon: Zap, labelKey: 'landing.cube.realtime', pillKey: 'landing.cube.online', face: 'top' },
+    { Icon: CheckCircle2, labelKey: 'landing.cube.confirmations', pillKey: 'landing.cube.realtimePill', face: 'bottom' },
   ];
 
   const size = isMobile ? 100 : 170;
