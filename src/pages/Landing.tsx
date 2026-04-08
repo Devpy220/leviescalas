@@ -127,6 +127,7 @@ function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: str
 
 // ── 3D Rotating Cube ─────────────────────────────────────────────────────────
 function FeatureCube() {
+  const { t } = useTranslation();
   const cubeRef = useRef<HTMLDivElement>(null);
   const rotRef = useRef({ x: -25, y: 0 });
   const rafRef = useRef<number>(0);
@@ -229,15 +230,15 @@ function FeatureCube() {
               <div className={`${isMobile ? 'w-8 h-8' : 'w-12 h-12'} rounded-xl bg-primary/10 flex items-center justify-center`}>
                 <item.Icon className={`${isMobile ? 'w-4 h-4' : 'w-6 h-6'} text-primary`} />
               </div>
-              <span className={`${isMobile ? 'text-[10px]' : 'text-sm'} font-semibold text-foreground`}>{item.label}</span>
+              <span className={`${isMobile ? 'text-[10px]' : 'text-sm'} font-semibold text-foreground`}>{t(item.labelKey)}</span>
               <span className={`${isMobile ? 'text-[8px] px-1.5' : 'text-xs px-2.5'} py-0.5 rounded-full border border-border bg-muted/50 text-muted-foreground`}>
-                {item.pill}
+                {t(item.pillKey)}
               </span>
             </div>
           ))}
         </div>
       </div>
-      <span className="text-[11px] text-muted-foreground/50 tracking-wider select-none">↻ arraste para girar</span>
+      <span className="text-[11px] text-muted-foreground/50 tracking-wider select-none">{t('common.dragToRotate')}</span>
     </div>
   );
 }
