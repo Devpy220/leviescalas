@@ -24,6 +24,7 @@ import MySchedules from "./pages/MySchedules";
 import Security from "./pages/Security";
 import Admin from "./pages/Admin";
 import Payment from "./pages/Payment";
+import PaymentSuccess from "./pages/PaymentSuccess";
 import Churches from "./pages/Churches";
 import ChurchDetail from "./pages/ChurchDetail";
 import ChurchSetup from "./pages/ChurchSetup";
@@ -117,6 +118,7 @@ const App = () => (
                   } />
                   <Route path="/payment" element={<Payment />} />
                   <Route path="/apoio" element={<Payment />} />
+                  <Route path="/payment-success" element={<PaymentSuccess />} />
                   
                   {/* Church management - protected routes */}
                   <Route path="/churches" element={
