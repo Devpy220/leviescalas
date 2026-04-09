@@ -1,48 +1,36 @@
 
 
-## Plano: Internacionalização (i18n) — Português, Inglês e Espanhol
+## Plano: Permitir admin ver todas as igrejas
 
-### Resumo
+### Problema
+A tabela `churches` tem RLS que restringe visualização apenas ao `leader_id` ou membros de departamentos. O admin global não tem política de acesso, por isso vê 0 igrejas.
 
-Adicionar suporte multilíngue ao LEVI usando a biblioteca `react-i18next`. O idioma padrão será Português (BR), com opções de Inglês e Espanhol. O usuário poderá trocar o idioma via um seletor no header/sidebar.
+### Solução
+Adicionar uma política RLS que permite admins verem todas as igrejas.
 
-### Escopo do trabalho
+### Mudanças
 
-O LEVI tem **~25 arquivos** com textos hardcoded em português e referências ao locale `ptBR` do date-fns. A implementação será feita em etapas:
+**1. Migration SQL**
+```sql
+CREATE POLICY "Admins can view all churches"
+  ON public.churches FOR SELECT
+  TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'));
+```
 
-**1. Instalar e configurar `react-i18next`**
-- Instalar `i18next`, `react-i18next`, `i18next-browser-languagedetector`
-- Criar `src/i18n/index.ts` com configuração base
-- Criar arquivos de tradução: `src/i18n/locales/pt.json`, `en.json`, `es.json`
-- Inicializar no `main.tsx`
+**2. (Opcional) Políticas para UPDATE/DELETE admin**
+Se o admin também precisa editar/deletar igrejas que não criou (já existe `admin_delete_church` como function, mas o SELECT direto é bloqueado):
+```sql
+CREATE POLICY "Admins can manage all churches"
+  ON public.churches FOR ALL
+  TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'));
+```
 
-**2. Criar arquivos de tradução**
-- Extrair todas as strings visíveis ao usuário (~300+ strings) organizadas por seção:
-  - `common` (botões, labels genéricos)
-  - `auth` (login, registro, recuperação)
-  - `dashboard`, `departments`, `schedules`, `church`, `landing`, `notifications`, `settings`
-- Traduzir para inglês e espanhol
+### Nota
+- Só existe 1 igreja no banco (Maranata Church), não 2. Se havia outra, pode ter sido removida pela função `cleanup-inactive-churches` (deleta igrejas sem departamentos após 5 dias).
+- Nenhuma alteração de código necessária — só a política RLS.
 
-**3. Criar componente seletor de idioma**
-- Dropdown com bandeiras (🇧🇷 🇺🇸 🇪🇸) no header/navbar
-- Salvar preferência no `localStorage`
-- Detectar idioma do navegador automaticamente na primeira visita
-
-**4. Migrar componentes para usar `useTranslation()`**
-- Substituir strings hardcoded por `t('chave')` nos ~25 arquivos principais
-- Adaptar formatação de datas (`date-fns/locale`) para trocar dinamicamente entre `ptBR`, `enUS`, `es`
-- Adaptar o `LeviTypewriter` para usar texto traduzido
-
-**5. Adaptar Edge Functions (emails/notificações)**
-- Os emails enviados (escalas, anúncios, código da igreja) continuarão em português por padrão
-- Opcionalmente, salvar a preferência de idioma no perfil para personalizar emails futuramente
-
-### Arquivos principais afetados
-- **Novos**: `src/i18n/index.ts`, `src/i18n/locales/pt.json`, `en.json`, `es.json`, `src/components/LanguageSelector.tsx`
-- **Editados**: `src/main.tsx`, `src/App.tsx`, `src/pages/Landing.tsx`, `src/pages/Auth.tsx`, `src/pages/Dashboard.tsx`, `src/pages/Department.tsx`, `src/pages/ChurchSetup.tsx`, `src/components/DashboardSidebar.tsx`, `src/components/LeviTypewriter.tsx`, e todos os componentes com texto visível (~20+ arquivos)
-
-### Observações
-- Nenhuma migration de banco necessária neste momento
-- O idioma dos emails pode ser adaptado futuramente salvando a preferência no perfil do usuário
-- A implementação será incremental — primeiro a infraestrutura, depois a migração arquivo por arquivo
+### Arquivo
+- **Migration**: nova política RLS na tabela `churches`
 
