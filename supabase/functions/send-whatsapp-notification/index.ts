@@ -23,7 +23,7 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    const { phone, message } = await req.json();
+    const { phone, message, delayTyping } = await req.json();
 
     if (!phone || !message) {
       return new Response(
