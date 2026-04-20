@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { scheduleBatch } from "../_shared/whatsapp-queue.ts";
+import { buildSupportMessage } from "../_shared/messageVariants.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -50,31 +52,23 @@ serve(async (req: Request): Promise<Response> => {
     const PIX_KEY = "suport@leviescalas.com.br";
     const TITULAR = "EDUARDO LINO DA SILVA";
 
-    let sent = 0;
-    let errors = 0;
+    const recipients = profiles
+      .filter((p: any) => p.whatsapp)
+      .map((p: any) => ({
+        phone: p.whatsapp,
+        message: buildSupportMessage({
+          userId: p.id,
+          userName: p.name || "Voluntário",
+          pixKey: PIX_KEY,
+          titular: TITULAR,
+        }),
+      }));
 
-    for (const profile of profiles) {
-      if (!profile.whatsapp) continue;
-
-      const msg = `❤️ *Apoie o LEVI*\n\nOlá, *${profile.name}*!\n\nO LEVI é gratuito e depende do seu apoio para continuar funcionando. Qualquer valor faz a diferença!\n\n💰 *Chave PIX (E-mail):*\n${PIX_KEY}\n\n👤 *Titular:* ${TITULAR}\n\n📋 _Copie a chave acima e cole no app do seu banco._\n\n🙏 Obrigado pelo carinho!\n\n_LEVI — Escalas Inteligentes_`;
-
-      try {
-        await fetch(`${supabaseUrl}/functions/v1/send-whatsapp-notification`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${serviceRoleKey}`,
-          },
-          body: JSON.stringify({ phone: profile.whatsapp, message: msg }),
-        });
-        sent++;
-      } catch {
-        errors++;
-      }
-    }
+    const queued = recipients.length;
+    scheduleBatch(supabaseUrl, serviceRoleKey, recipients);
 
     return new Response(
-      JSON.stringify({ success: true, sent, errors, total: profiles.length }),
+      JSON.stringify({ success: true, queued, total: profiles.length }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   } catch (error) {

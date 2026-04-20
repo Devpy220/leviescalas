@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { scheduleBatch } from "../_shared/whatsapp-queue.ts";
+import { buildAnnouncementMessage } from "../_shared/messageVariants.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -82,34 +84,28 @@ serve(async (req: Request): Promise<Response> => {
       .insert(notifications as any);
 
     // Send WhatsApp to each member (unless skip_whatsapp is true — delayed sending)
-    let whatsappSent = 0;
+    let whatsappQueued = 0;
 
     if (!skip_whatsapp) {
-      const whatsappResults = await Promise.allSettled(
-        (memberProfiles || [])
-          .filter((p: any) => p.whatsapp)
-          .map(async (p: any) => {
-            const msg = `📢 *Aviso — ${department_name}*\n\nOlá, *${p.name}*!\n\n${announcement_title}\n\n_LEVI — Escalas Inteligentes_`;
+      const recipients = (memberProfiles || [])
+        .filter((p: any) => p.whatsapp)
+        .map((p: any) => ({
+          phone: p.whatsapp,
+          message: buildAnnouncementMessage({
+            userId: p.id,
+            userName: p.name || "Voluntário",
+            deptName: department_name,
+            title: announcement_title,
+          }),
+        }));
 
-            const res = await fetch(`${supabaseUrl}/functions/v1/send-whatsapp-notification`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceRoleKey}` },
-              body: JSON.stringify({
-                phone: p.whatsapp,
-                message: msg,
-              }),
-            });
-            const data = await res.json();
-            return data.sent === true;
-          })
-      );
-
-      whatsappSent = whatsappResults.filter(r => r.status === "fulfilled" && r.value === true).length;
+      whatsappQueued = recipients.length;
+      scheduleBatch(supabaseUrl, serviceRoleKey, recipients);
     }
-    console.log(`Announcement: ${memberIds.length} notified, ${whatsappSent} WhatsApp`);
+    console.log(`Announcement: ${memberIds.length} notified, ${whatsappQueued} WhatsApp queued`);
 
     return new Response(
-      JSON.stringify({ success: true, notified: memberIds.length, whatsapp_sent: whatsappSent }),
+      JSON.stringify({ success: true, notified: memberIds.length, whatsapp_queued: whatsappQueued }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   } catch (error: unknown) {

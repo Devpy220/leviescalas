@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendWhatsAppBatch, type WhatsAppRecipient } from "../_shared/whatsapp-queue.ts";
+import { pickVariant, GREETINGS, CLOSINGS, REMINDER_EMOJIS } from "../_shared/messageVariants.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -128,6 +130,8 @@ const handler = async (req: Request): Promise<Response> => {
       const profileMap = new Map((profilesRes.data || []).map(p => [p.id, p]));
       const deptMap = new Map((deptsRes.data || []).map(d => [d.id, d]));
 
+      const waRecipients: WhatsAppRecipient[] = [];
+
       for (const schedule of pendingSchedules) {
         try {
           const dept = deptMap.get(schedule.department_id);
@@ -177,19 +181,13 @@ const handler = async (req: Request): Promise<Response> => {
           if ((profile as any).whatsapp) {
             const sectorSuffix = sectorName ? `\n📍 ${sectorName}` : '';
             const roleSuffix = roleLabel ? `\n💼 ${roleLabel}` : '';
-            const whatsappMsg = `🔔 *Lembrete — ${dept.name}*\n\nOlá, *${profile.name}*!\n\n📆 ${weekday}, ${dayNum} de ${monthFull}\n⏰ ${formatTime(schedule.time_start)} às ${formatTime(schedule.time_end)}${sectorSuffix}${roleSuffix}\n\n_LEVI — Escalas Inteligentes_`;
+            const seed = `${schedule.id}-${window.type}`;
+            const emoji = pickVariant(seed + "e", REMINDER_EMOJIS);
+            const greeting = pickVariant(seed + "g", GREETINGS);
+            const closing = pickVariant(seed + "c", CLOSINGS);
+            const whatsappMsg = `${emoji} *Lembrete — ${dept.name}*\n\n${greeting}, *${profile.name}*!\n\n📆 ${weekday}, ${dayNum} de ${monthFull}\n⏰ ${formatTime(schedule.time_start)} às ${formatTime(schedule.time_end)}${sectorSuffix}${roleSuffix}\n\n${closing}`;
 
-            try {
-              await fetch(`${supabaseUrl}/functions/v1/send-whatsapp-notification`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceRoleKey}` },
-                body: JSON.stringify({
-                  phone: (profile as any).whatsapp,
-                  message: whatsappMsg,
-                }),
-              });
-              totalSent++;
-            } catch { totalErrors++; }
+            waRecipients.push({ phone: (profile as any).whatsapp, message: whatsappMsg });
           } else {
             totalSent++;
           }
@@ -197,6 +195,12 @@ const handler = async (req: Request): Promise<Response> => {
           console.error(`Error processing schedule ${schedule.id}:`, err);
           totalErrors++;
         }
+      }
+
+      if (waRecipients.length > 0) {
+        const result = await sendWhatsAppBatch(supabaseUrl, serviceRoleKey, waRecipients);
+        totalSent += result.sent;
+        totalErrors += result.errors;
       }
     }
 

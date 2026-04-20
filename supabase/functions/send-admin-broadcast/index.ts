@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { scheduleBatch } from "../_shared/whatsapp-queue.ts";
+import { buildBroadcastMessage } from "../_shared/messageVariants.ts";
 
 const getUserIdFromJwt = (token: string): string | null => {
   try {
@@ -80,28 +82,21 @@ const handler = async (req: Request): Promise<Response> => {
       .from("notifications")
       .insert(notifications as any);
 
-    // WhatsApp
-    const whatsappRecipients = recipients.filter((p) => p.whatsapp);
-    for (const profile of whatsappRecipients) {
-      try {
-        const whatsappMsg = `📢 *Comunicado LEVI*\n\nOlá, *${profile.name}*!\n\n*${title}*\n\n${message}\n\n_LEVI — Escalas Inteligentes_`;
+    // WhatsApp — humanized batch
+    const whatsappRecipients = recipients
+      .filter((p) => p.whatsapp)
+      .map((p) => ({
+        phone: p.whatsapp as string,
+        message: buildBroadcastMessage({
+          userId: p.id,
+          userName: p.name || "Voluntário",
+          title,
+          message,
+        }),
+      }));
 
-        const res = await fetch(`${supabaseUrl}/functions/v1/send-whatsapp-notification`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceRoleKey}` },
-          body: JSON.stringify({
-            phone: profile.whatsapp,
-            message: whatsappMsg,
-          }),
-        });
-        if (res.ok) {
-          const result = await res.json();
-          if (result.sent) whatsappSent++;
-        }
-      } catch (e) {
-        console.error("WhatsApp error:", e);
-      }
-    }
+    const whatsappQueued = whatsappRecipients.length;
+    scheduleBatch(supabaseUrl, serviceRoleKey, whatsappRecipients);
 
     // Save broadcast record
     await supabase.from("admin_broadcasts").insert({
@@ -110,11 +105,11 @@ const handler = async (req: Request): Promise<Response> => {
       channels_used: channels || ['whatsapp'],
       recipients_count: recipientsCount,
       email_sent: 0, push_sent: 0, telegram_sent: 0, sms_sent: 0,
-      whatsapp_sent: whatsappSent,
+      whatsapp_sent: whatsappQueued,
     });
 
     return new Response(
-      JSON.stringify({ success: true, recipients: recipientsCount, whatsapp_sent: whatsappSent }),
+      JSON.stringify({ success: true, recipients: recipientsCount, whatsapp_queued: whatsappQueued }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   } catch (error) {

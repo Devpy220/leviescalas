@@ -23,7 +23,7 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    const { phone, message } = await req.json();
+    const { phone, message, delayTyping } = await req.json();
 
     if (!phone || !message) {
       return new Response(
@@ -43,6 +43,11 @@ serve(async (req: Request): Promise<Response> => {
 
     const fullNumber = cleanNumber.startsWith("55") ? cleanNumber : `55${cleanNumber}`;
 
+    // delayMessage: seconds Z-API shows "typing..." before delivering. 0–15.
+    const typing = typeof delayTyping === "number"
+      ? Math.max(0, Math.min(15, Math.floor(delayTyping)))
+      : Math.floor(Math.random() * 6) + 3; // 3–8s default
+
     const url = `https://api.z-api.io/instances/${instanceId}/token/${token}/send-text`;
 
     const res = await fetch(url, {
@@ -51,7 +56,7 @@ serve(async (req: Request): Promise<Response> => {
         "Content-Type": "application/json",
         "Client-Token": clientToken,
       },
-      body: JSON.stringify({ phone: fullNumber, message }),
+      body: JSON.stringify({ phone: fullNumber, message, delayMessage: typing }),
     });
 
     if (res.ok) {
