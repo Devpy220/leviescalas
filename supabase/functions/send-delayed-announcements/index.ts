@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendWhatsAppBatch } from "../_shared/whatsapp-queue.ts";
+import { buildAnnouncementMessage } from "../_shared/messageVariants.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -65,29 +67,23 @@ serve(async (req: Request): Promise<Response> => {
             .select("id, name, whatsapp")
             .in("id", memberIds);
 
-          // Send WhatsApp to each member
-          const results = await Promise.allSettled(
-            (profiles || [])
-              .filter((p: any) => p.whatsapp)
-              .map(async (p: any) => {
-                const msg = `📢 *Aviso — ${deptName}*\n\nOlá, *${p.name}*!\n\n${announcement.title}\n\n_LEVI — Escalas Inteligentes_`;
+          const recipients = (profiles || [])
+            .filter((p: any) => p.whatsapp)
+            .map((p: any) => ({
+              phone: p.whatsapp,
+              message: buildAnnouncementMessage({
+                userId: p.id,
+                userName: p.name || "Voluntário",
+                deptName,
+                title: announcement.title,
+              }),
+            }));
 
-                const res = await fetch(`${supabaseUrl}/functions/v1/send-whatsapp-notification`, {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${serviceRoleKey}`,
-                  },
-                  body: JSON.stringify({ phone: p.whatsapp, message: msg }),
-                });
-                const data = await res.json();
-                return data.sent === true;
-              })
-          );
-
-          const sent = results.filter((r) => r.status === "fulfilled" && r.value === true).length;
-          totalSent += sent;
-          console.log(`Announcement ${announcement.id}: ${sent} WhatsApp sent`);
+          if (recipients.length > 0) {
+            const result = await sendWhatsAppBatch(supabaseUrl, serviceRoleKey, recipients);
+            totalSent += result.sent;
+            console.log(`Announcement ${announcement.id}: ${result.sent}/${recipients.length} WhatsApp sent`);
+          }
         }
 
         // Mark as notified
