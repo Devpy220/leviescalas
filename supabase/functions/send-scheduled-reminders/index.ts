@@ -162,9 +162,20 @@ const handler = async (req: Request): Promise<Response> => {
       }
 
       if (waRecipients.length > 0) {
-        const result = await sendWhatsAppBatch(supabaseUrl, serviceRoleKey, waRecipients);
-        totalSent += result.sent;
-        totalErrors += result.errors;
+        // Shuffle so messages from different departments are interleaved
+        for (let i = waRecipients.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [waRecipients[i], waRecipients[j]] = [waRecipients[j], waRecipients[i]];
+        }
+        const { backgrounded, promise } = scheduleBatch(supabaseUrl, serviceRoleKey, waRecipients);
+        if (!backgrounded) {
+          const result = await promise;
+          totalSent += result.sent;
+          totalErrors += result.errors;
+        } else {
+          totalSent += waRecipients.length; // queued
+          console.log(`Queued ${waRecipients.length} reminders in background`);
+        }
       }
     }
 
