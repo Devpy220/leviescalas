@@ -47,34 +47,7 @@ const handler = async (req: Request): Promise<Response> => {
       return { date: `${get('year')}-${get('month')}-${get('day')}`, time: `${get('hour')}:${get('minute')}:${get('second')}` };
     };
 
-    // Fetch all departments ordered by created_at to assign stable indices
-    const { data: allDepartments } = await supabaseAdmin
-      .from('departments')
-      .select('id, created_at')
-      .order('created_at', { ascending: true });
-
-    if (!allDepartments?.length) {
-      return new Response(
-        JSON.stringify({ success: true, sent: 0, errors: 0, message: 'No departments found' }),
-        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
-
-    // Build department-to-group map
-    const deptGroupMap = new Map<string, number>();
-    allDepartments.forEach((dept, index) => {
-      deptGroupMap.set(dept.id, index % 3);
-    });
-
-    // Collect all unique windows we need to check
-    const allWindows: { type: string; hoursAhead: number; label: string; groupIndex: number }[] = [];
-    for (let g = 0; g < REMINDER_GROUPS.length; g++) {
-      for (const w of REMINDER_GROUPS[g].windows) {
-        allWindows.push({ ...w, groupIndex: g });
-      }
-    }
-
-    for (const window of allWindows) {
+    for (const window of REMINDER_WINDOWS) {
       const targetTime = new Date(now.getTime() + window.hoursAhead * 60 * 60 * 1000);
       const marginMs = WINDOW_MARGIN_MINUTES * 60 * 1000;
       const windowStart = new Date(targetTime.getTime() - marginMs);
@@ -83,17 +56,9 @@ const handler = async (req: Request): Promise<Response> => {
       const brStart = toBrazilParts(windowStart);
       const brEnd = toBrazilParts(windowEnd);
 
-      // Get department IDs that belong to this group
-      const groupDeptIds = allDepartments
-        .filter((_, idx) => idx % 3 === window.groupIndex)
-        .map(d => d.id);
-
-      if (!groupDeptIds.length) continue;
-
       const { data: schedules, error: schedulesError } = await supabaseAdmin
         .from('schedules')
         .select('id, date, time_start, time_end, user_id, department_id, sector_id, assignment_role, sector:sectors(name)')
-        .in('department_id', groupDeptIds)
         .gte('date', brStart.date)
         .lte('date', brEnd.date);
 
