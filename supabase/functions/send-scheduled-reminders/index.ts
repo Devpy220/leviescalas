@@ -15,14 +15,13 @@ const MONTHS_SHORT_PT = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago',
 
 const ROLE_LABELS: Record<string, string> = { on_duty: 'Plantão', participant: 'Culto' };
 
-// Staggered reminder windows per department group (index % 3)
-const REMINDER_GROUPS = [
-  { windows: [{ type: '48h', hoursAhead: 48, label: 'em 2 dias' }, { type: '16h', hoursAhead: 16, label: 'amanhã' }] },
-  { windows: [{ type: '36h', hoursAhead: 36, label: 'amanhã' }, { type: '10h', hoursAhead: 10, label: 'em 10 horas' }] },
-  { windows: [{ type: '24h', hoursAhead: 24, label: 'amanhã' }, { type: '6h', hoursAhead: 6, label: 'em 6 horas' }] },
+// Single reminder window: 12h before schedule start.
+// All departments are merged and shuffled into one humanized batch.
+const REMINDER_WINDOWS = [
+  { type: '12h', hoursAhead: 12, label: 'em 12 horas' },
 ];
 
-const WINDOW_MARGIN_MINUTES = 20;
+const WINDOW_MARGIN_MINUTES = 35;
 
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
