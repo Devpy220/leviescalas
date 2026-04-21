@@ -159,6 +159,33 @@ export type Database = {
         }
         Relationships: []
       }
+      blackout_collection_prompts: {
+        Row: {
+          id: string
+          parsed_dates: string[] | null
+          responded_at: string | null
+          sent_at: string
+          target_month: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          parsed_dates?: string[] | null
+          responded_at?: string | null
+          sent_at?: string
+          target_month: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          parsed_dates?: string[] | null
+          responded_at?: string | null
+          sent_at?: string
+          target_month?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       calendar_sync_tokens: {
         Row: {
           created_at: string

@@ -50,3 +50,9 @@ verify_jwt = false
 
 [functions.cleanup-inactive-churches]
 verify_jwt = false
+
+[functions.zapi-webhook-receive]
+verify_jwt = false
+
+[functions.send-blackout-collection-prompt]
+verify_jwt = false
