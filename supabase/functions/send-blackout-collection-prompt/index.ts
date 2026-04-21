@@ -41,8 +41,8 @@ serve(async (req: Request): Promise<Response> => {
     const nowBRT = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
     const force = new URL(req.url).searchParams.get("force") === "1";
 
-    if (!force && !isLastDayOfMonth(nowBRT)) {
-      return new Response(JSON.stringify({ skipped: true, reason: "not last day of month" }), {
+    if (!force && !isThirdToLastDayOfMonth(nowBRT)) {
+      return new Response(JSON.stringify({ skipped: true, reason: "not third-to-last day of month" }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
@@ -51,6 +51,8 @@ serve(async (req: Request): Promise<Response> => {
     const targetMonth = new Date(nowBRT.getFullYear(), nowBRT.getMonth() + 1, 1);
     const targetMonthIso = `${targetMonth.getFullYear()}-${String(targetMonth.getMonth() + 1).padStart(2, "0")}-01`;
     const targetMonthName = MONTH_NAMES[targetMonth.getMonth()];
+    const targetMonthNum = targetMonth.getMonth() + 1; // 1-12
+    const daysLeft = daysUntilEndOfMonth(nowBRT); // normalmente 2
 
     // Find active volunteers (members with whatsapp)
     const { data: members, error: mErr } = await supabase
