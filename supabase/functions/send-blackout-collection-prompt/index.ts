@@ -96,18 +96,21 @@ serve(async (req: Request): Promise<Response> => {
       ]);
       const headEmoji = pickVariant(`${p.id}-emo-${targetMonthIso}`, ["📅", "🗓️", "⏰"]);
 
+      const mm = String(targetMonthNum); // sem zero à esquerda: 5/5
+      const lastDayCurrent = new Date(nowBRT.getFullYear(), nowBRT.getMonth() + 1, 0).getDate();
+
       const msg =
 `${headEmoji} *LEVI — Bloqueios de ${targetMonthName}*
 
-${greet}, *${firstName(p.name)}*! Amanhã começa *${targetMonthName}*.
+${greet}, *${firstName(p.name)}*! Em *${daysLeft} dia(s)* começa *${targetMonthName}*.
 
-Se tiver dias que *não pode servir*, responda esta mensagem com as datas. Exemplos:
-• 5, 12, 19
-• 05/${String(targetMonth.getMonth() + 1).padStart(2, "0")} e 22/${String(targetMonth.getMonth() + 1).padStart(2, "0")}
-• dia 7 e 14
+Se tiver dias que *não pode servir* em ${targetMonthName}, responda esta mensagem com as datas no formato *dia/mês*. Exemplos:
+• 5/${mm}, 12/${mm}, 19/${mm}
+• dia 7/${mm} e 14/${mm}
+• 22/${mm}
 
 Para liberar todos os dias, responda *nenhum*.
-Você tem até o dia 3 para responder.
+Você tem até o *dia ${lastDayCurrent}* (último dia deste mês) para responder.
 
 ${close}`;
 
