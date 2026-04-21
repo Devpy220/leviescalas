@@ -13,10 +13,16 @@ const MONTH_NAMES = [
   "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
 ];
 
-function isLastDayOfMonth(d: Date): boolean {
-  const next = new Date(d);
-  next.setDate(d.getDate() + 1);
-  return next.getMonth() !== d.getMonth();
+function isThirdToLastDayOfMonth(d: Date): boolean {
+  // Antepenúltimo dia: faltam exatamente 2 dias para o último dia do mês
+  // Ex: mês com 31 dias -> dia 29; mês com 30 -> dia 28; fevereiro 28 -> dia 26
+  const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  return d.getDate() === lastDay - 2;
+}
+
+function daysUntilEndOfMonth(d: Date): number {
+  const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  return lastDay - d.getDate();
 }
 
 function firstName(name: string): string {
