@@ -1,6 +1,6 @@
 import elsdigitalLogo from '@/assets/elsdigital-logo.jpeg';
 
-const APP_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'dev';
+const APP_VERSION = import.meta.env.VITE_APP_VERSION || 'dev';
 
 const Footer = () => {
   return (
