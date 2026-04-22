@@ -1159,6 +1159,42 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_queue: {
+        Row: {
+          attempts: number
+          created_at: string
+          id: string
+          message: string
+          origin: string | null
+          phone: string
+          scheduled_for: string
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          message: string
+          origin?: string | null
+          phone: string
+          scheduled_for?: string
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          message?: string
+          origin?: string | null
+          phone?: string
+          scheduled_for?: string
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       churches_member_view: {
