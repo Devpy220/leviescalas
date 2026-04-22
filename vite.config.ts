@@ -6,11 +6,12 @@ import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  process.env.VITE_APP_VERSION = new Date()
-    .toISOString()
-    .slice(0, 10)
-    .replace(/-/g, ".");
+  const buildDate = new Date();
+  const appVersion = `${buildDate.getFullYear()}.${String(buildDate.getMonth() + 1).padStart(2, "0")}.${String(buildDate.getDate()).padStart(2, "0")}.${String(buildDate.getHours()).padStart(2, "0")}${String(buildDate.getMinutes()).padStart(2, "0")}`;
   return {
+  define: {
+    __APP_VERSION__: JSON.stringify(appVersion),
+  },
   server: {
     host: "::",
     port: 8080,
