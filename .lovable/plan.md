@@ -1,115 +1,70 @@
 
 
-## Plano: Coleta automática de bloqueios via WhatsApp
+## Plano: Envios sem padrão (até 10 min entre msgs) + lembrete extra de 36h
 
-### Como vai funcionar
+### Objetivo
 
-**1. Aviso no último dia do mês (cron)**
+1. Eliminar qualquer padrão temporal nos envios em massa: delay aleatório de **10s a 600s (10 min)** entre mensagens, aplicado a **todos** os fluxos (lembretes, avisos do líder, broadcasts, suporte, coleta de bloqueios).
+2. Adicionar uma segunda janela de lembrete de escala: **36h antes** (além do já existente de 12h).
+3. Manter `delayTyping` randômico (3–8s) por mensagem.
+4. A primeira mensagem do lote **dispara imediatamente**; as demais entram na fila com intervalos aleatórios.
 
-Nova edge function `send-blackout-collection-prompt` rodando às **20:00 do último dia de cada mês** (cron). Para cada voluntário ativo (membro de pelo menos 1 departamento, com WhatsApp cadastrado):
+### Mudanças
 
-- Envia **uma única mensagem** consolidada (mesmo que esteja em vários departamentos):
-  > 📅 *Levi — Bloqueios do próximo mês*
-  >
-  > Olá *{nome}*! Amanhã começa **{mês}**.
-  > Se tiver dias que **não pode servir**, responda esta mensagem com as datas. Exemplos:
-  > • `5, 12, 19`
-  > • `05/12 e 22/12`
-  > • `dia 7 e 14`
-  >
-  > Para liberar todos os dias, responda *nenhum*.
-  > Você tem até o dia 3 para responder.
-  
-- Usa `sendWhatsAppBatch` (delay 10–50s entre voluntários + `delayTyping` 3–8s). Como geralmente passa de 3 destinatários, roda em background via `EdgeRuntime.waitUntil`.
+**1. `_shared/whatsapp-queue.ts`**
 
-**2. Recebimento de respostas (webhook Z-API)**
+Ampliar a faixa de delay padrão:
 
-Nova edge function pública `zapi-webhook-receive` (sem JWT). Configurada no painel Z-API como webhook de "mensagem recebida":
-
-- Recebe `{ phone, text }` da Z-API
-- Faz match do `phone` com `profiles.whatsapp` (normalizando dígitos)
-- Verifica se há um **prompt de coleta ativo** para esse usuário (janela: do dia 28 do mês atual até dia 5 do mês seguinte) — controlado por uma nova tabela `blackout_collection_prompts`
-- Faz parse das datas no texto:
-  - Aceita `5`, `05`, `05/12`, `5 de dezembro`, separadores `,`, `e`, `;`, espaço, quebra de linha
-  - Datas só com dia → assume mês seguinte ao prompt
-  - Palavra `nenhum` / `nada` / `livre` → limpa lista
-  - Ignora datas inválidas e anteriores a hoje
-- Para cada departamento do voluntário: faz `upsert` em `member_preferences`, **adicionando** as novas datas ao `blackout_dates` existente (sem ultrapassar `departments.max_blackout_dates`)
-- Marca o prompt como respondido e envia confirmação WhatsApp:
-  > ✅ Anotado, *{nome}*! Bloqueei: 05/12, 12/12, 19/12.
-  > Se errei alguma data, responda novamente.
-  
-  Se passar do limite: avisa quantas foram aceitas e quais ficaram de fora.
-
-**3. Tabela nova: `blackout_collection_prompts`**
-
-| coluna | tipo |
-|---|---|
-| `id` | uuid PK |
-| `user_id` | uuid |
-| `target_month` | date (1º dia do mês de bloqueio) |
-| `sent_at` | timestamptz |
-| `responded_at` | timestamptz nullable |
-| `parsed_dates` | date[] |
-
-RLS: só service_role. Garante idempotência (1 prompt por user/mês) e dá janela pra casar a resposta.
-
-**4. Cron**
-
-```sql
--- Roda diariamente 20:00 BRT (23:00 UTC); a função verifica internamente se hoje é o último dia do mês.
-SELECT cron.schedule(
-  'blackout-collection-prompt',
-  '0 23 * * *',
-  $$ SELECT net.http_post(
-    url := 'https://zuksvsxnchwskqytuxxq.supabase.co/functions/v1/send-blackout-collection-prompt',
-    headers := '{"Content-Type":"application/json","Authorization":"Bearer <ANON>"}'::jsonb
-  ); $$
-);
+```ts
+const minDelay = opts.minDelayMs ?? 10_000;   // 10s
+const maxDelay = opts.maxDelayMs ?? 600_000;  // 10 min
 ```
 
-### Fluxo
+A primeira mensagem (`i = 0`) já é enviada imediatamente — só insere `setTimeout` **entre** mensagens (lógica atual já faz isso, só os limites mudam).
 
-```text
-Último dia do mês 20:00 ──► cron ──► send-blackout-collection-prompt
-                                       │
-                                       ├─ insere blackout_collection_prompts (1/user)
-                                       └─ sendWhatsAppBatch (delay + typing)
+`backgroundThreshold` cai de 3 → **2** (qualquer lote com 2+ destinatários roda em background via `EdgeRuntime.waitUntil`, já que 2 msgs podem levar até 10 min).
 
-Voluntário responde "5, 12, 19" no WhatsApp
-        │
-        ▼
-  Z-API webhook ──► zapi-webhook-receive
-                      │
-                      ├─ acha prompt ativo do user
-                      ├─ parse datas → [2026-05-05, 2026-05-12, 2026-05-19]
-                      ├─ upsert member_preferences.blackout_dates (todos os depts do user)
-                      └─ envia confirmação WhatsApp
+**2. `send-scheduled-reminders/index.ts`**
+
+Adicionar a janela de 36h junto com a de 12h:
+
+```ts
+const REMINDER_WINDOWS = [
+  { type: '36h', hoursAhead: 36, label: 'em 36 horas' },
+  { type: '12h', hoursAhead: 12, label: 'em 12 horas' },
+];
 ```
 
-### Detalhes técnicos
+Como `schedule_reminders_sent` já tem `(schedule_id, reminder_type)` como chave, cada escala receberá **2 lembretes distintos** (36h e 12h) sem duplicar. Ambos passam pelo mesmo embaralhamento entre departamentos e pela fila com delay 10s–10min.
 
-- **Webhook URL pública**: `https://zuksvsxnchwskqytuxxq.supabase.co/functions/v1/zapi-webhook-receive` — após deploy precisa ser configurada no painel Z-API ("Ao receber").
-- **Validação `verify_jwt = false`** no `config.toml` para a webhook function.
-- **Parser** isolado num módulo testável dentro da função (`parseBlackoutDates(text, targetMonth) → Date[]`).
-- **Limite por departamento**: respeita `departments.max_blackout_dates` por departamento.
-- **Privacidade**: webhook só responde se o telefone bater com algum `profiles.whatsapp`; ignora silenciosamente o resto.
-- **Anti-spam**: as confirmações também passam pelo `delayTyping` (3–8s) — sem batch porque é resposta 1-a-1.
+**3. Demais funções em lote** (sem mudança de código — herdam o novo default)
+
+- `send-announcement-notification` (avisos imediatos do líder)
+- `send-delayed-announcements` (avisos 30 min depois)
+- `send-admin-broadcast` (comunicados LEVI)
+- `send-support-whatsapp` (mensagem PIX)
+- `send-blackout-collection-prompt` (coleta de bloqueios)
+
+Todas já usam `scheduleBatch`/`sendWhatsAppBatch` sem passar `minDelayMs`/`maxDelayMs`, então automaticamente passam a usar 10s–10min.
+
+**4. Confirmações 1-a-1 (webhook Z-API)**
+
+`zapi-webhook-receive` continua respondendo na hora (resposta direta ao usuário não entra em fila — só o `delayTyping` 3–8s é mantido).
+
+### Considerações
+
+- **Timeouts**: com até 10 min entre msgs, lotes grandes só funcionam via `EdgeRuntime.waitUntil` (já implementado). Threshold reduzido para 2 garante que praticamente todo lote vai pra background.
+- **Janela de 36h em escalas existentes**: a primeira execução do cron após o deploy pode disparar 36h para escalas que já estavam dentro dessa janela (não receberam ainda porque o tipo não existia). Isso é desejado — recupera o aviso que faltava.
+- **Embaralhamento**: o shuffle entre departamentos no `send-scheduled-reminders` continua, agora misturando também as duas janelas (36h e 12h) no mesmo ciclo.
 
 ### Arquivos
 
-- **Migration**: criar `blackout_collection_prompts` + cron job
-- **Criar**: `supabase/functions/send-blackout-collection-prompt/index.ts`
-- **Criar**: `supabase/functions/zapi-webhook-receive/index.ts`
-- **Editar**: `supabase/config.toml` (adicionar bloco `[functions.zapi-webhook-receive]` com `verify_jwt = false`)
+- **Editar**: `supabase/functions/_shared/whatsapp-queue.ts` — defaults de delay e threshold
+- **Editar**: `supabase/functions/send-scheduled-reminders/index.ts` — adicionar janela de 36h
 
 ### Não faz parte
 
-- Não cria UI nova — tudo é background + WhatsApp
-- Não altera `MemberPreferences.tsx` (continua funcionando manualmente)
-- Não envia lembrete de "você não respondeu" (pode ser fase 2)
-
-### Dependência manual (você precisa fazer 1x)
-
-Depois do deploy, abrir o painel Z-API → **Webhooks** → "Ao receber" → colar a URL `https://zuksvsxnchwskqytuxxq.supabase.co/functions/v1/zapi-webhook-receive`. Sem isso o LEVI não recebe as respostas.
+- Não altera `send-whatsapp-notification` (delayTyping 3–8s já está aleatório e segue igual)
+- Não altera o webhook de resposta nem envios pontuais (`send-schedule-notification`, `send-contact-email`)
+- Não muda o cron da coleta de bloqueios nem o conteúdo das mensagens
 
