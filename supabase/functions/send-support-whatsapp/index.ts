@@ -27,7 +27,7 @@ serve(async (req: Request): Promise<Response> => {
       day: "2-digit",
     }).formatToParts(now);
     const dayOfMonth = parseInt(brParts.find((p) => p.type === "day")?.value ?? "0");
-    const SEND_DAYS = [1, 8, 16, 24];
+    const SEND_DAYS = [5, 20];
 
     if (!SEND_DAYS.includes(dayOfMonth)) {
       return new Response(
