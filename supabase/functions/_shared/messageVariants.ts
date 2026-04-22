@@ -84,5 +84,5 @@ export function buildSupportMessage(params: {
   const emoji = pickVariant(seed + "e", SUPPORT_EMOJIS);
   const greeting = pickVariant(seed + "g", GREETINGS);
   const closing = pickVariant(seed + "c", CLOSINGS);
-  return `${emoji} *Apoie o LEVI*\n\n${greeting}, *${params.userName}*!\n\nO LEVI é gratuito e depende do seu apoio para continuar funcionando. Qualquer valor faz a diferença!\n\n💛 *Toque para copiar a chave PIX:*\n👉 https://leviescalas.com.br/apoiar\n\n_Ou copie manualmente:_\n💰 *PIX:* ${params.pixKey}\n👤 *Titular:* ${params.titular}\n\n🙏 Obrigado pelo carinho!\n\n${closing}`;
+  return `${emoji} *Apoie o LEVI*\n\n${greeting}, *${params.userName}*!\n\nO LEVI é gratuito e depende do seu apoio para continuar funcionando. Qualquer valor faz a diferença!\n\n💛 *Toque no link abaixo para copiar a chave PIX com 1 clique:*\n\n👉 https://leviescalas.com.br/apoiar\n\n_(QR Code, chave PIX e opção de cartão disponíveis na página)_\n\n👤 *Titular:* ${params.titular}\n\n🙏 Obrigado pelo carinho!\n\n${closing}`;
 }
