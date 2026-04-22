@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useAuth } from '@/hooks/useAuth';
+import { isRecoveryLinkActive } from '@/components/AuthRecoveryRedirect';
 
 interface AdminRedirectProps {
   children: React.ReactNode;
@@ -17,35 +18,45 @@ export function AdminRedirect({ children }: AdminRedirectProps) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  useEffect(() => {
-    // Wait for loading to complete
-    if (authLoading || adminLoading) return;
+  // CRITICAL: Never redirect admins while a password-recovery link is being
+  // processed, or while the user is on /auth (where the reset-password form lives).
+  // Otherwise the brief session created by the recovery link would bounce the
+  // user to /admin before they can set a new password.
+  const recoveryActive =
+    isRecoveryLinkActive() || location.pathname === '/auth';
 
-    // If user is admin and not already in admin pages, redirect to /admin
+  useEffect(() => {
+    if (authLoading || adminLoading) return;
+    if (recoveryActive) return;
+
     if (user && isAdmin) {
       const isInAdminArea = location.pathname.startsWith('/admin');
       const isInJoinArea = location.pathname.startsWith('/join');
       const isInPublicArea = location.pathname.startsWith('/igreja');
-      const isExempt = isInAdminArea || isInJoinArea || isInPublicArea;
-      
+      const isInAuthArea = location.pathname.startsWith('/auth');
+      const isExempt = isInAdminArea || isInJoinArea || isInPublicArea || isInAuthArea;
+
       if (!isExempt) {
         navigate('/admin', { replace: true });
       }
     }
-  }, [user, isAdmin, authLoading, adminLoading, location.pathname, navigate]);
+  }, [user, isAdmin, authLoading, adminLoading, location.pathname, navigate, recoveryActive]);
 
-  // If still loading, render children (they'll handle their own loading states)
   if (authLoading || adminLoading) {
     return <>{children}</>;
   }
 
-  // If user is admin and not in admin area, don't render anything (redirect happening)
+  if (recoveryActive) {
+    return <>{children}</>;
+  }
+
   if (user && isAdmin) {
     const isInAdminArea = location.pathname.startsWith('/admin');
     const isInJoinArea = location.pathname.startsWith('/join');
     const isInPublicArea = location.pathname.startsWith('/igreja');
-    const isExempt = isInAdminArea || isInJoinArea || isInPublicArea;
-    
+    const isInAuthArea = location.pathname.startsWith('/auth');
+    const isExempt = isInAdminArea || isInJoinArea || isInPublicArea || isInAuthArea;
+
     if (!isExempt) {
       return null;
     }
