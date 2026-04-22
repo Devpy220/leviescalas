@@ -5,12 +5,12 @@ import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
-  define: {
-    __APP_VERSION__: JSON.stringify(
-      new Date().toISOString().slice(0, 10).replace(/-/g, ".")
-    ),
-  },
+export default defineConfig(({ mode }) => {
+  process.env.VITE_APP_VERSION = new Date()
+    .toISOString()
+    .slice(0, 10)
+    .replace(/-/g, ".");
+  return {
   server: {
     host: "::",
     port: 8080,
