@@ -35,6 +35,7 @@ import CompleteProfile from "./pages/CompleteProfile";
 import NotFound from "./pages/NotFound";
 
 import ConfirmSchedule from "./pages/ConfirmSchedule";
+import SupportPix from "./pages/SupportPix";
 
 const queryClient = new QueryClient();
 
@@ -118,6 +119,7 @@ const App = () => (
                   } />
                   <Route path="/payment" element={<Payment />} />
                   <Route path="/apoio" element={<Payment />} />
+                  <Route path="/apoiar" element={<SupportPix />} />
                   <Route path="/payment-success" element={<PaymentSuccess />} />
                   
                   {/* Church management - protected routes */}
