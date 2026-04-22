@@ -56,7 +56,8 @@ export function AdminRedirect({ children }: AdminRedirectProps) {
     const isInJoinArea = location.pathname.startsWith('/join');
     const isInPublicArea = location.pathname.startsWith('/igreja');
     const isInAuthArea = location.pathname.startsWith('/auth');
-    const isExempt = isInAdminArea || isInJoinArea || isInPublicArea || isInAuthArea;
+    const isInSupportArea = location.pathname.startsWith('/apoiar') || location.pathname.startsWith('/payment');
+    const isExempt = isInAdminArea || isInJoinArea || isInPublicArea || isInAuthArea || isInSupportArea;
 
     if (!isExempt) {
       return null;
