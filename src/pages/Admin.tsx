@@ -143,7 +143,7 @@ export default function Admin() {
   // Broadcast state
   const [broadcastTitle, setBroadcastTitle] = useState('');
   const [broadcastMessage, setBroadcastMessage] = useState('');
-  const [broadcastChannels, setBroadcastChannels] = useState<string[]>(['inapp', 'email', 'push', 'telegram', 'whatsapp']);
+  const [broadcastChannels] = useState<string[]>(['inapp', 'whatsapp']);
   const [sendingBroadcast, setSendingBroadcast] = useState(false);
   const [showBroadcastConfirm, setShowBroadcastConfirm] = useState(false);
   const [broadcastHistory, setBroadcastHistory] = useState<any[]>([]);
@@ -693,13 +693,7 @@ export default function Admin() {
 
       if (error) throw error;
 
-      const summary = [
-        `${data.recipients} in-app`,
-        broadcastChannels.includes('email') ? `${data.email_sent} e-mail` : null,
-        broadcastChannels.includes('push') ? `${data.push_sent} push` : null,
-        broadcastChannels.includes('telegram') ? `${data.telegram_sent} Telegram` : null,
-        broadcastChannels.includes('whatsapp') ? `${data.whatsapp_sent} WhatsApp` : null,
-      ].filter(Boolean).join(', ');
+      const summary = `${data.recipients} in-app, ${data.whatsapp_queued ?? data.whatsapp_sent ?? 0} WhatsApp na fila`;
 
       toast({
         title: '📢 Comunicado enviado!',
@@ -886,29 +880,13 @@ export default function Admin() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Canais de envio</Label>
-                  <div className="flex flex-wrap gap-4">
-                    {[
-                      { id: 'inapp', label: '📱 In-app' },
-                      { id: 'email', label: '📧 E-mail' },
-                      { id: 'push', label: '🔔 Push' },
-                      { id: 'telegram', label: '✈️ Telegram' },
-                      { id: 'whatsapp', label: '📲 WhatsApp' },
-                    ].map((ch) => (
-                      <div key={ch.id} className="flex items-center gap-2">
-                        <Checkbox
-                          id={`ch-${ch.id}`}
-                          checked={broadcastChannels.includes(ch.id)}
-                          onCheckedChange={(checked) => {
-                            setBroadcastChannels(prev =>
-                              checked ? [...prev, ch.id] : prev.filter(c => c !== ch.id)
-                            );
-                          }}
-                        />
-                        <Label htmlFor={`ch-${ch.id}`} className="cursor-pointer text-sm">{ch.label}</Label>
-                      </div>
-                    ))}
+                  <Label>Canal de envio</Label>
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-muted/30 text-sm">
+                    📲 WhatsApp + 📱 Notificação no app
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    Envio único pelo WhatsApp (Z-API) com intervalos aleatórios para evitar bloqueio.
+                  </p>
                 </div>
 
                 <AlertDialog open={showBroadcastConfirm} onOpenChange={setShowBroadcastConfirm}>
@@ -926,13 +904,7 @@ export default function Admin() {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Confirmar envio do comunicado</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Você está prestes a enviar o comunicado <strong>"{broadcastTitle}"</strong> para <strong>{broadcastMode === 'all' ? `${allProfiles.length} usuários` : `${selectedRecipients.length} usuário(s) selecionado(s)`}</strong> pelos canais: {broadcastChannels.map(c => ({
-                          inapp: 'In-app',
-                          email: 'E-mail',
-                          push: 'Push',
-                          telegram: 'Telegram',
-                          whatsapp: 'WhatsApp',
-                        }[c])).join(', ')}.
+                        Você está prestes a enviar o comunicado <strong>"{broadcastTitle}"</strong> para <strong>{broadcastMode === 'all' ? `${allProfiles.length} usuários` : `${selectedRecipients.length} usuário(s) selecionado(s)`}</strong> via WhatsApp e notificação interna.
                         <br /><br />
                         Esta ação não pode ser desfeita.
                       </AlertDialogDescription>
@@ -992,7 +964,7 @@ export default function Admin() {
                                 </div>
                               </TableCell>
                               <TableCell className="text-sm">
-                                {b.recipients_count} | ✉️{b.email_sent} 🔔{b.push_sent} ✈️{b.telegram_sent}
+                                {b.recipients_count} | 📲 {b.whatsapp_sent}
                               </TableCell>
                             </TableRow>
                           ))}
