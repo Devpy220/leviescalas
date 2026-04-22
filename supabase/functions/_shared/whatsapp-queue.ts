@@ -27,8 +27,8 @@ export async function sendWhatsAppBatch(
   recipients: WhatsAppRecipient[],
   opts: BatchOptions = {},
 ): Promise<BatchResult> {
-  const minDelay = opts.minDelayMs ?? 10_000;
-  const maxDelay = opts.maxDelayMs ?? 50_000;
+  const minDelay = opts.minDelayMs ?? 10_000;    // 10s
+  const maxDelay = opts.maxDelayMs ?? 600_000;   // 10 min
   const minTyping = opts.minTypingSec ?? 3;
   const maxTyping = opts.maxTypingSec ?? 8;
 
@@ -78,7 +78,7 @@ export function scheduleBatch(
   recipients: WhatsAppRecipient[],
   opts: BatchOptions & { backgroundThreshold?: number } = {},
 ): { backgrounded: boolean; promise: Promise<BatchResult> } {
-  const threshold = opts.backgroundThreshold ?? 3;
+  const threshold = opts.backgroundThreshold ?? 2;
   const promise = sendWhatsAppBatch(supabaseUrl, serviceRoleKey, recipients, opts);
 
   if (recipients.length > threshold) {
