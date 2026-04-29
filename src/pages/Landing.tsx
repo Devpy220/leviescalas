@@ -256,6 +256,179 @@ function FeatureCube() {
 // ── Feature data ─────────────────────────────────────────────────────────────
 // slides are now built dynamically in FeatureCarousel using t()
 
+// ── Feature Grid (todas as funcionalidades reais do LEVI) ───────────────────
+function FeatureGrid() {
+  const { t } = useTranslation();
+  const features = [
+    {
+      icon: Sparkles,
+      title: 'Geração Inteligente de Escalas',
+      desc: 'IA monta a escala do mês inteiro respeitando disponibilidade, bloqueios e setores.',
+      color: 'from-violet-500/15 to-violet-500/5',
+      iconColor: 'text-violet-600',
+    },
+    {
+      icon: Calendar,
+      title: 'Disponibilidade Semanal',
+      desc: 'Cada voluntário marca os dias e turnos que pode servir — uma vez só, vale para sempre.',
+      color: 'from-amber-500/15 to-amber-500/5',
+      iconColor: 'text-amber-600',
+    },
+    {
+      icon: CalendarDays,
+      title: 'Bloqueio de Datas',
+      desc: 'Voluntário bloqueia dias específicos pelo app ou respondendo no WhatsApp.',
+      color: 'from-rose-500/15 to-rose-500/5',
+      iconColor: 'text-rose-600',
+    },
+    {
+      icon: MessageCircle,
+      title: 'Notificações via WhatsApp',
+      desc: 'Confirmações, lembretes e avisos chegam direto no WhatsApp do voluntário.',
+      color: 'from-emerald-500/15 to-emerald-500/5',
+      iconColor: 'text-emerald-600',
+    },
+    {
+      icon: RefreshCw,
+      title: 'Trocas de Escala',
+      desc: 'Pedido e aceite mútuo entre voluntários, sem o líder precisar mediar.',
+      color: 'from-sky-500/15 to-sky-500/5',
+      iconColor: 'text-sky-600',
+    },
+    {
+      icon: CheckCircle2,
+      title: 'Confirmação por Link',
+      desc: 'Voluntário confirma presença com um clique no link recebido pelo WhatsApp.',
+      color: 'from-teal-500/15 to-teal-500/5',
+      iconColor: 'text-teal-600',
+    },
+    {
+      icon: Bell,
+      title: 'Lembretes Automáticos',
+      desc: 'Avisos escalonados antes da escala — 48h, 24h e no dia.',
+      color: 'from-indigo-500/15 to-indigo-500/5',
+      iconColor: 'text-indigo-600',
+    },
+    {
+      icon: Megaphone,
+      title: 'Mural de Avisos',
+      desc: 'Líder publica comunicados que aparecem como popup e vão para o WhatsApp.',
+      color: 'from-pink-500/15 to-pink-500/5',
+      iconColor: 'text-pink-600',
+    },
+    {
+      icon: LayoutGrid,
+      title: 'Múltiplos Departamentos',
+      desc: 'Louvor, mídia, recepção, kids… cada um com seus líderes, setores e regras.',
+      color: 'from-fuchsia-500/15 to-fuchsia-500/5',
+      iconColor: 'text-fuchsia-600',
+    },
+    {
+      icon: Users,
+      title: 'Setores e Funções',
+      desc: 'Defina funções (vocal, guitarra, câmera) e setores para escalar com precisão.',
+      color: 'from-cyan-500/15 to-cyan-500/5',
+      iconColor: 'text-cyan-600',
+    },
+    {
+      icon: Church,
+      title: 'Página Pública da Igreja',
+      desc: 'leviescalas.com.br/igreja/sua-igreja com calendário visível para todos.',
+      color: 'from-orange-500/15 to-orange-500/5',
+      iconColor: 'text-orange-600',
+    },
+    {
+      icon: Globe,
+      title: 'Embed no Site da Igreja',
+      desc: 'Incorpore as escalas no site da sua igreja com um simples iframe.',
+      color: 'from-lime-500/15 to-lime-500/5',
+      iconColor: 'text-lime-600',
+    },
+    {
+      icon: CalendarSync,
+      title: 'Sincronização com Calendário',
+      desc: 'Adicione suas escalas no Google Calendar, iCal ou Outlook automaticamente.',
+      color: 'from-blue-500/15 to-blue-500/5',
+      iconColor: 'text-blue-600',
+    },
+    {
+      icon: FileSpreadsheet,
+      title: 'Exportação em Excel',
+      desc: 'Baixe a escala mensal em planilha para imprimir ou compartilhar.',
+      color: 'from-green-500/15 to-green-500/5',
+      iconColor: 'text-green-600',
+    },
+    {
+      icon: Smartphone,
+      title: 'App PWA Instalável',
+      desc: 'Instale no celular como um app nativo — Android, iOS e Desktop.',
+      color: 'from-purple-500/15 to-purple-500/5',
+      iconColor: 'text-purple-600',
+    },
+    {
+      icon: Clock,
+      title: 'Detecção de Conflitos',
+      desc: 'Bloqueia escalas duplas ou conflitos entre departamentos automaticamente.',
+      color: 'from-red-500/15 to-red-500/5',
+      iconColor: 'text-red-600',
+    },
+    {
+      icon: Shield,
+      title: 'Convite Restrito',
+      desc: 'Acesso só por link de convite. Sem cadastro aberto, sem bots.',
+      color: 'from-slate-500/15 to-slate-500/5',
+      iconColor: 'text-slate-600',
+    },
+    {
+      icon: HeartHandshake,
+      title: 'Gratuito para Igrejas',
+      desc: 'Sem mensalidade. Mantido por doações via PIX e cartão.',
+      color: 'from-yellow-500/15 to-yellow-500/5',
+      iconColor: 'text-yellow-600',
+    },
+  ];
+
+  return (
+    <div className="mt-16 sm:mt-20">
+      <div className="text-center mb-10">
+        <p className="text-primary text-xs font-semibold uppercase tracking-[0.15em] mb-2">Tudo o que o LEVI faz</p>
+        <h3 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">
+          Funcionalidades em <span className="text-primary">um só lugar</span>
+        </h3>
+        <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto mt-3">
+          Da geração inteligente da escala até o lembrete no WhatsApp do voluntário — todo o fluxo da escala da sua igreja.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+        {features.map((f, i) => {
+          const Icon = f.icon;
+          return (
+            <div
+              key={i}
+              className={`group relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br ${f.color} p-5 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300`}
+              style={{
+                animationDelay: `${i * 40}ms`,
+              }}
+            >
+              <div className="flex items-start gap-3">
+                <div className={`w-11 h-11 rounded-xl bg-card border border-border/60 flex items-center justify-center flex-shrink-0 ${f.iconColor} group-hover:scale-110 transition-transform duration-300`}>
+                  <Icon className="w-5 h-5" strokeWidth={2} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-semibold text-foreground text-[15px] leading-snug mb-1.5">{f.title}</h4>
+                  <p className="text-[13px] text-muted-foreground leading-relaxed">{f.desc}</p>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+
 // ── Feature Carousel ────────────────────────────────────────────────────────
 function FeatureCarousel() {
   const { t } = useTranslation();
