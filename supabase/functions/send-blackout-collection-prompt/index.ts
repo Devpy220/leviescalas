@@ -166,24 +166,34 @@ serve(async (req: Request): Promise<Response> => {
 
       const msg =
 `${headEmoji} *LEVI — Disponibilidade de ${targetMonthName}*
+━━━━━━━━━━━━━━━━━━━━
 
-${greet}, *${firstName(p.name)}*! Em *${daysLeft} dia(s)* começa *${targetMonthName}*.
+${greet}, *${firstName(p.name)}*! 👋
 
-Estes são os dias em que você pode ser escalado:
+📖 *Leia com atenção, por favor.*
+
+Em *${daysLeft} dia(s)* começa *${targetMonthName}* e precisamos saber quando você pode servir.
+
+━━━━━━━━━━━━━━━━━━━━
+📆 *Dias possíveis para você:*
 ${linesStr}${moreLine}
+━━━━━━━━━━━━━━━━━━━━
 
-Responda de uma destas formas:
+✍️ *Como responder* (escolha 1 das 3 opções):
 
-🔴 *Para BLOQUEAR dias:*
-   _bloquear 5/${targetMonth.getMonth() + 1}, 12/${targetMonth.getMonth() + 1}_
+🔴 *1) BLOQUEAR alguns dias*
+   Envie: _bloquear 5/${targetMonth.getMonth() + 1}, 12/${targetMonth.getMonth() + 1}_
 
-🟢 *Para SERVIR APENAS nestes dias* (bloqueia o restante):
-   _servir 18/${targetMonth.getMonth() + 1}, 25/${targetMonth.getMonth() + 1}_
+🟢 *2) SERVIR APENAS nestes dias*
+   (o restante fica bloqueado)
+   Envie: _servir 18/${targetMonth.getMonth() + 1}, 25/${targetMonth.getMonth() + 1}_
 
-✅ *Para liberar TODOS os dias:*
-   _nenhum_ (ou simplesmente não responda)${limitLine}
+✅ *3) LIBERAR todos os dias*
+   Envie: _nenhum_
+   (ou simplesmente não responda)
+${limitLine}
 
-Você tem até *dia ${lastDayCurrent}* para responder.
+⏳ Prazo: até *dia ${lastDayCurrent}*.
 
 ${close}`;
 
