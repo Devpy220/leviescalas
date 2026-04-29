@@ -45,6 +45,7 @@ import ScheduleCountDialog from '@/components/department/ScheduleCountDialog';
 import AnnouncementBoard from '@/components/department/AnnouncementBoard';
 
 import CalendarSyncDialog from '@/components/department/CalendarSyncDialog';
+import { LeaderTour } from '@/components/LeaderTour';
 import { exportToPDF, exportToExcel } from '@/lib/exportSchedules';
 
 import { format } from 'date-fns';
@@ -486,7 +487,15 @@ export default function Department() {
           onInstallClick={install}
           onSignOut={handleSignOut}
         />
-        
+
+        {isLeader && department && (
+          <LeaderTour
+            departmentId={department.id}
+            departmentName={department.name}
+            inviteCode={department.invite_code}
+          />
+        )}
+
         <div className={`${sidebarExpanded ? 'ml-56' : 'ml-16'} transition-all duration-300`}>
         {/* Sub-header with department info */}
         <div className="border-b border-border/50 bg-card/50">

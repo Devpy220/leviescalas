@@ -33,6 +33,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { Link } from 'react-router-dom';
 import { LeviLogo } from '@/components/LeviLogo';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ChurchOnboardingGuide } from '@/components/ChurchOnboardingGuide';
 
 // CNPJ validation algorithm
 function isValidCNPJ(cnpj: string): boolean {
@@ -496,54 +497,17 @@ export default function ChurchSetup() {
         </div>
       </main>
 
-      {/* Success Dialog */}
-      <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-center justify-center">
-              <CheckCircle2 className="w-6 h-6 text-emerald-500" />
-              Igreja Cadastrada!
-            </DialogTitle>
-            <DialogDescription className="text-center">
-              Sua igreja <strong>{createdChurch?.name}</strong> foi cadastrada com sucesso!
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="py-4 space-y-4">
-            <Alert className="border-primary/20 bg-primary/5">
-              <Info className="h-4 w-4 text-primary" />
-              <AlertDescription className="text-sm">
-                Enviamos um email para o endereço da igreja com o <strong>link para criar departamentos</strong>. 
-                Use esse link para criar os ministérios (Louvor, Mídia, etc.). 
-                Dentro de cada departamento você terá um link para convidar voluntários.
-              </AlertDescription>
-            </Alert>
-
-            <Alert className="border-amber-500/20 bg-amber-500/5">
-              <AlertDescription className="text-sm text-amber-700 dark:text-amber-400">
-                ⚠️ Se nenhum departamento for criado em <strong>5 dias</strong>, a igreja será removida automaticamente.
-              </AlertDescription>
-            </Alert>
-          </div>
-
-          <div className="flex flex-col gap-3">
-            <Button 
-              className="w-full gradient-primary text-primary-foreground"
-              onClick={handleCreateDepartment}
-            >
-              Criar Departamento Agora
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-            <Button 
-              variant="ghost"
-              className="w-full"
-              onClick={handleContinue}
-            >
-              Ir para o Dashboard
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Onboarding Guide */}
+      {createdChurch && (
+        <ChurchOnboardingGuide
+          open={showSuccessDialog}
+          onOpenChange={setShowSuccessDialog}
+          churchName={createdChurch.name}
+          churchCode={createdChurch.code}
+          onCreateDepartment={handleCreateDepartment}
+          onGoToDashboard={handleContinue}
+        />
+      )}
     </div>
   );
 }
