@@ -172,7 +172,7 @@ async function startSwap(deps: SwapFlowDeps, profile: Profile): Promise<void> {
     const deptName = s.departments?.name ?? "";
     msg += `*${i + 1})* ${fmtDate(s.date)} ${fmtTime(s.time_start)}-${fmtTime(s.time_end)} — ${deptName}\n`;
   });
-  msg += `\nResponda com o *número* da escala (ou "cancelar").\n\n_LEVI_`;
+  msg += `\nResponda com o *número* da escala (ou "cancelar").\n\n💡 _Dica: configure um som personalizado para o LEVI em "Notificações personalizadas" da nossa conversa — assim você nunca perde uma escala._\n\n_LEVI_`;
 
   await deps.supabase.from("whatsapp_swap_sessions").insert({
     user_id: profile.id,
