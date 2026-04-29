@@ -560,7 +560,7 @@ export default function Landing() {
               onClick={() => { setShowContact(true); setContactSent(false); }}
               className="hidden md:inline-flex px-3 py-2 text-sm text-muted-foreground hover:text-foreground rounded-lg transition-colors"
             >
-              {t('landing.contact')}
+              {t('landing.contactUs')}
             </button>
             <LanguageSelector />
             <ThemeToggle />
@@ -615,14 +615,6 @@ export default function Landing() {
                   >
                     <Church className="w-4 h-4 mr-2" />
                     {t('landing.registerChurch')}
-                  </Button>
-                  <Button
-                    size="default"
-                    variant="ghost"
-                    className="text-muted-foreground hover:text-foreground rounded-full px-6 text-sm"
-                    onClick={() => { setShowContact(true); setContactSent(false); }}
-                  >
-                    {t('landing.contactUs')}
                   </Button>
                 </div>
 
