@@ -37,6 +37,16 @@ import {
   Mail,
   Send,
   Church,
+  MessageCircle,
+  Smartphone,
+  Shield,
+  CalendarDays,
+  Megaphone,
+  FileSpreadsheet,
+  Globe,
+  CalendarSync,
+  Clock,
+  HeartHandshake,
 } from 'lucide-react';
 import { LeviLogo } from '@/components/LeviLogo';
 import { LeviTypewriter } from '@/components/LeviTypewriter';
