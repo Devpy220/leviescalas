@@ -57,6 +57,8 @@ interface ScheduleData {
 export default function ChurchPublic() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isEmbed = searchParams.get('embed') === '1';
   const [church, setChurch] = useState<ChurchData | null>(null);
   const [departments, setDepartments] = useState<DepartmentData[]>([]);
   const [schedules, setSchedules] = useState<ScheduleData[]>([]);
