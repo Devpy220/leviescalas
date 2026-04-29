@@ -150,7 +150,7 @@ const handler = async (req: Request): Promise<Response> => {
             const emoji = pickVariant(seed + "e", REMINDER_EMOJIS);
             const greeting = pickVariant(seed + "g", GREETINGS);
             const closing = pickVariant(seed + "c", CLOSINGS);
-            const whatsappMsg = `${emoji} *Lembrete — ${dept.name}*\n\n${greeting}, *${profile.name}*!\n\n📆 ${weekday}, ${dayNum} de ${monthFull}\n⏰ ${formatTime(schedule.time_start)} às ${formatTime(schedule.time_end)}${sectorSuffix}${roleSuffix}\n\n${closing}`;
+            const whatsappMsg = `${emoji} *Lembrete — ${dept.name}*\n━━━━━━━━━━━━━━━━━━━━\n\n${greeting}, *${profile.name}*! 👋\n\n📖 _Leia com atenção:_\nVocê tem uma *escala próxima*.\n\n━━━━━━━━━━━━━━━━━━━━\n📆 *Data:* ${weekday}, ${dayNum} de ${monthFull}\n⏰ *Horário:* ${formatTime(schedule.time_start)} às ${formatTime(schedule.time_end)}${sectorSuffix}${roleSuffix}\n━━━━━━━━━━━━━━━━━━━━\n\n🙏 Conto com você!\nSe não puder ir, envie *"troca"* para combinar com um colega.\n\n${closing}`;
 
             waRecipients.push({ phone: (profile as any).whatsapp, message: whatsappMsg });
           } else {
