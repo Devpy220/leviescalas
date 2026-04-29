@@ -883,7 +883,7 @@ export default function Landing() {
 </iframe>`}
                 </pre>
                 <div className="mt-3 rounded-lg border border-dashed border-border p-4 text-center">
-                  <CalendarIcon className="w-6 h-6 text-primary mx-auto mb-1" />
+                  <Calendar className="w-6 h-6 text-primary mx-auto mb-1" />
                   <p className="text-xs text-muted-foreground">
                     Calendário de escalas embutido no site
                   </p>
