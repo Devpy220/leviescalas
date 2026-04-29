@@ -24,7 +24,7 @@ import {
   Calendar,
   Users,
   Bell,
-  Zap,
+  
   Eye,
   EyeOff,
   Loader2,
