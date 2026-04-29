@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Footer from '@/components/Footer';
 import { 
   Church, 
@@ -57,6 +57,8 @@ interface ScheduleData {
 export default function ChurchPublic() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isEmbed = searchParams.get('embed') === '1';
   const [church, setChurch] = useState<ChurchData | null>(null);
   const [departments, setDepartments] = useState<DepartmentData[]>([]);
   const [schedules, setSchedules] = useState<ScheduleData[]>([]);
@@ -191,51 +193,53 @@ export default function ChurchPublic() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="sticky top-0 z-50 glass border-b border-border/50">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <LeviLogo />
-            <span className="font-display text-xl font-bold text-foreground">LEVI</span>
-          </Link>
-          
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={handleShare}>
-              <Share2 className="w-5 h-5" />
-            </Button>
-            <ThemeToggle />
+      {/* Header — hidden in embed mode */}
+      {!isEmbed && (
+        <header className="sticky top-0 z-50 glass border-b border-border/50">
+          <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+            <Link to="/" className="flex items-center gap-2">
+              <LeviLogo />
+              <span className="font-display text-xl font-bold text-foreground">LEVI</span>
+            </Link>
             
-            {/* Auth buttons */}
-            {session ? (
-              <div className="flex items-center gap-2">
-                <Link to={`/auth?church=${slug}&forceLogin=true`}>
-                  <Button variant="outline" size="sm">
-                    Trocar Conta
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" onClick={handleShare}>
+                <Share2 className="w-5 h-5" />
+              </Button>
+              <ThemeToggle />
+              
+              {/* Auth buttons */}
+              {session ? (
+                <div className="flex items-center gap-2">
+                  <Link to={`/auth?church=${slug}&forceLogin=true`}>
+                    <Button variant="outline" size="sm">
+                      Trocar Conta
+                    </Button>
+                  </Link>
+                  <Button onClick={() => navigate('/dashboard')} className="gradient-vibrant text-white">
+                    Meu Painel
                   </Button>
-                </Link>
-                <Button onClick={() => navigate('/dashboard')} className="gradient-vibrant text-white">
-                  Meu Painel
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Link to={`/auth?church=${slug}&forceLogin=true`}>
-                  <Button variant="outline" size="sm">
-                    <LogIn className="w-4 h-4 mr-1" />
-                    Entrar
-                  </Button>
-                </Link>
-                <Link to={`/auth?tab=register&church=${slug}`}>
-                  <Button size="sm" className="gradient-vibrant text-white">
-                    <UserPlus className="w-4 h-4 mr-1" />
-                    Criar Conta
-                  </Button>
-                </Link>
-              </div>
-            )}
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Link to={`/auth?church=${slug}&forceLogin=true`}>
+                    <Button variant="outline" size="sm">
+                      <LogIn className="w-4 h-4 mr-1" />
+                      Entrar
+                    </Button>
+                  </Link>
+                  <Link to={`/auth?tab=register&church=${slug}`}>
+                    <Button size="sm" className="gradient-vibrant text-white">
+                      <UserPlus className="w-4 h-4 mr-1" />
+                      Criar Conta
+                    </Button>
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       <main className="container mx-auto px-4 py-8 flex-1">
         {/* Church Header */}
@@ -467,7 +471,7 @@ export default function ChurchPublic() {
         </Tabs>
       </main>
       
-      <Footer />
+      {!isEmbed && <Footer />}
     </div>
   );
 }

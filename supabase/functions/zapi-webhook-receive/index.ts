@@ -1,5 +1,10 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import {
+  buildCandidateDays,
+  getActiveSlotsForUser,
+  type AvailabilityRow,
+} from "../_shared/scheduleDates.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,25 +15,35 @@ function normalizePhone(p: string): string {
   return (p || "").replace(/\D/g, "");
 }
 
-// Parse blackout dates from free-text message.
-// targetMonth = first day of the month being blocked.
-export function parseBlackoutDates(text: string, targetMonth: Date): Date[] {
-  const lower = (text || "").toLowerCase().trim();
-  if (!lower) return [];
+export type ResponseMode = "block" | "serve_only" | "none";
 
-  // Clear keywords
-  if (/\b(nenhum|nenhuma|nada|livre|todos|disponivel|disponível)\b/.test(lower)) {
-    return [];
+export interface ParsedResponse {
+  mode: ResponseMode;
+  dates: string[]; // ISO YYYY-MM-DD
+}
+
+// Parse the user's reply. Detects mode from keywords, plus dates.
+export function parseUserResponse(text: string, targetMonth: Date): ParsedResponse {
+  const lower = (text || "").toLowerCase().trim();
+  if (!lower) return { mode: "none", dates: [] };
+
+  // Clear keywords -> liberar todos
+  if (/\b(nenhum|nenhuma|nada|livre|todos|disponivel|disponível|sem bloqueio)\b/.test(lower) &&
+      !/\b(servir|posso servir|apenas|somente|so|só)\b/.test(lower)) {
+    return { mode: "none", dates: [] };
   }
 
-  const tMonth = targetMonth.getMonth(); // 0-based
+  // Detect serve-only mode
+  const serveOnly =
+    /\b(servir|posso servir|vou servir|apenas|somente|so|só|disponivel em|disponível em)\b/.test(lower);
+
+  const tMonth = targetMonth.getMonth();
   const tYear = targetMonth.getFullYear();
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   const found = new Set<string>();
 
-  // Pattern 1: dd/mm or dd-mm or dd.mm (optional /yyyy)
   const ddmm = /(\b\d{1,2})[\/\-\.](\d{1,2})(?:[\/\-\.](\d{2,4}))?/g;
   let m: RegExpExecArray | null;
   while ((m = ddmm.exec(lower)) !== null) {
@@ -43,10 +58,7 @@ export function parseBlackoutDates(text: string, targetMonth: Date): Date[] {
     found.add(d.toISOString().slice(0, 10));
   }
 
-  // Remove dd/mm matches from text so we can extract bare days
   const stripped = lower.replace(ddmm, " ");
-
-  // Pattern 2: bare day numbers (1-31) separated by , ; e \n space
   const bareDays = stripped.match(/\b(\d{1,2})\b/g) ?? [];
   for (const ds of bareDays) {
     const day = parseInt(ds, 10);
@@ -57,7 +69,14 @@ export function parseBlackoutDates(text: string, targetMonth: Date): Date[] {
     found.add(d.toISOString().slice(0, 10));
   }
 
-  return Array.from(found).sort().map((s) => new Date(s + "T00:00:00"));
+  const dates = Array.from(found).sort();
+  const mode: ResponseMode = serveOnly ? "serve_only" : "block";
+  return { mode, dates };
+}
+
+// Backward-compat export name (legacy callers)
+export function parseBlackoutDates(text: string, targetMonth: Date): Date[] {
+  return parseUserResponse(text, targetMonth).dates.map((s) => new Date(s + "T00:00:00"));
 }
 
 async function sendConfirmation(supabaseUrl: string, key: string, phone: string, message: string) {
@@ -73,6 +92,11 @@ async function sendConfirmation(supabaseUrl: string, key: string, phone: string,
   }
 }
 
+const fmt = (s: string) => {
+  const [, m, d] = s.split("-");
+  return `${d}/${m}`;
+};
+
 serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -84,7 +108,6 @@ serve(async (req: Request): Promise<Response> => {
     const payload = await req.json().catch(() => ({} as any));
     console.log("Z-API webhook payload:", JSON.stringify(payload).slice(0, 500));
 
-    // Z-API received-message payload variants
     const phoneRaw =
       payload.phone ?? payload.from ?? payload.sender ?? payload.author ?? "";
     const text =
@@ -102,8 +125,7 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     const phoneDigits = normalizePhone(String(phoneRaw));
-    // Match against profiles.whatsapp by trailing digits (ignore country prefix differences)
-    const tail = phoneDigits.slice(-10); // last 10 digits (DDD + number)
+    const tail = phoneDigits.slice(-10);
     if (tail.length < 10) {
       return new Response(JSON.stringify({ ignored: true, reason: "phone too short" }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -124,7 +146,6 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    // Find active prompt: most recent unresponded for this user
     const { data: prompts } = await supabase
       .from("blackout_collection_prompts")
       .select("*")
@@ -140,7 +161,6 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    // Window: from day 28 of (target_month - 1) to day 5 of target_month
     const targetMonth = new Date(prompt.target_month + "T00:00:00");
     const windowStart = new Date(targetMonth.getFullYear(), targetMonth.getMonth() - 1, 28);
     const windowEnd = new Date(targetMonth.getFullYear(), targetMonth.getMonth(), 5, 23, 59, 59);
@@ -151,22 +171,21 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    const dates = parseBlackoutDates(text, targetMonth);
-    const dateStrings = dates.map((d) => d.toISOString().slice(0, 10));
+    const parsed = parseUserResponse(text, targetMonth);
+    const fname = (profile.name || "").split(" ")[0] || "amigo(a)";
 
-    // Get user's departments + max_blackout per dept
+    // Departments + memberships + availability
     const { data: memberships } = await supabase
       .from("members")
       .select("department_id")
       .eq("user_id", profile.id);
-
     const deptIds = (memberships ?? []).map((m: any) => m.department_id);
     if (deptIds.length === 0) {
       await sendConfirmation(
         supabaseUrl,
         serviceRoleKey,
         profile.whatsapp,
-        `Olá *${(profile.name || "").split(" ")[0]}*! Você não está em nenhum departamento ativo. Procure seu líder.`,
+        `Olá *${fname}*! Você não está em nenhum departamento ativo. Procure seu líder.`,
       );
       return new Response(JSON.stringify({ ok: true, no_depts: true }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -178,13 +197,44 @@ serve(async (req: Request): Promise<Response> => {
       .select("id, name, max_blackout_dates")
       .in("id", deptIds);
 
-    let acceptedGlobal = new Set<string>();
-    let rejectedGlobal = new Set<string>();
+    // Compute target blackout list per mode
+    let blackoutDateStrings: string[] = [];
+    let serveOnlyDates: string[] = [];
+    if (parsed.mode === "none") {
+      blackoutDateStrings = [];
+    } else if (parsed.mode === "block") {
+      blackoutDateStrings = parsed.dates;
+    } else {
+      // serve_only: blackouts = candidate days NOT in parsed.dates
+      // Use availability per dept and union — we mark blackout = any candidate day not chosen
+      const { data: availRows } = await supabase
+        .from("member_availability")
+        .select("day_of_week, time_start, time_end, is_available, department_id")
+        .eq("user_id", profile.id);
+
+      const userRows: AvailabilityRow[] = (availRows ?? []).map((r: any) => ({
+        day_of_week: r.day_of_week,
+        time_start: r.time_start,
+        time_end: r.time_end,
+        is_available: r.is_available,
+      }));
+      // Treat slot active if available in at least one row (or no row at all = default true)
+      const activeSlots = getActiveSlotsForUser(userRows);
+      const allCandidates = buildCandidateDays(
+        targetMonth.getFullYear(),
+        targetMonth.getMonth(),
+        activeSlots,
+      ).map((c) => c.iso);
+      const chosen = new Set(parsed.dates);
+      blackoutDateStrings = allCandidates.filter((iso) => !chosen.has(iso));
+      serveOnlyDates = parsed.dates;
+    }
+
+    const rejectedByDept: Record<string, string[]> = {}; // deptName -> rejected ISO
 
     for (const dept of depts ?? []) {
       const max = dept.max_blackout_dates ?? 5;
 
-      // Get existing preferences
       const { data: existing } = await supabase
         .from("member_preferences")
         .select("blackout_dates")
@@ -192,32 +242,43 @@ serve(async (req: Request): Promise<Response> => {
         .eq("department_id", dept.id)
         .maybeSingle();
 
-      const current = new Set<string>(((existing?.blackout_dates as string[]) ?? []).map((d) => d.toString()));
+      const _current = new Set<string>(((existing?.blackout_dates as string[]) ?? []).map((d) => d.toString()));
 
-      // Special case: empty dates with "nenhum" => clear
-      const isClear = dateStrings.length === 0 && /\b(nenhum|nenhuma|nada|livre|todos|disponivel|disponível)\b/i.test(text);
       let finalDates: string[];
+      const rejected: string[] = [];
 
-      if (isClear) {
+      if (parsed.mode === "none") {
         finalDates = [];
-        for (const d of current) acceptedGlobal.add("clear:" + d);
-      } else {
-        // Add new dates respecting max
-        const merged = new Set(current);
-        for (const ds of dateStrings) {
-          if (merged.size >= max) {
-            rejectedGlobal.add(ds);
+      } else if (parsed.mode === "block") {
+        // Replace the user's blackout list for this month (start fresh, respect max)
+        // Keep prior dates from other months
+        const priorOtherMonths = Array.from(_current).filter((iso) => !iso.startsWith(prompt.target_month.slice(0, 7)));
+        const merged = new Set(priorOtherMonths);
+        for (const ds of blackoutDateStrings) {
+          if (merged.size - priorOtherMonths.length >= max) {
+            rejected.push(ds);
             continue;
           }
-          if (!merged.has(ds)) {
-            merged.add(ds);
-            acceptedGlobal.add(ds);
-          } else {
-            acceptedGlobal.add(ds);
+          merged.add(ds);
+        }
+        finalDates = Array.from(merged).sort();
+      } else {
+        // serve_only: same — respect max
+        const priorOtherMonths = Array.from(_current).filter((iso) => !iso.startsWith(prompt.target_month.slice(0, 7)));
+        const merged = new Set(priorOtherMonths);
+        // Sort blackoutDateStrings so earliest are kept first
+        const sorted = [...blackoutDateStrings].sort();
+        for (const ds of sorted) {
+          if (merged.size - priorOtherMonths.length >= max) {
+            rejected.push(ds);
+            continue;
           }
+          merged.add(ds);
         }
         finalDates = Array.from(merged).sort();
       }
+
+      if (rejected.length > 0) rejectedByDept[dept.name] = rejected;
 
       await supabase
         .from("member_preferences")
@@ -231,30 +292,40 @@ serve(async (req: Request): Promise<Response> => {
         );
     }
 
-    // Mark prompt responded
     await supabase
       .from("blackout_collection_prompts")
-      .update({ responded_at: new Date().toISOString(), parsed_dates: dateStrings })
+      .update({ responded_at: new Date().toISOString(), parsed_dates: parsed.dates })
       .eq("id", prompt.id);
 
-    // Build confirmation
-    const fname = (profile.name || "").split(" ")[0] || "amigo(a)";
-    const fmt = (s: string) => {
-      const [y, m, d] = s.split("-");
-      return `${d}/${m}`;
-    };
+    // Build confirmation message
     let confirmMsg: string;
-    if (dateStrings.length === 0) {
+    if (parsed.mode === "none") {
       confirmMsg = `✅ Anotado, *${fname}*! Você está liberado(a) em todos os dias do próximo mês.\n\n_LEVI_`;
+    } else if (parsed.mode === "block") {
+      const acceptedIso = blackoutDateStrings.filter((d) =>
+        !Object.values(rejectedByDept).some((arr) => arr.includes(d) && arr.length === blackoutDateStrings.length)
+      );
+      const acceptedList = acceptedIso.map(fmt).join(", ");
+      let msg = `🔴 Anotado, *${fname}*! Bloqueei: ${acceptedList || "(nenhuma data válida)"}.`;
+      if (Object.keys(rejectedByDept).length > 0) {
+        msg += `\n\n⚠️ *Limite atingido em alguns departamentos.* Não bloqueei estes dias:\n`;
+        for (const [deptName, list] of Object.entries(rejectedByDept)) {
+          msg += `\n• *${deptName}*: ${list.map(fmt).join(", ")}`;
+        }
+        msg += `\n\n👉 Fale com seu líder se precisar liberar mais dias.`;
+      }
+      msg += `\n\nSe errei alguma data, responda novamente.\n\n_LEVI_`;
+      confirmMsg = msg;
     } else {
-      const acceptedList = dateStrings
-        .filter((d) => !rejectedGlobal.has(d))
-        .map(fmt)
-        .join(", ");
-      let msg = `✅ Anotado, *${fname}*! Bloqueei: ${acceptedList || "(nenhuma data válida)"}.`;
-      if (rejectedGlobal.size > 0) {
-        const rejList = Array.from(rejectedGlobal).map(fmt).join(", ");
-        msg += `\n\n⚠️ Não consegui adicionar (limite atingido): ${rejList}.`;
+      // serve_only
+      const serveList = serveOnlyDates.map(fmt).join(", ") || "(nenhuma)";
+      let msg = `🟢 Anotado, *${fname}*! Você servirá apenas em: ${serveList}.\nDemais dias do mês ficarão bloqueados.`;
+      if (Object.keys(rejectedByDept).length > 0) {
+        msg += `\n\n⚠️ *Atenção:* o limite de bloqueios foi atingido em alguns departamentos. Alguns dias podem ainda ficar como disponíveis:\n`;
+        for (const [deptName, list] of Object.entries(rejectedByDept)) {
+          msg += `\n• *${deptName}*: ${list.length} dia(s) não bloqueados`;
+        }
+        msg += `\n\n👉 Fale com seu líder para ajustar.`;
       }
       msg += `\n\nSe errei alguma data, responda novamente.\n\n_LEVI_`;
       confirmMsg = msg;
@@ -265,8 +336,10 @@ serve(async (req: Request): Promise<Response> => {
     return new Response(
       JSON.stringify({
         ok: true,
-        accepted: dateStrings.filter((d) => !rejectedGlobal.has(d)),
-        rejected: Array.from(rejectedGlobal),
+        mode: parsed.mode,
+        accepted: parsed.dates,
+        blackouts_applied: blackoutDateStrings,
+        rejected_by_dept: rejectedByDept,
       }),
       { headers: { "Content-Type": "application/json", ...corsHeaders } },
     );
