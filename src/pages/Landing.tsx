@@ -541,7 +541,7 @@ export default function Landing() {
       </nav>
 
       {/* ── HERO ── */}
-      <section className="min-h-screen flex items-center relative z-[1] pt-20">
+      <section className="flex items-center relative z-[1] pt-24 pb-10 sm:pt-28 sm:pb-14">
         {/* Dot grid + gradient blobs */}
         <div className="absolute inset-0 dot-grid" />
         <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: 'hsl(var(--primary) / 0.12)', filter: 'blur(120px)' }} />
@@ -550,7 +550,7 @@ export default function Landing() {
         <div className="container mx-auto px-4 sm:px-6 relative z-10">
           <div className="max-w-3xl mx-auto">
             {/* Hero centered */}
-            <div className="text-center space-y-6">
+            <div className="text-center space-y-4 sm:space-y-5">
               <div className="animate-slide-up-1 flex flex-col items-center gap-3">
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/8 text-primary text-sm font-medium border border-primary/15">
                   <Sparkles className="w-3.5 h-3.5" />
@@ -617,7 +617,7 @@ export default function Landing() {
       </section>
 
       {/* ── FEATURES ── */}
-      <section id="funcionalidades" className="relative z-[1] overflow-hidden py-16 sm:py-20" style={{ scrollMarginTop: 80 }}>
+      <section id="funcionalidades" className="relative z-[1] overflow-hidden py-8 sm:py-12" style={{ scrollMarginTop: 80 }}>
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
         <div className="container mx-auto px-4 sm:px-6 max-w-6xl relative w-full">
           <FeatureGrid />
