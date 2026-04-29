@@ -552,7 +552,7 @@ async function handleTargetResponse(
     .update({ status: "rejected", resolved_at: new Date().toISOString() })
     .eq("id", swapId);
 
-  await sendWA(deps, target.whatsapp, `Tudo bem, recusa registrada.\n\n_LEVI_`);
+  await sendWA(deps, target.whatsapp, `Tudo bem, *recusa registrada*. Obrigado por responder! 🙏\n\n_LEVI_`);
 
   // Try next candidate (up to MAX_ATTEMPTS)
   const userIds: string[] = session.candidate_target_user_ids ?? [];
