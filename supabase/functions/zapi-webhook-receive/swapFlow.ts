@@ -573,7 +573,7 @@ async function handleTargetResponse(
       await sendWA(
         deps,
         reqProfile.whatsapp,
-        `❌ Não foi possível encontrar substituto após ${nextAttempt} tentativa(s).\nFale com seu líder para resolver.\n\n_LEVI_`,
+        `❌ *Não encontramos substituto*\n━━━━━━━━━━━━━━━━━━━━\n\n📖 _Leia com atenção:_\nTentei *${nextAttempt} colega(s)* e ninguém pôde trocar com você.\n\n👉 Por favor, *fale com seu líder* para resolver essa escala.\n\n_LEVI_`,
       );
     }
 
