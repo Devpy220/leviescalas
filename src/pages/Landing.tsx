@@ -651,9 +651,9 @@ export default function Landing() {
         <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full pointer-events-none" style={{ background: 'hsl(var(--secondary) / 0.1)', filter: 'blur(120px)' }} />
 
         <div className="container mx-auto px-4 sm:px-6 relative z-10">
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
-            {/* Left */}
-            <div className="text-center lg:text-left space-y-6">
+          <div className="max-w-3xl mx-auto">
+            {/* Hero centered */}
+            <div className="text-center space-y-6">
               <div className="animate-slide-up-1 flex flex-col items-center lg:items-start gap-3">
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/8 text-primary text-sm font-medium border border-primary/15">
                   <Sparkles className="w-3.5 h-3.5" />
