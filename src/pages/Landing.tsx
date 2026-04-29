@@ -145,6 +145,7 @@ function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: str
 // ── Feature Grid (todas as funcionalidades reais do LEVI) ───────────────────
 function FeatureGrid() {
   const { t } = useTranslation();
+  const [selected, setSelected] = useState<number | null>(null);
   const features = [
     {
       icon: Sparkles,
@@ -300,27 +301,53 @@ function FeatureGrid() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-3">
+      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 sm:gap-2.5">
         {features.map((f, i) => {
           const Icon = f.icon;
           return (
-            <div
+            <button
               key={i}
-              className={`group relative overflow-hidden rounded-xl border border-border/60 bg-gradient-to-br ${f.color} p-3 sm:p-3.5 hover:border-primary/40 hover:shadow-md hover:shadow-primary/5 transition-all duration-300`}
+              type="button"
+              onClick={() => setSelected(i)}
+              className={`group relative overflow-hidden rounded-xl border border-border/60 bg-gradient-to-br ${f.color} p-2.5 sm:p-3 hover:border-primary/50 hover:shadow-md hover:shadow-primary/10 hover:-translate-y-0.5 transition-all duration-300 text-left flex flex-col items-center justify-center gap-1.5 aspect-square sm:aspect-auto sm:min-h-[88px]`}
+              aria-label={`Ver detalhes de ${f.title}`}
             >
-              <div className="flex items-start gap-2 sm:gap-2.5">
-                <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-card border border-border/60 flex items-center justify-center flex-shrink-0 ${f.iconColor} group-hover:scale-110 transition-transform duration-300`}>
-                  <Icon className="w-4 h-4" strokeWidth={2} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h4 className="font-semibold text-foreground text-[12px] sm:text-[13px] leading-tight mb-1">{f.title}</h4>
-                  <p className="text-[11px] sm:text-[12px] text-muted-foreground leading-snug line-clamp-3">{f.desc}</p>
-                </div>
+              <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-card border border-border/60 flex items-center justify-center flex-shrink-0 ${f.iconColor} group-hover:scale-110 transition-transform duration-300`}>
+                <Icon className="w-4 h-4" strokeWidth={2} />
               </div>
-            </div>
+              <h4 className="font-semibold text-foreground text-[10px] sm:text-[11px] leading-tight text-center line-clamp-2">{f.title}</h4>
+            </button>
           );
         })}
       </div>
+
+      {/* Modal central com blur ao clicar no banner */}
+      <Dialog open={selected !== null} onOpenChange={(open) => !open && setSelected(null)}>
+        <DialogPortal>
+          <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-background/60 backdrop-blur-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+          <DialogPrimitive.Content className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-md translate-x-[-50%] translate-y-[-50%] gap-4 border border-border/60 bg-card/95 backdrop-blur-xl p-6 shadow-2xl rounded-2xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95">
+            {selected !== null && (() => {
+              const f = features[selected];
+              const Icon = f.icon;
+              return (
+                <>
+                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${f.color} border border-border/60 flex items-center justify-center ${f.iconColor} mx-auto`}>
+                    <Icon className="w-7 h-7" strokeWidth={2} />
+                  </div>
+                  <div className="text-center space-y-2">
+                    <h3 className="font-display text-lg font-bold text-foreground">{f.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+                  </div>
+                  <DialogPrimitive.Close className="absolute right-3 top-3 rounded-full p-1.5 hover:bg-muted/60 transition-colors">
+                    <X className="w-4 h-4" />
+                    <span className="sr-only">Fechar</span>
+                  </DialogPrimitive.Close>
+                </>
+              );
+            })()}
+          </DialogPrimitive.Content>
+        </DialogPortal>
+      </Dialog>
     </div>
   );
 }
