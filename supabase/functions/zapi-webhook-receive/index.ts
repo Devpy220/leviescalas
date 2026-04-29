@@ -319,34 +319,59 @@ serve(async (req: Request): Promise<Response> => {
     // Build confirmation message
     let confirmMsg: string;
     if (parsed.mode === "none") {
-      confirmMsg = `✅ Anotado, *${fname}*! Você está liberado(a) em todos os dias do próximo mês.\n\n_LEVI_`;
+      confirmMsg =
+`✅ *Anotado, ${fname}!*
+━━━━━━━━━━━━━━━━━━━━
+
+📖 _Leia com atenção:_
+Você está *liberado(a) em todos os dias* do próximo mês.
+
+Se quiser bloquear algum dia, é só me responder novamente.
+
+_LEVI_`;
     } else if (parsed.mode === "block") {
       const acceptedIso = blackoutDateStrings.filter((d) =>
         !Object.values(rejectedByDept).some((arr) => arr.includes(d) && arr.length === blackoutDateStrings.length)
       );
       const acceptedList = acceptedIso.map(fmt).join(", ");
-      let msg = `🔴 Anotado, *${fname}*! Bloqueei: ${acceptedList || "(nenhuma data válida)"}.`;
+      let msg =
+`🔴 *Anotado, ${fname}!*
+━━━━━━━━━━━━━━━━━━━━
+
+📖 _Leia com atenção:_
+
+🚫 *Dias bloqueados:*
+${acceptedList || "(nenhuma data válida)"}`;
       if (Object.keys(rejectedByDept).length > 0) {
-        msg += `\n\n⚠️ *Limite atingido em alguns departamentos.* Não bloqueei estes dias:\n`;
+        msg += `\n\n━━━━━━━━━━━━━━━━━━━━\n⚠️ *Limite atingido em alguns departamentos.*\nNão consegui bloquear estes dias:\n`;
         for (const [deptName, list] of Object.entries(rejectedByDept)) {
           msg += `\n• *${deptName}*: ${list.map(fmt).join(", ")}`;
         }
         msg += `\n\n👉 Fale com seu líder se precisar liberar mais dias.`;
       }
-      msg += `\n\nSe errei alguma data, responda novamente.\n\n_LEVI_`;
+      msg += `\n\n━━━━━━━━━━━━━━━━━━━━\nSe errei alguma data, é só me responder novamente.\n\n_LEVI_`;
       confirmMsg = msg;
     } else {
       // serve_only
       const serveList = serveOnlyDates.map(fmt).join(", ") || "(nenhuma)";
-      let msg = `🟢 Anotado, *${fname}*! Você servirá apenas em: ${serveList}.\nDemais dias do mês ficarão bloqueados.`;
+      let msg =
+`🟢 *Anotado, ${fname}!*
+━━━━━━━━━━━━━━━━━━━━
+
+📖 _Leia com atenção:_
+
+✅ *Você servirá apenas em:*
+${serveList}
+
+🚫 Os demais dias do mês ficarão *bloqueados*.`;
       if (Object.keys(rejectedByDept).length > 0) {
-        msg += `\n\n⚠️ *Atenção:* o limite de bloqueios foi atingido em alguns departamentos. Alguns dias podem ainda ficar como disponíveis:\n`;
+        msg += `\n\n━━━━━━━━━━━━━━━━━━━━\n⚠️ *Atenção:* o limite de bloqueios foi atingido em alguns departamentos.\nAlguns dias podem continuar como disponíveis:\n`;
         for (const [deptName, list] of Object.entries(rejectedByDept)) {
           msg += `\n• *${deptName}*: ${list.length} dia(s) não bloqueados`;
         }
         msg += `\n\n👉 Fale com seu líder para ajustar.`;
       }
-      msg += `\n\nSe errei alguma data, responda novamente.\n\n_LEVI_`;
+      msg += `\n\n━━━━━━━━━━━━━━━━━━━━\nSe errei alguma data, é só me responder novamente.\n\n_LEVI_`;
       confirmMsg = msg;
     }
 
