@@ -471,7 +471,7 @@ export default function ChurchPublic() {
         </Tabs>
       </main>
       
-      <Footer />
+      {!isEmbed && <Footer />}
     </div>
   );
 }
