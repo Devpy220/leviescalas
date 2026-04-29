@@ -641,8 +641,7 @@ export default function Landing() {
       </section>
 
       {/* ── FEATURES ── */}
-      <section id="funcionalidades" className="relative z-[1] overflow-hidden py-8 sm:py-12" style={{ scrollMarginTop: 80 }}>
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+      <section id="funcionalidades" className="relative z-[1] overflow-hidden pt-0 pb-8 sm:pb-12 -mt-4 sm:-mt-6" style={{ scrollMarginTop: 80 }}>
         <div className="container mx-auto px-4 sm:px-6 max-w-6xl relative w-full">
           <FeatureGrid />
         </div>
