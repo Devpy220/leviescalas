@@ -177,8 +177,8 @@ function FeatureGrid() {
     },
     {
       icon: RefreshCw,
-      title: 'Trocas de Escala',
-      desc: 'Pedido e aceite mútuo entre voluntários, sem o líder precisar mediar.',
+      title: 'Trocas pelo WhatsApp',
+      desc: 'Voluntário envia "troca" no WhatsApp do LEVI e resolve a substituição em segundos — sem abrir o app.',
       color: 'from-sky-500/15 to-sky-500/5',
       iconColor: 'text-sky-600',
     },
