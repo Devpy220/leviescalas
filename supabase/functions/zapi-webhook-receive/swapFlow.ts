@@ -627,7 +627,7 @@ async function notifyLeader(
     .maybeSingle();
   if (!leader?.whatsapp) return;
   const msg =
-    `🔔 *${requesterName}* tentou trocar a escala de *${dateStr}* (${dept.name}) pelo WhatsApp e não encontrou substituto.\nPor favor, ajude a resolver.\n\n_LEVI_`;
+    `🔔 *Atenção, líder!*\n━━━━━━━━━━━━━━━━━━━━\n\n📖 _Leia com atenção:_\n\n*${requesterName}* tentou trocar a escala de *${dateStr}* no departamento *${dept.name}* pelo WhatsApp, mas *não encontrou substituto*.\n\n👉 Por favor, ajude a resolver essa escala.\n\n_LEVI_`;
   await sendWA(deps, leader.whatsapp, msg);
 }
 
