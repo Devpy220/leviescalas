@@ -577,10 +577,10 @@ export default function Landing() {
 
         <div className="container mx-auto px-4 sm:px-6 relative z-10">
           <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 items-center">
               {/* Coluna esquerda: tagline + título + descrição */}
-              <div className="text-center lg:text-left space-y-4 sm:space-y-5">
-                <div className="animate-slide-up-1 flex lg:justify-start justify-center">
+              <div className="text-center md:text-left space-y-4 sm:space-y-5">
+                <div className="animate-slide-up-1 flex md:justify-start justify-center">
                   <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/8 text-primary text-sm font-medium border border-primary/15">
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>{t('landing.tagline')}</span>
@@ -592,14 +592,14 @@ export default function Landing() {
                   <Typewriter words={t('landing.typewriterWords', { returnObjects: true }) as string[]} />
                 </h1>
 
-                <p className="animate-slide-up-3 text-sm sm:text-base text-muted-foreground max-w-lg mx-auto lg:mx-0 leading-relaxed">
+                <p className="animate-slide-up-3 text-sm sm:text-base text-muted-foreground max-w-lg mx-auto md:mx-0 leading-relaxed">
                   {t('landing.heroDescription')}
                 </p>
               </div>
 
               {/* Coluna direita: CTAs + contador */}
-              <div className="flex flex-col items-center lg:items-start gap-5">
-                <div className="animate-slide-up-4 flex flex-col sm:flex-row flex-wrap gap-2.5 justify-center lg:justify-start">
+              <div className="flex flex-col items-center md:items-start gap-5">
+                <div className="animate-slide-up-4 flex flex-col sm:flex-row flex-wrap gap-2.5 justify-center md:justify-start">
                   <Button
                     size="default"
                     className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-8 text-sm font-semibold btn-glow transition-all hover:scale-[1.02]"
