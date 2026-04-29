@@ -386,6 +386,20 @@ function FeatureGrid() {
       color: 'from-yellow-500/15 to-yellow-500/5',
       iconColor: 'text-yellow-600',
     },
+    {
+      icon: Crown,
+      title: 'Tour Guiado para Líderes',
+      desc: 'Passo a passo na primeira entrada explica tudo o que o líder pode fazer.',
+      color: 'from-violet-500/15 to-violet-500/5',
+      iconColor: 'text-violet-600',
+    },
+    {
+      icon: Settings,
+      title: 'Configurações por Departamento',
+      desc: 'Cada ministério define turnos, dobras de domingo e limite de bloqueios.',
+      color: 'from-stone-500/15 to-stone-500/5',
+      iconColor: 'text-stone-600',
+    },
   ];
 
   return (
