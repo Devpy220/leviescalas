@@ -466,17 +466,30 @@ async function askTarget(
 
   // Notify target
   const msg =
-    `Oi *${tgtFname}*! 🔄 *${reqFname}* pediu para trocar de escala com você no departamento *${deptName}*:\n\n` +
-    `• Você assumiria: ${fmtDate(reqSchedule.date)} ${fmtTime(reqSchedule.time_start)}-${fmtTime(reqSchedule.time_end)}\n` +
-    `• ${reqFname} assume sua: ${fmtDate(tgtSchedule.date)} ${fmtTime(tgtSchedule.time_start)}-${fmtTime(tgtSchedule.time_end)}\n\n` +
-    `Responda *"sim"* para aceitar ou *"não"* para recusar.\n\n_LEVI_`;
+    `🔄 *Pedido de Troca de Escala*\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n\n` +
+    `Oi *${tgtFname}*! 👋\n\n` +
+    `📖 *Leia com atenção, por favor.*\n\n` +
+    `*${reqFname}* pediu para trocar de escala com você no departamento *${deptName}*.\n\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n` +
+    `📥 *Você assumiria:*\n` +
+    `   📆 ${fmtDate(reqSchedule.date)}\n` +
+    `   ⏰ ${fmtTime(reqSchedule.time_start)}-${fmtTime(reqSchedule.time_end)}\n\n` +
+    `📤 *${reqFname} assume a sua:*\n` +
+    `   📆 ${fmtDate(tgtSchedule.date)}\n` +
+    `   ⏰ ${fmtTime(tgtSchedule.time_start)}-${fmtTime(tgtSchedule.time_end)}\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n\n` +
+    `✍️ *Responda agora:*\n` +
+    `   ✅ *"sim"* — para aceitar\n` +
+    `   ❌ *"não"* — para recusar\n\n` +
+    `_LEVI_`;
   await sendWA(deps, tgtProfile.whatsapp, msg);
 
   // Confirm to requester
   await sendWA(
     deps,
     requester.whatsapp,
-    `✉️ Solicitação enviada para *${tgtFname}*. Aguarde a resposta.\n\n_LEVI_`,
+    `✉️ *Solicitação enviada!*\n━━━━━━━━━━━━━━━━━━━━\n\nPedido enviado para *${tgtFname}*.\n\n⏳ Aguarde a resposta — assim que ${tgtFname} responder, eu te aviso aqui.\n\n_LEVI_`,
   );
 }
 
