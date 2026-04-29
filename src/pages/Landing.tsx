@@ -289,35 +289,32 @@ function FeatureGrid() {
   ];
 
   return (
-    <div className="mt-16 sm:mt-20">
-      <div className="text-center mb-10">
-        <p className="text-primary text-xs font-semibold uppercase tracking-[0.15em] mb-2">Tudo o que o LEVI faz</p>
-        <h3 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">
+    <div className="mt-8 sm:mt-10">
+      <div className="text-center mb-6 sm:mb-7">
+        <p className="text-primary text-[11px] font-semibold uppercase tracking-[0.15em] mb-1.5">Tudo o que o LEVI faz</p>
+        <h3 className="font-display text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">
           Funcionalidades em <span className="text-primary">um só lugar</span>
         </h3>
-        <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto mt-3">
-          Da geração inteligente da escala até o lembrete no WhatsApp do voluntário — todo o fluxo da escala da sua igreja.
+        <p className="text-xs sm:text-sm text-muted-foreground max-w-xl mx-auto mt-2">
+          Da geração inteligente da escala até o lembrete no WhatsApp do voluntário.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-3">
         {features.map((f, i) => {
           const Icon = f.icon;
           return (
             <div
               key={i}
-              className={`group relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br ${f.color} p-5 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300`}
-              style={{
-                animationDelay: `${i * 40}ms`,
-              }}
+              className={`group relative overflow-hidden rounded-xl border border-border/60 bg-gradient-to-br ${f.color} p-3 sm:p-3.5 hover:border-primary/40 hover:shadow-md hover:shadow-primary/5 transition-all duration-300`}
             >
-              <div className="flex items-start gap-3">
-                <div className={`w-11 h-11 rounded-xl bg-card border border-border/60 flex items-center justify-center flex-shrink-0 ${f.iconColor} group-hover:scale-110 transition-transform duration-300`}>
-                  <Icon className="w-5 h-5" strokeWidth={2} />
+              <div className="flex items-start gap-2 sm:gap-2.5">
+                <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-card border border-border/60 flex items-center justify-center flex-shrink-0 ${f.iconColor} group-hover:scale-110 transition-transform duration-300`}>
+                  <Icon className="w-4 h-4" strokeWidth={2} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h4 className="font-semibold text-foreground text-[15px] leading-snug mb-1.5">{f.title}</h4>
-                  <p className="text-[13px] text-muted-foreground leading-relaxed">{f.desc}</p>
+                  <h4 className="font-semibold text-foreground text-[12px] sm:text-[13px] leading-tight mb-1">{f.title}</h4>
+                  <p className="text-[11px] sm:text-[12px] text-muted-foreground leading-snug line-clamp-3">{f.desc}</p>
                 </div>
               </div>
             </div>
@@ -544,7 +541,7 @@ export default function Landing() {
       </nav>
 
       {/* ── HERO ── */}
-      <section className="min-h-screen flex items-center relative z-[1] pt-20">
+      <section className="flex items-center relative z-[1] pt-24 pb-10 sm:pt-28 sm:pb-14">
         {/* Dot grid + gradient blobs */}
         <div className="absolute inset-0 dot-grid" />
         <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: 'hsl(var(--primary) / 0.12)', filter: 'blur(120px)' }} />
@@ -553,7 +550,7 @@ export default function Landing() {
         <div className="container mx-auto px-4 sm:px-6 relative z-10">
           <div className="max-w-3xl mx-auto">
             {/* Hero centered */}
-            <div className="text-center space-y-6">
+            <div className="text-center space-y-4 sm:space-y-5">
               <div className="animate-slide-up-1 flex flex-col items-center gap-3">
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/8 text-primary text-sm font-medium border border-primary/15">
                   <Sparkles className="w-3.5 h-3.5" />
@@ -561,36 +558,36 @@ export default function Landing() {
                 </div>
               </div>
 
-              <h1 className="animate-slide-up-2 font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground leading-tight">
+              <h1 className="animate-slide-up-2 font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground leading-tight">
                 {t('landing.heroTitle1')}<br />{t('landing.heroTitle2')}<br />
                 <Typewriter words={t('landing.typewriterWords', { returnObjects: true }) as string[]} />
               </h1>
 
-              <p className="animate-slide-up-3 text-base sm:text-lg text-muted-foreground max-w-lg mx-auto leading-relaxed">
+              <p className="animate-slide-up-3 text-sm sm:text-base text-muted-foreground max-w-lg mx-auto leading-relaxed">
                 {t('landing.heroDescription')}
               </p>
 
-              <div className="animate-slide-up-4 flex flex-col sm:flex-row gap-3 justify-center">
+              <div className="animate-slide-up-4 flex flex-col sm:flex-row gap-2.5 justify-center">
                 <Button
-                  size="lg"
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-10 py-6 text-base font-semibold btn-glow transition-all hover:scale-[1.02]"
+                  size="default"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-8 text-sm font-semibold btn-glow transition-all hover:scale-[1.02]"
                   onClick={() => openAuth('login')}
                 >
                   {t('landing.enter')} <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
                 <Button
-                  size="lg"
+                  size="default"
                   variant="outline"
-                  className="border-primary/30 text-primary hover:bg-primary/10 rounded-full px-8"
+                  className="border-primary/30 text-primary hover:bg-primary/10 rounded-full px-6 text-sm"
                   onClick={() => navigate('/church-setup')}
                 >
                   <Church className="w-4 h-4 mr-2" />
                   {t('landing.registerChurch')}
                 </Button>
                 <Button
-                  size="lg"
+                  size="default"
                   variant="ghost"
-                  className="text-muted-foreground hover:text-foreground rounded-full px-8"
+                  className="text-muted-foreground hover:text-foreground rounded-full px-6 text-sm"
                   onClick={() => { setShowContact(true); setContactSent(false); }}
                 >
                   {t('landing.contactUs')}
@@ -620,7 +617,7 @@ export default function Landing() {
       </section>
 
       {/* ── FEATURES ── */}
-      <section id="funcionalidades" className="relative z-[1] overflow-hidden py-16 sm:py-20" style={{ scrollMarginTop: 80 }}>
+      <section id="funcionalidades" className="relative z-[1] overflow-hidden py-8 sm:py-12" style={{ scrollMarginTop: 80 }}>
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
         <div className="container mx-auto px-4 sm:px-6 max-w-6xl relative w-full">
           <FeatureGrid />
