@@ -534,13 +534,13 @@ async function handleTargetResponse(
       .update({ state: "done" })
       .eq("id", session.id);
 
-    await sendWA(deps, target.whatsapp, `✅ Troca confirmada! Suas escalas foram atualizadas.\n\n_LEVI_`);
+    await sendWA(deps, target.whatsapp, `✅ *Troca confirmada!*\n━━━━━━━━━━━━━━━━━━━━\n\n📖 _Leia com atenção:_\nSuas escalas já foram *atualizadas* no sistema.\n\n_LEVI_`);
     if (reqProfile?.whatsapp) {
       const tgtFname = (target.name || "").split(" ")[0];
       await sendWA(
         deps,
         reqProfile.whatsapp,
-        `✅ *${tgtFname}* aceitou! Suas escalas foram trocadas.\n\n_LEVI_`,
+        `✅ *Troca confirmada!*\n━━━━━━━━━━━━━━━━━━━━\n\n📖 _Leia com atenção:_\n*${tgtFname}* aceitou a troca. Suas escalas já foram *atualizadas*.\n\n_LEVI_`,
       );
     }
     return;
