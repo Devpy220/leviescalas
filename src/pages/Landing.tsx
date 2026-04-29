@@ -429,104 +429,6 @@ function FeatureGrid() {
 }
 
 
-// ── Feature Carousel ────────────────────────────────────────────────────────
-function FeatureCarousel() {
-  const { t } = useTranslation();
-  const [active, setActive] = useState(0);
-  const [paused, setPaused] = useState(false);
-
-  const allSlides = [
-    { type: 'feature' as const, icon: Calendar, title: t('landing.slides.smartSchedules'), desc: t('landing.slides.smartSchedulesDesc'), color: 'bg-primary/10 text-primary' },
-    { type: 'feature' as const, icon: Bell, title: t('landing.slides.autoNotifications'), desc: t('landing.slides.autoNotificationsDesc'), color: 'bg-accent/10 text-accent' },
-    { type: 'feature' as const, icon: CheckCircle2, title: t('landing.slides.realtimeConfirmations'), desc: t('landing.slides.realtimeConfirmationsDesc'), color: 'bg-accent/10 text-accent' },
-    { type: 'feature' as const, icon: RefreshCw, title: t('landing.slides.scheduleSwaps'), desc: t('landing.slides.scheduleSwapsDesc'), color: 'bg-secondary/10 text-secondary' },
-    { type: 'feature' as const, icon: LayoutGrid, title: t('landing.slides.multipleTeams'), desc: t('landing.slides.multipleTeamsDesc'), color: 'bg-primary/10 text-primary' },
-    { type: 'feature' as const, icon: Users, title: t('landing.slides.sectorsAndRoles'), desc: t('landing.slides.sectorsAndRolesDesc'), color: 'bg-secondary/10 text-secondary' },
-    { type: 'step' as const, step: 1, title: t('landing.slides.step1'), desc: t('landing.slides.step1Desc') },
-    { type: 'step' as const, step: 2, title: t('landing.slides.step2'), desc: t('landing.slides.step2Desc') },
-    { type: 'step' as const, step: 3, title: t('landing.slides.step3'), desc: t('landing.slides.step3Desc') },
-    { type: 'step' as const, step: 4, title: t('landing.slides.step4'), desc: t('landing.slides.step4Desc') },
-    { type: 'cta' as const, title: t('landing.slides.ctaTitle'), desc: t('landing.slides.ctaDesc') },
-  ];
-  const total = allSlides.length;
-
-  useEffect(() => {
-    if (paused) return;
-    const t = setInterval(() => setActive(a => (a + 1) % total), 3500);
-    return () => clearInterval(t);
-  }, [paused, total]);
-
-  const slide = allSlides[active];
-
-  return (
-    <div
-      className="flex flex-col items-center gap-8"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-    >
-      <div className="text-center">
-        <p className="text-primary text-xs font-semibold uppercase tracking-[0.15em] mb-2">{t('landing.features')}</p>
-        <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">{t('landing.allYourChurchNeeds')}</h2>
-      </div>
-
-      <div className="relative w-full max-w-md h-[220px] sm:h-[200px]">
-        {allSlides.map((s, i) => {
-          const isActive = i === active;
-          return (
-            <div
-              key={i}
-              className="absolute inset-0 flex items-center justify-center transition-all duration-700 ease-in-out"
-              style={{
-                opacity: isActive ? 1 : 0,
-                transform: isActive ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.95)',
-                pointerEvents: isActive ? 'auto' : 'none',
-              }}
-            >
-              <div className="w-full p-10 rounded-2xl border border-border bg-card shadow-sm">
-                <div className="flex flex-col items-center text-center gap-3">
-                  {s.type === 'cta' ? (
-                    <div className="text-5xl mb-1">📅</div>
-                  ) : s.type === 'feature' && 'icon' in s ? (
-                    <div className={`w-14 h-14 rounded-xl ${'color' in s ? s.color : ''} flex items-center justify-center`}>
-                      {(() => { const Icon = (s as any).icon; return <Icon className="w-7 h-7" />; })()}
-                    </div>
-                  ) : (
-                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center font-bold text-lg text-primary-foreground">
-                      {'step' in s ? (s as any).step : ''}
-                    </div>
-                  )}
-                  <h3 className="text-xl font-bold text-foreground">{s.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">{s.desc}</p>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="flex items-center gap-2">
-        {allSlides.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => setActive(i)}
-            className={`rounded-full transition-all duration-300 ${
-              i === active
-                ? 'w-6 h-2.5 bg-primary'
-                : 'w-2.5 h-2.5 bg-border hover:bg-muted-foreground/30'
-            }`}
-          />
-        ))}
-      </div>
-
-      <div className="w-full max-w-xs h-1 rounded-full bg-border overflow-hidden">
-        <div
-          className="h-full rounded-full bg-gradient-to-r from-primary to-secondary transition-all duration-300"
-          style={{ width: `${((active + 1) / total) * 100}%` }}
-        />
-      </div>
-    </div>
-  );
-}
 
 // ── Schemas ──────────────────────────────────────────────────────────────────
 const loginSchema = z.object({ email: z.string().email('Email inválido'), password: z.string().min(1, 'Senha é obrigatória') });
@@ -825,7 +727,6 @@ export default function Landing() {
       <section id="funcionalidades" className="relative z-[1] overflow-hidden py-16 sm:py-20" style={{ scrollMarginTop: 80 }}>
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
         <div className="container mx-auto px-4 sm:px-6 max-w-6xl relative w-full">
-          <FeatureCarousel />
           <FeatureGrid />
         </div>
       </section>
@@ -882,11 +783,13 @@ export default function Landing() {
   frameborder="0">
 </iframe>`}
                 </pre>
-                <div className="mt-3 rounded-lg border border-dashed border-border p-4 text-center">
-                  <Calendar className="w-6 h-6 text-primary mx-auto mb-1" />
-                  <p className="text-xs text-muted-foreground">
-                    Calendário de escalas embutido no site
-                  </p>
+                <div className="mt-3 rounded-lg border border-dashed border-border p-4 flex items-center gap-3">
+                  <LeviLogo size="sm" />
+                  <div className="text-left min-w-0 flex-1">
+                    <p className="text-xs font-semibold text-foreground truncate">Escala da igreja</p>
+                    <p className="text-[10px] text-muted-foreground truncate">Atualizado em tempo real pelo LEVI</p>
+                  </div>
+                  <Calendar className="w-5 h-5 text-primary shrink-0" />
                 </div>
               </div>
               <div className="absolute -top-3 -right-3 px-3 py-1 rounded-full bg-amber-400 text-[10px] font-bold text-amber-950 shadow-lg">

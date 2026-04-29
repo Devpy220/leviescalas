@@ -1,124 +1,51 @@
-## Duas perguntas, duas respostas
+## Resumo das verificações e ajustes na Landing
 
----
+### 1. "Fale conosco" — já está integrado ao Z-API ✅
 
-### 1) Melhorar a mensagem de coleta de bloqueios no WhatsApp
+Verificado em `supabase/functions/send-contact-email/index.ts`: apesar do nome legado, a função **não envia email**. Ela monta a mensagem e dispara via `send-whatsapp-notification` (Z-API) para o número administrativo `5518996344885`. Nenhuma ação necessária — está alinhado com a memória de "WhatsApp ONLY via Z-API".
 
-Hoje a mensagem só pede datas para bloquear. Você quer que ela mostre cada data com **dia da semana e turno** (ex: "domingo de manhã"), e que o voluntário possa responder de duas formas:
+Opcional (limpeza futura, fora deste escopo): renomear a função para `send-contact-whatsapp` para refletir o que ela faz.
 
-- **Bloquear** datas específicas (ex: "bloquear 5/5")
-- **Servir apenas em** datas específicas (ex: "servir 12/5, 19/5") — implícito que o resto fica bloqueado
-- **Não responder** ou responder **"nenhum"** = está liberado em todos os dias
+### 2. Logo do LEVI no mockup da seção de integração
 
-#### O que vou alterar
+Em `src/pages/Landing.tsx`, na seção "Integração" (mockup do site embutindo o iframe), substituir o placeholder do calendário por uma prévia mais fiel mostrando o **logo do LEVI** + ícone de calendário, deixando claro o que aparece no site da igreja quando o embed é colado.
 
-**a) Texto enviado em `send-blackout-collection-prompt**`
+Mudança no bloco do mockup (~linha 884):
 
-Em vez de listar datas genéricas, a mensagem vai:
-
-- Listar os **domingos e datas-chave** do mês com o dia da semana e turno (baseado nos slots fixos do departamento — manhã/noite no domingo, terça à noite, etc.)
-- Mostrar exemplo claro com as duas opções:
-
-```
-📅 LEVI — Disponibilidade de maio
-
-Olá, João! Em 2 dias começa maio.
-
-Estes são os dias em que você pode ser escalado:
-• Dom 04/05 — manhã e/ou noite
-• Dom 11/05 — manhã e/ou noite
-• Dom 18/05 — manhã e/ou noite
-• Dom 25/05 — manhã e/ou noite
-• Ter 06/05 — noite
-• (...)
-
-Responda de uma destas formas:
-
-🔴 Para BLOQUEAR dias:
-   "bloquear 5/5, 12/5"
-
-🟢 Para SERVIR APENAS nos dias indicados (bloqueia o resto):
-   "servir 18/5, 25/5"
-
-✅ Para liberar TODOS os dias:
-   "nenhum" (ou simplesmente não responda)
-
-Você tem até dia 31 para responder.
+```tsx
+<div className="mt-3 rounded-lg border border-dashed border-border p-4 flex items-center gap-3">
+  <LeviLogo size="sm" />
+  <div className="text-left">
+    <p className="text-xs font-semibold text-foreground">Escala da igreja</p>
+    <p className="text-[10px] text-muted-foreground">Atualizado em tempo real pelo LEVI</p>
+  </div>
+  <Calendar className="w-5 h-5 text-primary ml-auto" />
+</div>
 ```
 
-**b) Parser em `zapi-webhook-receive` (`parseBlackoutDates`)**
+`LeviLogo` já está importado no arquivo, basta usar.
 
-Adicionar detecção de palavra-chave no início da resposta:
+### 3. Remover o carrossel de slides e manter 3 banners por linha
 
-- `bloquear`, `bloqueio`, `não posso`, `nao posso` → modo **blackout** (atual)
-- `servir`, `posso`, `só`, `apenas`, `disponível em` → modo **servir-apenas**: gera blackouts para todas as datas-chave **exceto** as informadas
-- Sem palavra-chave → mantém comportamento atual (assume bloqueio, como hoje)
+Em `src/pages/Landing.tsx`, seção `#funcionalidades` (~linha 825-831):
 
-A confirmação no WhatsApp também vai diferenciar:
-
-- Modo bloquear: "Bloqueei: 5/5, 12/5"
-- Modo servir-apenas: "Você servirá em: 18/5, 25/5. Demais dias bloqueados."
-
-#### Arquivos afetados
-
-- `supabase/functions/send-blackout-collection-prompt/index.ts` — usar `FIXED_SLOTS` + `member_availability` do voluntário para listar os dias reais com dia da semana e turno
-- `supabase/functions/zapi-webhook-receive/index.ts` — estender `parseBlackoutDates` com modo (`block` | `serve_only`) e ajustar lógica que grava em `member_preferences.blackout_dates`
-- `supabase/functions/_shared/` — possível helper compartilhado para gerar a lista de datas-chave do mês a partir dos slots de um voluntário
-
-#### Observação importante
-
-A mensagem ficará **mais longa**. Para departamentos com muitos slots semanais isso pode passar de 20 linhas. Posso limitar a:
-
-- Apenas os próximos 4–5 domingos + dias da semana relevantes, OU
-- Mostrar só os turnos que o voluntário tem disponibilidade ativa (não listar dias que ele já bloqueou na disponibilidade semanal)
-
-Vou usar a **segunda opção** (mais limpa e personalizada) — só lista os dias em que ele realmente é candidato a ser escalado.
-
----
-
-### 2) LEVI integrado ao site de outras igrejas — sim, já é possível
-
-O LEVI já tem uma **página pública por igreja** funcionando hoje:
-
-```
-https://leviescalas.com.br/igreja/{slug-da-igreja}
+**Antes:**
+```tsx
+<FeatureCarousel />
+<FeatureGrid />
 ```
 
-Essa página mostra:
-
-- Logo, nome e descrição da igreja
-- Lista de departamentos
-- Calendário unificado de escalas (sem precisar login)
-
-**Como qualquer igreja pode integrar isso no site dela:**
-
-**Opção A — Link direto** (já funciona, sem desenvolvimento)
-A igreja coloca um botão "Ver Escalas" no site dela apontando para `https://leviescalas.com.br/igreja/{slug}`.
-
-**Opção B — Embed via iframe** (precisa de pequeno ajuste)
-Posso ajustar `ChurchPublic.tsx` para aceitar `?embed=1` (esconde header/footer/sidebar), permitindo que a igreja incorpore as escalas diretamente dentro do site dela:
-
-```html
-<iframe 
-  src="https://leviescalas.com.br/igreja/minha-igreja?embed=1"
-  width="100%" height="800" frameborder="0">
-</iframe>
+**Depois:**
+```tsx
+<FeatureGrid />
 ```
 
-**Opção C — Widget JS** (maior esforço)
-Um script `<script src="https://leviescalas.com.br/widget.js">` que renderiza as escalas próximas em qualquer site. Mais trabalho, mas mais flexível.
+O `FeatureGrid` já usa `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3` — ou seja, **3 banners por linha no desktop**, 2 em tablet e 1 em mobile. Não precisa de mudança na grade em si.
 
-**Minha recomendação:** começar pela **Opção B** (iframe + `?embed=1`). É rápido, atende a maioria dos casos e não exige que a igreja entenda nada de programação — basta colar o iframe.
+A função `FeatureCarousel()` (linhas 433–529) ficará órfã. Para evitar warning de "imports não usados", removê-la inteira do arquivo, junto com os imports que só ela usava (verificar: `Bell`, `RefreshCw`, `LayoutGrid`, `CheckCircle2` se não forem usados em outro lugar — manter os que são).
 
----
+### Arquivos a editar
 
-### O que faço agora
+- `src/pages/Landing.tsx` — remover `<FeatureCarousel />`, remover a função `FeatureCarousel`, ajustar mockup da seção de integração com `LeviLogo`.
 
-Vou implementar:
-
-1. **Mensagem de bloqueio melhorada** com dia da semana + turno + modo "servir/bloquear"
-2. **Modo embed** (`?embed=1`) na página pública da igreja, para integração em sites externos
-
-Confirma os dois? Se quiser só um deles primeiro, me diga.
-
-obs : veriicar se cada departamento tem qt e dias de bloueio respeitar isso se passar da cota de dias enviar uma msg 'falar com seu lider, dias não bloqueador " (apenas no caso de bloqueio) e não bloquear nehum  pois no departamento vc pode bloquear x dias o x representa o numero de dias que o voluntário pode bloquear
+Sem alterações em backend, banco, ou outros componentes.
