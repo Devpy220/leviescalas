@@ -167,12 +167,12 @@ async function startSwap(deps: SwapFlowDeps, profile: Profile): Promise<void> {
 
   await cancelOldSessions(deps, profile.id);
 
-  let msg = `Olá *${fname}*! 🔄 Qual escala você quer trocar?\n\n`;
+  let msg = `🔄 *Troca de Escala*\n━━━━━━━━━━━━━━━━━━━━\n\nOlá *${fname}*! 👋\n\n📖 _Leia com atenção:_\nQual escala você quer trocar? Responda com o *número* correspondente.\n\n━━━━━━━━━━━━━━━━━━━━\n📆 *Suas próximas escalas:*\n\n`;
   schedules.forEach((s: any, i: number) => {
     const deptName = s.departments?.name ?? "";
-    msg += `*${i + 1})* ${fmtDate(s.date)} ${fmtTime(s.time_start)}-${fmtTime(s.time_end)} — ${deptName}\n`;
+    msg += `*${i + 1})* ${fmtDate(s.date)} ${fmtTime(s.time_start)}-${fmtTime(s.time_end)}\n     ${deptName}\n\n`;
   });
-  msg += `\nResponda com o *número* da escala (ou "cancelar").\n\n💡 _Dica: configure um som personalizado para o LEVI em "Notificações personalizadas" da nossa conversa — assim você nunca perde uma escala._\n\n_LEVI_`;
+  msg += `━━━━━━━━━━━━━━━━━━━━\n✍️ Responda com o *número* da escala\n   (ou envie "cancelar")\n\n💡 _Dica: configure um som personalizado para o LEVI em "Notificações personalizadas" da nossa conversa — assim você nunca perde uma escala._\n\n_LEVI_`;
 
   await deps.supabase.from("whatsapp_swap_sessions").insert({
     user_id: profile.id,
@@ -350,11 +350,11 @@ async function handleSchedulePick(
     return;
   }
 
-  let msg = `Você quer trocar: *${fmtDate(reqSchedule.date)} ${fmtTime(reqSchedule.time_start)}-${fmtTime(reqSchedule.time_end)}*\n\nCom quem?\n\n`;
+  let msg = `🔄 *Escolha o colega*\n━━━━━━━━━━━━━━━━━━━━\n\n📖 _Leia com atenção:_\n\nVocê quer trocar a escala:\n📆 *${fmtDate(reqSchedule.date)}*\n⏰ ${fmtTime(reqSchedule.time_start)}-${fmtTime(reqSchedule.time_end)}\n\n━━━━━━━━━━━━━━━━━━━━\n👥 *Com quem você quer trocar?*\n\n`;
   candidates.forEach((c, i) => {
-    msg += `*${i + 1})* ${c.name} — escala em ${fmtDate(c.date)} ${fmtTime(c.time_start)}-${fmtTime(c.time_end)}\n`;
+    msg += `*${i + 1})* ${c.name}\n     escala em ${fmtDate(c.date)} ${fmtTime(c.time_start)}-${fmtTime(c.time_end)}\n\n`;
   });
-  msg += `\nResponda com o *número* (ou "cancelar").\n\n_LEVI_`;
+  msg += `━━━━━━━━━━━━━━━━━━━━\n✍️ Responda com o *número* (ou "cancelar").\n\n_LEVI_`;
 
   await deps.supabase
     .from("whatsapp_swap_sessions")
@@ -466,17 +466,30 @@ async function askTarget(
 
   // Notify target
   const msg =
-    `Oi *${tgtFname}*! 🔄 *${reqFname}* pediu para trocar de escala com você no departamento *${deptName}*:\n\n` +
-    `• Você assumiria: ${fmtDate(reqSchedule.date)} ${fmtTime(reqSchedule.time_start)}-${fmtTime(reqSchedule.time_end)}\n` +
-    `• ${reqFname} assume sua: ${fmtDate(tgtSchedule.date)} ${fmtTime(tgtSchedule.time_start)}-${fmtTime(tgtSchedule.time_end)}\n\n` +
-    `Responda *"sim"* para aceitar ou *"não"* para recusar.\n\n_LEVI_`;
+    `🔄 *Pedido de Troca de Escala*\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n\n` +
+    `Oi *${tgtFname}*! 👋\n\n` +
+    `📖 *Leia com atenção, por favor.*\n\n` +
+    `*${reqFname}* pediu para trocar de escala com você no departamento *${deptName}*.\n\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n` +
+    `📥 *Você assumiria:*\n` +
+    `   📆 ${fmtDate(reqSchedule.date)}\n` +
+    `   ⏰ ${fmtTime(reqSchedule.time_start)}-${fmtTime(reqSchedule.time_end)}\n\n` +
+    `📤 *${reqFname} assume a sua:*\n` +
+    `   📆 ${fmtDate(tgtSchedule.date)}\n` +
+    `   ⏰ ${fmtTime(tgtSchedule.time_start)}-${fmtTime(tgtSchedule.time_end)}\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n\n` +
+    `✍️ *Responda agora:*\n` +
+    `   ✅ *"sim"* — para aceitar\n` +
+    `   ❌ *"não"* — para recusar\n\n` +
+    `_LEVI_`;
   await sendWA(deps, tgtProfile.whatsapp, msg);
 
   // Confirm to requester
   await sendWA(
     deps,
     requester.whatsapp,
-    `✉️ Solicitação enviada para *${tgtFname}*. Aguarde a resposta.\n\n_LEVI_`,
+    `✉️ *Solicitação enviada!*\n━━━━━━━━━━━━━━━━━━━━\n\nPedido enviado para *${tgtFname}*.\n\n⏳ Aguarde a resposta — assim que ${tgtFname} responder, eu te aviso aqui.\n\n_LEVI_`,
   );
 }
 
@@ -521,13 +534,13 @@ async function handleTargetResponse(
       .update({ state: "done" })
       .eq("id", session.id);
 
-    await sendWA(deps, target.whatsapp, `✅ Troca confirmada! Suas escalas foram atualizadas.\n\n_LEVI_`);
+    await sendWA(deps, target.whatsapp, `✅ *Troca confirmada!*\n━━━━━━━━━━━━━━━━━━━━\n\n📖 _Leia com atenção:_\nSuas escalas já foram *atualizadas* no sistema.\n\n_LEVI_`);
     if (reqProfile?.whatsapp) {
       const tgtFname = (target.name || "").split(" ")[0];
       await sendWA(
         deps,
         reqProfile.whatsapp,
-        `✅ *${tgtFname}* aceitou! Suas escalas foram trocadas.\n\n_LEVI_`,
+        `✅ *Troca confirmada!*\n━━━━━━━━━━━━━━━━━━━━\n\n📖 _Leia com atenção:_\n*${tgtFname}* aceitou a troca. Suas escalas já foram *atualizadas*.\n\n_LEVI_`,
       );
     }
     return;
@@ -539,7 +552,7 @@ async function handleTargetResponse(
     .update({ status: "rejected", resolved_at: new Date().toISOString() })
     .eq("id", swapId);
 
-  await sendWA(deps, target.whatsapp, `Tudo bem, recusa registrada.\n\n_LEVI_`);
+  await sendWA(deps, target.whatsapp, `Tudo bem, *recusa registrada*. Obrigado por responder! 🙏\n\n_LEVI_`);
 
   // Try next candidate (up to MAX_ATTEMPTS)
   const userIds: string[] = session.candidate_target_user_ids ?? [];
@@ -560,7 +573,7 @@ async function handleTargetResponse(
       await sendWA(
         deps,
         reqProfile.whatsapp,
-        `❌ Não foi possível encontrar substituto após ${nextAttempt} tentativa(s).\nFale com seu líder para resolver.\n\n_LEVI_`,
+        `❌ *Não encontramos substituto*\n━━━━━━━━━━━━━━━━━━━━\n\n📖 _Leia com atenção:_\nTentei *${nextAttempt} colega(s)* e ninguém pôde trocar com você.\n\n👉 Por favor, *fale com seu líder* para resolver essa escala.\n\n_LEVI_`,
       );
     }
 
@@ -614,7 +627,7 @@ async function notifyLeader(
     .maybeSingle();
   if (!leader?.whatsapp) return;
   const msg =
-    `🔔 *${requesterName}* tentou trocar a escala de *${dateStr}* (${dept.name}) pelo WhatsApp e não encontrou substituto.\nPor favor, ajude a resolver.\n\n_LEVI_`;
+    `🔔 *Atenção, líder!*\n━━━━━━━━━━━━━━━━━━━━\n\n📖 _Leia com atenção:_\n\n*${requesterName}* tentou trocar a escala de *${dateStr}* no departamento *${dept.name}* pelo WhatsApp, mas *não encontrou substituto*.\n\n👉 Por favor, ajude a resolver essa escala.\n\n_LEVI_`;
   await sendWA(deps, leader.whatsapp, msg);
 }
 
