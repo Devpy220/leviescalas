@@ -165,12 +165,6 @@ serve(async (req: Request): Promise<Response> => {
       console.error("swap flow error:", e);
     }
 
-    if (false) {
-      return new Response(JSON.stringify({ ignored: true }), {
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
-    }
-
     const { data: prompts } = await supabase
       .from("blackout_collection_prompts")
       .select("*")
