@@ -47,6 +47,8 @@ import {
   CalendarSync,
   Clock,
   HeartHandshake,
+  Crown,
+  Settings,
 } from 'lucide-react';
 import { LeviLogo } from '@/components/LeviLogo';
 import { LeviTypewriter } from '@/components/LeviTypewriter';
