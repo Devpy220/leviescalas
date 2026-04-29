@@ -350,11 +350,11 @@ async function handleSchedulePick(
     return;
   }
 
-  let msg = `Você quer trocar: *${fmtDate(reqSchedule.date)} ${fmtTime(reqSchedule.time_start)}-${fmtTime(reqSchedule.time_end)}*\n\nCom quem?\n\n`;
+  let msg = `🔄 *Escolha o colega*\n━━━━━━━━━━━━━━━━━━━━\n\n📖 _Leia com atenção:_\n\nVocê quer trocar a escala:\n📆 *${fmtDate(reqSchedule.date)}*\n⏰ ${fmtTime(reqSchedule.time_start)}-${fmtTime(reqSchedule.time_end)}\n\n━━━━━━━━━━━━━━━━━━━━\n👥 *Com quem você quer trocar?*\n\n`;
   candidates.forEach((c, i) => {
-    msg += `*${i + 1})* ${c.name} — escala em ${fmtDate(c.date)} ${fmtTime(c.time_start)}-${fmtTime(c.time_end)}\n`;
+    msg += `*${i + 1})* ${c.name}\n     escala em ${fmtDate(c.date)} ${fmtTime(c.time_start)}-${fmtTime(c.time_end)}\n\n`;
   });
-  msg += `\nResponda com o *número* (ou "cancelar").\n\n_LEVI_`;
+  msg += `━━━━━━━━━━━━━━━━━━━━\n✍️ Responda com o *número* (ou "cancelar").\n\n_LEVI_`;
 
   await deps.supabase
     .from("whatsapp_swap_sessions")
