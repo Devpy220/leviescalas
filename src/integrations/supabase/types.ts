@@ -1195,6 +1195,57 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_swap_sessions: {
+        Row: {
+          attempts_count: number
+          candidate_target_schedule_ids: string[]
+          candidate_target_user_ids: string[]
+          created_at: string
+          current_target_schedule_id: string | null
+          current_target_user_id: string | null
+          expires_at: string
+          id: string
+          phone: string
+          requester_schedule_id: string | null
+          state: string
+          swap_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attempts_count?: number
+          candidate_target_schedule_ids?: string[]
+          candidate_target_user_ids?: string[]
+          created_at?: string
+          current_target_schedule_id?: string | null
+          current_target_user_id?: string | null
+          expires_at?: string
+          id?: string
+          phone: string
+          requester_schedule_id?: string | null
+          state: string
+          swap_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attempts_count?: number
+          candidate_target_schedule_ids?: string[]
+          candidate_target_user_ids?: string[]
+          created_at?: string
+          current_target_schedule_id?: string | null
+          current_target_user_id?: string | null
+          expires_at?: string
+          id?: string
+          phone?: string
+          requester_schedule_id?: string | null
+          state?: string
+          swap_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       churches_member_view: {

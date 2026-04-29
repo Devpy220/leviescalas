@@ -5,6 +5,7 @@ import {
   getActiveSlotsForUser,
   type AvailabilityRow,
 } from "../_shared/scheduleDates.ts";
+import { tryHandleSwapMessage } from "./swapFlow.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -144,6 +145,24 @@ serve(async (req: Request): Promise<Response> => {
       return new Response(JSON.stringify({ ignored: true, reason: "phone not found" }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
+    }
+
+    // ─── Swap-over-WhatsApp router ───
+    // Try to handle as a swap initiation / continuation.
+    // If handled, short-circuit. Otherwise fall through to blackout-prompt logic.
+    try {
+      const handledSwap = await tryHandleSwapMessage(
+        { supabase, supabaseUrl, serviceRoleKey },
+        { id: profile.id, name: profile.name, whatsapp: profile.whatsapp },
+        text,
+      );
+      if (handledSwap) {
+        return new Response(JSON.stringify({ ok: true, handled: "swap" }), {
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+    } catch (e) {
+      console.error("swap flow error:", e);
     }
 
     const { data: prompts } = await supabase
