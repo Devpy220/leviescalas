@@ -6,8 +6,23 @@ import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
+  // Build version stamped in São Paulo / Brazil timezone (America/Sao_Paulo)
   const buildDate = new Date();
-  const appVersion = `${buildDate.getFullYear()}.${String(buildDate.getMonth() + 1).padStart(2, "0")}.${String(buildDate.getDate()).padStart(2, "0")}.${String(buildDate.getHours()).padStart(2, "0")}${String(buildDate.getMinutes()).padStart(2, "0")}`;
+  const spParts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  })
+    .formatToParts(buildDate)
+    .reduce<Record<string, string>>((acc, p) => {
+      if (p.type !== "literal") acc[p.type] = p.value;
+      return acc;
+    }, {});
+  const appVersion = `${spParts.year}.${spParts.month}.${spParts.day}.${spParts.hour}${spParts.minute}`;
   return {
   define: {
     __APP_VERSION__: JSON.stringify(appVersion),
