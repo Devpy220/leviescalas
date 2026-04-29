@@ -301,7 +301,7 @@ function FeatureGrid() {
         </p>
       </div>
 
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 sm:gap-2.5">
+      <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-1.5 sm:gap-2">
         {features.map((f, i) => {
           const Icon = f.icon;
           return (
@@ -309,13 +309,14 @@ function FeatureGrid() {
               key={i}
               type="button"
               onClick={() => setSelected(i)}
-              className={`group relative overflow-hidden rounded-xl border border-border/60 bg-gradient-to-br ${f.color} p-2.5 sm:p-3 hover:border-primary/50 hover:shadow-md hover:shadow-primary/10 hover:-translate-y-0.5 transition-all duration-300 text-left flex flex-col items-center justify-center gap-1.5 aspect-square sm:aspect-auto sm:min-h-[88px]`}
+              className={`group relative overflow-hidden rounded-lg border border-border/60 bg-gradient-to-br ${f.color} p-1.5 hover:border-primary/50 hover:shadow-sm hover:shadow-primary/10 hover:-translate-y-0.5 transition-all duration-300 flex flex-col items-center justify-center gap-1 aspect-square`}
               aria-label={`Ver detalhes de ${f.title}`}
+              title={f.title}
             >
-              <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-card border border-border/60 flex items-center justify-center flex-shrink-0 ${f.iconColor} group-hover:scale-110 transition-transform duration-300`}>
-                <Icon className="w-4 h-4" strokeWidth={2} />
+              <div className={`w-7 h-7 rounded-md bg-card border border-border/60 flex items-center justify-center flex-shrink-0 ${f.iconColor} group-hover:scale-110 transition-transform duration-300`}>
+                <Icon className="w-3.5 h-3.5" strokeWidth={2} />
               </div>
-              <h4 className="font-semibold text-foreground text-[10px] sm:text-[11px] leading-tight text-center line-clamp-2">{f.title}</h4>
+              <h4 className="font-medium text-foreground text-[9px] leading-tight text-center line-clamp-2 px-0.5">{f.title}</h4>
             </button>
           );
         })}
