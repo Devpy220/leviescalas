@@ -167,12 +167,12 @@ async function startSwap(deps: SwapFlowDeps, profile: Profile): Promise<void> {
 
   await cancelOldSessions(deps, profile.id);
 
-  let msg = `Olá *${fname}*! 🔄 Qual escala você quer trocar?\n\n`;
+  let msg = `🔄 *Troca de Escala*\n━━━━━━━━━━━━━━━━━━━━\n\nOlá *${fname}*! 👋\n\n📖 _Leia com atenção:_\nQual escala você quer trocar? Responda com o *número* correspondente.\n\n━━━━━━━━━━━━━━━━━━━━\n📆 *Suas próximas escalas:*\n\n`;
   schedules.forEach((s: any, i: number) => {
     const deptName = s.departments?.name ?? "";
-    msg += `*${i + 1})* ${fmtDate(s.date)} ${fmtTime(s.time_start)}-${fmtTime(s.time_end)} — ${deptName}\n`;
+    msg += `*${i + 1})* ${fmtDate(s.date)} ${fmtTime(s.time_start)}-${fmtTime(s.time_end)}\n     ${deptName}\n\n`;
   });
-  msg += `\nResponda com o *número* da escala (ou "cancelar").\n\n💡 _Dica: configure um som personalizado para o LEVI em "Notificações personalizadas" da nossa conversa — assim você nunca perde uma escala._\n\n_LEVI_`;
+  msg += `━━━━━━━━━━━━━━━━━━━━\n✍️ Responda com o *número* da escala\n   (ou envie "cancelar")\n\n💡 _Dica: configure um som personalizado para o LEVI em "Notificações personalizadas" da nossa conversa — assim você nunca perde uma escala._\n\n_LEVI_`;
 
   await deps.supabase.from("whatsapp_swap_sessions").insert({
     user_id: profile.id,
