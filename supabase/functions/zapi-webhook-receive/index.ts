@@ -5,6 +5,7 @@ import {
   getActiveSlotsForUser,
   type AvailabilityRow,
 } from "../_shared/scheduleDates.ts";
+import { tryHandleSwapMessage } from "./swapFlow.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
