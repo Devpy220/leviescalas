@@ -830,7 +830,73 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── FOOTER ── */}
+      {/* ── EMBED / INTEGRAÇÃO ── */}
+      <section className="relative z-[1] py-16 sm:py-20 overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+        <div className="container mx-auto px-4 sm:px-6 max-w-5xl relative">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-4">
+                <Globe className="w-3.5 h-3.5" />
+                Integração
+              </div>
+              <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-4">
+                Coloque a escala da igreja <span className="text-primary">no site oficial</span>
+              </h2>
+              <p className="text-muted-foreground mb-4">
+                Cada igreja tem uma página pública no LEVI (<span className="font-mono text-xs">/igreja/sua-igreja</span>)
+                que pode ser embutida em qualquer site — Wix, WordPress, Webflow ou HTML próprio.
+              </p>
+              <ul className="space-y-2 text-sm text-muted-foreground mb-6">
+                <li className="flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 shrink-0" />
+                  <span>Mostra calendário público de escalas e departamentos</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 shrink-0" />
+                  <span>Atualiza automaticamente, sem precisar editar o site</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 shrink-0" />
+                  <span>1 linha de código <span className="font-mono">&lt;iframe&gt;</span> e pronto</span>
+                </li>
+              </ul>
+              <p className="text-xs text-muted-foreground">
+                Disponível na página da igreja no botão <strong>Integrar no site</strong>.
+              </p>
+            </div>
+
+            <div className="relative">
+              <div className="rounded-2xl border border-border bg-card/60 backdrop-blur-sm p-4 sm:p-6 shadow-2xl">
+                <div className="flex items-center gap-1.5 mb-3">
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-400/70" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400/70" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400/70" />
+                  <span className="ml-2 text-[10px] text-muted-foreground font-mono">site-da-igreja.com</span>
+                </div>
+                <pre className="text-[10px] sm:text-xs font-mono bg-muted/40 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-all border border-border">
+{`<iframe
+  src="https://leviescalas.com.br/igreja/sua-igreja?embed=1"
+  width="100%"
+  height="800"
+  frameborder="0">
+</iframe>`}
+                </pre>
+                <div className="mt-3 rounded-lg border border-dashed border-border p-4 text-center">
+                  <Calendar className="w-6 h-6 text-primary mx-auto mb-1" />
+                  <p className="text-xs text-muted-foreground">
+                    Calendário de escalas embutido no site
+                  </p>
+                </div>
+              </div>
+              <div className="absolute -top-3 -right-3 px-3 py-1 rounded-full bg-amber-400 text-[10px] font-bold text-amber-950 shadow-lg">
+                NOVO
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <footer className="relative z-[1] py-6 border-t border-border">
         <div className="container mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
