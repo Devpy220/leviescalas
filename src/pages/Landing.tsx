@@ -825,7 +825,6 @@ export default function Landing() {
       <section id="funcionalidades" className="relative z-[1] overflow-hidden py-16 sm:py-20" style={{ scrollMarginTop: 80 }}>
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
         <div className="container mx-auto px-4 sm:px-6 max-w-6xl relative w-full">
-          <FeatureCarousel />
           <FeatureGrid />
         </div>
       </section>
@@ -882,11 +881,13 @@ export default function Landing() {
   frameborder="0">
 </iframe>`}
                 </pre>
-                <div className="mt-3 rounded-lg border border-dashed border-border p-4 text-center">
-                  <Calendar className="w-6 h-6 text-primary mx-auto mb-1" />
-                  <p className="text-xs text-muted-foreground">
-                    Calendário de escalas embutido no site
-                  </p>
+                <div className="mt-3 rounded-lg border border-dashed border-border p-4 flex items-center gap-3">
+                  <LeviLogo size="sm" />
+                  <div className="text-left min-w-0 flex-1">
+                    <p className="text-xs font-semibold text-foreground truncate">Escala da igreja</p>
+                    <p className="text-[10px] text-muted-foreground truncate">Atualizado em tempo real pelo LEVI</p>
+                  </div>
+                  <Calendar className="w-5 h-5 text-primary shrink-0" />
                 </div>
               </div>
               <div className="absolute -top-3 -right-3 px-3 py-1 rounded-full bg-amber-400 text-[10px] font-bold text-amber-950 shadow-lg">
