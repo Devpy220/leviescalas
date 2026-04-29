@@ -558,36 +558,36 @@ export default function Landing() {
                 </div>
               </div>
 
-              <h1 className="animate-slide-up-2 font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground leading-tight">
+              <h1 className="animate-slide-up-2 font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground leading-tight">
                 {t('landing.heroTitle1')}<br />{t('landing.heroTitle2')}<br />
                 <Typewriter words={t('landing.typewriterWords', { returnObjects: true }) as string[]} />
               </h1>
 
-              <p className="animate-slide-up-3 text-base sm:text-lg text-muted-foreground max-w-lg mx-auto leading-relaxed">
+              <p className="animate-slide-up-3 text-sm sm:text-base text-muted-foreground max-w-lg mx-auto leading-relaxed">
                 {t('landing.heroDescription')}
               </p>
 
-              <div className="animate-slide-up-4 flex flex-col sm:flex-row gap-3 justify-center">
+              <div className="animate-slide-up-4 flex flex-col sm:flex-row gap-2.5 justify-center">
                 <Button
-                  size="lg"
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-10 py-6 text-base font-semibold btn-glow transition-all hover:scale-[1.02]"
+                  size="default"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-8 text-sm font-semibold btn-glow transition-all hover:scale-[1.02]"
                   onClick={() => openAuth('login')}
                 >
                   {t('landing.enter')} <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
                 <Button
-                  size="lg"
+                  size="default"
                   variant="outline"
-                  className="border-primary/30 text-primary hover:bg-primary/10 rounded-full px-8"
+                  className="border-primary/30 text-primary hover:bg-primary/10 rounded-full px-6 text-sm"
                   onClick={() => navigate('/church-setup')}
                 >
                   <Church className="w-4 h-4 mr-2" />
                   {t('landing.registerChurch')}
                 </Button>
                 <Button
-                  size="lg"
+                  size="default"
                   variant="ghost"
-                  className="text-muted-foreground hover:text-foreground rounded-full px-8"
+                  className="text-muted-foreground hover:text-foreground rounded-full px-6 text-sm"
                   onClick={() => { setShowContact(true); setContactSent(false); }}
                 >
                   {t('landing.contactUs')}
