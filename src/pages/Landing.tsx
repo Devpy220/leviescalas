@@ -576,70 +576,74 @@ export default function Landing() {
         <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full pointer-events-none" style={{ background: 'hsl(var(--secondary) / 0.1)', filter: 'blur(120px)' }} />
 
         <div className="container mx-auto px-4 sm:px-6 relative z-10">
-          <div className="max-w-3xl mx-auto">
-            {/* Hero centered */}
-            <div className="text-center space-y-4 sm:space-y-5">
-              <div className="animate-slide-up-1 flex flex-col items-center gap-3">
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/8 text-primary text-sm font-medium border border-primary/15">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>{t('landing.tagline')}</span>
+          <div className="max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+              {/* Coluna esquerda: tagline + título + descrição */}
+              <div className="text-center lg:text-left space-y-4 sm:space-y-5">
+                <div className="animate-slide-up-1 flex lg:justify-start justify-center">
+                  <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/8 text-primary text-sm font-medium border border-primary/15">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>{t('landing.tagline')}</span>
+                  </div>
                 </div>
+
+                <h1 className="animate-slide-up-2 font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground leading-tight">
+                  {t('landing.heroTitle1')}<br />{t('landing.heroTitle2')}<br />
+                  <Typewriter words={t('landing.typewriterWords', { returnObjects: true }) as string[]} />
+                </h1>
+
+                <p className="animate-slide-up-3 text-sm sm:text-base text-muted-foreground max-w-lg mx-auto lg:mx-0 leading-relaxed">
+                  {t('landing.heroDescription')}
+                </p>
               </div>
 
-              <h1 className="animate-slide-up-2 font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground leading-tight">
-                {t('landing.heroTitle1')}<br />{t('landing.heroTitle2')}<br />
-                <Typewriter words={t('landing.typewriterWords', { returnObjects: true }) as string[]} />
-              </h1>
-
-              <p className="animate-slide-up-3 text-sm sm:text-base text-muted-foreground max-w-lg mx-auto leading-relaxed">
-                {t('landing.heroDescription')}
-              </p>
-
-              <div className="animate-slide-up-4 flex flex-col sm:flex-row gap-2.5 justify-center">
-                <Button
-                  size="default"
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-8 text-sm font-semibold btn-glow transition-all hover:scale-[1.02]"
-                  onClick={() => openAuth('login')}
-                >
-                  {t('landing.enter')} <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-                <Button
-                  size="default"
-                  variant="outline"
-                  className="border-primary/30 text-primary hover:bg-primary/10 rounded-full px-6 text-sm"
-                  onClick={() => navigate('/church-setup')}
-                >
-                  <Church className="w-4 h-4 mr-2" />
-                  {t('landing.registerChurch')}
-                </Button>
-                <Button
-                  size="default"
-                  variant="ghost"
-                  className="text-muted-foreground hover:text-foreground rounded-full px-6 text-sm"
-                  onClick={() => { setShowContact(true); setContactSent(false); }}
-                >
-                  {t('landing.contactUs')}
-                </Button>
-              </div>
-
-              {/* Social proof */}
-              <div className="animate-slide-up-5 flex items-center justify-center gap-3">
-                <div className="flex -space-x-2">
-                  {['from-primary to-primary/70', 'from-secondary to-secondary/70', 'from-accent to-accent/70'].map((gradient, i) => (
-                    <div key={i} className={`w-8 h-8 rounded-full bg-gradient-to-br ${gradient} border-2 border-background flex items-center justify-center`}>
-                      <Users className="w-3.5 h-3.5 text-white" />
-                    </div>
-                  ))}
+              {/* Coluna direita: CTAs + contador */}
+              <div className="flex flex-col items-center lg:items-start gap-5">
+                <div className="animate-slide-up-4 flex flex-col sm:flex-row flex-wrap gap-2.5 justify-center lg:justify-start">
+                  <Button
+                    size="default"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-8 text-sm font-semibold btn-glow transition-all hover:scale-[1.02]"
+                    onClick={() => openAuth('login')}
+                  >
+                    {t('landing.enter')} <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                  <Button
+                    size="default"
+                    variant="outline"
+                    className="border-primary/30 text-primary hover:bg-primary/10 rounded-full px-6 text-sm"
+                    onClick={() => navigate('/church-setup')}
+                  >
+                    <Church className="w-4 h-4 mr-2" />
+                    {t('landing.registerChurch')}
+                  </Button>
+                  <Button
+                    size="default"
+                    variant="ghost"
+                    className="text-muted-foreground hover:text-foreground rounded-full px-6 text-sm"
+                    onClick={() => { setShowContact(true); setContactSent(false); }}
+                  >
+                    {t('landing.contactUs')}
+                  </Button>
                 </div>
-                <div className="text-left">
-                  <span className="text-xl font-bold text-foreground">
-                    {countLoading ? '...' : <AnimatedCounter target={count || 0} suffix="+" />}
-                  </span>
-                  <p className="text-xs text-muted-foreground">{t('landing.volunteersRegistered')}</p>
+
+                {/* Social proof */}
+                <div className="animate-slide-up-5 flex items-center gap-3">
+                  <div className="flex -space-x-2">
+                    {['from-primary to-primary/70', 'from-secondary to-secondary/70', 'from-accent to-accent/70'].map((gradient, i) => (
+                      <div key={i} className={`w-8 h-8 rounded-full bg-gradient-to-br ${gradient} border-2 border-background flex items-center justify-center`}>
+                        <Users className="w-3.5 h-3.5 text-white" />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-left">
+                    <span className="text-xl font-bold text-foreground">
+                      {countLoading ? '...' : <AnimatedCounter target={count || 0} suffix="+" />}
+                    </span>
+                    <p className="text-xs text-muted-foreground">{t('landing.volunteersRegistered')}</p>
+                  </div>
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       </section>
