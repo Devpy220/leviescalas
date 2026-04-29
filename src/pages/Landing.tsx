@@ -822,10 +822,11 @@ export default function Landing() {
       </section>
 
       {/* ── FEATURES ── */}
-      <section id="funcionalidades" className="relative z-[1] min-h-[80vh] flex items-center overflow-hidden py-12" style={{ scrollMarginTop: 80 }}>
+      <section id="funcionalidades" className="relative z-[1] overflow-hidden py-16 sm:py-20" style={{ scrollMarginTop: 80 }}>
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-        <div className="container mx-auto px-4 sm:px-6 max-w-5xl relative w-full">
+        <div className="container mx-auto px-4 sm:px-6 max-w-6xl relative w-full">
           <FeatureCarousel />
+          <FeatureGrid />
         </div>
       </section>
 
