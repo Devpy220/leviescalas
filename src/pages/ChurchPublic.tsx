@@ -12,7 +12,8 @@ import {
   Plus,
   Share2,
   LogIn,
-  UserPlus
+  UserPlus,
+  Code2
 } from 'lucide-react';
 import { LeviLogo } from '@/components/LeviLogo';
 import { EmbedCodeDialog } from '@/components/EmbedCodeDialog';
@@ -204,7 +205,16 @@ export default function ChurchPublic() {
             </Link>
             
             <div className="flex items-center gap-2">
-              <EmbedCodeDialog slug={slug!} churchName={church.name} />
+              <EmbedCodeDialog
+                slug={slug!}
+                churchName={church.name}
+                trigger={
+                  <Button variant="outline" size="sm" className="gap-1 sm:gap-2">
+                    <Code2 className="w-4 h-4" />
+                    <span className="hidden sm:inline">Integrar no site</span>
+                  </Button>
+                }
+              />
               <Button variant="ghost" size="icon" onClick={handleShare}>
                 <Share2 className="w-5 h-5" />
               </Button>
