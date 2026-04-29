@@ -24,7 +24,7 @@ import {
   Calendar,
   Users,
   Bell,
-  Zap,
+  
   Eye,
   EyeOff,
   Loader2,
@@ -47,6 +47,8 @@ import {
   CalendarSync,
   Clock,
   HeartHandshake,
+  Crown,
+  Settings,
 } from 'lucide-react';
 import { LeviLogo } from '@/components/LeviLogo';
 import { LeviTypewriter } from '@/components/LeviTypewriter';
@@ -135,123 +137,7 @@ function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: str
   return <span ref={ref}>{n.toLocaleString('pt-BR')}{suffix}</span>;
 }
 
-// ── 3D Rotating Cube ─────────────────────────────────────────────────────────
-function FeatureCube() {
-  const { t } = useTranslation();
-  const cubeRef = useRef<HTMLDivElement>(null);
-  const rotRef = useRef({ x: -25, y: 0 });
-  const rafRef = useRef<number>(0);
-  const lastRef = useRef<number | null>(null);
-  const isMobile = useIsMobile();
 
-  const dragging = useRef(false);
-  const dragStart = useRef({ x: 0, y: 0 });
-  const rotStart = useRef({ x: 0, y: 0 });
-  const lastInteraction = useRef(0);
-
-  const faces = [
-    { Icon: Calendar, labelKey: 'landing.cube.calendar', pillKey: 'landing.cube.live', face: 'front' },
-    { Icon: Users, labelKey: 'landing.cube.members', pillKey: 'landing.cube.organized', face: 'right' },
-    { Icon: Bell, labelKey: 'landing.cube.notifications', pillKey: 'landing.cube.auto', face: 'back' },
-    { Icon: RefreshCw, labelKey: 'landing.cube.swaps', pillKey: 'landing.cube.easy', face: 'left' },
-    { Icon: Zap, labelKey: 'landing.cube.realtime', pillKey: 'landing.cube.online', face: 'top' },
-    { Icon: CheckCircle2, labelKey: 'landing.cube.confirmations', pillKey: 'landing.cube.realtimePill', face: 'bottom' },
-  ];
-
-  const size = isMobile ? 100 : 170;
-
-  const faceTransforms: Record<string, string> = {
-    front: `translateZ(${size}px)`,
-    back: `rotateY(180deg) translateZ(${size}px)`,
-    right: `rotateY(90deg) translateZ(${size}px)`,
-    left: `rotateY(-90deg) translateZ(${size}px)`,
-    top: `rotateX(90deg) translateZ(${size}px)`,
-    bottom: `rotateX(-90deg) translateZ(${size}px)`,
-  };
-
-  const onPointerDown = useCallback((e: React.PointerEvent) => {
-    dragging.current = true;
-    dragStart.current = { x: e.clientX, y: e.clientY };
-    rotStart.current = { ...rotRef.current };
-    lastInteraction.current = Date.now();
-    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
-  }, []);
-
-  const onPointerMove = useCallback((e: React.PointerEvent) => {
-    if (!dragging.current) return;
-    const dx = e.clientX - dragStart.current.x;
-    const dy = e.clientY - dragStart.current.y;
-    rotRef.current.y = rotStart.current.y + dx * 0.5;
-    rotRef.current.x = rotStart.current.x - dy * 0.5;
-    lastInteraction.current = Date.now();
-  }, []);
-
-  const onPointerUp = useCallback(() => {
-    dragging.current = false;
-    lastInteraction.current = Date.now();
-  }, []);
-
-  useEffect(() => {
-    const animate = (ts: number) => {
-      const timeSinceInteraction = Date.now() - lastInteraction.current;
-      if (!dragging.current && timeSinceInteraction > 2000) {
-        if (lastRef.current !== null) {
-          const dt = ts - lastRef.current;
-          rotRef.current.y += dt * 0.02;
-          rotRef.current.x = -25 + Math.sin(ts * 0.0005) * 10;
-        }
-        lastRef.current = ts;
-      } else {
-        lastRef.current = null;
-      }
-      if (cubeRef.current) {
-        cubeRef.current.style.transform = `rotateX(${rotRef.current.x}deg) rotateY(${rotRef.current.y}deg)`;
-      }
-      rafRef.current = requestAnimationFrame(animate);
-    };
-    rafRef.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, []);
-
-  return (
-    <div className="flex flex-col items-center gap-3">
-      <div className={`absolute ${isMobile ? 'w-[200px] h-[200px]' : 'w-[300px] h-[300px] sm:w-[380px] sm:h-[380px]'} rounded-full pointer-events-none`}
-        style={{ background: 'radial-gradient(circle, hsl(var(--primary) / 0.15) 0%, transparent 70%)', filter: 'blur(40px)' }}
-      />
-      <div
-        className="relative cursor-grab active:cursor-grabbing touch-none"
-        style={{ width: size * 2, height: size * 2, perspective: 800 }}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-      >
-        <div ref={cubeRef} style={{ width: '100%', height: '100%', position: 'relative', transformStyle: 'preserve-3d' }}>
-          {faces.map((item) => (
-            <div
-              key={item.face}
-              className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-card/90 backdrop-blur-sm"
-              style={{
-                transform: faceTransforms[item.face],
-                backfaceVisibility: 'hidden',
-                boxShadow: '0 1px 3px hsl(0 0% 0% / 0.08), inset 0 1px 0 hsl(0 0% 100% / 0.06)',
-              }}
-            >
-              <div className={`${isMobile ? 'w-8 h-8' : 'w-12 h-12'} rounded-xl bg-primary/10 flex items-center justify-center`}>
-                <item.Icon className={`${isMobile ? 'w-4 h-4' : 'w-6 h-6'} text-primary`} />
-              </div>
-              <span className={`${isMobile ? 'text-[10px]' : 'text-sm'} font-semibold text-foreground`}>{t(item.labelKey)}</span>
-              <span className={`${isMobile ? 'text-[8px] px-1.5' : 'text-xs px-2.5'} py-0.5 rounded-full border border-border bg-muted/50 text-muted-foreground`}>
-                {t(item.pillKey)}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-      <span className="text-[11px] text-muted-foreground/50 tracking-wider select-none">{t('common.dragToRotate')}</span>
-    </div>
-  );
-}
 
 // ── Feature data ─────────────────────────────────────────────────────────────
 // slides are now built dynamically in FeatureCarousel using t()
@@ -386,6 +272,20 @@ function FeatureGrid() {
       color: 'from-yellow-500/15 to-yellow-500/5',
       iconColor: 'text-yellow-600',
     },
+    {
+      icon: Crown,
+      title: 'Tour Guiado para Líderes',
+      desc: 'Passo a passo na primeira entrada explica tudo o que o líder pode fazer.',
+      color: 'from-violet-500/15 to-violet-500/5',
+      iconColor: 'text-violet-600',
+    },
+    {
+      icon: Settings,
+      title: 'Configurações por Departamento',
+      desc: 'Cada ministério define turnos, dobras de domingo e limite de bloqueios.',
+      color: 'from-stone-500/15 to-stone-500/5',
+      iconColor: 'text-stone-600',
+    },
   ];
 
   return (
@@ -400,7 +300,7 @@ function FeatureGrid() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5">
         {features.map((f, i) => {
           const Icon = f.icon;
           return (
@@ -651,10 +551,10 @@ export default function Landing() {
         <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full pointer-events-none" style={{ background: 'hsl(var(--secondary) / 0.1)', filter: 'blur(120px)' }} />
 
         <div className="container mx-auto px-4 sm:px-6 relative z-10">
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
-            {/* Left */}
-            <div className="text-center lg:text-left space-y-6">
-              <div className="animate-slide-up-1 flex flex-col items-center lg:items-start gap-3">
+          <div className="max-w-3xl mx-auto">
+            {/* Hero centered */}
+            <div className="text-center space-y-6">
+              <div className="animate-slide-up-1 flex flex-col items-center gap-3">
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/8 text-primary text-sm font-medium border border-primary/15">
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>{t('landing.tagline')}</span>
@@ -666,11 +566,11 @@ export default function Landing() {
                 <Typewriter words={t('landing.typewriterWords', { returnObjects: true }) as string[]} />
               </h1>
 
-              <p className="animate-slide-up-3 text-base sm:text-lg text-muted-foreground max-w-lg mx-auto lg:mx-0 leading-relaxed">
+              <p className="animate-slide-up-3 text-base sm:text-lg text-muted-foreground max-w-lg mx-auto leading-relaxed">
                 {t('landing.heroDescription')}
               </p>
 
-              <div className="animate-slide-up-4 flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
+              <div className="animate-slide-up-4 flex flex-col sm:flex-row gap-3 justify-center">
                 <Button
                   size="lg"
                   className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-10 py-6 text-base font-semibold btn-glow transition-all hover:scale-[1.02]"
@@ -698,7 +598,7 @@ export default function Landing() {
               </div>
 
               {/* Social proof */}
-              <div className="animate-slide-up-5 flex items-center justify-center lg:justify-start gap-3">
+              <div className="animate-slide-up-5 flex items-center justify-center gap-3">
                 <div className="flex -space-x-2">
                   {['from-primary to-primary/70', 'from-secondary to-secondary/70', 'from-accent to-accent/70'].map((gradient, i) => (
                     <div key={i} className={`w-8 h-8 rounded-full bg-gradient-to-br ${gradient} border-2 border-background flex items-center justify-center`}>
@@ -715,10 +615,6 @@ export default function Landing() {
               </div>
             </div>
 
-            {/* Right — 3D Cube */}
-            <div className="flex justify-center items-center mt-8 lg:mt-0">
-              <FeatureCube />
-            </div>
           </div>
         </div>
       </section>
@@ -731,74 +627,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── EMBED / INTEGRAÇÃO ── */}
-      <section className="relative z-[1] py-16 sm:py-20 overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-        <div className="container mx-auto px-4 sm:px-6 max-w-5xl relative">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-4">
-                <Globe className="w-3.5 h-3.5" />
-                Integração
-              </div>
-              <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-4">
-                Coloque a escala da igreja <span className="text-primary">no site oficial</span>
-              </h2>
-              <p className="text-muted-foreground mb-4">
-                Cada igreja tem uma página pública no LEVI (<span className="font-mono text-xs">/igreja/sua-igreja</span>)
-                que pode ser embutida em qualquer site — Wix, WordPress, Webflow ou HTML próprio.
-              </p>
-              <ul className="space-y-2 text-sm text-muted-foreground mb-6">
-                <li className="flex items-start gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 shrink-0" />
-                  <span>Mostra calendário público de escalas e departamentos</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 shrink-0" />
-                  <span>Atualiza automaticamente, sem precisar editar o site</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 shrink-0" />
-                  <span>1 linha de código <span className="font-mono">&lt;iframe&gt;</span> e pronto</span>
-                </li>
-              </ul>
-              <p className="text-xs text-muted-foreground">
-                Disponível na página da igreja no botão <strong>Integrar no site</strong>.
-              </p>
-            </div>
 
-            <div className="relative">
-              <div className="rounded-2xl border border-border bg-card/60 backdrop-blur-sm p-4 sm:p-6 shadow-2xl">
-                <div className="flex items-center gap-1.5 mb-3">
-                  <span className="w-2.5 h-2.5 rounded-full bg-red-400/70" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400/70" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400/70" />
-                  <span className="ml-2 text-[10px] text-muted-foreground font-mono">site-da-igreja.com</span>
-                </div>
-                <pre className="text-[10px] sm:text-xs font-mono bg-muted/40 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-all border border-border">
-{`<iframe
-  src="https://leviescalas.com.br/igreja/sua-igreja?embed=1"
-  width="100%"
-  height="800"
-  frameborder="0">
-</iframe>`}
-                </pre>
-                <div className="mt-3 rounded-lg border border-dashed border-border p-4 flex items-center gap-3">
-                  <LeviLogo size="sm" />
-                  <div className="text-left min-w-0 flex-1">
-                    <p className="text-xs font-semibold text-foreground truncate">Escala da igreja</p>
-                    <p className="text-[10px] text-muted-foreground truncate">Atualizado em tempo real pelo LEVI</p>
-                  </div>
-                  <Calendar className="w-5 h-5 text-primary shrink-0" />
-                </div>
-              </div>
-              <div className="absolute -top-3 -right-3 px-3 py-1 rounded-full bg-amber-400 text-[10px] font-bold text-amber-950 shadow-lg">
-                NOVO
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       <footer className="relative z-[1] py-6 border-t border-border">
         <div className="container mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
