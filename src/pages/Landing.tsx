@@ -289,35 +289,32 @@ function FeatureGrid() {
   ];
 
   return (
-    <div className="mt-16 sm:mt-20">
-      <div className="text-center mb-10">
-        <p className="text-primary text-xs font-semibold uppercase tracking-[0.15em] mb-2">Tudo o que o LEVI faz</p>
-        <h3 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">
+    <div className="mt-8 sm:mt-10">
+      <div className="text-center mb-6 sm:mb-7">
+        <p className="text-primary text-[11px] font-semibold uppercase tracking-[0.15em] mb-1.5">Tudo o que o LEVI faz</p>
+        <h3 className="font-display text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">
           Funcionalidades em <span className="text-primary">um só lugar</span>
         </h3>
-        <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto mt-3">
-          Da geração inteligente da escala até o lembrete no WhatsApp do voluntário — todo o fluxo da escala da sua igreja.
+        <p className="text-xs sm:text-sm text-muted-foreground max-w-xl mx-auto mt-2">
+          Da geração inteligente da escala até o lembrete no WhatsApp do voluntário.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-3">
         {features.map((f, i) => {
           const Icon = f.icon;
           return (
             <div
               key={i}
-              className={`group relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br ${f.color} p-5 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300`}
-              style={{
-                animationDelay: `${i * 40}ms`,
-              }}
+              className={`group relative overflow-hidden rounded-xl border border-border/60 bg-gradient-to-br ${f.color} p-3 sm:p-3.5 hover:border-primary/40 hover:shadow-md hover:shadow-primary/5 transition-all duration-300`}
             >
-              <div className="flex items-start gap-3">
-                <div className={`w-11 h-11 rounded-xl bg-card border border-border/60 flex items-center justify-center flex-shrink-0 ${f.iconColor} group-hover:scale-110 transition-transform duration-300`}>
-                  <Icon className="w-5 h-5" strokeWidth={2} />
+              <div className="flex items-start gap-2 sm:gap-2.5">
+                <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-card border border-border/60 flex items-center justify-center flex-shrink-0 ${f.iconColor} group-hover:scale-110 transition-transform duration-300`}>
+                  <Icon className="w-4 h-4" strokeWidth={2} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h4 className="font-semibold text-foreground text-[15px] leading-snug mb-1.5">{f.title}</h4>
-                  <p className="text-[13px] text-muted-foreground leading-relaxed">{f.desc}</p>
+                  <h4 className="font-semibold text-foreground text-[12px] sm:text-[13px] leading-tight mb-1">{f.title}</h4>
+                  <p className="text-[11px] sm:text-[12px] text-muted-foreground leading-snug line-clamp-3">{f.desc}</p>
                 </div>
               </div>
             </div>
