@@ -654,7 +654,7 @@ export default function Landing() {
           <div className="max-w-3xl mx-auto">
             {/* Hero centered */}
             <div className="text-center space-y-6">
-              <div className="animate-slide-up-1 flex flex-col items-center lg:items-start gap-3">
+              <div className="animate-slide-up-1 flex flex-col items-center gap-3">
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/8 text-primary text-sm font-medium border border-primary/15">
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>{t('landing.tagline')}</span>
@@ -666,11 +666,11 @@ export default function Landing() {
                 <Typewriter words={t('landing.typewriterWords', { returnObjects: true }) as string[]} />
               </h1>
 
-              <p className="animate-slide-up-3 text-base sm:text-lg text-muted-foreground max-w-lg mx-auto lg:mx-0 leading-relaxed">
+              <p className="animate-slide-up-3 text-base sm:text-lg text-muted-foreground max-w-lg mx-auto leading-relaxed">
                 {t('landing.heroDescription')}
               </p>
 
-              <div className="animate-slide-up-4 flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
+              <div className="animate-slide-up-4 flex flex-col sm:flex-row gap-3 justify-center">
                 <Button
                   size="lg"
                   className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-10 py-6 text-base font-semibold btn-glow transition-all hover:scale-[1.02]"
@@ -698,7 +698,7 @@ export default function Landing() {
               </div>
 
               {/* Social proof */}
-              <div className="animate-slide-up-5 flex items-center justify-center lg:justify-start gap-3">
+              <div className="animate-slide-up-5 flex items-center justify-center gap-3">
                 <div className="flex -space-x-2">
                   {['from-primary to-primary/70', 'from-secondary to-secondary/70', 'from-accent to-accent/70'].map((gradient, i) => (
                     <div key={i} className={`w-8 h-8 rounded-full bg-gradient-to-br ${gradient} border-2 border-background flex items-center justify-center`}>
