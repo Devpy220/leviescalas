@@ -290,7 +290,7 @@ function FeatureGrid() {
   ];
 
   return (
-    <div className="mt-8 sm:mt-10">
+    <div className="mt-2 sm:mt-3">
       <div className="text-center mb-6 sm:mb-7">
         <p className="text-primary text-[11px] font-semibold uppercase tracking-[0.15em] mb-1.5">Tudo o que o LEVI faz</p>
         <h3 className="font-display text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">
@@ -569,7 +569,7 @@ export default function Landing() {
       </nav>
 
       {/* ── HERO ── */}
-      <section className="flex items-center relative z-[1] pt-24 pb-10 sm:pt-28 sm:pb-14">
+      <section className="flex items-center relative z-[1] pt-24 pb-4 sm:pt-28 sm:pb-6">
         {/* Dot grid + gradient blobs */}
         <div className="absolute inset-0 dot-grid" />
         <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: 'hsl(var(--primary) / 0.12)', filter: 'blur(120px)' }} />
@@ -641,8 +641,7 @@ export default function Landing() {
       </section>
 
       {/* ── FEATURES ── */}
-      <section id="funcionalidades" className="relative z-[1] overflow-hidden py-8 sm:py-12" style={{ scrollMarginTop: 80 }}>
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+      <section id="funcionalidades" className="relative z-[1] overflow-hidden pt-0 pb-8 sm:pb-12 -mt-4 sm:-mt-6" style={{ scrollMarginTop: 80 }}>
         <div className="container mx-auto px-4 sm:px-6 max-w-6xl relative w-full">
           <FeatureGrid />
         </div>
