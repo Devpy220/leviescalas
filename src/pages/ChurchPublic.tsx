@@ -15,6 +15,7 @@ import {
   UserPlus
 } from 'lucide-react';
 import { LeviLogo } from '@/components/LeviLogo';
+import { EmbedCodeDialog } from '@/components/EmbedCodeDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -203,6 +204,7 @@ export default function ChurchPublic() {
             </Link>
             
             <div className="flex items-center gap-2">
+              <EmbedCodeDialog slug={slug!} churchName={church.name} />
               <Button variant="ghost" size="icon" onClick={handleShare}>
                 <Share2 className="w-5 h-5" />
               </Button>
