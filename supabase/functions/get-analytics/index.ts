@@ -70,7 +70,7 @@ serve(async (req) => {
 
     const { data: pageViews, error: pvError } = await supabase
       .from("page_views")
-      .select("created_at, session_id, page_path")
+      .select("created_at, session_id, page_path, is_authenticated")
       .gte("created_at", thirtyDaysAgo.toISOString())
       .order("created_at", { ascending: true });
 
