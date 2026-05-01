@@ -204,6 +204,8 @@ export default function Admin() {
       if (data) {
         setAnalyticsData(data.dailyData || []);
         setTotalVisitors(data.totalVisitors || 0);
+        setTotalGuests(data.totalGuests || 0);
+        setTotalUsers(data.totalUsers || 0);
         setTotalPageviews(data.totalPageviews || 0);
         setLoginsToday(data.loginsToday || 0);
         setLoginsWeek(data.loginsWeek || 0);
