@@ -196,6 +196,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         totalVisitors,
+        totalGuests,
+        totalUsers,
         totalPageviews,
         avgPageviewsPerVisit: totalVisitors > 0 ? totalPageviews / totalVisitors : 0,
         dailyData: formattedData,
