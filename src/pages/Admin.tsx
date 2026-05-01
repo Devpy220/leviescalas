@@ -130,6 +130,8 @@ export default function Admin() {
   // Analytics state
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData[]>([]);
   const [totalVisitors, setTotalVisitors] = useState(0);
+  const [totalGuests, setTotalGuests] = useState(0);
+  const [totalUsers, setTotalUsers] = useState(0);
   const [totalPageviews, setTotalPageviews] = useState(0);
   const [loadingAnalytics, setLoadingAnalytics] = useState(true);
   
