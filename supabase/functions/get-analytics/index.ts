@@ -79,30 +79,46 @@ serve(async (req) => {
       throw pvError;
     }
 
-    const dailyData: Record<string, { visitors: Set<string>; pageviews: number }> = {};
+    const dailyData: Record<string, { guests: Set<string>; users: Set<string>; pageviews: number }> = {};
     
     for (let i = 29; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
       const dateStr = date.toISOString().split('T')[0];
-      dailyData[dateStr] = { visitors: new Set(), pageviews: 0 };
+      dailyData[dateStr] = { guests: new Set(), users: new Set(), pageviews: 0 };
     }
 
     (pageViews || []).forEach((pv: any) => {
       const dateStr = pv.created_at.split('T')[0];
       if (dailyData[dateStr]) {
-        dailyData[dateStr].visitors.add(pv.session_id || 'unknown');
+        const sid = pv.session_id || 'unknown';
+        if (pv.is_authenticated) {
+          dailyData[dateStr].users.add(sid);
+        } else {
+          dailyData[dateStr].guests.add(sid);
+        }
         dailyData[dateStr].pageviews++;
       }
     });
 
     const formattedData = Object.entries(dailyData).map(([date, data]) => ({
       date,
-      visitors: data.visitors.size,
+      guests: data.guests.size,
+      users: data.users.size,
+      visitors: data.guests.size + data.users.size,
       pageviews: data.pageviews,
     }));
 
-    const totalVisitors = new Set((pageViews || []).map((pv: any) => pv.session_id)).size;
+    const guestSessions = new Set<string>();
+    const userSessions = new Set<string>();
+    (pageViews || []).forEach((pv: any) => {
+      const sid = pv.session_id || 'unknown';
+      if (pv.is_authenticated) userSessions.add(sid);
+      else guestSessions.add(sid);
+    });
+    const totalGuests = guestSessions.size;
+    const totalUsers = userSessions.size;
+    const totalVisitors = totalGuests + totalUsers;
     const totalPageviews = (pageViews || []).length;
 
     // ===== LOGIN LOGS (last 30 days) =====
