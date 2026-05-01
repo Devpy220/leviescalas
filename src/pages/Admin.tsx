@@ -1035,11 +1035,16 @@ export default function Admin() {
                   Visitantes (não logados), usuários (logados) e visualizações nos últimos 30 dias
                 </CardDescription>
               </div>
-              <div className="flex items-center gap-4 text-sm">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-amber-500" />
+                  <span className="text-muted-foreground">Visitantes</span>
+                  <span className="font-bold">{totalGuests}</span>
+                </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-primary" />
-                  <span className="text-muted-foreground">Visitantes</span>
-                  <span className="font-bold">{totalVisitors}</span>
+                  <span className="text-muted-foreground">Usuários</span>
+                  <span className="font-bold">{totalUsers}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-blue-500" />
