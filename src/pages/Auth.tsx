@@ -633,12 +633,41 @@ export default function Auth() {
 
     if (error) {
       setIsLoading(false);
-      const errorMessage = error.message.includes('User already registered')
-        ? 'Este email já está cadastrado'
-        : error.message.includes('Password')
+      const isDuplicate = error.message.includes('User already registered')
+        || error.message.toLowerCase().includes('already exists')
+        || error.message.toLowerCase().includes('already been registered');
+
+      if (isDuplicate) {
+        // Preserve invite context so login takes the user back to /join/:code
+        const redirectParam = searchParams.get('redirect');
+        const invitedByParam = searchParams.get('invitedBy');
+        const loginParams = new URLSearchParams({ tab: 'login' });
+        if (redirectParam) loginParams.set('redirect', redirectParam);
+        if (invitedByParam) loginParams.set('invitedBy', invitedByParam);
+
+        toast({
+          variant: 'destructive',
+          title: 'Você já tem uma conta no LEVI',
+          description: 'Esse email já está cadastrado. Faça login com sua conta atual — o novo departamento será adicionado e você verá todos juntos no seu painel.',
+          action: (
+            <ToastAction
+              altText="Ir para login"
+              onClick={() => navigate(`/auth?${loginParams.toString()}`)}
+            >
+              Fazer login
+            </ToastAction>
+          ),
+        });
+        // Auto-switch to login tab and pre-fill email for convenience
+        setActiveTab('login');
+        loginForm.setValue('email', data.email);
+        return;
+      }
+
+      const errorMessage = error.message.includes('Password')
         ? 'Senha muito fraca. Use letras e números.'
         : 'Erro ao criar conta. Tente novamente.';
-      
+
       toast({
         variant: 'destructive',
         title: 'Erro no cadastro',
