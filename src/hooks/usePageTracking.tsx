@@ -17,11 +17,15 @@ export const usePageTracking = () => {
   useEffect(() => {
     const trackPageView = async () => {
       try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const isAuthenticated = !!session?.user;
+
         await supabase.from('page_views').insert({
           page_path: location.pathname,
           user_agent: navigator.userAgent,
           referrer: document.referrer || null,
           session_id: getSessionId(),
+          is_authenticated: isAuthenticated,
         });
       } catch (error) {
         // Silently fail - don't interrupt user experience
