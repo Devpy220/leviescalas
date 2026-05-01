@@ -1032,7 +1032,7 @@ export default function Admin() {
                   Acessos ao Site
                 </CardTitle>
                 <CardDescription>
-                  Visitantes e visualizações nos últimos 30 dias
+                  Visitantes (não logados), usuários (logados) e visualizações nos últimos 30 dias
                 </CardDescription>
               </div>
               <div className="flex items-center gap-4 text-sm">
