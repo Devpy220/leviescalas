@@ -459,6 +459,18 @@ export default function Auth() {
         return;
       }
 
+      // PRIORITY: If user came from a department invite link, send them back to /join/:code
+      // so they get auto-added to the new department (existing accounts joining additional depts)
+      if (isDepartmentInvite && redirectParam) {
+        sessionStorage.setItem('pendingInvite', redirectParam.replace('/join/', ''));
+        toast({
+          title: 'Bem-vindo de volta!',
+          description: 'Adicionando você ao novo departamento...',
+        });
+        navigate(redirectParam, { replace: true });
+        return;
+      }
+
       // Check if user is admin and redirect accordingly
       const { data: hasRole } = await supabase.rpc('has_role', { 
         _user_id: currentSession.user.id, 
