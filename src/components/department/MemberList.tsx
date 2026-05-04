@@ -189,6 +189,35 @@ export default function MemberList({
     window.open(`mailto:${email}`, '_blank');
   };
 
+  const handleTransferLeadership = async () => {
+    if (!transferTarget) return;
+    setTransferring(true);
+    try {
+      const { error } = await supabase.rpc('transfer_department_leadership' as any, {
+        dept_id: departmentId,
+        new_leader_user_id: transferTarget.user_id,
+      });
+      if (error) throw error;
+      toast({
+        title: 'Liderança transferida',
+        description: `${transferTarget.profile.name} agora é o líder do departamento.`,
+      });
+      onLeadershipTransferred?.();
+      onMemberRemoved();
+    } catch (error: any) {
+      console.error('Error transferring leadership:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao transferir',
+        description: error?.message || 'Não foi possível transferir a liderança.',
+      });
+    } finally {
+      setTransferring(false);
+      setShowTransferDialog(false);
+      setTransferTarget(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
