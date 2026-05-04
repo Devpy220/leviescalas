@@ -7,7 +7,8 @@ import {
   Phone,
   UserPlus,
   Shield,
-  Lock
+  Lock,
+  ShieldCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
