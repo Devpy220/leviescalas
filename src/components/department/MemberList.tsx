@@ -416,6 +416,27 @@ export default function MemberList({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Transfer Leadership Dialog */}
+      <AlertDialog open={showTransferDialog} onOpenChange={setShowTransferDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-primary" />
+              Transferir liderança
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <strong>{transferTarget?.profile.name}</strong> se tornará o novo líder deste departamento e poderá gerenciar escalas, membros e configurações. Você passará a ser membro comum (continua no departamento). Esta ação pode ser revertida pelo novo líder.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={transferring}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleTransferLeadership} disabled={transferring}>
+              {transferring ? 'Transferindo...' : 'Confirmar transferência'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
