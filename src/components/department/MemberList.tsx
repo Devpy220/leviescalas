@@ -338,6 +338,15 @@ export default function MemberList({
                         <>
                           {hasContactAccess && <DropdownMenuSeparator />}
                           <DropdownMenuItem
+                            onClick={() => {
+                              setTransferTarget(member);
+                              setShowTransferDialog(true);
+                            }}
+                          >
+                            <ShieldCheck className="w-4 h-4 mr-2" />
+                            Tornar líder
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
                             className="text-destructive focus:text-destructive"
                             onClick={() => {
                               setSelectedMember(member);
