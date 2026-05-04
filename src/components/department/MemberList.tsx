@@ -69,11 +69,15 @@ export default function MemberList({
   currentUserId,
   departmentId,
   onMemberRemoved,
-  onInviteMember
+  onInviteMember,
+  onLeadershipTransferred,
 }: MemberListProps) {
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [showTransferDialog, setShowTransferDialog] = useState(false);
+  const [transferTarget, setTransferTarget] = useState<Member | null>(null);
+  const [transferring, setTransferring] = useState(false);
   const [contactInfo, setContactInfo] = useState<MemberContactInfo>({});
   const { toast } = useToast();
 
