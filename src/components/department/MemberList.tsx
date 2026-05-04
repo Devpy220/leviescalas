@@ -7,7 +7,8 @@ import {
   Phone,
   UserPlus,
   Shield,
-  Lock
+  Lock,
+  ShieldCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -59,6 +60,7 @@ interface MemberListProps {
   departmentId: string;
   onMemberRemoved: () => void;
   onInviteMember: () => void;
+  onLeadershipTransferred?: () => void;
 }
 
 export default function MemberList({
@@ -67,11 +69,15 @@ export default function MemberList({
   currentUserId,
   departmentId,
   onMemberRemoved,
-  onInviteMember
+  onInviteMember,
+  onLeadershipTransferred,
 }: MemberListProps) {
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [showTransferDialog, setShowTransferDialog] = useState(false);
+  const [transferTarget, setTransferTarget] = useState<Member | null>(null);
+  const [transferring, setTransferring] = useState(false);
   const [contactInfo, setContactInfo] = useState<MemberContactInfo>({});
   const { toast } = useToast();
 
@@ -181,6 +187,35 @@ export default function MemberList({
 
   const handleContactEmail = (email: string) => {
     window.open(`mailto:${email}`, '_blank');
+  };
+
+  const handleTransferLeadership = async () => {
+    if (!transferTarget) return;
+    setTransferring(true);
+    try {
+      const { error } = await supabase.rpc('transfer_department_leadership' as any, {
+        dept_id: departmentId,
+        new_leader_user_id: transferTarget.user_id,
+      });
+      if (error) throw error;
+      toast({
+        title: 'Liderança transferida',
+        description: `${transferTarget.profile.name} agora é o líder do departamento.`,
+      });
+      onLeadershipTransferred?.();
+      onMemberRemoved();
+    } catch (error: any) {
+      console.error('Error transferring leadership:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao transferir',
+        description: error?.message || 'Não foi possível transferir a liderança.',
+      });
+    } finally {
+      setTransferring(false);
+      setShowTransferDialog(false);
+      setTransferTarget(null);
+    }
   };
 
   return (
@@ -303,6 +338,15 @@ export default function MemberList({
                         <>
                           {hasContactAccess && <DropdownMenuSeparator />}
                           <DropdownMenuItem
+                            onClick={() => {
+                              setTransferTarget(member);
+                              setShowTransferDialog(true);
+                            }}
+                          >
+                            <ShieldCheck className="w-4 h-4 mr-2" />
+                            Tornar líder
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
                             className="text-destructive focus:text-destructive"
                             onClick={() => {
                               setSelectedMember(member);
@@ -368,6 +412,27 @@ export default function MemberList({
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {removing ? 'Removendo...' : 'Remover'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Transfer Leadership Dialog */}
+      <AlertDialog open={showTransferDialog} onOpenChange={setShowTransferDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-primary" />
+              Transferir liderança
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <strong>{transferTarget?.profile.name}</strong> se tornará o novo líder deste departamento e poderá gerenciar escalas, membros e configurações. Você passará a ser membro comum (continua no departamento). Esta ação pode ser revertida pelo novo líder.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={transferring}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleTransferLeadership} disabled={transferring}>
+              {transferring ? 'Transferindo...' : 'Confirmar transferência'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

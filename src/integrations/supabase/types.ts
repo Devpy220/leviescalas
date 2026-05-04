@@ -1706,6 +1706,10 @@ export type Database = {
         }
         Returns: string
       }
+      transfer_department_leadership: {
+        Args: { dept_id: string; new_leader_user_id: string }
+        Returns: boolean
+      }
       update_contact_privacy: { Args: { share: boolean }; Returns: undefined }
       validate_church_code: {
         Args: { p_code: string }
