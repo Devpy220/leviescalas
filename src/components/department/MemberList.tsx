@@ -60,6 +60,7 @@ interface MemberListProps {
   departmentId: string;
   onMemberRemoved: () => void;
   onInviteMember: () => void;
+  onLeadershipTransferred?: () => void;
 }
 
 export default function MemberList({
