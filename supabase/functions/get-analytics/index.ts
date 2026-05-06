@@ -70,7 +70,7 @@ serve(async (req) => {
 
     const { data: pageViews, error: pvError } = await supabase
       .from("page_views")
-      .select("created_at, session_id, page_path, is_authenticated")
+      .select("created_at, session_id, page_path, is_authenticated, user_agent, referrer")
       .gte("created_at", thirtyDaysAgo.toISOString())
       .order("created_at", { ascending: true });
 
@@ -193,6 +193,52 @@ serve(async (req) => {
       user_email: profileMap[l.user_id]?.email || '',
     }));
 
+    // Aggregate guest sessions: one row per anonymous session
+    const guestSessionMap: Record<string, {
+      session_id: string;
+      first_seen: string;
+      last_seen: string;
+      pageviews: number;
+      pages: Set<string>;
+      user_agent: string | null;
+      referrer: string | null;
+    }> = {};
+
+    (pageViews || []).forEach((pv: any) => {
+      if (pv.is_authenticated) return;
+      const sid = pv.session_id || 'unknown';
+      if (!guestSessionMap[sid]) {
+        guestSessionMap[sid] = {
+          session_id: sid,
+          first_seen: pv.created_at,
+          last_seen: pv.created_at,
+          pageviews: 0,
+          pages: new Set(),
+          user_agent: pv.user_agent || null,
+          referrer: pv.referrer || null,
+        };
+      }
+      const s = guestSessionMap[sid];
+      s.pageviews++;
+      s.pages.add(pv.page_path);
+      if (pv.created_at > s.last_seen) s.last_seen = pv.created_at;
+      if (pv.created_at < s.first_seen) s.first_seen = pv.created_at;
+      if (!s.referrer && pv.referrer) s.referrer = pv.referrer;
+    });
+
+    const guestSessions_list = Object.values(guestSessionMap)
+      .sort((a, b) => b.last_seen.localeCompare(a.last_seen))
+      .slice(0, 100)
+      .map(s => ({
+        session_id: s.session_id,
+        first_seen: s.first_seen,
+        last_seen: s.last_seen,
+        pageviews: s.pageviews,
+        pages: Array.from(s.pages),
+        user_agent: s.user_agent,
+        referrer: s.referrer,
+      }));
+
     return new Response(
       JSON.stringify({
         totalVisitors,
@@ -207,6 +253,7 @@ serve(async (req) => {
         loginsMonth,
         dailyLoginData,
         recentLogins,
+        guestSessions: guestSessions_list,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

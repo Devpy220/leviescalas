@@ -141,6 +141,15 @@ export default function Admin() {
   const [loginsMonth, setLoginsMonth] = useState(0);
   const [dailyLoginData, setDailyLoginData] = useState<LoginDailyData[]>([]);
   const [recentLogins, setRecentLogins] = useState<RecentLogin[]>([]);
+  const [guestSessions, setGuestSessions] = useState<Array<{
+    session_id: string;
+    first_seen: string;
+    last_seen: string;
+    pageviews: number;
+    pages: string[];
+    user_agent: string | null;
+    referrer: string | null;
+  }>>([]);
 
   // Broadcast state
   const [broadcastTitle, setBroadcastTitle] = useState('');
@@ -212,6 +221,7 @@ export default function Admin() {
         setLoginsMonth(data.loginsMonth || 0);
         setDailyLoginData(data.dailyLoginData || []);
         setRecentLogins(data.recentLogins || []);
+        setGuestSessions(data.guestSessions || []);
       }
     } catch (error) {
       console.error('Error fetching analytics:', error);
@@ -1139,7 +1149,76 @@ export default function Admin() {
           </CardContent>
         </Card>
 
-        {/* Login Analytics */}
+        {/* Guest (anonymous) sessions */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              Visitantes não logados (últimos 30 dias)
+            </CardTitle>
+            <CardDescription>
+              Sessões anônimas detectadas. Como não fazem login, não temos nome/email — mas registramos sessão única, páginas visitadas, origem e navegador.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loadingAnalytics ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            ) : guestSessions.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                Nenhuma sessão anônima registrada.
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="text-left text-muted-foreground border-b">
+                    <tr>
+                      <th className="py-2 pr-3">Sessão</th>
+                      <th className="py-2 pr-3">Última visita</th>
+                      <th className="py-2 pr-3">Pageviews</th>
+                      <th className="py-2 pr-3">Páginas</th>
+                      <th className="py-2 pr-3">Origem</th>
+                      <th className="py-2 pr-3">Dispositivo</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {guestSessions.map((s) => {
+                      const ua = s.user_agent || '';
+                      const device = /Mobile|Android|iPhone|iPad/i.test(ua)
+                        ? 'Mobile'
+                        : ua ? 'Desktop' : '—';
+                      const browser = /Firefox/i.test(ua) ? 'Firefox'
+                        : /Edg/i.test(ua) ? 'Edge'
+                        : /Chrome/i.test(ua) ? 'Chrome'
+                        : /Safari/i.test(ua) ? 'Safari'
+                        : 'Outro';
+                      let referrerHost = '—';
+                      try {
+                        if (s.referrer) referrerHost = new URL(s.referrer).hostname;
+                      } catch {}
+                      return (
+                        <tr key={s.session_id} className="border-b last:border-0">
+                          <td className="py-2 pr-3 font-mono text-xs">{s.session_id.slice(0, 8)}</td>
+                          <td className="py-2 pr-3 whitespace-nowrap">
+                            {format(new Date(s.last_seen), "dd/MM HH:mm", { locale: ptBR })}
+                          </td>
+                          <td className="py-2 pr-3">{s.pageviews}</td>
+                          <td className="py-2 pr-3 max-w-[240px] truncate" title={s.pages.join(', ')}>
+                            {s.pages.join(', ')}
+                          </td>
+                          <td className="py-2 pr-3">{referrerHost}</td>
+                          <td className="py-2 pr-3">{device} · {browser}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Card>
             <CardHeader className="pb-2">
