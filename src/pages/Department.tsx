@@ -237,8 +237,8 @@ export default function Department() {
       }
       
       // Fetch extra fields not in RPC
-      const { data: deptExtra } = await supabase
-        .from('departments')
+      const { data: deptExtra } = await (supabase as any)
+        .from('departments_safe')
         .select('max_blackout_dates, allow_sunday_double')
         .eq('id', id)
         .maybeSingle();
