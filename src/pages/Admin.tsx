@@ -221,6 +221,7 @@ export default function Admin() {
         setLoginsMonth(data.loginsMonth || 0);
         setDailyLoginData(data.dailyLoginData || []);
         setRecentLogins(data.recentLogins || []);
+        setGuestSessions(data.guestSessions || []);
       }
     } catch (error) {
       console.error('Error fetching analytics:', error);
