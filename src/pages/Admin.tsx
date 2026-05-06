@@ -141,6 +141,15 @@ export default function Admin() {
   const [loginsMonth, setLoginsMonth] = useState(0);
   const [dailyLoginData, setDailyLoginData] = useState<LoginDailyData[]>([]);
   const [recentLogins, setRecentLogins] = useState<RecentLogin[]>([]);
+  const [guestSessions, setGuestSessions] = useState<Array<{
+    session_id: string;
+    first_seen: string;
+    last_seen: string;
+    pageviews: number;
+    pages: string[];
+    user_agent: string | null;
+    referrer: string | null;
+  }>>([]);
 
   // Broadcast state
   const [broadcastTitle, setBroadcastTitle] = useState('');
