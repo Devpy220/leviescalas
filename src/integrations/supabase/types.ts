@@ -127,6 +127,13 @@ export type Database = {
             referencedRelation: "departments"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "assignment_roles_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       billing_access_audit: {
@@ -313,6 +320,13 @@ export type Database = {
             columns: ["department_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "department_announcements_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -550,6 +564,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "members_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments_safe"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "members_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -604,6 +625,13 @@ export type Database = {
             columns: ["department_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments_safe"
             referencedColumns: ["id"]
           },
           {
@@ -695,6 +723,13 @@ export type Database = {
             referencedRelation: "departments"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "payment_receipts_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       profile_access_audit: {
@@ -761,6 +796,13 @@ export type Database = {
             columns: ["invited_by_department_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_invited_by_department_id_fkey"
+            columns: ["invited_by_department_id"]
+            isOneToOne: false
+            referencedRelation: "departments_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -934,6 +976,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "schedule_swaps_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments_safe"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "schedule_swaps_requester_schedule_id_fkey"
             columns: ["requester_schedule_id"]
             isOneToOne: false
@@ -1034,6 +1083,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "schedules_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments_safe"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "schedules_sector_id_fkey"
             columns: ["sector_id"]
             isOneToOne: false
@@ -1083,6 +1139,13 @@ export type Database = {
             columns: ["department_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sectors_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -1296,6 +1359,79 @@ export type Database = {
         }
         Relationships: []
       }
+      departments_safe: {
+        Row: {
+          allow_sunday_double: boolean | null
+          avatar_url: string | null
+          church_id: string | null
+          created_at: string | null
+          description: string | null
+          id: string | null
+          leader_id: string | null
+          max_blackout_dates: number | null
+          name: string | null
+          subscription_status:
+            | Database["public"]["Enums"]["subscription_status"]
+            | null
+          trial_ends_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          allow_sunday_double?: boolean | null
+          avatar_url?: string | null
+          church_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          leader_id?: string | null
+          max_blackout_dates?: number | null
+          name?: string | null
+          subscription_status?:
+            | Database["public"]["Enums"]["subscription_status"]
+            | null
+          trial_ends_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          allow_sunday_double?: boolean | null
+          avatar_url?: string | null
+          church_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          leader_id?: string | null
+          max_blackout_dates?: number | null
+          name?: string | null
+          subscription_status?:
+            | Database["public"]["Enums"]["subscription_status"]
+            | null
+          trial_ends_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "departments_church_id_fkey"
+            columns: ["church_id"]
+            isOneToOne: false
+            referencedRelation: "churches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "departments_church_id_fkey"
+            columns: ["church_id"]
+            isOneToOne: false
+            referencedRelation: "churches_member_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "departments_leader_id_fkey"
+            columns: ["leader_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       schedules_public: {
         Row: {
           assignment_role: string | null
@@ -1370,6 +1506,13 @@ export type Database = {
             columns: ["department_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedules_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments_safe"
             referencedColumns: ["id"]
           },
           {

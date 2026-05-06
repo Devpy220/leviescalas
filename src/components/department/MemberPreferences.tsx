@@ -33,13 +33,14 @@ export default function MemberPreferences({ departmentId, userId }: MemberPrefer
     try {
       // Fetch department blackout limit
       const { data: deptData } = await supabase
-        .from('departments')
+        .from('departments_safe' as any)
         .select('max_blackout_dates')
         .eq('id', departmentId)
         .maybeSingle();
 
-      if (deptData?.max_blackout_dates) {
-        setMaxBlackoutDates(deptData.max_blackout_dates);
+      const dd = deptData as any;
+      if (dd?.max_blackout_dates) {
+        setMaxBlackoutDates(dd.max_blackout_dates);
       }
 
       const { data, error } = await supabase
