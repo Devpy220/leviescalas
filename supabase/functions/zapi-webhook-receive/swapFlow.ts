@@ -1,5 +1,17 @@
 // Swap flow over WhatsApp.
 // Handles a stateful menu-based conversation for schedule swaps.
+// Localized via DDI (PT/ES/EN) — see _shared/whatsappI18n.ts
+
+import {
+  detectLang,
+  t,
+  fmtTime,
+  fmtDateLang,
+  isSwapInitiationMulti,
+  isCancelMulti,
+  isYesMulti,
+  isNoMulti,
+} from "../_shared/whatsappI18n.ts";
 
 const MAX_ATTEMPTS = 3;
 const MAX_MY_SCHEDULES = 5;
@@ -15,19 +27,6 @@ export interface SwapFlowDeps {
   supabase: any;
   supabaseUrl: string;
   serviceRoleKey: string;
-}
-
-const DOW = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-
-function fmtDate(iso: string): string {
-  const d = new Date(iso + "T00:00:00");
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  return `${dd}/${mm} (${DOW[d.getDay()]})`;
-}
-
-function fmtTime(t: string): string {
-  return t.slice(0, 5);
 }
 
 async function sendWA(
@@ -53,32 +52,11 @@ async function sendWA(
   }
 }
 
-// Detect intent: "troca", "trocar", "troca escala"
-export function isSwapInitiation(text: string): boolean {
-  const t = text.trim().toLowerCase();
-  return (
-    t === "troca" ||
-    t === "trocar" ||
-    t === "troca escala" ||
-    t === "trocar escala" ||
-    /^troca\b/.test(t) && t.length < 40
-  );
-}
-
-export function isCancel(text: string): boolean {
-  const t = text.trim().toLowerCase();
-  return t === "cancelar" || t === "cancela" || t === "sair";
-}
-
-export function isYes(text: string): boolean {
-  const t = text.trim().toLowerCase();
-  return ["sim", "s", "aceito", "ok", "claro", "pode", "yes"].includes(t);
-}
-
-export function isNo(text: string): boolean {
-  const t = text.trim().toLowerCase();
-  return ["nao", "não", "n", "negativo", "no", "recuso"].includes(t);
-}
+// Backward-compat exports (still used elsewhere if any)
+export const isSwapInitiation = isSwapInitiationMulti;
+export const isCancel = isCancelMulti;
+export const isYes = isYesMulti;
+export const isNo = isNoMulti;
 
 function parseNumberPick(text: string): number | null {
   const m = text.trim().match(/^(\d{1,2})\b/);
@@ -128,20 +106,16 @@ async function cancelOldSessions(deps: SwapFlowDeps, userId: string) {
 // ─────────────────────────────────────────────────────────────────────
 
 async function startSwap(deps: SwapFlowDeps, profile: Profile): Promise<void> {
-  const fname = (profile.name || "amigo(a)").split(" ")[0];
+  const lang = detectLang(profile.whatsapp);
+  const fname = (profile.name || "").split(" ")[0] || "👋";
 
-  // Departments where user is member
   const { data: memberships } = await deps.supabase
     .from("members")
     .select("department_id")
     .eq("user_id", profile.id);
   const deptIds = (memberships ?? []).map((m: any) => m.department_id);
   if (deptIds.length === 0) {
-    await sendWA(
-      deps,
-      profile.whatsapp,
-      `Olá *${fname}*! Você não está em nenhum departamento ativo.\n\n_LEVI_`,
-    );
+    await sendWA(deps, profile.whatsapp, t(lang, "no_active_dept", { fname }));
     return;
   }
 
@@ -157,22 +131,26 @@ async function startSwap(deps: SwapFlowDeps, profile: Profile): Promise<void> {
     .limit(MAX_MY_SCHEDULES);
 
   if (!schedules || schedules.length === 0) {
-    await sendWA(
-      deps,
-      profile.whatsapp,
-      `Olá *${fname}*! Você não tem escalas futuras para trocar.\n\n_LEVI_`,
-    );
+    await sendWA(deps, profile.whatsapp, t(lang, "no_swap_schedules", { fname }));
     return;
   }
 
   await cancelOldSessions(deps, profile.id);
 
-  let msg = `🔄 *Troca de Escala*\n━━━━━━━━━━━━━━━━━━━━\n\nOlá *${fname}*! 👋\n\n📖 _Leia com atenção:_\nQual escala você quer trocar? Responda com o *número* correspondente.\n\n━━━━━━━━━━━━━━━━━━━━\n📆 *Suas próximas escalas:*\n\n`;
+  let msg =
+    `${t(lang, "swap_start_title")}\n━━━━━━━━━━━━━━━━━━━━\n\n` +
+    `${t(lang, "swap_start_intro", { fname })}\n\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n${t(lang, "swap_start_list_title")}\n\n`;
   schedules.forEach((s: any, i: number) => {
-    const deptName = s.departments?.name ?? "";
-    msg += `*${i + 1})* ${fmtDate(s.date)} ${fmtTime(s.time_start)}-${fmtTime(s.time_end)}\n     ${deptName}\n\n`;
+    msg += t(lang, "line_schedule", {
+      i: i + 1,
+      date: fmtDateLang(s.date, lang),
+      ts: fmtTime(s.time_start),
+      te: fmtTime(s.time_end),
+      dept: s.departments?.name ?? "",
+    }) + "\n\n";
   });
-  msg += `━━━━━━━━━━━━━━━━━━━━\n✍️ Responda com o *número* da escala\n   (ou envie "cancelar")\n\n💡 _Dica: configure um som personalizado para o LEVI em "Notificações personalizadas" da nossa conversa — assim você nunca perde uma escala._\n\n_LEVI_`;
+  msg += `━━━━━━━━━━━━━━━━━━━━\n${t(lang, "swap_start_footer")}\n\n_LEVI_`;
 
   await deps.supabase.from("whatsapp_swap_sessions").insert({
     user_id: profile.id,
@@ -195,7 +173,6 @@ async function getEligibleCandidates(
 ): Promise<Array<{ user_id: string; name: string; whatsapp: string; schedule_id: string; date: string; time_start: string; time_end: string }>> {
   const today = new Date().toISOString().slice(0, 10);
 
-  // 1. All members of the department
   const { data: members } = await deps.supabase
     .from("members")
     .select("user_id")
@@ -205,7 +182,6 @@ async function getEligibleCandidates(
   const memberIds = (members ?? []).map((m: any) => m.user_id);
   if (memberIds.length === 0) return [];
 
-  // 2. Filter out: blocked on req date (member_preferences.blackout_dates)
   const { data: prefs } = await deps.supabase
     .from("member_preferences")
     .select("user_id, blackout_dates")
@@ -218,7 +194,6 @@ async function getEligibleCandidates(
     if (dates.includes(reqSchedule.date)) blockedSet.add(p.user_id);
   }
 
-  // 3. Filter out: already scheduled at conflicting time on that date in this dept
   const { data: conflicts } = await deps.supabase
     .from("schedules")
     .select("user_id")
@@ -233,8 +208,6 @@ async function getEligibleCandidates(
   const eligibleIds = memberIds.filter((id: string) => !blockedSet.has(id));
   if (eligibleIds.length === 0) return [];
 
-  // 4. Each must have at least one *future* schedule in same dept (their counterpart)
-  //    that the requester (reqSchedule.user_id) does NOT have a conflict with.
   const { data: theirSchedules } = await deps.supabase
     .from("schedules")
     .select("id, date, time_start, time_end, user_id")
@@ -244,7 +217,6 @@ async function getEligibleCandidates(
     .neq("date", reqSchedule.date)
     .order("date", { ascending: true });
 
-  // Requester's blackout
   const { data: reqPref } = await deps.supabase
     .from("member_preferences")
     .select("blackout_dates")
@@ -253,7 +225,6 @@ async function getEligibleCandidates(
     .maybeSingle();
   const reqBlackouts: string[] = (reqPref?.blackout_dates as string[]) ?? [];
 
-  // Requester's other schedules (to detect conflicts when they take counterpart)
   const { data: reqOther } = await deps.supabase
     .from("schedules")
     .select("date, time_start, time_end")
@@ -268,7 +239,6 @@ async function getEligibleCandidates(
   for (const s of theirSchedules ?? []) {
     if (usedUsers.has(s.user_id)) continue;
     if (reqBlackouts.includes(s.date)) continue;
-    // Check conflict for requester
     const conflict = reqOtherList.some(
       (o: any) =>
         o.date === s.date &&
@@ -289,7 +259,6 @@ async function getEligibleCandidates(
 
   if (candidates.length === 0) return [];
 
-  // 5. Get profiles
   const { data: profiles } = await deps.supabase
     .from("profiles")
     .select("id, name, whatsapp")
@@ -299,7 +268,7 @@ async function getEligibleCandidates(
     const p = (profiles ?? []).find((pp: any) => pp.id === c.user_id);
     return {
       user_id: c.user_id,
-      name: p?.name ?? "Voluntário",
+      name: p?.name ?? "—",
       whatsapp: p?.whatsapp ?? "",
       schedule_id: c.schedule_id,
       date: c.date,
@@ -315,13 +284,10 @@ async function handleSchedulePick(
   session: any,
   pick: number,
 ): Promise<void> {
+  const lang = detectLang(profile.whatsapp);
   const ids: string[] = session.candidate_target_schedule_ids ?? [];
   if (pick < 1 || pick > ids.length) {
-    await sendWA(
-      deps,
-      profile.whatsapp,
-      `Número inválido. Responda entre 1 e ${ids.length}, ou "cancelar".\n\n_LEVI_`,
-    );
+    await sendWA(deps, profile.whatsapp, t(lang, "swap_pick_invalid", { max: ids.length }));
     return;
   }
   const reqScheduleId = ids[pick - 1];
@@ -333,28 +299,36 @@ async function handleSchedulePick(
     .maybeSingle();
 
   if (!reqSchedule) {
-    await sendWA(deps, profile.whatsapp, `Escala não encontrada. Envie "troca" para começar de novo.\n\n_LEVI_`);
+    await sendWA(deps, profile.whatsapp, t(lang, "swap_not_found"));
     await deps.supabase.from("whatsapp_swap_sessions").update({ state: "cancelled" }).eq("id", session.id);
     return;
   }
 
   const candidates = await getEligibleCandidates(deps, reqSchedule);
   if (candidates.length === 0) {
-    await sendWA(
-      deps,
-      profile.whatsapp,
-      `❌ Nenhum colega disponível para trocar essa escala.\nFale com seu líder para resolver.\n\n_LEVI_`,
-    );
+    await sendWA(deps, profile.whatsapp, t(lang, "swap_no_candidates"));
     await deps.supabase.from("whatsapp_swap_sessions").update({ state: "cancelled" }).eq("id", session.id);
-    await notifyLeader(deps, reqSchedule.department_id, profile.name, fmtDate(reqSchedule.date));
+    await notifyLeader(deps, reqSchedule.department_id, profile.name, fmtDateLang(reqSchedule.date, lang));
     return;
   }
 
-  let msg = `🔄 *Escolha o colega*\n━━━━━━━━━━━━━━━━━━━━\n\n📖 _Leia com atenção:_\n\nVocê quer trocar a escala:\n📆 *${fmtDate(reqSchedule.date)}*\n⏰ ${fmtTime(reqSchedule.time_start)}-${fmtTime(reqSchedule.time_end)}\n\n━━━━━━━━━━━━━━━━━━━━\n👥 *Com quem você quer trocar?*\n\n`;
+  let msg =
+    `${t(lang, "swap_target_title")}\n━━━━━━━━━━━━━━━━━━━━\n\n` +
+    `${t(lang, "swap_target_intro", {
+      date: fmtDateLang(reqSchedule.date, lang),
+      ts: fmtTime(reqSchedule.time_start),
+      te: fmtTime(reqSchedule.time_end),
+    })}\n\n━━━━━━━━━━━━━━━━━━━━\n${t(lang, "swap_target_list_title")}\n\n`;
   candidates.forEach((c, i) => {
-    msg += `*${i + 1})* ${c.name}\n     escala em ${fmtDate(c.date)} ${fmtTime(c.time_start)}-${fmtTime(c.time_end)}\n\n`;
+    msg += t(lang, "line_target", {
+      i: i + 1,
+      name: c.name,
+      date: fmtDateLang(c.date, lang),
+      ts: fmtTime(c.time_start),
+      te: fmtTime(c.time_end),
+    }) + "\n\n";
   });
-  msg += `━━━━━━━━━━━━━━━━━━━━\n✍️ Responda com o *número* (ou "cancelar").\n\n_LEVI_`;
+  msg += `━━━━━━━━━━━━━━━━━━━━\n${t(lang, "swap_target_footer")}\n\n_LEVI_`;
 
   await deps.supabase
     .from("whatsapp_swap_sessions")
@@ -380,14 +354,11 @@ async function handleTargetPick(
   session: any,
   pick: number,
 ): Promise<void> {
+  const lang = detectLang(profile.whatsapp);
   const userIds: string[] = session.candidate_target_user_ids ?? [];
   const schIds: string[] = session.candidate_target_schedule_ids ?? [];
   if (pick < 1 || pick > userIds.length) {
-    await sendWA(
-      deps,
-      profile.whatsapp,
-      `Número inválido. Responda entre 1 e ${userIds.length}, ou "cancelar".\n\n_LEVI_`,
-    );
+    await sendWA(deps, profile.whatsapp, t(lang, "swap_pick_invalid", { max: userIds.length }));
     return;
   }
 
@@ -404,7 +375,8 @@ async function askTarget(
   targetUserId: string,
   targetScheduleId: string,
 ): Promise<void> {
-  // Fetch all the data we need
+  const reqLang = detectLang(requester.whatsapp);
+
   const { data: reqSchedule } = await deps.supabase
     .from("schedules")
     .select("id, date, time_start, time_end, department_id, departments(name)")
@@ -424,11 +396,12 @@ async function askTarget(
     .maybeSingle();
 
   if (!reqSchedule || !tgtSchedule || !tgtProfile?.whatsapp) {
-    await sendWA(requester.whatsapp ? deps : deps, requester.whatsapp, `Erro ao montar a troca. Envie "troca" novamente.\n\n_LEVI_`);
+    await sendWA(deps, requester.whatsapp, t(reqLang, "swap_error_create"));
     return;
   }
 
-  // Create swap_swaps record (pending)
+  const tgtLang = detectLang(tgtProfile.whatsapp);
+
   const { data: swapRow, error: swapErr } = await deps.supabase
     .from("schedule_swaps")
     .insert({
@@ -437,18 +410,17 @@ async function askTarget(
       target_schedule_id: targetScheduleId,
       requester_user_id: requester.id,
       target_user_id: targetUserId,
-      reason: "Solicitação via WhatsApp",
+      reason: "WhatsApp swap request",
     })
     .select("id")
     .single();
 
   if (swapErr) {
     console.error("Error creating swap:", swapErr);
-    await sendWA(deps, requester.whatsapp, `Erro ao criar a solicitação. Tente novamente mais tarde.\n\n_LEVI_`);
+    await sendWA(deps, requester.whatsapp, t(reqLang, "swap_error_create"));
     return;
   }
 
-  // Update session
   await deps.supabase
     .from("whatsapp_swap_sessions")
     .update({
@@ -460,37 +432,32 @@ async function askTarget(
     })
     .eq("id", session.id);
 
-  const reqFname = (requester.name || "").split(" ")[0] || "Um voluntário";
-  const tgtFname = (tgtProfile.name || "").split(" ")[0] || "amigo(a)";
+  const reqFname = (requester.name || "").split(" ")[0] || "—";
+  const tgtFname = (tgtProfile.name || "").split(" ")[0] || "👋";
   const deptName = reqSchedule.departments?.name ?? "";
 
-  // Notify target
+  // Notify target — in target's language
   const msg =
-    `🔄 *Pedido de Troca de Escala*\n` +
-    `━━━━━━━━━━━━━━━━━━━━\n\n` +
-    `Oi *${tgtFname}*! 👋\n\n` +
-    `📖 *Leia com atenção, por favor.*\n\n` +
-    `*${reqFname}* pediu para trocar de escala com você no departamento *${deptName}*.\n\n` +
+    `${t(tgtLang, "swap_request_title")}\n━━━━━━━━━━━━━━━━━━━━\n\n` +
+    `${t(tgtLang, "swap_request_body", { tgt: tgtFname, req: reqFname, dept: deptName })}\n\n` +
     `━━━━━━━━━━━━━━━━━━━━\n` +
-    `📥 *Você assumiria:*\n` +
-    `   📆 ${fmtDate(reqSchedule.date)}\n` +
-    `   ⏰ ${fmtTime(reqSchedule.time_start)}-${fmtTime(reqSchedule.time_end)}\n\n` +
-    `📤 *${reqFname} assume a sua:*\n` +
-    `   📆 ${fmtDate(tgtSchedule.date)}\n` +
-    `   ⏰ ${fmtTime(tgtSchedule.time_start)}-${fmtTime(tgtSchedule.time_end)}\n` +
+    `${t(tgtLang, "swap_assume_yours", {
+      date: fmtDateLang(reqSchedule.date, tgtLang),
+      ts: fmtTime(reqSchedule.time_start),
+      te: fmtTime(reqSchedule.time_end),
+    })}\n\n` +
+    `${t(tgtLang, "swap_assume_theirs", {
+      req: reqFname,
+      date: fmtDateLang(tgtSchedule.date, tgtLang),
+      ts: fmtTime(tgtSchedule.time_start),
+      te: fmtTime(tgtSchedule.time_end),
+    })}\n` +
     `━━━━━━━━━━━━━━━━━━━━\n\n` +
-    `✍️ *Responda agora:*\n` +
-    `   ✅ *"sim"* — para aceitar\n` +
-    `   ❌ *"não"* — para recusar\n\n` +
-    `_LEVI_`;
+    `${t(tgtLang, "swap_request_actions")}\n\n_LEVI_`;
   await sendWA(deps, tgtProfile.whatsapp, msg);
 
-  // Confirm to requester
-  await sendWA(
-    deps,
-    requester.whatsapp,
-    `✉️ *Solicitação enviada!*\n━━━━━━━━━━━━━━━━━━━━\n\nPedido enviado para *${tgtFname}*.\n\n⏳ Aguarde a resposta — assim que ${tgtFname} responder, eu te aviso aqui.\n\n_LEVI_`,
-  );
+  // Confirm to requester — in requester's language
+  await sendWA(deps, requester.whatsapp, t(reqLang, "swap_sent", { tgt: tgtFname }));
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -503,17 +470,18 @@ async function handleTargetResponse(
   session: any,
   accept: boolean,
 ): Promise<void> {
+  const tgtLang = detectLang(target.whatsapp);
   const swapId = session.swap_id;
 
-  // Get requester
   const { data: reqProfile } = await deps.supabase
     .from("profiles")
     .select("id, name, whatsapp")
     .eq("id", session.user_id)
     .maybeSingle();
 
+  const reqLang = reqProfile?.whatsapp ? detectLang(reqProfile.whatsapp) : "pt";
+
   if (accept) {
-    // Update swap status & execute
     await deps.supabase
       .from("schedule_swaps")
       .update({ status: "accepted", resolved_at: new Date().toISOString() })
@@ -522,9 +490,9 @@ async function handleTargetResponse(
     const { error: execErr } = await deps.supabase.rpc("execute_schedule_swap", { swap_id: swapId });
     if (execErr) {
       console.error("execute_schedule_swap error:", execErr);
-      await sendWA(deps, target.whatsapp, `❌ Erro ao concluir a troca. Avise seu líder.\n\n_LEVI_`);
+      await sendWA(deps, target.whatsapp, t(tgtLang, "swap_error"));
       if (reqProfile?.whatsapp) {
-        await sendWA(deps, reqProfile.whatsapp, `❌ Erro ao concluir a troca com ${target.name}. Avise seu líder.\n\n_LEVI_`);
+        await sendWA(deps, reqProfile.whatsapp, t(reqLang, "swap_error_with", { name: target.name }));
       }
       return;
     }
@@ -534,14 +502,10 @@ async function handleTargetResponse(
       .update({ state: "done" })
       .eq("id", session.id);
 
-    await sendWA(deps, target.whatsapp, `✅ *Troca confirmada!*\n━━━━━━━━━━━━━━━━━━━━\n\n📖 _Leia com atenção:_\nSuas escalas já foram *atualizadas* no sistema.\n\n_LEVI_`);
+    await sendWA(deps, target.whatsapp, t(tgtLang, "swap_confirmed_target"));
     if (reqProfile?.whatsapp) {
       const tgtFname = (target.name || "").split(" ")[0];
-      await sendWA(
-        deps,
-        reqProfile.whatsapp,
-        `✅ *Troca confirmada!*\n━━━━━━━━━━━━━━━━━━━━\n\n📖 _Leia com atenção:_\n*${tgtFname}* aceitou a troca. Suas escalas já foram *atualizadas*.\n\n_LEVI_`,
-      );
+      await sendWA(deps, reqProfile.whatsapp, t(reqLang, "swap_confirmed_requester", { tgt: tgtFname }));
     }
     return;
   }
@@ -552,9 +516,9 @@ async function handleTargetResponse(
     .update({ status: "rejected", resolved_at: new Date().toISOString() })
     .eq("id", swapId);
 
-  await sendWA(deps, target.whatsapp, `Tudo bem, *recusa registrada*. Obrigado por responder! 🙏\n\n_LEVI_`);
+  await sendWA(deps, target.whatsapp, t(tgtLang, "swap_rejected"));
 
-  // Try next candidate (up to MAX_ATTEMPTS)
+  // Try next candidate
   const userIds: string[] = session.candidate_target_user_ids ?? [];
   const schIds: string[] = session.candidate_target_schedule_ids ?? [];
   const currentIdx = userIds.indexOf(session.current_target_user_id);
@@ -563,33 +527,26 @@ async function handleTargetResponse(
   const nextAttempt = (session.attempts_count ?? 0) + 1;
 
   if (remaining.length === 0 || nextAttempt >= MAX_ATTEMPTS) {
-    // Give up
     await deps.supabase
       .from("whatsapp_swap_sessions")
       .update({ state: "cancelled" })
       .eq("id", session.id);
 
     if (reqProfile?.whatsapp) {
-      await sendWA(
-        deps,
-        reqProfile.whatsapp,
-        `❌ *Não encontramos substituto*\n━━━━━━━━━━━━━━━━━━━━\n\n📖 _Leia com atenção:_\nTentei *${nextAttempt} colega(s)* e ninguém pôde trocar com você.\n\n👉 Por favor, *fale com seu líder* para resolver essa escala.\n\n_LEVI_`,
-      );
+      await sendWA(deps, reqProfile.whatsapp, t(reqLang, "swap_no_substitute", { n: nextAttempt }));
     }
 
-    // Notify leader
     const { data: reqSchedule } = await deps.supabase
       .from("schedules")
       .select("date, department_id")
       .eq("id", session.requester_schedule_id)
       .maybeSingle();
     if (reqSchedule && reqProfile) {
-      await notifyLeader(deps, reqSchedule.department_id, reqProfile.name, fmtDate(reqSchedule.date));
+      await notifyLeader(deps, reqSchedule.department_id, reqProfile.name, fmtDateLang(reqSchedule.date, reqLang));
     }
     return;
   }
 
-  // Auto-try the next candidate
   const nextUserId = remaining[0];
   const nextSchId = remainingSch[0];
   await deps.supabase
@@ -626,9 +583,12 @@ async function notifyLeader(
     .eq("id", dept.leader_id)
     .maybeSingle();
   if (!leader?.whatsapp) return;
-  const msg =
-    `🔔 *Atenção, líder!*\n━━━━━━━━━━━━━━━━━━━━\n\n📖 _Leia com atenção:_\n\n*${requesterName}* tentou trocar a escala de *${dateStr}* no departamento *${dept.name}* pelo WhatsApp, mas *não encontrou substituto*.\n\n👉 Por favor, ajude a resolver essa escala.\n\n_LEVI_`;
-  await sendWA(deps, leader.whatsapp, msg);
+  const lang = detectLang(leader.whatsapp);
+  await sendWA(
+    deps,
+    leader.whatsapp,
+    t(lang, "leader_alert", { name: requesterName, date: dateStr, dept: dept.name }),
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -640,31 +600,27 @@ export async function tryHandleSwapMessage(
   profile: Profile,
   text: string,
 ): Promise<boolean> {
-  // 1. Initiation keyword
-  if (isSwapInitiation(text)) {
+  const lang = detectLang(profile.whatsapp);
+
+  if (isSwapInitiationMulti(text)) {
     await startSwap(deps, profile);
     return true;
   }
 
-  // 2. Active session for the sender as initiator?
   const initSession = await findActiveSession(deps, profile.id);
   if (initSession) {
-    if (isCancel(text)) {
+    if (isCancelMulti(text)) {
       await deps.supabase
         .from("whatsapp_swap_sessions")
         .update({ state: "cancelled" })
         .eq("id", initSession.id);
-      await sendWA(deps, profile.whatsapp, `Troca cancelada.\n\n_LEVI_`);
+      await sendWA(deps, profile.whatsapp, t(lang, "swap_cancelled"));
       return true;
     }
 
     const pick = parseNumberPick(text);
     if (pick === null) {
-      await sendWA(
-        deps,
-        profile.whatsapp,
-        `Não entendi. Responda com um *número* da lista, ou "cancelar".\n\n_LEVI_`,
-      );
+      await sendWA(deps, profile.whatsapp, t(lang, "swap_invalid_pick"));
       return true;
     }
 
@@ -678,22 +634,17 @@ export async function tryHandleSwapMessage(
     }
   }
 
-  // 3. Active session where sender is the target awaiting response?
   const respSession = await findPendingResponseSession(deps, profile.id);
   if (respSession) {
-    if (isYes(text)) {
+    if (isYesMulti(text)) {
       await handleTargetResponse(deps, profile, respSession, true);
       return true;
     }
-    if (isNo(text)) {
+    if (isNoMulti(text)) {
       await handleTargetResponse(deps, profile, respSession, false);
       return true;
     }
-    await sendWA(
-      deps,
-      profile.whatsapp,
-      `Responda *"sim"* ou *"não"* para a troca.\n\n_LEVI_`,
-    );
+    await sendWA(deps, profile.whatsapp, t(lang, "swap_yes_no"));
     return true;
   }
 
