@@ -150,8 +150,8 @@ serve(async (req: Request): Promise<Response> => {
 
     // ─── "escala" command: list user's upcoming schedules ───
     try {
-      const trimmed = text.trim().toLowerCase().replace(/[!.?]+$/, "");
-      if (trimmed === "escala" || trimmed === "escalas" || trimmed === "minhas escalas") {
+      if (isScheduleListCommand(text)) {
+        const lang = detectLang(profile.whatsapp);
         const today = new Date().toISOString().slice(0, 10);
         const { data: scheds } = await supabase
           .from("schedules")
@@ -161,14 +161,14 @@ serve(async (req: Request): Promise<Response> => {
           .order("date", { ascending: true })
           .order("time_start", { ascending: true });
 
-        const fname = (profile.name || "").split(" ")[0] || "amigo(a)";
+        const fname = (profile.name || "").split(" ")[0] || "👋";
 
         if (!scheds || scheds.length === 0) {
           await sendConfirmation(
             supabaseUrl,
             serviceRoleKey,
             profile.whatsapp,
-            `📭 *Olá ${fname}!*\n\nVocê não tem escalas futuras agendadas no momento.\n\n_LEVI_`,
+            t(lang, "no_future_schedules", { fname }),
           );
         } else {
           const deptIdsSet = Array.from(new Set(scheds.map((s: any) => s.department_id)));
@@ -179,25 +179,25 @@ serve(async (req: Request): Promise<Response> => {
           const deptName: Record<string, string> = {};
           for (const d of deptRows ?? []) deptName[d.id] = d.name;
 
-          const dows = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
           const grouped: Record<string, string[]> = {};
           for (const s of scheds as any[]) {
             const d = new Date(s.date + "T00:00:00");
             const [, m, dd] = s.date.split("-");
-            const dow = dows[d.getDay()];
-            const ts = (s.time_start || "").slice(0, 5);
-            const te = (s.time_end || "").slice(0, 5);
+            const dow = DOW[lang][d.getDay()];
+            const ts = fmtTime(s.time_start);
+            const te = fmtTime(s.time_end);
             const role = s.assignment_role ? ` — ${s.assignment_role}` : "";
             const line = `• ${dd}/${m} (${dow}) ${ts}–${te}${role}`;
-            const dn = deptName[s.department_id] || "Departamento";
+            const dn = deptName[s.department_id] || "—";
             (grouped[dn] ||= []).push(line);
           }
 
-          let msg = `📅 *Olá ${fname}!* Suas próximas escalas:\n━━━━━━━━━━━━━━━━━━━━\n`;
+          let msg = t(lang, "list_header", { fname });
           for (const [dn, lines] of Object.entries(grouped)) {
             msg += `\n*${dn}*\n${lines.join("\n")}\n`;
           }
-          msg += `\n━━━━━━━━━━━━━━━━━━━━\nPara trocar uma escala, envie *troca*.\n\n_LEVI_`;
+          msg += t(lang, "list_footer");
+
 
           await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, msg);
         }
