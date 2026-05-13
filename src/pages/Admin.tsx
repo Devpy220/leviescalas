@@ -1078,7 +1078,7 @@ export default function Admin() {
         </div>
 
         {/* Analytics Chart */}
-        <Card className="mb-6">
+        <Card className="mb-6 overflow-hidden border-primary/20 bg-gradient-to-br from-card via-card to-primary/5" id="section-analytics">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
