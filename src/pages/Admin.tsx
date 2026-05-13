@@ -1348,7 +1348,8 @@ export default function Admin() {
         </Card>
 
         {/* Recent Logins - Collapsible */}
-        <Collapsible className="mb-6" id="section-recent-logins">
+        <Dialog open={openModal==='recent-logins'} onOpenChange={(o)=>!o&&closeModal()}><DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+        <Collapsible defaultOpen id="section-recent-logins">
           <Card>
             <CollapsibleTrigger asChild>
               <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
