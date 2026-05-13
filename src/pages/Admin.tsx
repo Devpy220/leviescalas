@@ -2101,6 +2101,7 @@ export default function Admin() {
             )}
           </CardContent>
         </Card>
+        </DialogContent></Dialog>
       </main>
     </div>
   );
