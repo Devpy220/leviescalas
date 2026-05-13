@@ -1,0 +1,16 @@
+# LEVI — Escalas de Voluntários para Igrejas
+
+> LEVI é uma plataforma brasileira para gestão de escalas de voluntários em igrejas: calendário visual, lembretes automáticos por WhatsApp, troca de turnos em tempo real e geração inteligente de escalas.
+
+## Pages
+
+- [Início](/): Apresentação do LEVI, recursos e cadastro de igrejas.
+- [Entrar](/auth): Login para líderes e voluntários já cadastrados.
+- [Cadastrar Igreja](/church-setup): Auto-cadastro de novas igrejas (uso gratuito).
+- [Entrar com convite](/join): Voluntários ingressam via código de convite da igreja.
+- [Tutorial](/tutorial): Guia rápido de uso da plataforma.
+- [Apoiar o LEVI](/apoiar): Doação via PIX para sustentar o projeto.
+
+## Optional
+
+- [Página pública da igreja](/igreja/:slug): Calendário público de cada igreja cadastrada.

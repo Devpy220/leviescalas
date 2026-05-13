@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import Footer from '@/components/Footer';
+import { SEO } from '@/components/SEO';
 import { 
   Church, 
   Loader2, 
@@ -122,6 +123,7 @@ export default function JoinChurch() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <SEO title="Entrar com convite — LEVI" description="Use o código de convite da sua igreja para criar conta no LEVI e participar das escalas." path="/join" />
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">

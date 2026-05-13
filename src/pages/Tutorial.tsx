@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { SEO } from '@/components/SEO';
 import { 
   ArrowLeft,
   Play,
@@ -112,6 +113,7 @@ export default function Tutorial() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO title="Tutorial — Como usar o LEVI" description="Aprenda a usar o LEVI: cadastro de igreja, departamentos, escalas e notificações WhatsApp." path="/tutorial" />
       {/* Header */}
       <header className="sticky top-0 z-50 glass border-b border-border/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">

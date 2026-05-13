@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Calendar, Eye, EyeOff, ArrowLeft, Loader2, Sparkles, Users, Bell, Fingerprint } from 'lucide-react';
 import { isWebAuthnSupported, loginWithBiometric } from '@/lib/webauthn';
+import { SEO } from '@/components/SEO';
 import { LeviLogo } from '@/components/LeviLogo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -997,6 +998,7 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen bg-background flex">
+      <SEO title="Entrar — LEVI" description="Acesse sua conta LEVI para gerenciar escalas de voluntários da sua igreja." path="/auth" />
       {/* Left side - Form */}
       <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 lg:px-20 py-12">
         <div className="w-full max-w-md mx-auto">
