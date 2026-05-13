@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import Footer from '@/components/Footer';
 import { 
   Church, 
@@ -193,8 +194,48 @@ export default function ChurchPublic() {
     );
   }
 
+  const churchUrl = `https://leviescalas.com.br/igreja/${slug}`;
+  const churchTitle = `${church.name} — Escalas | LEVI`;
+  const churchDesc = church.description
+    ? church.description.slice(0, 155)
+    : `Calendário público de escalas e voluntários de ${church.name}${church.city ? ` em ${church.city}` : ''}.`;
+  const churchAddress = [church.address, church.city, church.state].filter(Boolean).join(', ');
+  const churchJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Church',
+    name: church.name,
+    description: churchDesc,
+    url: churchUrl,
+    ...(church.logo_url ? { logo: church.logo_url, image: church.logo_url } : {}),
+    ...(churchAddress
+      ? {
+          address: {
+            '@type': 'PostalAddress',
+            streetAddress: church.address || undefined,
+            addressLocality: church.city || undefined,
+            addressRegion: church.state || undefined,
+            addressCountry: 'BR',
+          },
+        }
+      : {}),
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <Helmet>
+        <title>{churchTitle}</title>
+        <meta name="description" content={churchDesc} />
+        <link rel="canonical" href={churchUrl} />
+        <meta property="og:title" content={churchTitle} />
+        <meta property="og:description" content={churchDesc} />
+        <meta property="og:url" content={churchUrl} />
+        <meta property="og:type" content="website" />
+        {church.logo_url && <meta property="og:image" content={church.logo_url} />}
+        <meta name="twitter:title" content={churchTitle} />
+        <meta name="twitter:description" content={churchDesc} />
+        {church.logo_url && <meta name="twitter:image" content={church.logo_url} />}
+        <script type="application/ld+json">{JSON.stringify(churchJsonLd)}</script>
+      </Helmet>
       {/* Header — hidden in embed mode */}
       {!isEmbed && (
         <header className="sticky top-0 z-50 glass border-b border-border/50">
