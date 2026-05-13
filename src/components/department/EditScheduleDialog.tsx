@@ -211,12 +211,7 @@ export default function EditScheduleDialog({
     if (date) {
       setSelectedDate(date);
       setShowCalendar(false);
-      // Auto-select first available slot for the new day
-      const slots = getAvailableSlotsForDay(getDay(date));
-      if (slots.length > 0) {
-        setTimeStart(slots[0].timeStart);
-        setTimeEnd(slots[0].timeEnd);
-      }
+      // Do not override time — user can freely edit any day/time
     }
   };
 
@@ -328,18 +323,19 @@ export default function EditScheduleDialog({
                   onSelect={handleDateSelect}
                   locale={ptBR}
                   initialFocus
+                  className={cn("p-3 pointer-events-auto")}
                 />
               </PopoverContent>
             </Popover>
           </div>
 
-          {/* Time Slot */}
+          {/* Time — always free edit, with optional quick presets */}
           <div className="space-y-2">
             <Label>Horário</Label>
-            {availableSlots.length > 0 ? (
+            {availableSlots.length > 0 && (
               <Select value={currentSlotLabel} onValueChange={handleSlotSelect}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecionar horário" />
+                  <SelectValue placeholder="Atalhos de horário (opcional)" />
                 </SelectTrigger>
                 <SelectContent>
                   {availableSlots.map(slot => (
@@ -349,26 +345,25 @@ export default function EditScheduleDialog({
                   ))}
                 </SelectContent>
               </Select>
-            ) : (
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Início</Label>
-                  <Input
-                    type="time"
-                    value={timeStart}
-                    onChange={(e) => setTimeStart(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Fim</Label>
-                  <Input
-                    type="time"
-                    value={timeEnd}
-                    onChange={(e) => setTimeEnd(e.target.value)}
-                  />
-                </div>
-              </div>
             )}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Início</Label>
+                <Input
+                  type="time"
+                  value={timeStart}
+                  onChange={(e) => setTimeStart(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Fim</Label>
+                <Input
+                  type="time"
+                  value={timeEnd}
+                  onChange={(e) => setTimeEnd(e.target.value)}
+                />
+              </div>
+            </div>
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Clock className="w-3 h-3" />
               <span>{timeStart} - {timeEnd}</span>
