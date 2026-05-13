@@ -328,6 +328,7 @@ export default function EditScheduleDialog({
                   onSelect={handleDateSelect}
                   locale={ptBR}
                   initialFocus
+                  className={cn("p-3 pointer-events-auto")}
                 />
               </PopoverContent>
             </Popover>
