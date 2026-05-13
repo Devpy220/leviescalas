@@ -26,8 +26,9 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const token = authHeader.replace("Bearer ", "");
-    const adminUserId = getUserIdFromJwt(token);
-    if (!adminUserId) {
+    const { data: userData, error: userErr } = await supabase.auth.getUser(token);
+    const adminUserId = userData?.user?.id;
+    if (userErr || !adminUserId) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { "Content-Type": "application/json", ...corsHeaders },
       });
