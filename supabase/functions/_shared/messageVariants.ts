@@ -1,6 +1,8 @@
 // Shared message variation helpers to humanize WhatsApp content.
 // Same meaning, different wording — reduces spam-flagging on Z-API.
 
+export const INSTAGRAM_LINK = "https://www.instagram.com/levi_escalas";
+
 function hashString(s: string): number {
   let h = 0;
   for (let i = 0; i < s.length; i++) {
