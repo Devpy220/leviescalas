@@ -137,6 +137,8 @@ async function startSwap(deps: SwapFlowDeps, profile: Profile): Promise<void> {
 
   await cancelOldSessions(deps, profile.id);
 
+  const igLine = "📲 Siga o LEVI no Instagram:\nhttps://www.instagram.com/levi_escalas";
+
   let msg =
     `${t(lang, "swap_start_title")}\n━━━━━━━━━━━━━━━━━━━━\n\n` +
     `${t(lang, "swap_start_intro", { fname })}\n\n` +
@@ -150,7 +152,7 @@ async function startSwap(deps: SwapFlowDeps, profile: Profile): Promise<void> {
       dept: s.departments?.name ?? "",
     }) + "\n\n";
   });
-  msg += `━━━━━━━━━━━━━━━━━━━━\n${t(lang, "swap_start_footer")}\n\n_LEVI_`;
+  msg += `━━━━━━━━━━━━━━━━━━━━\n${t(lang, "swap_start_footer")}\n\n${igLine}\n\n_LEVI_`;
 
   await deps.supabase.from("whatsapp_swap_sessions").insert({
     user_id: profile.id,
