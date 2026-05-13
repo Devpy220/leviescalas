@@ -21,6 +21,7 @@ import { format, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { slugify } from '@/lib/slugify';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { LighthouseReportCard } from '@/components/admin/LighthouseReportCard';
 interface Department {
   id: string;
   name: string;
