@@ -812,8 +812,10 @@ export default function Admin() {
         </Card>
 
 
-        {/* Comunicados LEVI */}
-        <Card className="mb-6">
+        {/* Comunicados LEVI — modal */}
+        <Dialog open={openModal==='broadcast'} onOpenChange={(o)=>!o&&closeModal()}>
+          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto p-0">
+        <Card className="border-0 shadow-none">
           <Collapsible>
             <CollapsibleTrigger className="w-full">
               <CardHeader className="pb-3">
