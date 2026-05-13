@@ -767,29 +767,50 @@ export default function Admin() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        {/* Email Inbox Button */}
+        {/* Quick Actions Toolbar */}
         <Card className="mb-6">
           <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Mail className="w-5 h-5 text-primary" />
-                  Caixa de Entrada
-                </CardTitle>
-                <CardDescription>
-                  Acesse os emails de suporte (suport@leviescalas.com.br)
-                </CardDescription>
-              </div>
-              <Button 
-                onClick={() => window.open('https://webmail.kinghost.com.br/leviescalas.com.br', '_blank')}
-                className="gap-2"
-              >
-                <ExternalLink className="w-4 h-4" />
-                Abrir Webmail
+            <CardTitle className="text-base flex items-center gap-2">
+              <Activity className="w-4 h-4 text-primary" />
+              Ações rápidas
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Atalhos para as principais áreas administrativas
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" className="gap-1.5" onClick={() => window.open('https://webmail.kinghost.com.br/leviescalas.com.br', '_blank')}>
+                <Mail className="w-3.5 h-3.5" /> Webmail
+              </Button>
+              <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('broadcast')}>
+                <Megaphone className="w-3.5 h-3.5" /> Comunicados LEVI
+              </Button>
+              <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('guests')}>
+                <UserX className="w-3.5 h-3.5" /> Entradas sem login
+              </Button>
+              <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('daily-logins')}>
+                <BarChart3 className="w-3.5 h-3.5" /> Logins por dia
+              </Button>
+              <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('recent-logins')}>
+                <Clock className="w-3.5 h-3.5" /> Últimos logins
+              </Button>
+              <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('volunteers')}>
+                <Users className="w-3.5 h-3.5" /> Todos voluntários
+              </Button>
+              <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('departments')}>
+                <Building2 className="w-3.5 h-3.5" /> Departamentos
+              </Button>
+              <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('churches')}>
+                <Church className="w-3.5 h-3.5" /> Igrejas
+              </Button>
+              <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('analytics')}>
+                <TrendingUp className="w-3.5 h-3.5" /> Acesso ao site
               </Button>
             </div>
-          </CardHeader>
+          </CardContent>
         </Card>
+
 
         {/* Comunicados LEVI */}
         <Card className="mb-6">
