@@ -1410,7 +1410,8 @@ export default function Admin() {
           </Card>
         </Collapsible>
 
-        <Card className="mb-6" id="section-churches">
+        <Dialog open={openModal==='churches'} onOpenChange={(o)=>!o&&closeModal()}><DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+        <Card className="border-0 shadow-none" id="section-churches">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
