@@ -1346,6 +1346,7 @@ export default function Admin() {
             )}
           </CardContent>
         </Card>
+        </DialogContent></Dialog>
 
         {/* Recent Logins - Collapsible */}
         <Dialog open={openModal==='recent-logins'} onOpenChange={(o)=>!o&&closeModal()}><DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
