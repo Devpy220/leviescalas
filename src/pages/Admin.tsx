@@ -1288,7 +1288,8 @@ export default function Admin() {
         </div>
 
         {/* Login Chart */}
-        <Card className="mb-6" id="section-daily-logins">
+        <Dialog open={openModal==='daily-logins'} onOpenChange={(o)=>!o&&closeModal()}><DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+        <Card className="border-0 shadow-none" id="section-daily-logins">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Monitor className="w-5 h-5" />
