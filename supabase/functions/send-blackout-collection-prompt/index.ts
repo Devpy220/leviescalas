@@ -163,6 +163,7 @@ serve(async (req: Request): Promise<Response> => {
         "_Equipe LEVI_",
       ]);
       const headEmoji = pickVariant(`${p.id}-emo-${targetMonthIso}`, ["📅", "🗓️", "⏰"]);
+      const igLine = `📲 Siga o LEVI no Instagram:\n${INSTAGRAM_LINK}`;
 
       const msg =
 `${headEmoji} *LEVI — Disponibilidade de ${targetMonthName}*
@@ -194,6 +195,8 @@ ${linesStr}${moreLine}
 ${limitLine}
 
 ⏳ Prazo: até *dia ${lastDayCurrent}*.
+
+${igLine}
 
 ${close}`;
 
