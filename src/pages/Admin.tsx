@@ -21,6 +21,7 @@ import { format, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { slugify } from '@/lib/slugify';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { LighthouseReportCard } from '@/components/admin/LighthouseReportCard';
 interface Department {
   id: string;
   name: string;
@@ -1219,7 +1220,10 @@ export default function Admin() {
           </CardContent>
         </Card>
 
+        <LighthouseReportCard />
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+
           <Card>
             <CardHeader className="pb-2">
               <CardDescription>Logins Hoje</CardDescription>
