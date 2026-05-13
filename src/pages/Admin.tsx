@@ -1296,7 +1296,7 @@ export default function Admin() {
         </div>
 
         {/* Login Chart */}
-        <Card className="mb-6">
+        <Card className="mb-6" id="section-daily-logins">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Monitor className="w-5 h-5" />
