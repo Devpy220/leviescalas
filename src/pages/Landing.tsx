@@ -648,6 +648,7 @@ export default function Landing() {
           <FeatureGrid />
         </div>
       </section>
+      </main>
 
 
 
