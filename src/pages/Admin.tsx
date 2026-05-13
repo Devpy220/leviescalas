@@ -1418,7 +1418,7 @@ export default function Admin() {
           </Card>
         </Collapsible>
 
-        <Card className="mb-6">
+        <Card className="mb-6" id="section-churches">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
