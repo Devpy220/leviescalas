@@ -780,43 +780,33 @@ export default function Admin() {
           </CardHeader>
           <CardContent className="pt-0">
             <div className="flex flex-wrap gap-2">
-              {(() => {
-                const goto = (id: string) => {
-                  const el = document.getElementById(id);
-                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                };
-                return (
-                  <>
-                    <Button size="sm" variant="outline" className="gap-1.5" onClick={() => window.open('https://webmail.kinghost.com.br/leviescalas.com.br', '_blank')}>
-                      <Mail className="w-3.5 h-3.5" /> Webmail
-                    </Button>
-                    <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('broadcast')}>
-                      <Megaphone className="w-3.5 h-3.5" /> Comunicados LEVI
-                    </Button>
-                    <Button size="sm" variant="outline" className="gap-1.5" onClick={() => goto('section-guests')}>
-                      <UserX className="w-3.5 h-3.5" /> Entradas sem login
-                    </Button>
-                    <Button size="sm" variant="outline" className="gap-1.5" onClick={() => goto('section-daily-logins')}>
-                      <BarChart3 className="w-3.5 h-3.5" /> Logins por dia
-                    </Button>
-                    <Button size="sm" variant="outline" className="gap-1.5" onClick={() => goto('section-recent-logins')}>
-                      <Clock className="w-3.5 h-3.5" /> Últimos logins
-                    </Button>
-                    <Button size="sm" variant="outline" className="gap-1.5" onClick={() => goto('section-volunteers')}>
-                      <Users className="w-3.5 h-3.5" /> Todos voluntários
-                    </Button>
-                    <Button size="sm" variant="outline" className="gap-1.5" onClick={() => goto('section-departments')}>
-                      <Building2 className="w-3.5 h-3.5" /> Departamentos
-                    </Button>
-                    <Button size="sm" variant="outline" className="gap-1.5" onClick={() => goto('section-churches')}>
-                      <Church className="w-3.5 h-3.5" /> Igrejas
-                    </Button>
-                    <Button size="sm" variant="outline" className="gap-1.5" onClick={() => goto('section-analytics')}>
-                      <TrendingUp className="w-3.5 h-3.5" /> Acesso ao site
-                    </Button>
-                  </>
-                );
-              })()}
+             <Button size="sm" variant="outline" className="gap-1.5" onClick={() => window.open('https://webmail.kinghost.com.br/leviescalas.com.br', '_blank')}>
+                 <Mail className="w-3.5 h-3.5" /> Webmail
+               </Button>
+               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('broadcast')}>
+                 <Megaphone className="w-3.5 h-3.5" /> Comunicados LEVI
+               </Button>
+               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('guests')}>
+                 <UserX className="w-3.5 h-3.5" /> Entradas sem login
+               </Button>
+               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('daily-logins')}>
+                 <BarChart3 className="w-3.5 h-3.5" /> Logins por dia
+               </Button>
+               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('recent-logins')}>
+                 <Clock className="w-3.5 h-3.5" /> Últimos logins
+               </Button>
+               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('volunteers')}>
+                 <Users className="w-3.5 h-3.5" /> Todos voluntários
+               </Button>
+               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('departments')}>
+                 <Building2 className="w-3.5 h-3.5" /> Departamentos
+               </Button>
+               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('churches')}>
+                 <Church className="w-3.5 h-3.5" /> Igrejas
+               </Button>
+               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('analytics')}>
+                 <TrendingUp className="w-3.5 h-3.5" /> Acesso ao site
+               </Button>
             </div>
           </CardContent>
         </Card>
