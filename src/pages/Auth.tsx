@@ -3,7 +3,8 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Calendar, Eye, EyeOff, ArrowLeft, Loader2, Sparkles, Users, Bell } from 'lucide-react';
+import { Calendar, Eye, EyeOff, ArrowLeft, Loader2, Sparkles, Users, Bell, Fingerprint } from 'lucide-react';
+import { isWebAuthnSupported, loginWithBiometric } from '@/lib/webauthn';
 import { LeviLogo } from '@/components/LeviLogo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1122,6 +1123,43 @@ export default function Auth() {
                   'Entrar'
                 )}
               </Button>
+
+              {isWebAuthnSupported() && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full h-12 gap-2"
+                  disabled={isLoading}
+                  onClick={async () => {
+                    const email = loginForm.getValues('email');
+                    if (!email) {
+                      toast({
+                        variant: 'destructive',
+                        title: 'Informe seu email',
+                        description: 'Digite seu email antes de usar Face ID/digital.',
+                      });
+                      return;
+                    }
+                    setIsLoading(true);
+                    hasRedirectedRef.current = false;
+                    try {
+                      await loginWithBiometric(email);
+                      toast({ title: 'Bem-vindo!', description: 'Login com biometria realizado.' });
+                    } catch (e: any) {
+                      toast({
+                        variant: 'destructive',
+                        title: 'Falha na biometria',
+                        description: e?.message || 'Não foi possível entrar com biometria.',
+                      });
+                    } finally {
+                      setIsLoading(false);
+                    }
+                  }}
+                >
+                  <Fingerprint className="w-5 h-5" />
+                  Entrar com Face ID / digital
+                </Button>
+              )}
 
               <button
                 type="button"

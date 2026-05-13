@@ -1,51 +1,73 @@
-## Comando "escala" no WhatsApp
+## Objetivo
 
-Quando um voluntário enviar a palavra **escala** (sozinha, sem aspas) para o WhatsApp do LEVI, o sistema responde automaticamente com a lista de todas as escalas futuras dele, identificando o usuário pelo número de WhatsApp.
+Acrescentar **Face ID / Touch ID / digital** como forma **opcional** de entrar no LEVI, **sem remover** o login por email e senha. Quem ativar passa a ver um botão "Entrar com Face ID" na tela de login, ao lado do formulário tradicional.
 
-### Como funciona
+A tecnologia usada é **WebAuthn / Passkeys** — padrão nativo do navegador. Não precisa instalar app, não usa biblioteca paga, funciona em:
+- iPhone/iPad → Face ID ou Touch ID
+- Android → digital ou rosto
+- Mac → Touch ID
+- Windows → Windows Hello
 
-1. Voluntário envia `escala` no WhatsApp do LEVI.
-2. LEVI identifica o usuário pelo número (últimos 10 dígitos), igual ao fluxo de "troca".
-3. LEVI busca todas as escalas futuras (data ≥ hoje) do usuário em todos os departamentos em que ele participa.
-4. LEVI envia uma mensagem formatada agrupada por departamento, com data, dia da semana, horário e função (se houver).
+A chave biométrica fica **no aparelho do usuário**, o LEVI guarda só uma referência pública. Se o usuário perder o aparelho, ele continua entrando por email/senha normalmente.
 
-### Exemplo de resposta
+## Como funciona para o usuário
 
-```
-📅 Olá Lucas! Suas próximas escalas:
-━━━━━━━━━━━━━━━━━━━━
+1. **Cadastro da biometria** (uma vez)
+   - Usuário entra normal por email/senha
+   - Em "Segurança" → novo card "Entrar com Face ID / digital"
+   - Clica "Ativar" → o sistema operacional pede Face ID/digital → pronto
+   - Pode ter até 3 dispositivos cadastrados (celular, tablet, notebook)
+   - Pode remover um dispositivo a qualquer momento
 
-🎵 *Louvor*
-• 12/05 (Dom) 18:00–22:00
-• 19/05 (Dom) 08:00–12:00 — Vocal
-• 02/06 (Dom) 18:00–22:00
+2. **Login com biometria**
+   - Na tela `/auth`, abaixo do formulário, aparece botão **"Entrar com Face ID"** (só se o navegador suportar)
+   - Usuário digita só o email → clica no botão → SO pede biometria → entra direto
 
-🅿️ *Estacionamento*
-• 25/05 (Dom) 08:00–12:00
+3. **Fallback**
+   - Se a biometria falhar, recusar, ou o aparelho não tiver suporte, o formulário de senha continua funcionando normal.
 
-━━━━━━━━━━━━━━━━━━━━
-Para trocar uma escala, envie *troca*.
+## Escopo técnico
 
-_LEVI_
-```
+### Backend (Lovable Cloud)
 
-Se não houver escalas futuras: `📭 Você não tem escalas futuras agendadas no momento.`
+**Nova tabela `webauthn_credentials`**
+- `user_id` (referência ao perfil)
+- `credential_id` (id público da chave, único)
+- `public_key` (chave pública em base64)
+- `counter` (contador anti-replay)
+- `device_name` (ex: "iPhone de João")
+- `created_at`, `last_used_at`
+- RLS: usuário só vê/apaga as próprias credenciais
 
-### Detalhes técnicos
+**Nova tabela `webauthn_challenges`** (temporária, expira em 5 min)
+- `challenge`, `email`, `type` (register/login), `expires_at`
 
-**Arquivo modificado:** `supabase/functions/zapi-webhook-receive/index.ts`
+**3 Edge Functions novas:**
+- `webauthn-register-options` — gera challenge para cadastro (precisa estar logado)
+- `webauthn-register-verify` — valida e salva a credencial
+- `webauthn-login-options` — gera challenge para login (público, recebe email)
+- `webauthn-login-verify` — valida assinatura, gera sessão Supabase via `admin.generateLink` e devolve tokens
 
-- Adicionar um novo roteador no topo (antes do `tryHandleSwapMessage`) que detecta texto `escala` (case-insensitive, trim, sozinho) e chama um novo helper `handleScheduleListMessage`.
-- O helper:
-  - Busca `members` do usuário → IDs de departamentos.
-  - Busca `schedules` onde `user_id = profile.id` AND `date >= today`, ordenado por `date, time_start`, com join no nome do departamento.
-  - Formata mensagem agrupada por departamento (PT-BR, dia da semana abreviado).
-  - Envia via `send-whatsapp-notification` (mesmo padrão já usado).
-- Não persiste estado (não usa `whatsapp_swap_sessions`); é uma resposta única.
-- Mantém compatibilidade total com fluxos existentes (`troca`, blackout collection).
+Usar a lib `@simplewebauthn/server` (Deno via npm:) — é a referência do mercado.
 
-### Fora de escopo
+### Frontend
 
-- Sem alterações de UI no app.
-- Sem novas tabelas ou migrações.
-- Sem alteração no comportamento de "troca" ou na coleta de blackouts.
+- **`src/lib/webauthn.ts`** — helpers usando `@simplewebauthn/browser` (registerCredential, authenticate, isSupported)
+- **`src/pages/Security.tsx`** — novo card "Login por biometria" listando dispositivos cadastrados + botão "Adicionar este dispositivo" + remover
+- **`src/pages/Auth.tsx`** — abaixo do botão "Entrar", mostrar botão **"Entrar com Face ID"** quando `isSupported() === true`. Fluxo: pede email → chama login-verify → `supabase.auth.setSession(tokens)` → redireciona pra `/dashboard`
+
+### Compatibilidade
+
+- iOS Safari 16+, Chrome/Edge/Firefox modernos: ✅
+- Requer HTTPS (já temos em leviescalas.com.br e leviescalas.lovable.app)
+- Em navegadores antigos, o botão simplesmente não aparece — login por senha continua
+
+## Fora do escopo
+
+- Não substituirá a senha (decisão sua: manter os dois lados)
+- Não obrigará ninguém — totalmente opcional
+- Não vai bloquear o app ao reabrir — só agiliza o login
+
+## Próximo passo
+
+Se aprovar, vou: criar as 2 tabelas + RLS, instalar `@simplewebauthn/browser` no front, criar as 4 edge functions, adicionar o card em Segurança e o botão em /auth.
