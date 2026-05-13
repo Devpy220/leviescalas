@@ -993,6 +993,11 @@ export default function Admin() {
           </Collapsible>
         </Card>
 
+        {/* Lighthouse / PageSpeed report (admin only) */}
+        <div className="mb-6">
+          <LighthouseReportCard />
+        </div>
+
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <Card>
@@ -1219,8 +1224,6 @@ export default function Admin() {
             )}
           </CardContent>
         </Card>
-
-        <LighthouseReportCard />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
 
