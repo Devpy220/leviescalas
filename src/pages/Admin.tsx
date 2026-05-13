@@ -780,43 +780,33 @@ export default function Admin() {
           </CardHeader>
           <CardContent className="pt-0">
             <div className="flex flex-wrap gap-2">
-              {(() => {
-                const goto = (id: string) => {
-                  const el = document.getElementById(id);
-                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                };
-                return (
-                  <>
-                    <Button size="sm" variant="outline" className="gap-1.5" onClick={() => window.open('https://webmail.kinghost.com.br/leviescalas.com.br', '_blank')}>
-                      <Mail className="w-3.5 h-3.5" /> Webmail
-                    </Button>
-                    <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('broadcast')}>
-                      <Megaphone className="w-3.5 h-3.5" /> Comunicados LEVI
-                    </Button>
-                    <Button size="sm" variant="outline" className="gap-1.5" onClick={() => goto('section-guests')}>
-                      <UserX className="w-3.5 h-3.5" /> Entradas sem login
-                    </Button>
-                    <Button size="sm" variant="outline" className="gap-1.5" onClick={() => goto('section-daily-logins')}>
-                      <BarChart3 className="w-3.5 h-3.5" /> Logins por dia
-                    </Button>
-                    <Button size="sm" variant="outline" className="gap-1.5" onClick={() => goto('section-recent-logins')}>
-                      <Clock className="w-3.5 h-3.5" /> Últimos logins
-                    </Button>
-                    <Button size="sm" variant="outline" className="gap-1.5" onClick={() => goto('section-volunteers')}>
-                      <Users className="w-3.5 h-3.5" /> Todos voluntários
-                    </Button>
-                    <Button size="sm" variant="outline" className="gap-1.5" onClick={() => goto('section-departments')}>
-                      <Building2 className="w-3.5 h-3.5" /> Departamentos
-                    </Button>
-                    <Button size="sm" variant="outline" className="gap-1.5" onClick={() => goto('section-churches')}>
-                      <Church className="w-3.5 h-3.5" /> Igrejas
-                    </Button>
-                    <Button size="sm" variant="outline" className="gap-1.5" onClick={() => goto('section-analytics')}>
-                      <TrendingUp className="w-3.5 h-3.5" /> Acesso ao site
-                    </Button>
-                  </>
-                );
-              })()}
+             <Button size="sm" variant="outline" className="gap-1.5" onClick={() => window.open('https://webmail.kinghost.com.br/leviescalas.com.br', '_blank')}>
+                 <Mail className="w-3.5 h-3.5" /> Webmail
+               </Button>
+               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('broadcast')}>
+                 <Megaphone className="w-3.5 h-3.5" /> Comunicados LEVI
+               </Button>
+               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('guests')}>
+                 <UserX className="w-3.5 h-3.5" /> Entradas sem login
+               </Button>
+               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('daily-logins')}>
+                 <BarChart3 className="w-3.5 h-3.5" /> Logins por dia
+               </Button>
+               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('recent-logins')}>
+                 <Clock className="w-3.5 h-3.5" /> Últimos logins
+               </Button>
+               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('volunteers')}>
+                 <Users className="w-3.5 h-3.5" /> Todos voluntários
+               </Button>
+               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('departments')}>
+                 <Building2 className="w-3.5 h-3.5" /> Departamentos
+               </Button>
+               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('churches')}>
+                 <Church className="w-3.5 h-3.5" /> Igrejas
+               </Button>
+               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('analytics')}>
+                 <TrendingUp className="w-3.5 h-3.5" /> Acesso ao site
+               </Button>
             </div>
           </CardContent>
         </Card>
@@ -1078,7 +1068,8 @@ export default function Admin() {
         </div>
 
         {/* Analytics Chart */}
-        <Card className="mb-6 overflow-hidden border-primary/20 bg-gradient-to-br from-card via-card to-primary/5" id="section-analytics">
+        <Dialog open={openModal==='analytics'} onOpenChange={(o)=>!o&&closeModal()}><DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+        <Card className="border-0 shadow-none overflow-hidden bg-gradient-to-br from-card via-card to-primary/5" id="section-analytics">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -1193,9 +1184,11 @@ export default function Admin() {
             )}
           </CardContent>
         </Card>
+        </DialogContent></Dialog>
 
         {/* Guest (anonymous) sessions */}
-        <Card className="mb-6" id="section-guests">
+        <Dialog open={openModal==='guests'} onOpenChange={(o)=>!o&&closeModal()}><DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+        <Card className="border-0 shadow-none" id="section-guests">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="w-5 h-5" />
@@ -1263,6 +1256,7 @@ export default function Admin() {
             )}
           </CardContent>
         </Card>
+        </DialogContent></Dialog>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
 
@@ -1296,7 +1290,8 @@ export default function Admin() {
         </div>
 
         {/* Login Chart */}
-        <Card className="mb-6" id="section-daily-logins">
+        <Dialog open={openModal==='daily-logins'} onOpenChange={(o)=>!o&&closeModal()}><DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+        <Card className="border-0 shadow-none" id="section-daily-logins">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Monitor className="w-5 h-5" />
@@ -1354,9 +1349,11 @@ export default function Admin() {
             )}
           </CardContent>
         </Card>
+        </DialogContent></Dialog>
 
         {/* Recent Logins - Collapsible */}
-        <Collapsible className="mb-6" id="section-recent-logins">
+        <Dialog open={openModal==='recent-logins'} onOpenChange={(o)=>!o&&closeModal()}><DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+        <Collapsible defaultOpen id="section-recent-logins">
           <Card>
             <CollapsibleTrigger asChild>
               <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
@@ -1417,8 +1414,10 @@ export default function Admin() {
             </CollapsibleContent>
           </Card>
         </Collapsible>
+        </DialogContent></Dialog>
 
-        <Card className="mb-6" id="section-churches">
+        <Dialog open={openModal==='churches'} onOpenChange={(o)=>!o&&closeModal()}><DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+        <Card className="border-0 shadow-none" id="section-churches">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -1656,6 +1655,7 @@ export default function Admin() {
             )}
           </CardContent>
         </Card>
+        </DialogContent></Dialog>
 
         {/* Edit Church Dialog */}
         <Dialog open={showEditChurch} onOpenChange={(open) => {
@@ -1835,7 +1835,8 @@ export default function Admin() {
         </Dialog>
 
         {/* All Volunteers List */}
-        <Collapsible>
+        <Dialog open={openModal==='volunteers'} onOpenChange={(o)=>!o&&closeModal()}><DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+        <Collapsible defaultOpen>
           <Card className="mb-6">
             <CollapsibleTrigger asChild>
               <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
@@ -1943,9 +1944,11 @@ export default function Admin() {
             </CollapsibleContent>
           </Card>
         </Collapsible>
+        </DialogContent></Dialog>
 
         {/* Departments List */}
-        <Card>
+        <Dialog open={openModal==='departments'} onOpenChange={(o)=>!o&&closeModal()}><DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+        <Card className="border-0 shadow-none">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building2 className="w-5 h-5" />
@@ -2109,6 +2112,7 @@ export default function Admin() {
             )}
           </CardContent>
         </Card>
+        </DialogContent></Dialog>
       </main>
     </div>
   );
