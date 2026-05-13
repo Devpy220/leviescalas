@@ -248,6 +248,8 @@ function generateHtmlResponse(
     status: 200,
     headers: {
       "Content-Type": "text/html; charset=utf-8",
+      "Content-Security-Policy": "default-src 'self'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:;",
+      "X-Content-Type-Options": "nosniff",
       ...corsHeaders,
     },
   });
