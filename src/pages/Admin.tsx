@@ -1019,6 +1019,8 @@ export default function Admin() {
             </CollapsibleContent>
           </Collapsible>
         </Card>
+          </DialogContent>
+        </Dialog>
 
         {/* Lighthouse / PageSpeed report (admin only) */}
         <div className="mb-6">
