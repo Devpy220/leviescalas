@@ -569,6 +569,7 @@ export default function Landing() {
         </div>
       </nav>
 
+      <main>
       {/* ── HERO ── */}
       <section className="flex items-center relative z-[1] pt-24 pb-4 sm:pt-28 sm:pb-6">
         {/* Dot grid + gradient blobs */}
@@ -647,6 +648,7 @@ export default function Landing() {
           <FeatureGrid />
         </div>
       </section>
+      </main>
 
 
 
