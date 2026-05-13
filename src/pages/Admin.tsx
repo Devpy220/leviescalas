@@ -1068,7 +1068,8 @@ export default function Admin() {
         </div>
 
         {/* Analytics Chart */}
-        <Card className="mb-6 overflow-hidden border-primary/20 bg-gradient-to-br from-card via-card to-primary/5" id="section-analytics">
+        <Dialog open={openModal==='analytics'} onOpenChange={(o)=>!o&&closeModal()}><DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+        <Card className="border-0 shadow-none overflow-hidden bg-gradient-to-br from-card via-card to-primary/5" id="section-analytics">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
