@@ -1827,7 +1827,8 @@ export default function Admin() {
         </Dialog>
 
         {/* All Volunteers List */}
-        <Collapsible>
+        <Dialog open={openModal==='volunteers'} onOpenChange={(o)=>!o&&closeModal()}><DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+        <Collapsible defaultOpen>
           <Card className="mb-6">
             <CollapsibleTrigger asChild>
               <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
