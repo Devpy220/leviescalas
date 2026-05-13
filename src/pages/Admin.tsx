@@ -1184,6 +1184,7 @@ export default function Admin() {
             )}
           </CardContent>
         </Card>
+        </DialogContent></Dialog>
 
         {/* Guest (anonymous) sessions */}
         <Card className="mb-6" id="section-guests">
