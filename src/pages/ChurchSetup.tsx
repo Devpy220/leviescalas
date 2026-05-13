@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { SEO } from '@/components/SEO';
 import { 
   Church, 
   Loader2, 
@@ -243,6 +244,7 @@ export default function ChurchSetup() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO title="Cadastrar minha Igreja — LEVI" description="Cadastre sua igreja gratuitamente no LEVI e comece a organizar escalas de voluntários em minutos." path="/church-setup" />
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">

@@ -6,6 +6,7 @@ import { Copy, Check, Heart, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import pixQrCode from "@/assets/pix-qrcode-levi.jpg";
 import { LeviLogo } from "@/components/LeviLogo";
+import { SEO } from "@/components/SEO";
 import Footer from "@/components/Footer";
 
 const PIX_KEY = "suport@leviescalas.com.br";
@@ -41,6 +42,7 @@ const SupportPix = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <SEO title="Apoiar o LEVI — Doação via PIX" description="Apoie o LEVI com uma doação via PIX e ajude a manter o projeto gratuito para igrejas." path="/apoiar" />
       <main className="flex-1 flex items-center justify-center px-4 py-10">
         <div className="w-full max-w-md space-y-6">
           <div className="flex flex-col items-center text-center space-y-3">
