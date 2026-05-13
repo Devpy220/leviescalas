@@ -1356,7 +1356,7 @@ export default function Admin() {
         </Card>
 
         {/* Recent Logins - Collapsible */}
-        <Collapsible className="mb-6">
+        <Collapsible className="mb-6" id="section-recent-logins">
           <Card>
             <CollapsibleTrigger asChild>
               <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
