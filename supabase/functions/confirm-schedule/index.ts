@@ -170,11 +170,22 @@ const handler = async (req: Request): Promise<Response> => {
   }
 };
 
+function esc(s: string): string {
+  return String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function generateHtmlResponse(
-  title: string,
-  message: string,
+  rawTitle: string,
+  rawMessage: string,
   type: "success" | "declined" | "error" | "warning" | "info"
 ): Response {
+  const title = esc(rawTitle);
+  const message = esc(rawMessage);
   const themes = {
     success:  { gradient: "linear-gradient(135deg, #10b981 0%, #14b8a6 100%)", bg: "#10b981", icon: "✅", badge: "CONFIRMADO" },
     declined: { gradient: "linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)", bg: "#f59e0b", icon: "📋", badge: "REGISTRADO" },
@@ -237,6 +248,8 @@ function generateHtmlResponse(
     status: 200,
     headers: {
       "Content-Type": "text/html; charset=utf-8",
+      "Content-Security-Policy": "default-src 'self'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:;",
+      "X-Content-Type-Options": "nosniff",
       ...corsHeaders,
     },
   });

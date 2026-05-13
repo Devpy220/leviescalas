@@ -1,0 +1,1 @@
+REVOKE SELECT (confirmation_token) ON public.schedules FROM authenticated, anon;

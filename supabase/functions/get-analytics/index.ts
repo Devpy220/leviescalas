@@ -6,23 +6,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const getUserIdFromJwt = (token: string): string | null => {
-  try {
-    const parts = token.split(".");
-    if (parts.length < 2) return null;
-
-    const payload = parts[1]
-      .replace(/-/g, "+")
-      .replace(/_/g, "/")
-      .padEnd(Math.ceil(parts[1].length / 4) * 4, "=");
-
-    const decoded = JSON.parse(atob(payload));
-    return typeof decoded?.sub === "string" ? decoded.sub : null;
-  } catch {
-    return null;
-  }
-};
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -43,9 +26,10 @@ serve(async (req) => {
 
     const token = authHeader.replace("Bearer ", "");
 
-    const userId = getUserIdFromJwt(token);
+    const { data: userData, error: userErr } = await supabase.auth.getUser(token);
+    const userId = userData?.user?.id;
 
-    if (!userId) {
+    if (userErr || !userId) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

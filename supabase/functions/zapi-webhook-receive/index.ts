@@ -102,6 +102,28 @@ const fmt = (s: string) => {
 serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  // Verify webhook source via shared secret. Configure ZAPI_WEBHOOK_SECRET in env
+  // and set the same value in the Z-API webhook custom header (X-Webhook-Secret)
+  // or as a query string parameter (?secret=...).
+  const expectedSecret = Deno.env.get("ZAPI_WEBHOOK_SECRET");
+  if (expectedSecret) {
+    const url = new URL(req.url);
+    const provided =
+      req.headers.get("x-webhook-secret") ||
+      req.headers.get("x-zapi-secret") ||
+      url.searchParams.get("secret") ||
+      "";
+    if (provided !== expectedSecret) {
+      console.warn("zapi-webhook-receive: invalid webhook secret");
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+  } else {
+    console.warn("zapi-webhook-receive: ZAPI_WEBHOOK_SECRET not configured — webhook is unauthenticated");
+  }
+
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
