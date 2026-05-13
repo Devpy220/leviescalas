@@ -6,7 +6,7 @@ import {
   type AvailabilityRow,
 } from "../_shared/scheduleDates.ts";
 import { tryHandleSwapMessage } from "./swapFlow.ts";
-import { detectLang, t, fmtTime, DOW, isScheduleListCommand } from "../_shared/whatsappI18n.ts";
+import { detectLang, t, fmtTime, DOW, isScheduleListCommand, translateRole } from "../_shared/whatsappI18n.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
