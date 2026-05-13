@@ -211,12 +211,7 @@ export default function EditScheduleDialog({
     if (date) {
       setSelectedDate(date);
       setShowCalendar(false);
-      // Auto-select first available slot for the new day
-      const slots = getAvailableSlotsForDay(getDay(date));
-      if (slots.length > 0) {
-        setTimeStart(slots[0].timeStart);
-        setTimeEnd(slots[0].timeEnd);
-      }
+      // Do not override time — user can freely edit any day/time
     }
   };
 
