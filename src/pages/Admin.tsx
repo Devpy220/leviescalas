@@ -1255,6 +1255,7 @@ export default function Admin() {
             )}
           </CardContent>
         </Card>
+        </DialogContent></Dialog>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
 
