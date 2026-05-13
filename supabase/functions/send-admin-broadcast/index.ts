@@ -3,16 +3,6 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { scheduleBatch } from "../_shared/whatsapp-queue.ts";
 import { buildBroadcastMessage } from "../_shared/messageVariants.ts";
 
-const getUserIdFromJwt = (token: string): string | null => {
-  try {
-    const parts = token.split(".");
-    if (parts.length < 2) return null;
-    const payload = parts[1].replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(parts[1].length / 4) * 4, "=");
-    const decoded = JSON.parse(atob(payload));
-    return typeof decoded?.sub === "string" ? decoded.sub : null;
-  } catch { return null; }
-};
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
