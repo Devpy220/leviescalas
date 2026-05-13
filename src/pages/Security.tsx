@@ -20,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import CalendarSyncDialog from '@/components/department/CalendarSyncDialog';
 import ProfileAvatarUpload from '@/components/ProfileAvatarUpload';
+import { BiometricLoginCard } from '@/components/BiometricLoginCard';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -303,6 +304,9 @@ export default function Security() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Biometric Login Card */}
+        <BiometricLoginCard />
 
         {/* Calendar Sync Card */}
         <Card className="mt-6">
