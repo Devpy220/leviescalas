@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendWhatsAppBatch, scheduleBatch, type WhatsAppRecipient } from "../_shared/whatsapp-queue.ts";
-import { pickVariant, GREETINGS, CLOSINGS, REMINDER_EMOJIS } from "../_shared/messageVariants.ts";
+import { pickVariant, GREETINGS, CLOSINGS, REMINDER_EMOJIS, INSTAGRAM_LINK } from "../_shared/messageVariants.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -150,7 +150,8 @@ const handler = async (req: Request): Promise<Response> => {
             const emoji = pickVariant(seed + "e", REMINDER_EMOJIS);
             const greeting = pickVariant(seed + "g", GREETINGS);
             const closing = pickVariant(seed + "c", CLOSINGS);
-            const whatsappMsg = `${emoji} *Lembrete — ${dept.name}*\n━━━━━━━━━━━━━━━━━━━━\n\n${greeting}, *${profile.name}*! 👋\n\n📖 _Leia com atenção:_\nVocê tem uma *escala próxima*.\n\n━━━━━━━━━━━━━━━━━━━━\n📆 *Data:* ${weekday}, ${dayNum} de ${monthFull}\n⏰ *Horário:* ${formatTime(schedule.time_start)} às ${formatTime(schedule.time_end)}${sectorSuffix}${roleSuffix}\n━━━━━━━━━━━━━━━━━━━━\n\n🙏 Conto com você!\nSe não puder ir, envie *"troca"* para combinar com um colega.\n\n${closing}`;
+            const igLine = `📲 Siga o LEVI no Instagram:\n${INSTAGRAM_LINK}`;
+            const whatsappMsg = `${emoji} *Lembrete — ${dept.name}*\n━━━━━━━━━━━━━━━━━━━━\n\n${greeting}, *${profile.name}*! 👋\n\n📖 _Leia com atenção:_\nVocê tem uma *escala próxima*.\n\n━━━━━━━━━━━━━━━━━━━━\n📆 *Data:* ${weekday}, ${dayNum} de ${monthFull}\n⏰ *Horário:* ${formatTime(schedule.time_start)} às ${formatTime(schedule.time_end)}${sectorSuffix}${roleSuffix}\n━━━━━━━━━━━━━━━━━━━━\n\n🙏 Conto com você!\nSe não puder ir, envie *"troca"* para combinar com um colega.\n\n${igLine}\n\n${closing}`;
 
             waRecipients.push({ phone: (profile as any).whatsapp, message: whatsappMsg });
           } else {

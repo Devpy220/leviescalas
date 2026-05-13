@@ -137,6 +137,8 @@ async function startSwap(deps: SwapFlowDeps, profile: Profile): Promise<void> {
 
   await cancelOldSessions(deps, profile.id);
 
+  const igLine = "📲 Siga o LEVI no Instagram:\nhttps://www.instagram.com/levi_escalas";
+
   let msg =
     `${t(lang, "swap_start_title")}\n━━━━━━━━━━━━━━━━━━━━\n\n` +
     `${t(lang, "swap_start_intro", { fname })}\n\n` +
@@ -150,7 +152,7 @@ async function startSwap(deps: SwapFlowDeps, profile: Profile): Promise<void> {
       dept: s.departments?.name ?? "",
     }) + "\n\n";
   });
-  msg += `━━━━━━━━━━━━━━━━━━━━\n${t(lang, "swap_start_footer")}\n\n_LEVI_`;
+  msg += `━━━━━━━━━━━━━━━━━━━━\n${t(lang, "swap_start_footer")}\n\n${igLine}\n\n_LEVI_`;
 
   await deps.supabase.from("whatsapp_swap_sessions").insert({
     user_id: profile.id,
@@ -328,7 +330,8 @@ async function handleSchedulePick(
       te: fmtTime(c.time_end),
     }) + "\n\n";
   });
-  msg += `━━━━━━━━━━━━━━━━━━━━\n${t(lang, "swap_target_footer")}\n\n_LEVI_`;
+  const igLine2 = "📲 Siga o LEVI no Instagram:\nhttps://www.instagram.com/levi_escalas";
+  msg += `━━━━━━━━━━━━━━━━━━━━\n${t(lang, "swap_target_footer")}\n\n${igLine2}\n\n_LEVI_`;
 
   await deps.supabase
     .from("whatsapp_swap_sessions")
@@ -437,6 +440,7 @@ async function askTarget(
   const deptName = reqSchedule.departments?.name ?? "";
 
   // Notify target — in target's language
+  const igLine3 = "📲 Siga o LEVI no Instagram:\nhttps://www.instagram.com/levi_escalas";
   const msg =
     `${t(tgtLang, "swap_request_title")}\n━━━━━━━━━━━━━━━━━━━━\n\n` +
     `${t(tgtLang, "swap_request_body", { tgt: tgtFname, req: reqFname, dept: deptName })}\n\n` +
@@ -453,7 +457,7 @@ async function askTarget(
       te: fmtTime(tgtSchedule.time_end),
     })}\n` +
     `━━━━━━━━━━━━━━━━━━━━\n\n` +
-    `${t(tgtLang, "swap_request_actions")}\n\n_LEVI_`;
+    `${t(tgtLang, "swap_request_actions")}\n\n${igLine3}\n\n_LEVI_`;
   await sendWA(deps, tgtProfile.whatsapp, msg);
 
   // Confirm to requester — in requester's language

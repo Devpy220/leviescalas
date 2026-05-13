@@ -1,6 +1,8 @@
 // Shared message variation helpers to humanize WhatsApp content.
 // Same meaning, different wording — reduces spam-flagging on Z-API.
 
+export const INSTAGRAM_LINK = "https://www.instagram.com/levi_escalas";
+
 function hashString(s: string): number {
   let h = 0;
   for (let i = 0; i < s.length; i++) {
@@ -56,7 +58,8 @@ export function buildAnnouncementMessage(params: {
   const emoji = pickVariant(seed + "e", ANNOUNCEMENT_EMOJIS);
   const greeting = pickVariant(seed + "g", GREETINGS);
   const closing = pickVariant(seed + "c", CLOSINGS);
-  return `${emoji} *Aviso — ${params.deptName}*\n\n${greeting}, *${params.userName}*!\n\n${params.title}\n\n${closing}`;
+  const igLine = `📲 Siga o LEVI no Instagram:\n${INSTAGRAM_LINK}`;
+  return `${emoji} *Aviso — ${params.deptName}*\n\n${greeting}, *${params.userName}*!\n\n${params.title}\n\n${igLine}\n\n${closing}`;
 }
 
 export function buildBroadcastMessage(params: {
@@ -70,7 +73,8 @@ export function buildBroadcastMessage(params: {
   const emoji = pickVariant(seed + "e", BROADCAST_EMOJIS);
   const greeting = pickVariant(seed + "g", GREETINGS);
   const closing = pickVariant(seed + "c", CLOSINGS);
-  return `${emoji} *Comunicado LEVI*\n\n${greeting}, *${params.userName}*!\n\n*${params.title}*\n\n${params.message}\n\n${closing}`;
+  const igLine = `📲 Siga o LEVI no Instagram:\n${INSTAGRAM_LINK}`;
+  return `${emoji} *Comunicado LEVI*\n\n${greeting}, *${params.userName}*!\n\n*${params.title}*\n\n${params.message}\n\n${igLine}\n\n${closing}`;
 }
 
 export function buildSupportMessage(params: {
@@ -84,5 +88,6 @@ export function buildSupportMessage(params: {
   const emoji = pickVariant(seed + "e", SUPPORT_EMOJIS);
   const greeting = pickVariant(seed + "g", GREETINGS);
   const closing = pickVariant(seed + "c", CLOSINGS);
-  return `${emoji} *Apoie o LEVI*\n\n${greeting}, *${params.userName}*!\n\nO LEVI é gratuito e depende do seu apoio para continuar funcionando. Qualquer valor faz a diferença!\n\n💛 *Toque no link abaixo para copiar a chave PIX com 1 clique:*\n\n👉 https://leviescalas.com.br/apoiar\n\n_(QR Code, chave PIX e opção de cartão disponíveis na página)_\n\n👤 *Titular:* ${params.titular}\n\n🙏 Obrigado pelo carinho!\n\n${closing}`;
+  const igLine = `📲 Siga o LEVI no Instagram:\n${INSTAGRAM_LINK}`;
+  return `${emoji} *Apoie o LEVI*\n\n${greeting}, *${params.userName}*!\n\nO LEVI é gratuito e depende do seu apoio para continuar funcionando. Qualquer valor faz a diferença!\n\n💛 *Toque no link abaixo para copiar a chave PIX com 1 clique:*\n\n👉 https://leviescalas.com.br/apoiar\n\n_(QR Code, chave PIX e opção de cartão disponíveis na página)_\n\n👤 *Titular:* ${params.titular}\n\n🙏 Obrigado pelo carinho!\n\n${igLine}\n\n${closing}`;
 }

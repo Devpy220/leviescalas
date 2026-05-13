@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { scheduleBatch } from "../_shared/whatsapp-queue.ts";
-import { pickVariant } from "../_shared/messageVariants.ts";
+import { pickVariant, INSTAGRAM_LINK } from "../_shared/messageVariants.ts";
 import {
   buildCandidateDays,
   formatCandidateLine,
@@ -163,6 +163,7 @@ serve(async (req: Request): Promise<Response> => {
         "_Equipe LEVI_",
       ]);
       const headEmoji = pickVariant(`${p.id}-emo-${targetMonthIso}`, ["📅", "🗓️", "⏰"]);
+      const igLine = `📲 Siga o LEVI no Instagram:\n${INSTAGRAM_LINK}`;
 
       const msg =
 `${headEmoji} *LEVI — Disponibilidade de ${targetMonthName}*
@@ -194,6 +195,8 @@ ${linesStr}${moreLine}
 ${limitLine}
 
 ⏳ Prazo: até *dia ${lastDayCurrent}*.
+
+${igLine}
 
 ${close}`;
 

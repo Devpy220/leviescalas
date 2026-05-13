@@ -165,7 +165,12 @@ const STR: Record<Lang, Record<string, string>> = {
 
 export function t(lang: Lang, key: string, params: TParams = {}): string {
   const s = STR[lang]?.[key] ?? STR.pt[key] ?? key;
-  return interp(s, params);
+  const result = interp(s, params);
+  // Add Instagram link before _LEVI_ closing in all WhatsApp messages
+  if (result.includes("\n\n_LEVI_")) {
+    return result.replace("\n\n_LEVI_", `\n\n📲 Siga o LEVI no Instagram:\nhttps://www.instagram.com/levi_escalas\n\n_LEVI_`);
+  }
+  return result;
 }
 
 // Multi-language keyword detection
