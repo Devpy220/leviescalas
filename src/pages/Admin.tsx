@@ -1648,6 +1648,7 @@ export default function Admin() {
             )}
           </CardContent>
         </Card>
+        </DialogContent></Dialog>
 
         {/* Edit Church Dialog */}
         <Dialog open={showEditChurch} onOpenChange={(open) => {
