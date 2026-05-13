@@ -1187,7 +1187,8 @@ export default function Admin() {
         </DialogContent></Dialog>
 
         {/* Guest (anonymous) sessions */}
-        <Card className="mb-6" id="section-guests">
+        <Dialog open={openModal==='guests'} onOpenChange={(o)=>!o&&closeModal()}><DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+        <Card className="border-0 shadow-none" id="section-guests">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="w-5 h-5" />
