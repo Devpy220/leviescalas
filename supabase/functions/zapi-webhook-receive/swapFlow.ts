@@ -440,6 +440,7 @@ async function askTarget(
   const deptName = reqSchedule.departments?.name ?? "";
 
   // Notify target — in target's language
+  const igLine3 = "📲 Siga o LEVI no Instagram:\nhttps://www.instagram.com/levi_escalas";
   const msg =
     `${t(tgtLang, "swap_request_title")}\n━━━━━━━━━━━━━━━━━━━━\n\n` +
     `${t(tgtLang, "swap_request_body", { tgt: tgtFname, req: reqFname, dept: deptName })}\n\n` +
@@ -456,7 +457,7 @@ async function askTarget(
       te: fmtTime(tgtSchedule.time_end),
     })}\n` +
     `━━━━━━━━━━━━━━━━━━━━\n\n` +
-    `${t(tgtLang, "swap_request_actions")}\n\n_LEVI_`;
+    `${t(tgtLang, "swap_request_actions")}\n\n${igLine3}\n\n_LEVI_`;
   await sendWA(deps, tgtProfile.whatsapp, msg);
 
   // Confirm to requester — in requester's language
