@@ -6,7 +6,7 @@ import {
   type AvailabilityRow,
 } from "../_shared/scheduleDates.ts";
 import { tryHandleSwapMessage } from "./swapFlow.ts";
-import { detectLang, t, fmtTime, DOW, isScheduleListCommand } from "../_shared/whatsappI18n.ts";
+import { detectLang, t, fmtTime, DOW, isScheduleListCommand, translateRole } from "../_shared/whatsappI18n.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -208,7 +208,7 @@ serve(async (req: Request): Promise<Response> => {
             const dow = DOW[lang][d.getDay()];
             const ts = fmtTime(s.time_start);
             const te = fmtTime(s.time_end);
-            const role = s.assignment_role ? ` — ${s.assignment_role}` : "";
+            const role = s.assignment_role ? ` — ${translateRole(s.assignment_role, lang)}` : "";
             const line = `• ${dd}/${m} (${dow}) ${ts}–${te}${role}`;
             const dn = deptName[s.department_id] || "—";
             (grouped[dn] ||= []).push(line);

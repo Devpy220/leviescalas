@@ -163,6 +163,17 @@ const STR: Record<Lang, Record<string, string>> = {
   },
 };
 
+const ROLE_LABELS: Record<Lang, Record<string, string>> = {
+  pt: { on_duty: "Plantão", participant: "Culto" },
+  es: { on_duty: "Guardia", participant: "Culto" },
+  en: { on_duty: "On duty", participant: "Service" },
+};
+
+export function translateRole(role: string | null | undefined, lang: Lang): string {
+  if (!role) return "";
+  return ROLE_LABELS[lang]?.[role] ?? ROLE_LABELS.pt[role] ?? role;
+}
+
 export function t(lang: Lang, key: string, params: TParams = {}): string {
   const s = STR[lang]?.[key] ?? STR.pt[key] ?? key;
   const result = interp(s, params);
