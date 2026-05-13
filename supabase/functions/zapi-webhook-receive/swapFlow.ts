@@ -330,7 +330,8 @@ async function handleSchedulePick(
       te: fmtTime(c.time_end),
     }) + "\n\n";
   });
-  msg += `━━━━━━━━━━━━━━━━━━━━\n${t(lang, "swap_target_footer")}\n\n_LEVI_`;
+  const igLine2 = "📲 Siga o LEVI no Instagram:\nhttps://www.instagram.com/levi_escalas";
+  msg += `━━━━━━━━━━━━━━━━━━━━\n${t(lang, "swap_target_footer")}\n\n${igLine2}\n\n_LEVI_`;
 
   await deps.supabase
     .from("whatsapp_swap_sessions")
