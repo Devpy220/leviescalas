@@ -1937,7 +1937,8 @@ export default function Admin() {
         </Collapsible>
 
         {/* Departments List */}
-        <Card>
+        <Dialog open={openModal==='departments'} onOpenChange={(o)=>!o&&closeModal()}><DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+        <Card className="border-0 shadow-none">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building2 className="w-5 h-5" />
