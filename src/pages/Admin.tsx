@@ -1195,7 +1195,7 @@ export default function Admin() {
         </Card>
 
         {/* Guest (anonymous) sessions */}
-        <Card className="mb-6">
+        <Card className="mb-6" id="section-guests">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="w-5 h-5" />
