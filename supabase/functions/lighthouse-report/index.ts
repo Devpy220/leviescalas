@@ -11,6 +11,8 @@ const CATEGORIES = ["performance", "accessibility", "best-practices", "seo"];
 async function runPSI(url: string, strategy: "mobile" | "desktop") {
   const params = new URLSearchParams({ url, strategy });
   CATEGORIES.forEach((c) => params.append("category", c));
+  const apiKey = Deno.env.get("PAGESPEED_API_KEY");
+  if (apiKey) params.append("key", apiKey);
 
   const res = await fetch(
     `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?${params.toString()}`,
