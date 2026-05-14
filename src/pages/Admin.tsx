@@ -1025,10 +1025,12 @@ export default function Admin() {
           </DialogContent>
         </Dialog>
 
-        {/* Lighthouse / PageSpeed report (admin only) */}
-        <div className="mb-6">
-          <LighthouseReportCard />
-        </div>
+        {/* Lighthouse / PageSpeed report (admin only) — modal */}
+        <Dialog open={openModal==='lighthouse'} onOpenChange={(o)=>!o&&closeModal()}>
+          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+            <LighthouseReportCard />
+          </DialogContent>
+        </Dialog>
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
