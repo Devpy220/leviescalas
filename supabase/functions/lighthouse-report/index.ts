@@ -9,14 +9,25 @@ const DEFAULT_URL = "https://leviescalas.com.br";
 const CATEGORIES = ["performance", "accessibility", "best-practices", "seo"];
 
 async function runPSI(url: string, strategy: "mobile" | "desktop") {
-  const params = new URLSearchParams({ url, strategy });
-  CATEGORIES.forEach((c) => params.append("category", c));
-  const apiKey = Deno.env.get("PAGESPEED_API_KEY");
-  if (apiKey) params.append("key", apiKey);
+  const apiKey = Deno.env.get("PAGESPEED_API_KEY")?.trim();
+  const makeRequest = (includeKey: boolean) => {
+    const params = new URLSearchParams({ url, strategy });
+    CATEGORIES.forEach((c) => params.append("category", c));
+    if (includeKey && apiKey) params.append("key", apiKey);
 
-  const res = await fetch(
-    `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?${params.toString()}`,
-  );
+    return fetch(
+      `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?${params.toString()}`,
+    );
+  };
+
+  let res = await makeRequest(Boolean(apiKey));
+  if (!res.ok && apiKey && res.status === 400) {
+    const text = await res.clone().text();
+    if (text.includes("API key not valid")) {
+      console.warn(`PAGESPEED_API_KEY rejected for ${strategy}; retrying without key`);
+      res = await makeRequest(false);
+    }
+  }
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`PSI ${strategy} failed [${res.status}]: ${text.slice(0, 300)}`);
