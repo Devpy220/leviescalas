@@ -166,7 +166,7 @@ export default function Admin() {
   const [recipientSearch, setRecipientSearch] = useState('');
 
   // Modal navigation state — all section access via centered modals
-  const [openModal, setOpenModal] = useState<null | 'broadcast' | 'volunteers' | 'departments' | 'churches' | 'recent-logins' | 'daily-logins' | 'guests' | 'analytics'>(null);
+  const [openModal, setOpenModal] = useState<null | 'broadcast' | 'volunteers' | 'departments' | 'churches' | 'recent-logins' | 'daily-logins' | 'guests' | 'analytics' | 'lighthouse'>(null);
   const closeModal = () => setOpenModal(null);
 
   useEffect(() => {
