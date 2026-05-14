@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Trash2, Users, Building2, ChevronDown, ChevronUp, Shield, LogOut, Church, Plus, Copy, Link as LinkIcon, Mail, ExternalLink, ChevronRight, Pencil, Upload, X, TrendingUp, Eye, Clock, CalendarDays, CalendarRange, Monitor, Megaphone, Send, Activity, BarChart3, UserX, LineChart as LineChartIcon } from 'lucide-react';
+import { Loader2, Trash2, Users, Building2, ChevronDown, ChevronUp, Shield, LogOut, Church, Plus, Copy, Link as LinkIcon, Mail, ExternalLink, ChevronRight, Pencil, Upload, X, TrendingUp, Eye, Clock, CalendarDays, CalendarRange, Monitor, Megaphone, Send, Activity, BarChart3, UserX, LineChart as LineChartIcon, Gauge } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -166,7 +166,7 @@ export default function Admin() {
   const [recipientSearch, setRecipientSearch] = useState('');
 
   // Modal navigation state — all section access via centered modals
-  const [openModal, setOpenModal] = useState<null | 'broadcast' | 'volunteers' | 'departments' | 'churches' | 'recent-logins' | 'daily-logins' | 'guests' | 'analytics'>(null);
+  const [openModal, setOpenModal] = useState<null | 'broadcast' | 'volunteers' | 'departments' | 'churches' | 'recent-logins' | 'daily-logins' | 'guests' | 'analytics' | 'lighthouse'>(null);
   const closeModal = () => setOpenModal(null);
 
   useEffect(() => {
@@ -807,6 +807,9 @@ export default function Admin() {
                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('analytics')}>
                  <TrendingUp className="w-3.5 h-3.5" /> Acesso ao site
                </Button>
+               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('lighthouse')}>
+                 <Gauge className="w-3.5 h-3.5" /> Lighthouse / PageSpeed
+               </Button>
             </div>
           </CardContent>
         </Card>
@@ -1022,10 +1025,12 @@ export default function Admin() {
           </DialogContent>
         </Dialog>
 
-        {/* Lighthouse / PageSpeed report (admin only) */}
-        <div className="mb-6">
-          <LighthouseReportCard />
-        </div>
+        {/* Lighthouse / PageSpeed report (admin only) — modal */}
+        <Dialog open={openModal==='lighthouse'} onOpenChange={(o)=>!o&&closeModal()}>
+          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+            <LighthouseReportCard />
+          </DialogContent>
+        </Dialog>
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
