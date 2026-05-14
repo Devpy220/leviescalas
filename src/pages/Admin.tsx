@@ -807,6 +807,9 @@ export default function Admin() {
                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('analytics')}>
                  <TrendingUp className="w-3.5 h-3.5" /> Acesso ao site
                </Button>
+               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('lighthouse')}>
+                 <Gauge className="w-3.5 h-3.5" /> Lighthouse / PageSpeed
+               </Button>
             </div>
           </CardContent>
         </Card>
