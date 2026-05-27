@@ -780,9 +780,6 @@ export default function Admin() {
           </CardHeader>
           <CardContent className="pt-0">
             <div className="flex flex-wrap gap-2">
-             <Button size="sm" variant="outline" className="gap-1.5" onClick={() => window.open('https://webmail.kinghost.com.br/leviescalas.com.br', '_blank')}>
-                 <Mail className="w-3.5 h-3.5" /> Webmail
-               </Button>
                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('broadcast')}>
                  <Megaphone className="w-3.5 h-3.5" /> Comunicados LEVI
                </Button>
