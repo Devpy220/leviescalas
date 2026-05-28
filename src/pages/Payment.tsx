@@ -7,14 +7,12 @@ import { useSidebarExpanded } from '@/contexts/SidebarContext';
 import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Loader2, QrCode, Copy, Check, Heart, Sparkles, CreditCard } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import pixQrCode from "@/assets/pix-qrcode-levi.jpg";
 import Footer from "@/components/Footer";
 
-const PIX_KEY = "suport@leviescalas.com.br";
+const PIX_KEY = "leviescalas@gmail.com";
+const STRIPE_DONATION_URL = "https://donate.stripe.com/9B63cw3ekcsy2wG6dw4AU00";
 
 const Payment = () => {
   const navigate = useNavigate();
@@ -23,8 +21,6 @@ const Payment = () => {
   const { shouldShowInstallPrompt, install } = usePWAInstall();
   const [copied, setCopied] = useState(false);
   const { expanded: sidebarExpanded } = useSidebarExpanded();
-  const [cardAmount, setCardAmount] = useState("");
-  const [loadingCheckout, setLoadingCheckout] = useState(false);
 
   const copyPixKey = async () => {
     try {
@@ -34,33 +30,6 @@ const Payment = () => {
       setTimeout(() => setCopied(false), 3000);
     } catch {
       toast.error("Erro ao copiar chave PIX");
-    }
-  };
-
-  const handleStripeCheckout = async () => {
-    const amount = Math.round(parseFloat(cardAmount.replace(",", ".")) * 100);
-    if (isNaN(amount) || amount < 100) {
-      toast.error("Valor mínimo: R$ 1,00");
-      return;
-    }
-
-    setLoadingCheckout(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("create-donation-checkout", {
-        body: { amount },
-      });
-
-      if (error) throw error;
-      if (data?.url) {
-        window.open(data.url, "_blank");
-      } else {
-        throw new Error("URL de checkout não retornada");
-      }
-    } catch (err: any) {
-      console.error(err);
-      toast.error("Erro ao iniciar pagamento");
-    } finally {
-      setLoadingCheckout(false);
     }
   };
 
@@ -103,12 +72,12 @@ const Payment = () => {
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
                 <Sparkles className="w-4 h-4 text-primary" />
                 <span className="text-sm font-medium text-primary">
-                  Informe o valor que deseja contribuir
+                  Escolha o valor no próximo passo
                 </span>
               </div>
             </div>
 
-            {/* Cartão - Stripe */}
+            {/* Cartão - Stripe Payment Link */}
             <Card className="border-2 border-primary/30 mb-6">
               <CardHeader className="text-center">
                 <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-2">
@@ -117,27 +86,12 @@ const Payment = () => {
                 <CardTitle>Cartão de Crédito/Débito</CardTitle>
                 <CardDescription>Pagamento seguro via Stripe</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Valor (R$)</label>
-                  <Input
-                    type="text"
-                    inputMode="decimal"
-                    placeholder="0,00"
-                    value={cardAmount}
-                    onChange={(e) => setCardAmount(e.target.value)}
-                  />
-                </div>
+              <CardContent>
                 <Button
                   className="w-full"
-                  onClick={handleStripeCheckout}
-                  disabled={loadingCheckout}
+                  onClick={() => window.open(STRIPE_DONATION_URL, "_blank")}
                 >
-                  {loadingCheckout ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <CreditCard className="h-4 w-4 mr-2" />
-                  )}
+                  <CreditCard className="h-4 w-4 mr-2" />
                   Apoiar via cartão
                 </Button>
               </CardContent>
@@ -150,19 +104,12 @@ const Payment = () => {
                   <QrCode className="h-6 w-6 text-rose-500" />
                 </div>
                 <CardTitle>PIX</CardTitle>
-                <CardDescription>Escaneie o QR code com o app do seu banco</CardDescription>
+                <CardDescription>Copie a chave PIX e cole no app do seu banco</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="flex justify-center">
-                  <img
-                    src={pixQrCode}
-                    alt="QR Code PIX - Apoio Voluntário"
-                    className="w-64 h-64 rounded-lg border object-contain bg-white"
-                  />
-                </div>
                 <div className="text-center space-y-1">
                   <p className="text-sm font-medium text-foreground">EDUARDO LINO DA SILVA</p>
-                  <p className="text-xs text-muted-foreground">Obrigado pelo seu apoio! Deus abençoe!</p>
+                  <p className="text-xs text-muted-foreground">Banco BMG</p>
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground text-center font-medium">Chave PIX (E-mail):</p>
@@ -185,7 +132,7 @@ const Payment = () => {
                 </div>
                 <div className="border-t pt-4">
                   <p className="text-xs text-muted-foreground text-center">
-                    Este QR Code não possui valor definido. Informe qualquer valor no momento do pagamento.
+                    Obrigado pelo seu apoio! Deus abençoe! 🙏
                   </p>
                 </div>
               </CardContent>
