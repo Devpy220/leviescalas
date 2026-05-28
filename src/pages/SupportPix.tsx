@@ -1,19 +1,18 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Copy, Check, Heart, CreditCard } from "lucide-react";
 import { toast } from "sonner";
-import pixQrCode from "@/assets/pix-qrcode-levi.jpg";
 import { LeviLogo } from "@/components/LeviLogo";
 import { SEO } from "@/components/SEO";
 import Footer from "@/components/Footer";
 
-const PIX_KEY = "suport@leviescalas.com.br";
+const PIX_KEY = "leviescalas@gmail.com";
 const TITULAR = "EDUARDO LINO DA SILVA";
+const BANCO = "Banco BMG";
+const STRIPE_DONATION_URL = "https://donate.stripe.com/9B63cw3ekcsy2wG6dw4AU00";
 
 const SupportPix = () => {
-  const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
 
   const copyPixKey = async () => {
@@ -23,7 +22,6 @@ const SupportPix = () => {
       toast.success("Chave PIX copiada!");
       setTimeout(() => setCopied(false), 3000);
     } catch {
-      // Fallback
       const ta = document.createElement("textarea");
       ta.value = PIX_KEY;
       document.body.appendChild(ta);
@@ -58,14 +56,6 @@ const SupportPix = () => {
 
           <Card className="border-primary/20">
             <CardContent className="p-6 space-y-5">
-              <div className="flex justify-center">
-                <img
-                  src={pixQrCode}
-                  alt="QR Code PIX para apoiar o LEVI"
-                  className="w-48 h-48 rounded-lg border"
-                />
-              </div>
-
               <div className="space-y-2">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground text-center">
                   Chave PIX (E-mail)
@@ -93,9 +83,15 @@ const SupportPix = () => {
                 )}
               </Button>
 
-              <div className="text-center text-sm">
-                <span className="text-muted-foreground">Titular: </span>
-                <span className="font-medium">{TITULAR}</span>
+              <div className="text-center text-sm space-y-1">
+                <div>
+                  <span className="text-muted-foreground">Titular: </span>
+                  <span className="font-medium">{TITULAR}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Banco: </span>
+                  <span className="font-medium">{BANCO}</span>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -103,7 +99,7 @@ const SupportPix = () => {
           <Button
             variant="outline"
             className="w-full"
-            onClick={() => navigate("/payment")}
+            onClick={() => window.open(STRIPE_DONATION_URL, "_blank")}
           >
             <CreditCard className="w-4 h-4 mr-2" />
             Pagar com cartão

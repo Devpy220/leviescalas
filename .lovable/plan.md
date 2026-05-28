@@ -1,73 +1,31 @@
-## Objetivo
+## Mudanças no fluxo de apoio/doação
 
-Acrescentar **Face ID / Touch ID / digital** como forma **opcional** de entrar no LEVI, **sem remover** o login por email e senha. Quem ativar passa a ver um botão "Entrar com Face ID" na tela de login, ao lado do formulário tradicional.
+### 1. Botão "Apoiar via cartão" → Stripe Payment Link
+- Em `src/pages/Payment.tsx`: substituir o card de "Cartão de Crédito/Débito" (que hoje chama a edge function `create-donation-checkout` com valor digitado) por um botão simples que abre `https://donate.stripe.com/9B63cw3ekcsy2wG6dw4AU00` em nova aba.
+- Remover o input de valor, o estado `cardAmount`, `loadingCheckout` e a função `handleStripeCheckout`.
+- A edge function `create-donation-checkout` deixa de ser usada por este fluxo (mantida no projeto, sem remoção, para não quebrar nada que ainda possa referenciá-la).
 
-A tecnologia usada é **WebAuthn / Passkeys** — padrão nativo do navegador. Não precisa instalar app, não usa biblioteca paga, funciona em:
-- iPhone/iPad → Face ID ou Touch ID
-- Android → digital ou rosto
-- Mac → Touch ID
-- Windows → Windows Hello
+### 2. Nova chave PIX
+- Substituir a constante `PIX_KEY` em:
+  - `src/pages/Payment.tsx`
+  - `src/pages/SupportPix.tsx`
+- De: `suport@leviescalas.com.br`
+- Para: `leviescalas@gmail.com`
+- Atualizar o rótulo "Chave PIX (E-mail)" — continua e-mail, ok.
+- Adicionar informação do banco: **Banco BMG** abaixo do titular **EDUARDO LINO DA SILVA** nos dois arquivos.
 
-A chave biométrica fica **no aparelho do usuário**, o LEVI guarda só uma referência pública. Se o usuário perder o aparelho, ele continua entrando por email/senha normalmente.
+### 3. Remover QR Code antigo
+- Remover a imagem `pixQrCode` (import e `<img src={pixQrCode} />`) de:
+  - `src/pages/Payment.tsx`
+  - `src/pages/SupportPix.tsx`
+- O QR atual aponta para a chave antiga; sem QR novo informado pelo usuário, exibimos apenas a chave PIX em destaque com botão "Copiar chave PIX".
+- Arquivo `src/assets/pix-qrcode-levi.jpg` permanece no repositório (não deletar) mas deixa de ser referenciado.
 
-## Como funciona para o usuário
+### 4. Botão "Apoiar via cartão" no SupportPix
+- Em `src/pages/SupportPix.tsx`, o botão "Pagar com cartão" hoje navega para `/payment`. Trocar para abrir o Payment Link do Stripe diretamente em nova aba (consistência com o item 1).
 
-1. **Cadastro da biometria** (uma vez)
-   - Usuário entra normal por email/senha
-   - Em "Segurança" → novo card "Entrar com Face ID / digital"
-   - Clica "Ativar" → o sistema operacional pede Face ID/digital → pronto
-   - Pode ter até 3 dispositivos cadastrados (celular, tablet, notebook)
-   - Pode remover um dispositivo a qualquer momento
+### Não incluído
+- Não mexer em backend/edge functions, nem em RLS/DB.
+- Não tocar em outras telas além de Payment.tsx e SupportPix.tsx.
 
-2. **Login com biometria**
-   - Na tela `/auth`, abaixo do formulário, aparece botão **"Entrar com Face ID"** (só se o navegador suportar)
-   - Usuário digita só o email → clica no botão → SO pede biometria → entra direto
-
-3. **Fallback**
-   - Se a biometria falhar, recusar, ou o aparelho não tiver suporte, o formulário de senha continua funcionando normal.
-
-## Escopo técnico
-
-### Backend (Lovable Cloud)
-
-**Nova tabela `webauthn_credentials`**
-- `user_id` (referência ao perfil)
-- `credential_id` (id público da chave, único)
-- `public_key` (chave pública em base64)
-- `counter` (contador anti-replay)
-- `device_name` (ex: "iPhone de João")
-- `created_at`, `last_used_at`
-- RLS: usuário só vê/apaga as próprias credenciais
-
-**Nova tabela `webauthn_challenges`** (temporária, expira em 5 min)
-- `challenge`, `email`, `type` (register/login), `expires_at`
-
-**3 Edge Functions novas:**
-- `webauthn-register-options` — gera challenge para cadastro (precisa estar logado)
-- `webauthn-register-verify` — valida e salva a credencial
-- `webauthn-login-options` — gera challenge para login (público, recebe email)
-- `webauthn-login-verify` — valida assinatura, gera sessão Supabase via `admin.generateLink` e devolve tokens
-
-Usar a lib `@simplewebauthn/server` (Deno via npm:) — é a referência do mercado.
-
-### Frontend
-
-- **`src/lib/webauthn.ts`** — helpers usando `@simplewebauthn/browser` (registerCredential, authenticate, isSupported)
-- **`src/pages/Security.tsx`** — novo card "Login por biometria" listando dispositivos cadastrados + botão "Adicionar este dispositivo" + remover
-- **`src/pages/Auth.tsx`** — abaixo do botão "Entrar", mostrar botão **"Entrar com Face ID"** quando `isSupported() === true`. Fluxo: pede email → chama login-verify → `supabase.auth.setSession(tokens)` → redireciona pra `/dashboard`
-
-### Compatibilidade
-
-- iOS Safari 16+, Chrome/Edge/Firefox modernos: ✅
-- Requer HTTPS (já temos em leviescalas.com.br e leviescalas.lovable.app)
-- Em navegadores antigos, o botão simplesmente não aparece — login por senha continua
-
-## Fora do escopo
-
-- Não substituirá a senha (decisão sua: manter os dois lados)
-- Não obrigará ninguém — totalmente opcional
-- Não vai bloquear o app ao reabrir — só agiliza o login
-
-## Próximo passo
-
-Se aprovar, vou: criar as 2 tabelas + RLS, instalar `@simplewebauthn/browser` no front, criar as 4 edge functions, adicionar o card em Segurança e o botão em /auth.
+Confirma que posso seguir? Se você tiver um **QR code novo** da chave `leviescalas@gmail.com` (BMG), me envie a imagem que eu coloco no lugar — caso contrário sigo apenas com a chave PIX em texto + botão copiar.
