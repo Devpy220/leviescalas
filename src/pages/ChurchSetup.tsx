@@ -151,21 +151,29 @@ export default function ChurchSetup() {
       });
 
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      if (data?.error && !data?.ok) throw new Error(data.error);
 
-      toast({
-        title: 'Email enviado!',
-        description: 'Enviamos as instruções para o email da igreja.',
-      });
+      if (data?.channel === 'whatsapp') {
+        toast({
+          title: 'Link enviado por WhatsApp!',
+          description: 'O email falhou, mas enviamos as instruções pelo WhatsApp.',
+        });
+      } else {
+        toast({
+          title: 'Email enviado!',
+          description: 'Enviamos as instruções para o email da igreja.',
+        });
+      }
     } catch (err: any) {
       console.error('Error sending code email:', err);
       toast({
         variant: 'destructive',
-        title: 'Não foi possível enviar o email',
-        description: 'Tente novamente em instantes.',
+        title: 'Não foi possível enviar o link',
+        description: 'Você pode copiar o link manualmente no próximo passo.',
       });
     }
   };
+
 
   const handleCreateChurch = async (data: ChurchForm) => {
     if (!requireAuth()) return;
