@@ -298,9 +298,8 @@ export default function UnifiedScheduleView({
           </div>
         </CardHeader>
       </Card>
-      {isLeader && !readOnly && (
       {/* Floating action buttons for leaders */}
-      {isLeader && (
+      {isLeader && !readOnly && (
         <div className="fixed bottom-6 right-6 flex flex-col gap-2 z-40">
           {/* Smart Schedule Button */}
           <Tooltip>
