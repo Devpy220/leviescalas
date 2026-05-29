@@ -275,7 +275,61 @@ export default function Dashboard() {
         role: 'leader' as const
       }));
 
-      setDepartments([...leaderDepartments, ...memberDepartments]);
+      // Fetch coordinator departments
+      const coordDepartments: DepartmentWithRole[] = [];
+      const { data: coordRows } = await (supabase as any)
+        .from('department_coordinators')
+        .select('department_id')
+        .eq('user_id', currentUser.id);
+
+      if (coordRows && coordRows.length > 0) {
+        const existingIds = new Set([
+          ...leaderDepartments.map(d => d.id),
+          ...memberDepartments.map(d => d.id),
+        ]);
+        for (const row of coordRows as Array<{ department_id: string }>) {
+          if (existingIds.has(row.department_id)) continue;
+          const { data: deptData } = await supabase
+            .rpc('get_department_basic', { dept_id: row.department_id });
+          if (deptData && deptData.length > 0) {
+            const dept = deptData[0] as any;
+            let churchInfo: { name: string; logo_url: string | null } | null = null;
+            if (dept.church_id) {
+              if (!churchMap[dept.church_id]) {
+                const { data: churchData } = await supabase
+                  .from('churches')
+                  .select('id, name, logo_url')
+                  .eq('id', dept.church_id)
+                  .maybeSingle();
+                if (churchData) {
+                  churchMap[churchData.id] = { name: churchData.name, logo_url: churchData.logo_url };
+                }
+              }
+              churchInfo = churchMap[dept.church_id] || null;
+            }
+            // member count for coordinator dept
+            const { count } = await supabase
+              .from('members')
+              .select('*', { count: 'exact', head: true })
+              .eq('department_id', dept.id);
+            coordDepartments.push({
+              id: dept.id,
+              name: dept.name,
+              description: dept.description,
+              leader_id: dept.leader_id,
+              created_at: dept.created_at,
+              avatar_url: dept.avatar_url || null,
+              member_count: count || 0,
+              church_id: dept.church_id || null,
+              church_name: churchInfo?.name || null,
+              church_logo_url: churchInfo?.logo_url || null,
+              role: 'coordinator' as const,
+            });
+          }
+        }
+      }
+
+      setDepartments([...leaderDepartments, ...memberDepartments, ...coordDepartments]);
     } catch (error) {
       console.error('Error fetching departments:', error);
       toast({
