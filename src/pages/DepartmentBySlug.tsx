@@ -72,7 +72,10 @@ export default function DepartmentBySlug() {
             return;
           }
         }
+      }
+
       // Check coordinator departments
+
       const { data: coordRows } = await (supabase as any)
         .from('department_coordinators')
         .select('department_id')
