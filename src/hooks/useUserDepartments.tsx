@@ -4,10 +4,11 @@ import { useAuth } from '@/hooks/useAuth';
 
 export interface UserDepartment {
   id: string;
+export interface UserDepartment {
+  id: string;
   name: string;
-  role: 'leader' | 'member';
+  role: 'leader' | 'member' | 'coordinator';
   church_name?: string | null;
-  church_logo_url?: string | null;
   avatar_url?: string | null;
 }
 
