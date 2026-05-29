@@ -56,19 +56,41 @@ export function useUserDepartments() {
         const { data: leaderDepts } = await supabase
           .from('departments')
           .select('id, name, avatar_url, church_id')
+        // Also check leader departments (direct ownership)
+        const { data: leaderDepts } = await supabase
+          .from('departments')
+          .select('id, name, avatar_url, church_id')
           .eq('leader_id', currentUser.id);
+
+        // Coordinator departments
+        const { data: coordRows } = await (supabase as any)
+          .from('department_coordinators')
+          .select('department_id')
+          .eq('user_id', currentUser.id);
+
+        const coordDeptIds = ((coordRows || []) as Array<{ department_id: string }>).map(r => r.department_id);
+        let coordDepts: Array<{ id: string; name: string; avatar_url: string | null; church_id: string | null }> = [];
+        if (coordDeptIds.length > 0) {
+          const { data: cd } = await supabase
+            .from('departments')
+            .select('id, name, avatar_url, church_id')
+            .in('id', coordDeptIds);
+          coordDepts = (cd || []) as any;
+        }
 
         // Gather all church IDs
         const allChurchIds = new Set<string>();
-        memberData.forEach(m => {
+        memberRows.forEach(m => {
           const dept = m.departments as any;
           if (dept?.church_id) allChurchIds.add(dept.church_id);
         });
         (leaderDepts || []).forEach(d => {
           if (d.church_id) allChurchIds.add(d.church_id);
         });
+        coordDepts.forEach(d => {
+          if (d.church_id) allChurchIds.add(d.church_id);
+        });
 
-        // Fetch church info
         const churchMap: Record<string, { name: string; logo_url: string | null }> = {};
         if (allChurchIds.size > 0) {
           const { data: churches } = await supabase
