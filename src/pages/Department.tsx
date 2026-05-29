@@ -690,7 +690,10 @@ export default function Department() {
         open={showInviteMember}
         onOpenChange={setShowInviteMember}
         inviteCode={department.invite_code}
+        departmentId={department.id}
+        coordinatorInviteCode={(department as any).coordinator_invite_code}
       />
+
 
       <DepartmentSettingsDialog
         open={showSettings}
