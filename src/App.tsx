@@ -20,6 +20,7 @@ import Department from "./pages/Department";
 import DepartmentBySlug from "./pages/DepartmentBySlug";
 import CreateDepartment from "./pages/CreateDepartment";
 import JoinDepartment from "./pages/JoinDepartment";
+import JoinCoordinator from "./pages/JoinCoordinator";
 import MySchedules from "./pages/MySchedules";
 import Security from "./pages/Security";
 import Admin from "./pages/Admin";
@@ -76,7 +77,8 @@ const App = () => (
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/join" element={<JoinChurch />} />
                   <Route path="/join/:inviteCode" element={<JoinDepartment />} />
-                  <Route path="/igreja/:slug" element={<ChurchPublic />} />
+                  <Route path="/join/:inviteCode" element={<JoinDepartment />} />
+                  <Route path="/join-coordinator/:code" element={<JoinCoordinator />} />
                   <Route path="/confirm/:token" element={<ConfirmSchedule />} />
                   <Route path="/tutorial" element={<Tutorial />} />
                   <Route path="/complete-profile" element={
