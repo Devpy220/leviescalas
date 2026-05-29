@@ -622,8 +622,10 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
           open={showInvite}
           onOpenChange={setShowInvite}
           inviteCode={inviteCode}
+          departmentId={selectedDept.id}
         />
       )}
+
 
       {showExport && selectedDept && (
         <Dialog open={showExport} onOpenChange={setShowExport}>
