@@ -126,10 +126,10 @@ export default function UnifiedScheduleView({
   const getMemberBgStyle = (userId: string): React.CSSProperties => {
     return getMemberBackgroundStyle(memberColorMap, userId);
   };
-
-  // Filter schedules based on user role - members only see their own schedules
   const visibleSchedules = useMemo(() => {
-    if (isLeader) return schedules;
+    if (isLeader || readOnly) return schedules;
+    return schedules.filter(s => s.user_id === currentUserId);
+  }, [schedules, isLeader, currentUserId, readOnly]);
     return schedules.filter(s => s.user_id === currentUserId);
   }, [schedules, isLeader, currentUserId]);
 
@@ -300,7 +300,7 @@ export default function UnifiedScheduleView({
           </div>
         </CardHeader>
       </Card>
-
+      {isLeader && !readOnly && (
       {/* Floating action buttons for leaders */}
       {isLeader && (
         <div className="fixed bottom-6 right-6 flex flex-col gap-2 z-40">
@@ -357,7 +357,7 @@ export default function UnifiedScheduleView({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {slotGroups.map((group) => (
             <SlotCard
-              key={`${format(group.date, 'yyyy-MM-dd')}-${group.slotInfo.timeStart}`}
+              isLeader={isLeader && !readOnly}
               group={group}
               isLeader={isLeader}
               getMemberColorValue={getMemberColorValue}
