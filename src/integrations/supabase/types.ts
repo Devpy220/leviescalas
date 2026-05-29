@@ -331,11 +331,36 @@ export type Database = {
           },
         ]
       }
+      department_coordinators: {
+        Row: {
+          created_at: string
+          department_id: string
+          id: string
+          invited_by: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          department_id: string
+          id?: string
+          invited_by?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          department_id?: string
+          id?: string
+          invited_by?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       departments: {
         Row: {
           allow_sunday_double: boolean
           avatar_url: string | null
           church_id: string | null
+          coordinator_invite_code: string
           created_at: string
           description: string | null
           id: string
@@ -353,6 +378,7 @@ export type Database = {
           allow_sunday_double?: boolean
           avatar_url?: string | null
           church_id?: string | null
+          coordinator_invite_code?: string
           created_at?: string
           description?: string | null
           id?: string
@@ -370,6 +396,7 @@ export type Database = {
           allow_sunday_double?: boolean
           avatar_url?: string | null
           church_id?: string | null
+          coordinator_invite_code?: string
           created_at?: string
           description?: string | null
           id?: string
@@ -1833,6 +1860,7 @@ export type Database = {
         Args: { dept_id: string }
         Returns: {
           avatar_url: string
+          coordinator_invite_code: string
           created_at: string
           description: string
           id: string
@@ -1888,6 +1916,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_department_coordinator: {
+        Args: { _department_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_department_leader: {
         Args: { _department_id: string; _user_id: string }
         Returns: boolean
@@ -1895,6 +1927,15 @@ export type Database = {
       is_department_member: {
         Args: { _department_id: string; _user_id: string }
         Returns: boolean
+      }
+      join_department_as_coordinator: {
+        Args: { p_code: string }
+        Returns: {
+          department_id: string
+          department_name: string
+          message: string
+          success: boolean
+        }[]
       }
       join_department_by_invite: {
         Args: { invite_code: string }
@@ -1915,6 +1956,10 @@ export type Database = {
         }
         Returns: string
       }
+      rotate_coordinator_invite_code: {
+        Args: { dept_id: string }
+        Returns: string
+      }
       transfer_department_leadership: {
         Args: { dept_id: string; new_leader_user_id: string }
         Returns: boolean
@@ -1932,6 +1977,13 @@ export type Database = {
         Args: { p_code: string }
         Returns: {
           church_name: string
+          is_valid: boolean
+        }[]
+      }
+      validate_coordinator_code_secure: {
+        Args: { p_code: string }
+        Returns: {
+          department_name: string
           is_valid: boolean
         }[]
       }

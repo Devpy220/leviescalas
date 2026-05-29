@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 export interface UserDepartment {
   id: string;
   name: string;
-  role: 'leader' | 'member';
+  role: 'leader' | 'member' | 'coordinator';
   church_name?: string | null;
   church_logo_url?: string | null;
   avatar_url?: string | null;
@@ -47,11 +47,8 @@ export function useUserDepartments() {
           .select('department_id, role, departments(id, name, avatar_url, church_id)')
           .eq('user_id', currentUser.id);
 
-        if (!memberData) {
-          setDepartments([]);
-          setLoading(false);
-          return;
-        }
+        // Note: don't early return if memberData is empty — user may be coordinator only
+        const memberRows = memberData || [];
 
         // Also check leader departments (direct ownership)
         const { data: leaderDepts } = await supabase
@@ -59,17 +56,35 @@ export function useUserDepartments() {
           .select('id, name, avatar_url, church_id')
           .eq('leader_id', currentUser.id);
 
+        // Coordinator departments
+        const { data: coordRows } = await (supabase as any)
+          .from('department_coordinators')
+          .select('department_id')
+          .eq('user_id', currentUser.id);
+
+        const coordDeptIds = ((coordRows || []) as Array<{ department_id: string }>).map(r => r.department_id);
+        let coordDepts: Array<{ id: string; name: string; avatar_url: string | null; church_id: string | null }> = [];
+        if (coordDeptIds.length > 0) {
+          const { data: cd } = await supabase
+            .from('departments')
+            .select('id, name, avatar_url, church_id')
+            .in('id', coordDeptIds);
+          coordDepts = (cd || []) as any;
+        }
+
         // Gather all church IDs
         const allChurchIds = new Set<string>();
-        memberData.forEach(m => {
+        memberRows.forEach(m => {
           const dept = m.departments as any;
           if (dept?.church_id) allChurchIds.add(dept.church_id);
         });
         (leaderDepts || []).forEach(d => {
           if (d.church_id) allChurchIds.add(d.church_id);
         });
+        coordDepts.forEach(d => {
+          if (d.church_id) allChurchIds.add(d.church_id);
+        });
 
-        // Fetch church info
         const churchMap: Record<string, { name: string; logo_url: string | null }> = {};
         if (allChurchIds.size > 0) {
           const { data: churches } = await supabase
@@ -98,11 +113,10 @@ export function useUserDepartments() {
         });
 
         // Member departments (don't override leader role)
-        memberData.forEach(m => {
+        memberRows.forEach(m => {
           const dept = m.departments as any;
           if (!dept) return;
           if (deptMap.has(dept.id)) {
-            // If already added as leader via leader_id check, upgrade role
             if (m.role === 'leader') {
               const existing = deptMap.get(dept.id)!;
               existing.role = 'leader';
@@ -116,6 +130,19 @@ export function useUserDepartments() {
             avatar_url: dept.avatar_url,
             church_name: dept.church_id ? churchMap[dept.church_id]?.name : null,
             church_logo_url: dept.church_id ? churchMap[dept.church_id]?.logo_url : null,
+          });
+        });
+
+        // Coordinator departments (lowest priority — don't override leader/member)
+        coordDepts.forEach(d => {
+          if (deptMap.has(d.id)) return;
+          deptMap.set(d.id, {
+            id: d.id,
+            name: d.name,
+            role: 'coordinator',
+            avatar_url: d.avatar_url,
+            church_name: d.church_id ? churchMap[d.church_id]?.name : null,
+            church_logo_url: d.church_id ? churchMap[d.church_id]?.logo_url : null,
           });
         });
 

@@ -98,6 +98,7 @@ interface UnifiedScheduleViewProps {
   onAddSchedule: (date?: Date) => void;
   onDeleteSchedule: () => void;
   onOpenSmartSchedule: () => void;
+  readOnly?: boolean;
 }
 
 export default function UnifiedScheduleView({ 
@@ -108,7 +109,8 @@ export default function UnifiedScheduleView({
   departmentId,
   onAddSchedule,
   onDeleteSchedule,
-  onOpenSmartSchedule
+  onOpenSmartSchedule,
+  readOnly = false
 }: UnifiedScheduleViewProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
@@ -124,12 +126,10 @@ export default function UnifiedScheduleView({
   const getMemberBgStyle = (userId: string): React.CSSProperties => {
     return getMemberBackgroundStyle(memberColorMap, userId);
   };
-
-  // Filter schedules based on user role - members only see their own schedules
   const visibleSchedules = useMemo(() => {
-    if (isLeader) return schedules;
+    if (isLeader || readOnly) return schedules;
     return schedules.filter(s => s.user_id === currentUserId);
-  }, [schedules, isLeader, currentUserId]);
+  }, [schedules, isLeader, currentUserId, readOnly]);
 
   // Group schedules by date + slot - use visibleSchedules instead of schedules
   const slotGroups = useMemo(() => {
@@ -298,9 +298,8 @@ export default function UnifiedScheduleView({
           </div>
         </CardHeader>
       </Card>
-
       {/* Floating action buttons for leaders */}
-      {isLeader && (
+      {isLeader && !readOnly && (
         <div className="fixed bottom-6 right-6 flex flex-col gap-2 z-40">
           {/* Smart Schedule Button */}
           <Tooltip>
@@ -355,7 +354,7 @@ export default function UnifiedScheduleView({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {slotGroups.map((group) => (
             <SlotCard
-              key={`${format(group.date, 'yyyy-MM-dd')}-${group.slotInfo.timeStart}`}
+              isLeader={isLeader && !readOnly}
               group={group}
               isLeader={isLeader}
               getMemberColorValue={getMemberColorValue}
