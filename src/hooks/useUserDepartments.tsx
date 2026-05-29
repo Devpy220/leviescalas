@@ -113,11 +113,10 @@ export function useUserDepartments() {
         });
 
         // Member departments (don't override leader role)
-        memberData.forEach(m => {
+        memberRows.forEach(m => {
           const dept = m.departments as any;
           if (!dept) return;
           if (deptMap.has(dept.id)) {
-            // If already added as leader via leader_id check, upgrade role
             if (m.role === 'leader') {
               const existing = deptMap.get(dept.id)!;
               existing.role = 'leader';
@@ -131,6 +130,19 @@ export function useUserDepartments() {
             avatar_url: dept.avatar_url,
             church_name: dept.church_id ? churchMap[dept.church_id]?.name : null,
             church_logo_url: dept.church_id ? churchMap[dept.church_id]?.logo_url : null,
+          });
+        });
+
+        // Coordinator departments (lowest priority — don't override leader/member)
+        coordDepts.forEach(d => {
+          if (deptMap.has(d.id)) return;
+          deptMap.set(d.id, {
+            id: d.id,
+            name: d.name,
+            role: 'coordinator',
+            avatar_url: d.avatar_url,
+            church_name: d.church_id ? churchMap[d.church_id]?.name : null,
+            church_logo_url: d.church_id ? churchMap[d.church_id]?.logo_url : null,
           });
         });
 
