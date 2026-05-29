@@ -122,16 +122,55 @@ serve(async (req) => {
       });
     }
 
+    const baseUrl = req.headers.get("origin") || "https://leviescalas.com.br";
+    const createDeptUrl = `${baseUrl}/departments/new?churchCode=${church.code}`;
+    const churchPageUrl = church.slug ? `${baseUrl}/igreja/${church.slug}` : null;
+
+    const sendWhatsAppFallback = async (reason: string) => {
+      const phone = (church as any).registrant_phone || (church as any).phone;
+      if (!phone) {
+        return { sent: false, channel: null, error: `email_failed: ${reason}; no_phone` };
+      }
+      const instanceId = Deno.env.get("ZAPI_INSTANCE_ID");
+      const zToken = Deno.env.get("ZAPI_TOKEN");
+      const clientToken = Deno.env.get("ZAPI_CLIENT_TOKEN");
+      if (!instanceId || !zToken || !clientToken) {
+        return { sent: false, channel: null, error: `email_failed: ${reason}; zapi_not_configured` };
+      }
+      const cleanNumber = String(phone).replace(/\D/g, "");
+      if (cleanNumber.length < 10) {
+        return { sent: false, channel: null, error: `email_failed: ${reason}; invalid_phone` };
+      }
+      const fullNumber = cleanNumber.startsWith("55") ? cleanNumber : `55${cleanNumber}`;
+      const message =
+        `🎉 *LEVI* — Igreja *${church.name}* cadastrada com sucesso!\n\n` +
+        `Próximo passo: crie os departamentos/ministérios da sua igreja.\n\n` +
+        `👉 ${createDeptUrl}\n\n` +
+        (churchPageUrl ? `Página pública: ${churchPageUrl}\n\n` : "") +
+        `⚠️ Igrejas sem departamentos em até 5 dias são removidas automaticamente.`;
+      const res = await fetch(
+        `https://api.z-api.io/instances/${instanceId}/token/${zToken}/send-text`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Client-Token": clientToken },
+          body: JSON.stringify({ phone: fullNumber, message, delayMessage: 2 }),
+        },
+      );
+      if (!res.ok) {
+        const errText = await res.text();
+        return { sent: false, channel: null, error: `email_failed: ${reason}; whatsapp_failed: ${errText}` };
+      }
+      return { sent: true, channel: "whatsapp", phone: fullNumber };
+    };
+
+    // If church has no email, go straight to WhatsApp
     if (!church.email) {
-      return new Response(JSON.stringify({ error: "Church email not configured" }), {
-        status: 400,
+      const wa = await sendWhatsAppFallback("no_email");
+      return new Response(JSON.stringify({ ok: wa.sent, ...wa }), {
+        status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
-
-    const baseUrl = req.headers.get("origin") || "https://leviescalas.lovable.app";
-    const createDeptUrl = `${baseUrl}/departments/new?churchCode=${church.code}`;
-    const churchPageUrl = church.slug ? `${baseUrl}/igreja/${church.slug}` : null;
 
     const subject = `LEVI - Crie os departamentos da ${church.name}`;
     const html = `
@@ -140,63 +179,45 @@ serve(async (req) => {
           <h1 style="margin: 0; color: #6366f1; font-size: 28px;">LEVI</h1>
           <p style="margin: 4px 0 0; color: #6b7280; font-size: 14px;">Logística de Escalas para Voluntários da Igreja</p>
         </div>
-        
         <h2 style="margin: 0 0 16px; color: #111827;">Bem-vindo ao LEVI!</h2>
-        
         <p style="margin: 0 0 16px; color: #374151;">
           A igreja <strong>${church.name}</strong> foi cadastrada com sucesso no sistema LEVI
           por <strong>${registrantName}</strong>.
         </p>
-
         <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin: 16px 0;">
           <h3 style="margin: 0 0 8px; color: #166534; font-size: 16px;">📋 Próximo passo: Criar Departamentos</h3>
           <p style="margin: 0; color: #15803d; font-size: 14px;">
-            Use o link abaixo para criar os departamentos/ministérios da sua igreja (Louvor, Mídia, Recepção, etc.).
+            Use o link abaixo para criar os departamentos/ministérios da sua igreja.
           </p>
         </div>
-
         <div style="text-align: center; margin: 24px 0;">
           <a href="${createDeptUrl}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
             Criar Departamentos
           </a>
         </div>
-        
-        <div style="background: #f9fafb; border-radius: 8px; padding: 16px; margin: 24px 0;">
-          <h3 style="margin: 0 0 12px; color: #111827; font-size: 16px;">Como funciona:</h3>
-          <ol style="margin: 0; padding-left: 20px; color: #4b5563;">
-            <li style="margin-bottom: 8px;">Clique no link acima para criar seus departamentos/ministérios</li>
-            <li style="margin-bottom: 8px;">Dentro de cada departamento, você receberá um <strong>link de convite</strong></li>
-            <li style="margin-bottom: 8px;">Compartilhe o link de convite com os voluntários do departamento</li>
-            <li>Comece a criar escalas!</li>
-          </ol>
-        </div>
-
+        ${churchPageUrl ? `<p style="margin: 16px 0; color: #6b7280; font-size: 14px; text-align: center;">Página pública: <a href="${churchPageUrl}" style="color: #6366f1;">${churchPageUrl}</a></p>` : ''}
         <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px 16px; margin: 16px 0;">
           <p style="margin: 0; color: #92400e; font-size: 13px;">
-            ⚠️ <strong>Importante:</strong> Se nenhum departamento for criado em até 5 dias, a igreja será removida automaticamente do sistema.
+            ⚠️ <strong>Importante:</strong> Igrejas sem departamentos em até 5 dias são removidas automaticamente.
           </p>
         </div>
-
-        ${churchPageUrl ? `
-        <p style="margin: 16px 0; color: #6b7280; font-size: 14px; text-align: center;">
-          Página pública da igreja: <a href="${churchPageUrl}" style="color: #6366f1;">${churchPageUrl}</a>
-        </p>
-        ` : ''}
-        
-        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
-        
-        <p style="margin: 16px 0 0; color: #9ca3af; font-size: 12px; text-align: center;">
-          Dúvidas? Entre em contato: <a href="mailto:elsdigital@elsdigital.tech" style="color: #6366f1;">elsdigital@elsdigital.tech</a>
-        </p>
       </div>
     `;
 
-    const emailRes = await sendEmailViaResend(church.email, subject, html);
-
-    return new Response(JSON.stringify({ ok: true, email: church.email, emailRes }), {
-      status: 200,
-      headers: { "Content-Type": "application/json", ...corsHeaders },
-    });
+    try {
+      const emailRes = await sendEmailViaResend(church.email, subject, html);
+      return new Response(JSON.stringify({ ok: true, channel: "email", email: church.email, emailRes }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    } catch (emailErr: any) {
+      console.error("Email failed, falling back to WhatsApp:", emailErr?.message);
+      const wa = await sendWhatsAppFallback(emailErr?.message || "send_failed");
+      return new Response(JSON.stringify({ ok: wa.sent, ...wa }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
   } catch (error: any) {
     console.error("send-church-code-email error:", error);
     return new Response(JSON.stringify({ error: error?.message ?? "Unknown error" }), {
@@ -205,3 +226,4 @@ serve(async (req) => {
     });
   }
 });
+
