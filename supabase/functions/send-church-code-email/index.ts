@@ -89,9 +89,10 @@ serve(async (req) => {
     // Allow the church creator (leader_id) OR admin to send the email
     const { data: church, error: churchErr } = await serviceClient
       .from("churches")
-      .select("id, name, code, email, slug, leader_id")
+      .select("id, name, code, email, slug, leader_id, phone, registrant_phone, registrant_name")
       .eq("id", parsed.data.churchId)
       .maybeSingle();
+
 
     // Get registrant profile name
     const { data: registrantProfile } = await serviceClient
