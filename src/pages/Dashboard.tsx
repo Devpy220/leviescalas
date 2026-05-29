@@ -479,6 +479,11 @@ function DepartmentCard({ department }: { department: DepartmentWithRole }) {
                   <Crown className="w-3.5 h-3.5 text-white" />
                 </div>
               )}
+              {department.role === 'coordinator' && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20">
+                  Coordenador
+                </span>
+              )}
               {status && (
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${status.bg}`}>
                   {status.label}
