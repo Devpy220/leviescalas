@@ -94,8 +94,11 @@ export default function DepartmentBySlug() {
 
       // Not found - show error instead of redirecting
       setError('Departamento não encontrado ou você não tem acesso.');
-
+    } catch (error) {
+      console.error('Error finding department:', error);
+      setError('Erro ao buscar departamento.');
     } finally {
+
       setLoading(false);
     }
   };
