@@ -98,6 +98,7 @@ interface UnifiedScheduleViewProps {
   onAddSchedule: (date?: Date) => void;
   onDeleteSchedule: () => void;
   onOpenSmartSchedule: () => void;
+  readOnly?: boolean;
 }
 
 export default function UnifiedScheduleView({ 
@@ -108,7 +109,8 @@ export default function UnifiedScheduleView({
   departmentId,
   onAddSchedule,
   onDeleteSchedule,
-  onOpenSmartSchedule
+  onOpenSmartSchedule,
+  readOnly = false
 }: UnifiedScheduleViewProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
