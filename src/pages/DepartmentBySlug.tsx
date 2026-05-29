@@ -74,12 +74,31 @@ export default function DepartmentBySlug() {
         }
       }
 
+      // Check coordinator departments
+
+      const { data: coordRows } = await (supabase as any)
+        .from('department_coordinators')
+        .select('department_id')
+        .eq('user_id', user.id);
+
+      if (coordRows && coordRows.length > 0) {
+        for (const row of coordRows as Array<{ department_id: string }>) {
+          const { data: deptData } = await supabase
+            .rpc('get_department_basic', { dept_id: row.department_id });
+          if (deptData && deptData.length > 0 && slugify(deptData[0].name) === slug) {
+            navigate(`/departments/${row.department_id}`, { replace: true });
+            return;
+          }
+        }
+      }
+
       // Not found - show error instead of redirecting
       setError('Departamento não encontrado ou você não tem acesso.');
     } catch (error) {
       console.error('Error finding department:', error);
       setError('Erro ao buscar departamento.');
     } finally {
+
       setLoading(false);
     }
   };
