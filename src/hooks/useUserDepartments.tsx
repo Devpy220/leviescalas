@@ -47,11 +47,10 @@ export function useUserDepartments() {
           .select('department_id, role, departments(id, name, avatar_url, church_id)')
           .eq('user_id', currentUser.id);
 
-        if (!memberData) {
-          setDepartments([]);
-          setLoading(false);
-          return;
-        }
+        // Note: don't early return if memberData is empty — user may be coordinator only
+        const memberRows = memberData || [];
+
+
 
         // Also check leader departments (direct ownership)
         const { data: leaderDepts } = await supabase
