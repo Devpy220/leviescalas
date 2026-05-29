@@ -47,7 +47,7 @@ interface Department {
 }
 
 interface DepartmentWithRole extends Department {
-  role: 'leader' | 'member';
+  role: 'leader' | 'member' | 'coordinator';
 }
 
 
