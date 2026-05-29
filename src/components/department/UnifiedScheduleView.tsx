@@ -130,8 +130,6 @@ export default function UnifiedScheduleView({
     if (isLeader || readOnly) return schedules;
     return schedules.filter(s => s.user_id === currentUserId);
   }, [schedules, isLeader, currentUserId, readOnly]);
-    return schedules.filter(s => s.user_id === currentUserId);
-  }, [schedules, isLeader, currentUserId]);
 
   // Group schedules by date + slot - use visibleSchedules instead of schedules
   const slotGroups = useMemo(() => {
