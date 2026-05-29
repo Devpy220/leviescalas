@@ -136,6 +136,7 @@ export default function Department() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isLeader, setIsLeader] = useState(false);
+  const [isCoordinator, setIsCoordinator] = useState(false);
   const [copiedInvite, setCopiedInvite] = useState(false);
   const [showAddSchedule, setShowAddSchedule] = useState(false);
   const [showInviteMember, setShowInviteMember] = useState(false);
@@ -258,6 +259,19 @@ export default function Department() {
         allow_sunday_double: deptExtra?.allow_sunday_double ?? false,
       });
       setIsLeader(data.leader_id === currentUser?.id);
+
+      // Check if user is a coordinator of this department
+      if (data.leader_id !== currentUser?.id && currentUser?.id) {
+        const { data: coordRow } = await (supabase as any)
+          .from('department_coordinators')
+          .select('id')
+          .eq('department_id', id)
+          .eq('user_id', currentUser.id)
+          .maybeSingle();
+        setIsCoordinator(!!coordRow);
+      } else {
+        setIsCoordinator(false);
+      }
     } catch (error: any) {
       console.error('Error fetching department:', error);
       
@@ -518,6 +532,11 @@ export default function Department() {
                       <Crown className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
                     </div>
                   )}
+                  {isCoordinator && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 shrink-0">
+                      Coordenador • somente leitura
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {members.length} membros
@@ -547,8 +566,8 @@ export default function Department() {
 
         <main className="container mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 max-w-7xl transition-all duration-200">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
-          {/* TabsList only for non-leaders (members) - leaders use sidebar navigation */}
-          {!isLeader && (
+          {/* TabsList only for non-leaders (members) - leaders use sidebar navigation, coordinators see schedules only */}
+          {!isLeader && !isCoordinator && (
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <TabsList className="bg-muted/50 self-start w-full sm:w-auto overflow-x-auto">
                 <TabsTrigger 
@@ -595,12 +614,13 @@ export default function Department() {
               <UnifiedScheduleView 
                 schedules={schedules}
                 members={members}
-                isLeader={isLeader}
+                isLeader={isLeader || isCoordinator}
                 currentUserId={currentUser?.id || ''}
                 onAddSchedule={handleAddSchedule}
                 onDeleteSchedule={handleScheduleDeleted}
                 departmentId={id!}
                 onOpenSmartSchedule={() => setShowSmartSchedule(true)}
+                readOnly={isCoordinator}
               />
               
               {/* Leader availability views removed from default - accessible via ActionMenu */}
