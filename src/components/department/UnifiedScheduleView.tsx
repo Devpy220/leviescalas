@@ -354,9 +354,8 @@ export default function UnifiedScheduleView({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {slotGroups.map((group) => (
             <SlotCard
-              isLeader={isLeader && !readOnly}
               group={group}
-              isLeader={isLeader}
+              isLeader={isLeader && !readOnly}
               getMemberColorValue={getMemberColorValue}
               getMemberBgStyle={getMemberBgStyle}
               onAddSchedule={onAddSchedule}
