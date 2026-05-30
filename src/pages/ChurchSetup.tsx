@@ -234,15 +234,12 @@ export default function ChurchSetup() {
     });
   };
 
-  const handleCreateDepartment = () => {
-    if (!createdChurch) return;
+  const handleCloseAndLogout = async () => {
     setShowSuccessDialog(false);
-    navigate(`/departments/new?churchCode=${createdChurch.code}`);
-  };
-
-  const handleContinue = () => {
-    setShowSuccessDialog(false);
-    navigate('/dashboard');
+    try {
+      await supabase.auth.signOut();
+    } catch {}
+    navigate('/auth');
   };
 
   if (authLoading) {
@@ -551,11 +548,10 @@ export default function ChurchSetup() {
       {createdChurch && (
         <ChurchOnboardingGuide
           open={showSuccessDialog}
-          onOpenChange={setShowSuccessDialog}
+          onOpenChange={(open) => { if (!open) void handleCloseAndLogout(); }}
           churchName={createdChurch.name}
           churchCode={createdChurch.code}
-          onCreateDepartment={handleCreateDepartment}
-          onGoToDashboard={handleContinue}
+          onClose={handleCloseAndLogout}
           onSendWhatsApp={() => sendCodeByWhatsApp(createdChurch.id)}
         />
       )}
