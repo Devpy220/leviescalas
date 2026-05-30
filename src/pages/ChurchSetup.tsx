@@ -81,8 +81,9 @@ const churchSchema = z.object({
     .min(10, 'Telefone inválido')
     .max(20, 'Telefone inválido'),
   cnpj: z.string()
-    .min(1, 'CNPJ é obrigatório')
-    .refine((val) => isValidCNPJ(val), 'CNPJ inválido — verifique os dígitos'),
+    .optional()
+    .or(z.literal(''))
+    .refine((val) => !val || isValidCNPJ(val), 'CNPJ inválido — verifique os dígitos'),
   description: z.string()
     .max(500, 'Descrição muito longa')
     .optional(),
@@ -394,7 +395,7 @@ export default function ChurchSetup() {
                 <div className="space-y-2">
                   <Label htmlFor="cnpj" className="flex items-center gap-2">
                     <FileText className="w-4 h-4" />
-                    CNPJ *
+                    CNPJ <span className="text-xs text-muted-foreground font-normal">(opcional)</span>
                   </Label>
                   <Controller
                     name="cnpj"
