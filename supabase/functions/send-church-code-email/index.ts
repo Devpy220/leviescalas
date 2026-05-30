@@ -163,61 +163,12 @@ serve(async (req) => {
       return { sent: true, channel: "whatsapp", phone: fullNumber };
     };
 
-    // If church has no email, go straight to WhatsApp
-    if (!church.email) {
-      const wa = await sendWhatsAppFallback("no_email");
-      return new Response(JSON.stringify({ ok: wa.sent, ...wa }), {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
-    }
-
-    const subject = `LEVI - Crie os departamentos da ${church.name}`;
-    const html = `
-      <div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="text-align: center; margin-bottom: 24px;">
-          <h1 style="margin: 0; color: #6366f1; font-size: 28px;">LEVI</h1>
-          <p style="margin: 4px 0 0; color: #6b7280; font-size: 14px;">Logística de Escalas para Voluntários da Igreja</p>
-        </div>
-        <h2 style="margin: 0 0 16px; color: #111827;">Bem-vindo ao LEVI!</h2>
-        <p style="margin: 0 0 16px; color: #374151;">
-          A igreja <strong>${church.name}</strong> foi cadastrada com sucesso no sistema LEVI
-          por <strong>${registrantName}</strong>.
-        </p>
-        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin: 16px 0;">
-          <h3 style="margin: 0 0 8px; color: #166534; font-size: 16px;">📋 Próximo passo: Criar Departamentos</h3>
-          <p style="margin: 0; color: #15803d; font-size: 14px;">
-            Use o link abaixo para criar os departamentos/ministérios da sua igreja.
-          </p>
-        </div>
-        <div style="text-align: center; margin: 24px 0;">
-          <a href="${createDeptUrl}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
-            Criar Departamentos
-          </a>
-        </div>
-        ${churchPageUrl ? `<p style="margin: 16px 0; color: #6b7280; font-size: 14px; text-align: center;">Página pública: <a href="${churchPageUrl}" style="color: #6366f1;">${churchPageUrl}</a></p>` : ''}
-        <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px 16px; margin: 16px 0;">
-          <p style="margin: 0; color: #92400e; font-size: 13px;">
-            ⚠️ <strong>Importante:</strong> Igrejas sem departamentos em até 5 dias são removidas automaticamente.
-          </p>
-        </div>
-      </div>
-    `;
-
-    try {
-      const emailRes = await sendEmailViaResend(church.email, subject, html);
-      return new Response(JSON.stringify({ ok: true, channel: "email", email: church.email, emailRes }), {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
-    } catch (emailErr: any) {
-      console.error("Email failed, falling back to WhatsApp:", emailErr?.message);
-      const wa = await sendWhatsAppFallback(emailErr?.message || "send_failed");
-      return new Response(JSON.stringify({ ok: wa.sent, ...wa }), {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
-    }
+    // Always send via WhatsApp (email disabled by product decision)
+    const wa = await sendWhatsAppFallback("whatsapp_only");
+    return new Response(JSON.stringify({ ok: wa.sent, ...wa }), {
+      status: 200,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
   } catch (error: any) {
     console.error("send-church-code-email error:", error);
     return new Response(JSON.stringify({ error: error?.message ?? "Unknown error" }), {

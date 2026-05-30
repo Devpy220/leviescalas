@@ -144,32 +144,23 @@ export default function ChurchSetup() {
     return true;
   };
 
-  const sendCodeByEmail = async (churchId: string) => {
+  const sendCodeByWhatsApp = async (churchId: string) => {
     try {
       const { data, error } = await supabase.functions.invoke('send-church-code-email', {
         body: { churchId },
       });
-
       if (error) throw error;
       if (data?.error && !data?.ok) throw new Error(data.error);
-
-      if (data?.channel === 'whatsapp') {
-        toast({
-          title: 'Link enviado por WhatsApp!',
-          description: 'O email falhou, mas enviamos as instruções pelo WhatsApp.',
-        });
-      } else {
-        toast({
-          title: 'Email enviado!',
-          description: 'Enviamos as instruções para o email da igreja.',
-        });
-      }
+      toast({
+        title: 'Link enviado por WhatsApp!',
+        description: 'Verifique seu WhatsApp para o link de acesso.',
+      });
     } catch (err: any) {
-      console.error('Error sending code email:', err);
+      console.error('Error sending whatsapp:', err);
       toast({
         variant: 'destructive',
-        title: 'Não foi possível enviar o link',
-        description: 'Você pode copiar o link manualmente no próximo passo.',
+        title: 'Não foi possível enviar pelo WhatsApp',
+        description: 'Copie o link manualmente no modal.',
       });
     }
   };
@@ -215,10 +206,7 @@ export default function ChurchSetup() {
       });
       setShowSuccessDialog(true);
 
-      // Send email with link automatically
-      setTimeout(() => {
-        sendCodeByEmail(newChurch.id);
-      }, 0);
+      // No auto-send — modal shows link with Copy + Send-WhatsApp buttons
     } catch (error: any) {
       console.error('Error creating church:', error);
       toast({
@@ -516,6 +504,7 @@ export default function ChurchSetup() {
           churchCode={createdChurch.code}
           onCreateDepartment={handleCreateDepartment}
           onGoToDashboard={handleContinue}
+          onSendWhatsApp={() => sendCodeByWhatsApp(createdChurch.id)}
         />
       )}
     </div>
