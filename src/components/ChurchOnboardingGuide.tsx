@@ -186,13 +186,13 @@ export function ChurchOnboardingGuide({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-lg p-0 overflow-hidden max-h-[92vh] flex flex-col gap-0">
         {/* Header */}
-        <div className="gradient-vibrant p-5 text-white">
+        <div className="gradient-vibrant p-4 text-white shrink-0">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <LeviLogo size="sm" className="bg-white/20 rounded-xl p-1" />
-              <span className="font-display text-lg font-bold">LEVI · Boas-vindas</span>
+              <span className="font-display text-base font-bold">LEVI · Boas-vindas</span>
             </div>
             <Button
               variant="ghost"
@@ -216,24 +216,24 @@ export function ChurchOnboardingGuide({
         </div>
 
         {/* Content */}
-        <div className="p-5">
+        <div className="p-4 overflow-y-auto flex-1 min-h-0">
           <div className="flex items-start gap-3 mb-4">
-            <div className="w-12 h-12 rounded-2xl gradient-vibrant flex items-center justify-center shrink-0">
-              <Icon className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 rounded-2xl gradient-vibrant flex items-center justify-center shrink-0">
+              <Icon className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="font-display text-lg font-bold text-foreground mb-1">
+              <h3 className="font-display text-base font-bold text-foreground mb-1">
                 {current.title}
               </h3>
-              <p className="text-sm text-muted-foreground">{current.description}</p>
+              <p className="text-xs text-muted-foreground">{current.description}</p>
             </div>
           </div>
 
-          <div className="min-h-[180px]">{current.content}</div>
+          <div>{current.content}</div>
         </div>
 
         {/* Footer */}
-        <div className="px-5 pb-5 flex items-center justify-between gap-2">
+        <div className="px-4 py-3 flex items-center justify-between gap-2 border-t border-border bg-card shrink-0">
           <Button variant="ghost" onClick={() => setStep(s => Math.max(0, s - 1))} disabled={step === 0} size="sm">
             <ChevronLeft className="w-4 h-4 mr-1" />
             Voltar
@@ -245,7 +245,7 @@ export function ChurchOnboardingGuide({
 
           {isLast ? (
             <Button size="sm" className="gradient-vibrant text-white" onClick={() => onClose()}>
-              Sair e voltar ao login
+              Sair
               <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           ) : (
