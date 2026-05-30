@@ -328,8 +328,8 @@ export default function Auth() {
     defaultValues: { churchCode: '', name: '', email: '', whatsapp: '', password: '', confirmPassword: '' },
   });
 
-  // Form is ready when church is validated OR it's a department invite
-  const isFormReadyToSubmit = churchValidated.valid || isDepartmentInvite;
+  // Form is ready when church is validated, it's a department invite, or it's the church owner signup flow
+  const isFormReadyToSubmit = churchValidated.valid || isDepartmentInvite || isChurchSetupRedirect;
 
   // Validate church by slug (from URL)
   const validateChurchBySlug = async (slug: string) => {
@@ -471,6 +471,15 @@ export default function Auth() {
           description: 'Adicionando você ao novo departamento...',
         });
         navigate(redirectParam, { replace: true });
+        return;
+      }
+
+      if (isChurchSetupRedirect) {
+        toast({
+          title: 'Login realizado!',
+          description: 'Continue o cadastro da sua igreja.',
+        });
+        navigate('/church-setup', { replace: true });
         return;
       }
 
