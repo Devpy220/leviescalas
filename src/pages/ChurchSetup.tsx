@@ -234,15 +234,12 @@ export default function ChurchSetup() {
     });
   };
 
-  const handleCreateDepartment = () => {
-    if (!createdChurch) return;
+  const handleCloseAndLogout = async () => {
     setShowSuccessDialog(false);
-    navigate(`/departments/new?churchCode=${createdChurch.code}`);
-  };
-
-  const handleContinue = () => {
-    setShowSuccessDialog(false);
-    navigate('/dashboard');
+    try {
+      await supabase.auth.signOut();
+    } catch {}
+    navigate('/auth');
   };
 
   if (authLoading) {
