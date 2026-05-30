@@ -158,16 +158,16 @@ export function ChurchOnboardingGuide({
     {
       icon: Sparkles,
       title: 'Tudo pronto!',
-      description: 'Você pode criar o primeiro departamento agora ou ir para o painel.',
+      description: 'Use os links para entrar como líder, coordenador ou voluntário.',
       content: (
         <div className="space-y-3 text-sm text-muted-foreground">
-          <p>
-            Dentro do departamento, o líder terá acesso a: geração inteligente de escalas,
-            envio automático por WhatsApp, datas de bloqueio, troca de turnos, e muito mais.
-          </p>
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-xs">
+            <strong className="text-foreground">Importante:</strong> o responsável pelo cadastro
+            <strong> não entra automaticamente como voluntário</strong>. O acesso à igreja e aos
+            departamentos é feito apenas pelos links — como líder, coordenador ou membro do departamento.
+          </div>
           <p className="text-xs italic">
-            Dica: salve o link da página da igreja nos favoritos. Ele é o ponto de entrada para
-            criar e gerenciar todos os ministérios.
+            Guarde bem o link administrativo. Ao fechar este aviso você sairá da conta e voltará para a tela de login.
           </p>
         </div>
       ),
