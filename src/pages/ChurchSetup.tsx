@@ -206,10 +206,7 @@ export default function ChurchSetup() {
       });
       setShowSuccessDialog(true);
 
-      // Send email with link automatically
-      setTimeout(() => {
-        sendCodeByEmail(newChurch.id);
-      }, 0);
+      // No auto-send — modal shows link with Copy + Send-WhatsApp buttons
     } catch (error: any) {
       console.error('Error creating church:', error);
       toast({
