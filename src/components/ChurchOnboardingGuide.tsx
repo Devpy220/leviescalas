@@ -26,7 +26,8 @@ export function ChurchOnboardingGuide({
   const [sending, setSending] = useState(false);
   const { toast } = useToast();
 
-  const adminLink = `${typeof window !== 'undefined' ? window.location.origin : 'https://leviescalas.com.br'}/departments/new?churchCode=${churchCode}`;
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://leviescalas.com.br';
+  const adminLink = `${origin}/auth?tab=register&churchCode=${churchCode}&redirect=${encodeURIComponent(`/departments/new?churchCode=${churchCode}`)}`;
 
   const handleCopy = async () => {
     try {
