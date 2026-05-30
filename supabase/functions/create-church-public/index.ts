@@ -81,7 +81,7 @@ serve(async (req) => {
     }
 
     const origin = req.headers.get("origin") || "https://leviescalas.com.br";
-    const createDeptUrl = `${origin}/departments/new?churchCode=${church.code}`;
+    const createDeptUrl = `${origin}/auth?tab=register&churchCode=${church.code}&redirect=${encodeURIComponent(`/departments/new?churchCode=${church.code}`)}`;
     const churchPageUrl = church.slug ? `${origin}/igreja/${church.slug}` : null;
 
     // Send WhatsApp via Z-API
