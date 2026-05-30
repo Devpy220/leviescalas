@@ -89,6 +89,7 @@ export default function ChurchSetup() {
   const [createdChurch, setCreatedChurch] = useState<CreatedChurch | null>(null);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [whatsappStatus, setWhatsappStatus] = useState<'sent' | 'failed' | null>(null);
+  const [registrantPhone, setRegistrantPhone] = useState<string>('');
 
   const navigate = useNavigate();
   const { toast } = useToast();
