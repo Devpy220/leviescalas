@@ -1,0 +1,1 @@
+ALTER TABLE public.churches ALTER COLUMN leader_id DROP NOT NULL;

@@ -227,7 +227,7 @@ export type Database = {
           description: string | null
           email: string | null
           id: string
-          leader_id: string
+          leader_id: string | null
           logo_url: string | null
           name: string
           phone: string | null
@@ -247,7 +247,7 @@ export type Database = {
           description?: string | null
           email?: string | null
           id?: string
-          leader_id: string
+          leader_id?: string | null
           logo_url?: string | null
           name: string
           phone?: string | null
@@ -267,7 +267,7 @@ export type Database = {
           description?: string | null
           email?: string | null
           id?: string
-          leader_id?: string
+          leader_id?: string | null
           logo_url?: string | null
           name?: string
           phone?: string | null
