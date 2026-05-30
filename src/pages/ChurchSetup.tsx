@@ -130,6 +130,7 @@ export default function ChurchSetup() {
         name: result.church.name,
         code: result.church.code,
       });
+      setRegistrantPhone(data.registrantPhone);
       setWhatsappStatus(result.whatsappSent ? 'sent' : 'failed');
       setShowSuccessDialog(true);
       toast({
