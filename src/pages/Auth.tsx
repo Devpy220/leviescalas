@@ -654,7 +654,13 @@ export default function Auth() {
       return;
     }
     
-    const { error } = await signUp(data.email, data.password, data.name, data.whatsapp);
+    const { error } = await signUp(
+      data.email,
+      data.password,
+      data.name,
+      data.whatsapp,
+      isChurchSetupRedirect ? '/church-setup' : '/'
+    );
 
     if (error) {
       setIsLoading(false);
