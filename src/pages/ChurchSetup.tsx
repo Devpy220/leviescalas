@@ -138,6 +138,10 @@ export default function ChurchSetup() {
 
   const requireAuth = () => {
     if (!user) {
+      toast({
+        title: 'Entre para continuar',
+        description: 'Faça login ou crie sua conta antes de cadastrar a igreja.',
+      });
       navigate('/auth?tab=register&redirect=/church-setup');
       return false;
     }
@@ -205,8 +209,11 @@ export default function ChurchSetup() {
         code: newChurch.code,
       });
       setShowSuccessDialog(true);
-
-      // No auto-send — modal shows link with Copy + Send-WhatsApp buttons
+      toast({
+        title: 'Igreja cadastrada!',
+        description: 'O link apareceu no modal e também será enviado por WhatsApp.',
+      });
+      void sendCodeByWhatsApp(newChurch.id);
     } catch (error: any) {
       console.error('Error creating church:', error);
       toast({
@@ -234,6 +241,43 @@ export default function ChurchSetup() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SEO title="Cadastrar minha Igreja — LEVI" description="Cadastre sua igreja gratuitamente no LEVI e comece a organizar escalas de voluntários em minutos." path="/church-setup" />
+        <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
+          <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+            <Link to="/" className="flex items-center gap-2 group">
+              <LeviLogo className="transition-all duration-300 group-hover:scale-110 group-hover:shadow-glow" />
+              <span className="font-display text-xl font-bold text-foreground">LEVI</span>
+            </Link>
+            <ThemeToggle />
+          </div>
+        </nav>
+
+        <main className="container mx-auto px-4 pt-32 pb-16">
+          <div className="max-w-lg mx-auto text-center glass rounded-2xl p-8 border border-border/50 animate-fade-in">
+            <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4 shadow-glow">
+              <Church className="w-8 h-8 text-primary-foreground" />
+            </div>
+            <h1 className="font-display text-3xl font-bold text-foreground mb-3">
+              Cadastrar sua Igreja
+            </h1>
+            <p className="text-muted-foreground mb-6">
+              Para evitar perder os dados do formulário, entre ou crie sua conta primeiro. Depois você volta automaticamente para cadastrar a igreja.
+            </p>
+            <Button asChild className="w-full h-12 gradient-primary text-primary-foreground shadow-glow-sm">
+              <Link to="/auth?tab=register&redirect=/church-setup">
+                Entrar ou criar conta
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Link>
+            </Button>
+          </div>
+        </main>
       </div>
     );
   }
@@ -272,7 +316,7 @@ export default function ChurchSetup() {
           <Alert className="mb-6 border-primary/20 bg-primary/5">
             <Info className="h-4 w-4 text-primary" />
             <AlertDescription className="text-sm text-muted-foreground">
-              Após o cadastro, enviaremos um email com o link para criar os departamentos/ministérios da sua igreja. 
+              Após o cadastro, mostraremos um modal com o link para criar os departamentos/ministérios e enviaremos esse link por WhatsApp.
               Dentro de cada departamento você poderá convidar os voluntários.
               <br />
               <strong className="text-foreground">Atenção:</strong> igrejas sem departamentos criados em até 5 dias serão removidas automaticamente.
