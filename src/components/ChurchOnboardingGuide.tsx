@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, X, Church, Layers, Users, Link2, Mail, Sparkles, ArrowDown, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Church, Layers, Users, Link2, Sparkles, ArrowDown, CheckCircle2, Copy, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { LeviLogo } from '@/components/LeviLogo';
+import { useToast } from '@/hooks/use-toast';
 
 interface ChurchOnboardingGuideProps {
   open: boolean;
@@ -11,6 +12,7 @@ interface ChurchOnboardingGuideProps {
   churchCode: string;
   onCreateDepartment: () => void;
   onGoToDashboard: () => void;
+  onSendWhatsApp?: () => void | Promise<void>;
 }
 
 export function ChurchOnboardingGuide({
@@ -20,14 +22,38 @@ export function ChurchOnboardingGuide({
   churchCode,
   onCreateDepartment,
   onGoToDashboard,
+  onSendWhatsApp,
 }: ChurchOnboardingGuideProps) {
   const [step, setStep] = useState(0);
+  const [sending, setSending] = useState(false);
+  const { toast } = useToast();
+
+  const adminLink = `${typeof window !== 'undefined' ? window.location.origin : 'https://leviescalas.com.br'}/departments/new?churchCode=${churchCode}`;
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(adminLink);
+      toast({ title: 'Link copiado!', description: 'Cole onde precisar.' });
+    } catch {
+      toast({ variant: 'destructive', title: 'Não foi possível copiar' });
+    }
+  };
+
+  const handleSendWa = async () => {
+    if (!onSendWhatsApp) return;
+    setSending(true);
+    try {
+      await onSendWhatsApp();
+    } finally {
+      setSending(false);
+    }
+  };
 
   const steps = [
     {
       icon: CheckCircle2,
       title: `Igreja ${churchName} cadastrada! 🎉`,
-      description: 'Vamos te guiar agora pelo passo a passo para evitar confusão. São apenas 4 telas.',
+      description: 'Guarde o link administrativo abaixo — envie pelo WhatsApp ou copie para usar quando quiser.',
       content: (
         <div className="space-y-3">
           <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4">
@@ -36,12 +62,26 @@ export function ChurchOnboardingGuide({
               {churchCode}
             </p>
           </div>
-          <div className="flex items-start gap-2 text-sm text-muted-foreground">
-            <Mail className="w-4 h-4 mt-0.5 shrink-0 text-primary" />
-            <p>
-              Também enviamos um email com o <strong>link de acesso administrativo</strong> para o
-              endereço cadastrado.
+          <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-2">
+            <p className="text-xs text-muted-foreground">Link administrativo (criar departamentos)</p>
+            <p className="text-[11px] font-mono text-primary break-all bg-background/60 rounded-md p-2">
+              {adminLink}
             </p>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" className="flex-1" onClick={handleCopy}>
+                <Copy className="w-4 h-4 mr-1.5" />
+                Copiar link
+              </Button>
+              <Button
+                size="sm"
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                onClick={handleSendWa}
+                disabled={sending || !onSendWhatsApp}
+              >
+                <MessageCircle className="w-4 h-4 mr-1.5" />
+                {sending ? 'Enviando...' : 'Enviar WhatsApp'}
+              </Button>
+            </div>
           </div>
         </div>
       ),
