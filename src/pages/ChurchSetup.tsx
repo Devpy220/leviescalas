@@ -504,6 +504,7 @@ export default function ChurchSetup() {
           churchCode={createdChurch.code}
           onCreateDepartment={handleCreateDepartment}
           onGoToDashboard={handleContinue}
+          onSendWhatsApp={() => sendCodeByWhatsApp(createdChurch.id)}
         />
       )}
     </div>
