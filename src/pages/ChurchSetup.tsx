@@ -548,11 +548,10 @@ export default function ChurchSetup() {
       {createdChurch && (
         <ChurchOnboardingGuide
           open={showSuccessDialog}
-          onOpenChange={setShowSuccessDialog}
+          onOpenChange={(open) => { if (!open) void handleCloseAndLogout(); }}
           churchName={createdChurch.name}
           churchCode={createdChurch.code}
-          onCreateDepartment={handleCreateDepartment}
-          onGoToDashboard={handleContinue}
+          onClose={handleCloseAndLogout}
           onSendWhatsApp={() => sendCodeByWhatsApp(createdChurch.id)}
         />
       )}
