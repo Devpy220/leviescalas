@@ -243,15 +243,10 @@ export function ChurchOnboardingGuide({
           </span>
 
           {isLast ? (
-            <div className="flex gap-2">
-              <Button variant="ghost" size="sm" onClick={onGoToDashboard}>
-                Painel
-              </Button>
-              <Button size="sm" className="gradient-vibrant text-white" onClick={onCreateDepartment}>
-                Criar departamento
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
+            <Button size="sm" className="gradient-vibrant text-white" onClick={() => onClose()}>
+              Sair e voltar ao login
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
           ) : (
             <Button size="sm" className="gradient-vibrant text-white" onClick={() => setStep(s => s + 1)}>
               Próximo
