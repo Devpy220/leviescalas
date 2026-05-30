@@ -89,6 +89,7 @@ export default function ChurchSetup() {
   const [createdChurch, setCreatedChurch] = useState<CreatedChurch | null>(null);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [whatsappStatus, setWhatsappStatus] = useState<'sent' | 'failed' | null>(null);
+  const [registrantPhone, setRegistrantPhone] = useState<string>('');
 
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -129,6 +130,7 @@ export default function ChurchSetup() {
         name: result.church.name,
         code: result.church.code,
       });
+      setRegistrantPhone(data.registrantPhone);
       setWhatsappStatus(result.whatsappSent ? 'sent' : 'failed');
       setShowSuccessDialog(true);
       toast({
@@ -377,7 +379,15 @@ export default function ChurchSetup() {
           churchName={createdChurch.name}
           churchCode={createdChurch.code}
           onClose={handleClose}
-          onSendWhatsApp={whatsappStatus === 'sent' ? undefined : undefined}
+          onSendWhatsApp={() => {
+            const origin = window.location.origin;
+            const code = createdChurch.code;
+            const link = `${origin}/auth?tab=register&churchCode=${code}&redirect=${encodeURIComponent(`/departments/new?churchCode=${code}`)}`;
+            const text = `Olá! Sua igreja "${createdChurch.name}" foi cadastrada no LEVI.\n\nCódigo: ${code}\n\nAcesse este link para criar sua conta e seus departamentos:\n${link}`;
+            const phone = registrantPhone.replace(/\D/g, '');
+            const waUrl = `https://wa.me/${phone.startsWith('55') ? phone : '55' + phone}?text=${encodeURIComponent(text)}`;
+            window.open(waUrl, '_blank');
+          }}
         />
       )}
     </div>
