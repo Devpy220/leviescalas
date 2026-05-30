@@ -1,11 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SEO } from '@/components/SEO';
 import { 
   Church, 
   Loader2, 
   ArrowRight, 
-  CheckCircle2,
   Mail,
   Phone,
   FileText,
@@ -17,15 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -72,20 +63,13 @@ const churchSchema = z.object({
   registrantName: z.string().min(2, 'Nome do responsável é obrigatório').max(100),
   registrantEmail: z.string().email('Email inválido'),
   registrantPhone: z.string().min(10, 'Telefone inválido').max(20),
-  name: z.string()
-    .min(2, 'Nome deve ter no mínimo 2 caracteres')
-    .max(100, 'Nome muito longo'),
-  email: z.string()
-    .email('Email inválido'),
-  phone: z.string()
-    .min(10, 'Telefone inválido')
-    .max(20, 'Telefone inválido'),
+  name: z.string().min(2, 'Nome deve ter no mínimo 2 caracteres').max(100, 'Nome muito longo'),
+  email: z.string().email('Email inválido'),
+  phone: z.string().min(10, 'Telefone inválido').max(20, 'Telefone inválido'),
   cnpj: z.string().trim().optional().nullable()
     .transform((v) => (v ?? '').trim())
     .refine((val) => val === '' || isValidCNPJ(val), 'CNPJ inválido — verifique os dígitos'),
-  description: z.string()
-    .max(500, 'Descrição muito longa')
-    .optional(),
+  description: z.string().max(500, 'Descrição muito longa').optional(),
   address: z.string().max(200).optional(),
   city: z.string().max(100).optional(),
   state: z.string().max(50).optional(),
@@ -104,10 +88,10 @@ export default function ChurchSetup() {
   const [isLoading, setIsLoading] = useState(false);
   const [createdChurch, setCreatedChurch] = useState<CreatedChurch | null>(null);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
-  
+  const [whatsappStatus, setWhatsappStatus] = useState<'sent' | 'failed' | null>(null);
+
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, loading: authLoading } = useAuth();
 
   const churchForm = useForm<ChurchForm>({
     resolver: zodResolver(churchSchema),
@@ -118,72 +102,14 @@ export default function ChurchSetup() {
     },
   });
 
-  // Pre-fill registrant fields from user profile
-  useEffect(() => {
-    if (!user) return;
-    const loadProfile = async () => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('name, email, whatsapp')
-        .eq('id', user.id)
-        .maybeSingle();
-      if (data) {
-        churchForm.setValue('registrantName', data.name || '');
-        churchForm.setValue('registrantEmail', data.email || '');
-        churchForm.setValue('registrantPhone', data.whatsapp || '');
-      }
-    };
-    loadProfile();
-  }, [user]);
-
-  const requireAuth = () => {
-    if (!user) {
-      toast({
-        title: 'Entre para continuar',
-        description: 'Faça login ou crie sua conta antes de cadastrar a igreja.',
-      });
-      navigate('/auth?tab=register&redirect=/church-setup');
-      return false;
-    }
-    return true;
-  };
-
-  const sendCodeByWhatsApp = async (churchId: string) => {
-    try {
-      const { data, error } = await supabase.functions.invoke('send-church-code-email', {
-        body: { churchId },
-      });
-      if (error) throw error;
-      if (data?.error && !data?.ok) throw new Error(data.error);
-      toast({
-        title: 'Link enviado por WhatsApp!',
-        description: 'Verifique seu WhatsApp para o link de acesso.',
-      });
-    } catch (err: any) {
-      console.error('Error sending whatsapp:', err);
-      toast({
-        variant: 'destructive',
-        title: 'Não foi possível enviar pelo WhatsApp',
-        description: 'Copie o link manualmente no modal.',
-      });
-    }
-  };
-
-
   const handleCreateChurch = async (data: ChurchForm) => {
-    if (!requireAuth()) return;
-    
     setIsLoading(true);
-    
     try {
-      const { data: codeData, error: codeErr } = await supabase
-        .rpc('generate_church_code');
-      
-      if (codeErr) throw codeErr;
-
-      const { data: newChurch, error } = await supabase
-        .from('churches')
-        .insert({
+      const { data: result, error } = await supabase.functions.invoke('create-church-public', {
+        body: {
+          registrantName: data.registrantName,
+          registrantEmail: data.registrantEmail,
+          registrantPhone: data.registrantPhone,
           name: data.name,
           email: data.email,
           phone: data.phone,
@@ -192,28 +118,25 @@ export default function ChurchSetup() {
           address: data.address || null,
           city: data.city || null,
           state: data.state || null,
-          registrant_name: data.registrantName,
-          registrant_email: data.registrantEmail,
-          registrant_phone: data.registrantPhone,
-          code: codeData,
-          leader_id: user!.id,
-        } as any)
-        .select()
-        .single();
+        },
+      });
 
       if (error) throw error;
+      if (!result?.ok) throw new Error(result?.error || 'Falha ao cadastrar igreja');
 
       setCreatedChurch({
-        id: newChurch.id,
-        name: newChurch.name,
-        code: newChurch.code,
+        id: result.church.id,
+        name: result.church.name,
+        code: result.church.code,
       });
+      setWhatsappStatus(result.whatsappSent ? 'sent' : 'failed');
       setShowSuccessDialog(true);
       toast({
         title: 'Igreja cadastrada!',
-        description: 'O link apareceu no modal e também será enviado por WhatsApp.',
+        description: result.whatsappSent
+          ? 'O link de acesso foi enviado por WhatsApp.'
+          : 'O link aparece no modal. Copie e envie manualmente se necessário.',
       });
-      void sendCodeByWhatsApp(newChurch.id);
     } catch (error: any) {
       console.error('Error creating church:', error);
       toast({
@@ -234,77 +157,26 @@ export default function ChurchSetup() {
     });
   };
 
-  const handleCloseAndLogout = async () => {
+  const handleClose = () => {
     setShowSuccessDialog(false);
-    try {
-      await supabase.auth.signOut();
-    } catch {}
-    navigate('/auth');
+    navigate('/');
   };
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-background">
-        <SEO title="Cadastrar minha Igreja — LEVI" description="Cadastre sua igreja gratuitamente no LEVI e comece a organizar escalas de voluntários em minutos." path="/church-setup" />
-        <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
-          <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-2 group">
-              <LeviLogo className="transition-all duration-300 group-hover:scale-110 group-hover:shadow-glow" />
-              <span className="font-display text-xl font-bold text-foreground">LEVI</span>
-            </Link>
-            <ThemeToggle />
-          </div>
-        </nav>
-
-        <main className="container mx-auto px-4 pt-32 pb-16">
-          <div className="max-w-lg mx-auto text-center glass rounded-2xl p-8 border border-border/50 animate-fade-in">
-            <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4 shadow-glow">
-              <Church className="w-8 h-8 text-primary-foreground" />
-            </div>
-            <h1 className="font-display text-3xl font-bold text-foreground mb-3">
-              Cadastrar sua Igreja
-            </h1>
-            <p className="text-muted-foreground mb-6">
-              Para evitar perder os dados do formulário, entre ou crie sua conta primeiro. Depois você volta automaticamente para cadastrar a igreja.
-            </p>
-            <Button asChild className="w-full h-12 gradient-primary text-primary-foreground shadow-glow-sm">
-              <Link to="/auth?tab=register&redirect=/church-setup">
-                Entrar ou criar conta
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Link>
-            </Button>
-          </div>
-        </main>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">
       <SEO title="Cadastrar minha Igreja — LEVI" description="Cadastre sua igreja gratuitamente no LEVI e comece a organizar escalas de voluntários em minutos." path="/church-setup" />
-      {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 group">
             <LeviLogo className="transition-all duration-300 group-hover:scale-110 group-hover:shadow-glow" />
             <span className="font-display text-xl font-bold text-foreground">LEVI</span>
           </Link>
-          
           <ThemeToggle />
         </div>
       </nav>
 
       <main className="container mx-auto px-4 pt-32 pb-16">
         <div className="max-w-lg mx-auto">
-          {/* Header */}
           <div className="text-center mb-8 animate-fade-in">
             <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4 shadow-glow">
               <Church className="w-8 h-8 text-primary-foreground" />
@@ -313,26 +185,23 @@ export default function ChurchSetup() {
               Cadastrar sua Igreja
             </h1>
             <p className="text-muted-foreground">
-              Cadastre sua igreja para começar a criar departamentos e escalas
+              Cadastre apenas a igreja agora. O link para criar a conta e os departamentos será enviado pelo seu WhatsApp.
             </p>
           </div>
 
-          {/* Info Alert */}
           <Alert className="mb-6 border-primary/20 bg-primary/5">
             <Info className="h-4 w-4 text-primary" />
             <AlertDescription className="text-sm text-muted-foreground">
-              Após o cadastro, mostraremos um modal com o link para criar os departamentos/ministérios e enviaremos esse link por WhatsApp.
-              Dentro de cada departamento você poderá convidar os voluntários.
+              Após o cadastro, mostraremos um modal com o link e enviaremos esse link pelo WhatsApp do responsável.
+              É por esse link que você cria sua conta e os departamentos.
               <br />
               <strong className="text-foreground">Atenção:</strong> igrejas sem departamentos criados em até 5 dias serão removidas automaticamente.
             </AlertDescription>
           </Alert>
 
-          {/* Form */}
           <div className="animate-fade-in glass rounded-2xl p-6 border border-border/50" style={{ animationDelay: '0.1s' }}>
             <form onSubmit={churchForm.handleSubmit(handleCreateChurch, handleFormInvalid)} className="space-y-6">
               
-              {/* Registrant Section */}
               <div className="space-y-4 pb-4 border-b border-border/50">
                 <h3 className="font-semibold text-foreground flex items-center gap-2">
                   <User className="w-4 h-4 text-primary" />
@@ -340,11 +209,7 @@ export default function ChurchSetup() {
                 </h3>
                 <div className="space-y-2">
                   <Label htmlFor="registrantName">Nome do Responsável *</Label>
-                  <Input
-                    id="registrantName"
-                    placeholder="Seu nome completo"
-                    {...churchForm.register('registrantName')}
-                  />
+                  <Input id="registrantName" placeholder="Seu nome completo" {...churchForm.register('registrantName')} />
                   {churchForm.formState.errors.registrantName && (
                     <p className="text-sm text-destructive">{churchForm.formState.errors.registrantName.message}</p>
                   )}
@@ -352,31 +217,24 @@ export default function ChurchSetup() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="registrantEmail">Email *</Label>
-                    <Input
-                      id="registrantEmail"
-                      type="email"
-                      placeholder="seu@email.com"
-                      {...churchForm.register('registrantEmail')}
-                    />
+                    <Input id="registrantEmail" type="email" placeholder="seu@email.com" {...churchForm.register('registrantEmail')} />
                     {churchForm.formState.errors.registrantEmail && (
                       <p className="text-sm text-destructive">{churchForm.formState.errors.registrantEmail.message}</p>
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="registrantPhone">Telefone *</Label>
-                    <Input
-                      id="registrantPhone"
-                      placeholder="(11) 99999-9999"
-                      {...churchForm.register('registrantPhone')}
-                    />
+                    <Label htmlFor="registrantPhone">WhatsApp *</Label>
+                    <Input id="registrantPhone" placeholder="(11) 99999-9999" {...churchForm.register('registrantPhone')} />
                     {churchForm.formState.errors.registrantPhone && (
                       <p className="text-sm text-destructive">{churchForm.formState.errors.registrantPhone.message}</p>
                     )}
                   </div>
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  O link de acesso será enviado para esse WhatsApp.
+                </p>
               </div>
 
-              {/* Church Data Section */}
               <div className="space-y-4">
                 <h3 className="font-semibold text-foreground flex items-center gap-2">
                   <Church className="w-4 h-4 text-primary" />
@@ -385,12 +243,7 @@ export default function ChurchSetup() {
 
                 <div className="space-y-2">
                   <Label htmlFor="name">Nome da Igreja *</Label>
-                  <Input
-                    id="name"
-                    placeholder="Ex: Igreja Batista Central"
-                    {...churchForm.register('name')}
-                    className="h-12"
-                  />
+                  <Input id="name" placeholder="Ex: Igreja Batista Central" {...churchForm.register('name')} className="h-12" />
                   {churchForm.formState.errors.name && (
                     <p className="text-sm text-destructive">{churchForm.formState.errors.name.message}</p>
                   )}
@@ -402,12 +255,7 @@ export default function ChurchSetup() {
                       <Mail className="w-4 h-4" />
                       Email da Igreja *
                     </Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="contato@igreja.com"
-                      {...churchForm.register('email')}
-                    />
+                    <Input id="email" type="email" placeholder="contato@igreja.com" {...churchForm.register('email')} />
                     {churchForm.formState.errors.email && (
                       <p className="text-sm text-destructive">{churchForm.formState.errors.email.message}</p>
                     )}
@@ -417,11 +265,7 @@ export default function ChurchSetup() {
                       <Phone className="w-4 h-4" />
                       Telefone *
                     </Label>
-                    <Input
-                      id="phone"
-                      placeholder="(11) 99999-9999"
-                      {...churchForm.register('phone')}
-                    />
+                    <Input id="phone" placeholder="(11) 99999-9999" {...churchForm.register('phone')} />
                     {churchForm.formState.errors.phone && (
                       <p className="text-sm text-destructive">{churchForm.formState.errors.phone.message}</p>
                     )}
@@ -452,44 +296,26 @@ export default function ChurchSetup() {
 
                 <div className="space-y-2">
                   <Label htmlFor="description">Descrição</Label>
-                  <Textarea
-                    id="description"
-                    placeholder="Descrição breve da igreja..."
-                    {...churchForm.register('description')}
-                    className="min-h-[80px] resize-none"
-                  />
+                  <Textarea id="description" placeholder="Descrição breve da igreja..." {...churchForm.register('description')} className="min-h-[80px] resize-none" />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="city">Cidade</Label>
-                    <Input
-                      id="city"
-                      placeholder="Ex: São Paulo"
-                      {...churchForm.register('city')}
-                    />
+                    <Input id="city" placeholder="Ex: São Paulo" {...churchForm.register('city')} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="state">Estado</Label>
-                    <Input
-                      id="state"
-                      placeholder="Ex: SP"
-                      {...churchForm.register('state')}
-                    />
+                    <Input id="state" placeholder="Ex: SP" {...churchForm.register('state')} />
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="address">Endereço</Label>
-                  <Input
-                    id="address"
-                    placeholder="Rua, número, bairro..."
-                    {...churchForm.register('address')}
-                  />
+                  <Input id="address" placeholder="Rua, número, bairro..." {...churchForm.register('address')} />
                 </div>
               </div>
 
-              {/* Disclaimer & Terms */}
               <div className="space-y-3 pt-4 border-t border-border/50">
                 <div className="bg-muted/50 rounded-lg p-3">
                   <p className="text-xs text-muted-foreground leading-relaxed">
@@ -544,15 +370,14 @@ export default function ChurchSetup() {
         </div>
       </main>
 
-      {/* Onboarding Guide */}
       {createdChurch && (
         <ChurchOnboardingGuide
           open={showSuccessDialog}
-          onOpenChange={(open) => { if (!open) void handleCloseAndLogout(); }}
+          onOpenChange={(open) => { if (!open) handleClose(); }}
           churchName={createdChurch.name}
           churchCode={createdChurch.code}
-          onClose={handleCloseAndLogout}
-          onSendWhatsApp={() => sendCodeByWhatsApp(createdChurch.id)}
+          onClose={handleClose}
+          onSendWhatsApp={whatsappStatus === 'sent' ? undefined : undefined}
         />
       )}
     </div>
