@@ -10,8 +10,7 @@ interface ChurchOnboardingGuideProps {
   onOpenChange: (open: boolean) => void;
   churchName: string;
   churchCode: string;
-  onCreateDepartment: () => void;
-  onGoToDashboard: () => void;
+  onClose: () => void | Promise<void>;
   onSendWhatsApp?: () => void | Promise<void>;
 }
 
@@ -20,8 +19,7 @@ export function ChurchOnboardingGuide({
   onOpenChange,
   churchName,
   churchCode,
-  onCreateDepartment,
-  onGoToDashboard,
+  onClose,
   onSendWhatsApp,
 }: ChurchOnboardingGuideProps) {
   const [step, setStep] = useState(0);
