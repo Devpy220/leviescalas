@@ -395,7 +395,7 @@ export default function ChurchSetup() {
                 <div className="space-y-2">
                   <Label htmlFor="cnpj" className="flex items-center gap-2">
                     <FileText className="w-4 h-4" />
-                    CNPJ *
+                    CNPJ <span className="text-xs text-muted-foreground font-normal">(opcional)</span>
                   </Label>
                   <Controller
                     name="cnpj"
