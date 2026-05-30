@@ -226,6 +226,14 @@ export default function ChurchSetup() {
     }
   };
 
+  const handleFormInvalid = () => {
+    toast({
+      variant: 'destructive',
+      title: 'Confira os campos obrigatórios',
+      description: 'Preencha os dados destacados antes de cadastrar a igreja.',
+    });
+  };
+
   const handleCreateDepartment = () => {
     if (!createdChurch) return;
     setShowSuccessDialog(false);
@@ -325,7 +333,7 @@ export default function ChurchSetup() {
 
           {/* Form */}
           <div className="animate-fade-in glass rounded-2xl p-6 border border-border/50" style={{ animationDelay: '0.1s' }}>
-            <form onSubmit={churchForm.handleSubmit(handleCreateChurch)} className="space-y-6">
+            <form onSubmit={churchForm.handleSubmit(handleCreateChurch, handleFormInvalid)} className="space-y-6">
               
               {/* Registrant Section */}
               <div className="space-y-4 pb-4 border-b border-border/50">
