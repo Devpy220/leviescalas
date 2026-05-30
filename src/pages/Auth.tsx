@@ -717,7 +717,18 @@ export default function Auth() {
 
     const currentSession = await ensureSession();
 
-    if (currentSession?.user) {
+    if (!currentSession?.user) {
+      setIsLoading(false);
+      toast({
+        title: 'Conta criada!',
+        description: 'Confirme seu email, faça login e você voltará para continuar o cadastro da igreja.',
+      });
+      loginForm.setValue('email', data.email);
+      setActiveTab('login');
+      return;
+    }
+
+    if (currentSession.user) {
       // Save invited_by_department_id if coming from department invite
       if (invitedByDepartmentId && invitedByDepartmentId !== '') {
         try {
