@@ -80,10 +80,9 @@ const churchSchema = z.object({
   phone: z.string()
     .min(10, 'Telefone inválido')
     .max(20, 'Telefone inválido'),
-  cnpj: z.string()
-    .optional()
-    .or(z.literal(''))
-    .refine((val) => !val || isValidCNPJ(val), 'CNPJ inválido — verifique os dígitos'),
+  cnpj: z.string().trim().optional().nullable()
+    .transform((v) => (v ?? '').trim())
+    .refine((val) => val === '' || isValidCNPJ(val), 'CNPJ inválido — verifique os dígitos'),
   description: z.string()
     .max(500, 'Descrição muito longa')
     .optional(),
