@@ -88,7 +88,8 @@ type ResetPasswordForm = z.infer<typeof resetPasswordSchema>;
 export default function Auth() {
   const [searchParams] = useSearchParams();
   // Only allow register tab when coming from an invite link (church or department)
-  const hasInviteContext = !!searchParams.get('church') || !!searchParams.get('churchCode') || searchParams.get('redirect')?.startsWith('/join/');
+  const isChurchSetupRedirect = searchParams.get('redirect') === '/church-setup';
+  const hasInviteContext = !!searchParams.get('church') || !!searchParams.get('churchCode') || searchParams.get('redirect')?.startsWith('/join/') || isChurchSetupRedirect;
   const initialTab = (searchParams.get('tab') === 'register' && hasInviteContext) ? 'register' : 'login';
   const [activeTab, setActiveTab] = useState<'login' | 'register' | 'recovery' | 'reset-password' | '2fa-verify' | '2fa-verify-password-reset'>(initialTab);
   const [showPassword, setShowPassword] = useState(false);
@@ -327,8 +328,8 @@ export default function Auth() {
     defaultValues: { churchCode: '', name: '', email: '', whatsapp: '', password: '', confirmPassword: '' },
   });
 
-  // Form is ready when church is validated OR it's a department invite
-  const isFormReadyToSubmit = churchValidated.valid || isDepartmentInvite;
+  // Form is ready when church is validated, it's a department invite, or it's the church owner signup flow
+  const isFormReadyToSubmit = churchValidated.valid || isDepartmentInvite || isChurchSetupRedirect;
 
   // Validate church by slug (from URL)
   const validateChurchBySlug = async (slug: string) => {
@@ -470,6 +471,15 @@ export default function Auth() {
           description: 'Adicionando você ao novo departamento...',
         });
         navigate(redirectParam, { replace: true });
+        return;
+      }
+
+      if (isChurchSetupRedirect) {
+        toast({
+          title: 'Login realizado!',
+          description: 'Continue o cadastro da sua igreja.',
+        });
+        navigate('/church-setup', { replace: true });
         return;
       }
 
@@ -620,8 +630,8 @@ export default function Auth() {
   const handleRegister = async (data: RegisterForm) => {
     setIsLoading(true);
     
-    // Church must be validated unless it's a department invite
-    if (!churchValidated.valid && !isDepartmentInvite) {
+    // Church must be validated unless it's a department invite or the church owner signup flow
+    if (!churchValidated.valid && !isDepartmentInvite && !isChurchSetupRedirect) {
       toast({
         variant: 'destructive',
         title: 'Igreja não encontrada',
@@ -644,7 +654,13 @@ export default function Auth() {
       return;
     }
     
-    const { error } = await signUp(data.email, data.password, data.name, data.whatsapp);
+    const { error } = await signUp(
+      data.email,
+      data.password,
+      data.name,
+      data.whatsapp,
+      isChurchSetupRedirect ? '/church-setup' : '/'
+    );
 
     if (error) {
       setIsLoading(false);
@@ -701,7 +717,18 @@ export default function Auth() {
 
     const currentSession = await ensureSession();
 
-    if (currentSession?.user) {
+    if (!currentSession?.user) {
+      setIsLoading(false);
+      toast({
+        title: 'Conta criada!',
+        description: 'Confirme seu email, faça login e você voltará para continuar o cadastro da igreja.',
+      });
+      loginForm.setValue('email', data.email);
+      setActiveTab('login');
+      return;
+    }
+
+    if (currentSession.user) {
       // Save invited_by_department_id if coming from department invite
       if (invitedByDepartmentId && invitedByDepartmentId !== '') {
         try {
@@ -741,7 +768,9 @@ export default function Auth() {
 
     setIsLoading(false);
 
-    const welcomeMessage = isDepartmentInvite
+    const welcomeMessage = isChurchSetupRedirect
+      ? 'Conta criada! Agora cadastre os dados da igreja.'
+      : isDepartmentInvite
       ? 'Conta criada! Você será redirecionado para entrar no departamento.'
       : `Bem-vindo à ${churchValidated.name}!`;
 
@@ -760,6 +789,8 @@ export default function Auth() {
     if (isDepartmentInvite && redirectParam) {
       // Department invite - go back to join page to complete joining
       redirectTo = redirectParam;
+    } else if (isChurchSetupRedirect) {
+      redirectTo = '/church-setup';
     } else if (churchCodeParam) {
       // Volunteer coming from church code link - go to create department
       redirectTo = `/departments/new?churchCode=${churchCodeParam.toUpperCase()}`;
@@ -1204,7 +1235,7 @@ export default function Auth() {
               )}
 
               {/* No church context - show error */}
-              {!hasChurchContext && !churchValidated.valid && !isDepartmentInvite && (
+              {!hasChurchContext && !churchValidated.valid && !isDepartmentInvite && !isChurchSetupRedirect && (
                 <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 mb-4">
                   <p className="text-sm text-foreground">
                     <span className="font-medium text-destructive">Acesso somente por convite</span>
@@ -1342,7 +1373,7 @@ export default function Auth() {
               </p>
 
               {/* Info for users without church context */}
-              {!hasChurchContext && !isDepartmentInvite && (
+              {!hasChurchContext && !isDepartmentInvite && !isChurchSetupRedirect && (
                 <div className="p-4 rounded-xl glass border border-border/50">
                   <p className="text-sm text-muted-foreground">
                     <span className="font-medium text-foreground">Como criar conta?</span>

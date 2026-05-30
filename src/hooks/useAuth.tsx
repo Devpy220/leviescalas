@@ -20,7 +20,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   authEvent: AuthChangeEvent | null;
-  signUp: (email: string, password: string, name: string, whatsapp: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, name: string, whatsapp: string, redirectTo?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null; session: Session | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
@@ -505,9 +505,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('online', onOnline);
   }, [ensureSession, session?.user]);
 
-  const signUp = useCallback(async (email: string, password: string, name: string, whatsapp: string) => {
+  const signUp = useCallback(async (email: string, password: string, name: string, whatsapp: string, redirectTo = '/') => {
     try {
-      const redirectUrl = `${window.location.origin}/`;
+      const redirectUrl = `${window.location.origin}${redirectTo.startsWith('/') ? redirectTo : '/'}`;
       
       const { error } = await supabase.auth.signUp({
         email,
