@@ -12,7 +12,8 @@ import {
   Layers,
   UserCog,
   Megaphone,
-  CalendarSync
+  CalendarSync,
+  Library
 } from 'lucide-react';
 import { DashboardSidebar } from '@/components/DashboardSidebar';
 import { useAdmin } from '@/hooks/useAdmin';
@@ -43,6 +44,7 @@ import MyAvailabilitySheet from '@/components/department/MyAvailabilitySheet';
 // ActionMenuPopover removed — leader actions are now in the sidebar
 import ScheduleCountDialog from '@/components/department/ScheduleCountDialog';
 import AnnouncementBoard from '@/components/department/AnnouncementBoard';
+import RepertoireView from '@/components/department/RepertoireView';
 
 import CalendarSyncDialog from '@/components/department/CalendarSyncDialog';
 import { LeaderTour } from '@/components/LeaderTour';
@@ -596,6 +598,13 @@ export default function Department() {
                     </span>
                   )}
                 </TabsTrigger>
+                <TabsTrigger
+                  value="repertorio"
+                  className="gap-2 click-scale selection-glow data-[state=active]:gradient-vibrant data-[state=active]:text-white data-[state=active]:shadow-glow-sm transition-all"
+                >
+                  <Library className="w-4 h-4" />
+                  <span className="hidden xs:inline">Repertório</span>
+                </TabsTrigger>
               </TabsList>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -671,6 +680,14 @@ export default function Department() {
               isLeader={isLeader}
               currentUserId={currentUser?.id || ''}
               onUnreadCountChange={setUnreadAnnouncements}
+            />
+          </TabsContent>
+
+          <TabsContent value="repertorio" className="mt-6 animate-fade-in">
+            <RepertoireView
+              departmentId={id!}
+              isLeader={isLeader}
+              currentUserId={user?.id || ''}
             />
           </TabsContent>
         </Tabs>

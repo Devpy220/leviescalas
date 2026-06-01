@@ -921,6 +921,54 @@ export type Database = {
         }
         Relationships: []
       }
+      repertorio: {
+        Row: {
+          ativo: boolean
+          bpm: number | null
+          cifra: string | null
+          criado_em: string
+          criado_por: string
+          departamento_id: string
+          id: string
+          observacoes: string | null
+          tags: string[] | null
+          tipo: string
+          titulo: string
+          tom: string | null
+          url: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          bpm?: number | null
+          cifra?: string | null
+          criado_em?: string
+          criado_por: string
+          departamento_id: string
+          id?: string
+          observacoes?: string | null
+          tags?: string[] | null
+          tipo: string
+          titulo: string
+          tom?: string | null
+          url?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          bpm?: number | null
+          cifra?: string | null
+          criado_em?: string
+          criado_por?: string
+          departamento_id?: string
+          id?: string
+          observacoes?: string | null
+          tags?: string[] | null
+          tipo?: string
+          titulo?: string
+          tom?: string | null
+          url?: string | null
+        }
+        Relationships: []
+      }
       schedule_reminders_sent: {
         Row: {
           id: string

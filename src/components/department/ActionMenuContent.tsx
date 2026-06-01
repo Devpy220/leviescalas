@@ -1,4 +1,4 @@
-import { Download, Clock, UserPlus, FileText, FileSpreadsheet, Calendar, Layers, Users, CalendarDays, BarChart2, Megaphone, CalendarSync } from 'lucide-react';
+import { Download, Clock, UserPlus, FileText, FileSpreadsheet, Calendar, Layers, Users, CalendarDays, BarChart2, Megaphone, CalendarSync, Library } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -50,6 +50,12 @@ const navigationItems = [
     icon: Megaphone, 
     labelSuffix: 'Mural', 
     color: 'text-rose-500 hover:text-rose-400 hover:bg-rose-500/10',
+  },
+  {
+    id: 'repertorio',
+    icon: Library,
+    labelSuffix: 'Repertório',
+    color: 'text-amber-500 hover:text-amber-400 hover:bg-amber-500/10',
   },
 ];
 
