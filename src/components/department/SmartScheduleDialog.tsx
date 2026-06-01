@@ -160,13 +160,24 @@ export default function SmartScheduleDialog({
         return;
       }
       
+      if (selectedDates.size === 0) {
+        toast({
+          variant: 'destructive',
+          title: 'Nenhum dia selecionado',
+          description: 'Selecione pelo menos um dia do mês para gerar escalas.',
+        });
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('generate-smart-schedule', {
         body: {
           department_id: departmentId,
           start_date: startDate,
           end_date: endDate,
           sector_id: sectorId === 'all' ? undefined : sectorId,
-          fixed_slots: configuredSlots
+          fixed_slots: configuredSlots,
+          selected_dates: Array.from(selectedDates).sort(),
         }
       });
 
