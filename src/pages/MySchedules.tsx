@@ -28,6 +28,7 @@ import { SwapRequestDialog } from '@/components/schedules/SwapRequestDialog';
 import { SwapResponseDialog } from '@/components/schedules/SwapResponseDialog';
 import { PendingSwapBadge } from '@/components/schedules/PendingSwapBadge';
 import MyAvailabilitySheet from '@/components/department/MyAvailabilitySheet';
+import ScheduleSetlistManager from '@/components/department/ScheduleSetlistManager';
 import {
   DropdownMenu,
   DropdownMenuContent,
