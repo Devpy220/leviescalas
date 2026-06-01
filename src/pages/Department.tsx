@@ -598,6 +598,13 @@ export default function Department() {
                     </span>
                   )}
                 </TabsTrigger>
+                <TabsTrigger
+                  value="repertorio"
+                  className="gap-2 click-scale selection-glow data-[state=active]:gradient-vibrant data-[state=active]:text-white data-[state=active]:shadow-glow-sm transition-all"
+                >
+                  <Library className="w-4 h-4" />
+                  <span className="hidden xs:inline">Repertório</span>
+                </TabsTrigger>
               </TabsList>
               <Tooltip>
                 <TooltipTrigger asChild>
