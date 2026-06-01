@@ -98,8 +98,6 @@ export default function ScheduleSetlistManager({ scheduleId, departmentId, canEd
     }
   };
 
-  return (
-    <div className="space-y-2">
   if (!canEdit && !loading && items.length === 0) return null;
 
   return (
