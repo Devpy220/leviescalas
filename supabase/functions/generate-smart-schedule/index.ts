@@ -104,7 +104,7 @@ serve(async (req) => {
       });
     }
 
-    const { department_id, start_date, end_date, sector_id, fixed_slots } = validationResult.data;
+    const { department_id, start_date, end_date, sector_id, fixed_slots, selected_dates } = validationResult.data;
 
     console.log('Generating schedule for period:', start_date, 'to', end_date);
     console.log('Fixed slots config:', JSON.stringify(fixed_slots));
