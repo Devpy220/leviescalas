@@ -32,6 +32,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import ScheduleSetlistManager from './ScheduleSetlistManager';
 interface Schedule {
   id: string;
   user_id: string;
@@ -286,7 +287,7 @@ export default function EditScheduleDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Pencil className="w-5 h-5 text-primary" />
@@ -480,7 +481,18 @@ export default function EditScheduleDialog({
               </Select>
             </div>
           )}
+
+          {/* Setlist (Músicas da Escala) */}
+          <div className="pt-2 border-t">
+            <ScheduleSetlistManager
+              scheduleId={schedule.id}
+              departmentId={departmentId}
+              canEdit
+            />
+          </div>
         </div>
+
+
 
         <DialogFooter className="gap-2 sm:gap-0">
           <Button

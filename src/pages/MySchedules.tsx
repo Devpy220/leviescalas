@@ -28,6 +28,7 @@ import { SwapRequestDialog } from '@/components/schedules/SwapRequestDialog';
 import { SwapResponseDialog } from '@/components/schedules/SwapResponseDialog';
 import { PendingSwapBadge } from '@/components/schedules/PendingSwapBadge';
 import MyAvailabilitySheet from '@/components/department/MyAvailabilitySheet';
+import ScheduleSetlistManager from '@/components/department/ScheduleSetlistManager';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -562,8 +563,18 @@ export default function MySchedules() {
                       )}
                     </div>
                     
+                    {/* Setlist - read only */}
+                    <div className="pt-3 mt-3 border-t border-border/50">
+                      <ScheduleSetlistManager
+                        scheduleId={schedule.id}
+                        departmentId={schedule.department_id}
+                        canEdit={false}
+                      />
+                    </div>
+
                     {/* Swap section */}
                     <div className="pt-3 mt-3 border-t border-border/50">
+
                       {swap ? (
                         <PendingSwapBadge 
                           swap={swap}

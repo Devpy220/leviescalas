@@ -18,6 +18,8 @@ import {
   ExternalLink, Pencil, Trash2, Music2, X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getYouTubeEmbedUrl, getYouTubeThumbnail } from '@/lib/youtube';
+import CipherViewer from './CipherViewer';
 
 type TipoRep = 'musica' | 'video' | 'cifra' | 'documento' | 'link';
 
@@ -157,8 +159,22 @@ export default function RepertoireView({ departmentId, isLeader, currentUserId }
           {filtered.map(item => {
             const meta = TIPO_META[item.tipo];
             const Icon = meta.Icon;
+            const ytEmbed = getYouTubeEmbedUrl(item.url);
+            const ytThumb = getYouTubeThumbnail(item.url);
             return (
               <Card key={item.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                {ytEmbed && (
+                  <div className="relative w-full aspect-video bg-black">
+                    <iframe
+                      src={ytEmbed}
+                      title={item.titulo}
+                      loading="lazy"
+                      allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="absolute inset-0 w-full h-full"
+                    />
+                  </div>
+                )}
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-start gap-3">
                     <div className={cn('p-2.5 rounded-xl shrink-0', meta.bg)}>
@@ -166,7 +182,9 @@ export default function RepertoireView({ departmentId, isLeader, currentUserId }
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold leading-tight truncate">{item.titulo}</h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">{meta.label}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {meta.label}{ytEmbed && ' · YouTube'}
+                      </p>
                     </div>
                   </div>
 
@@ -198,10 +216,17 @@ export default function RepertoireView({ departmentId, isLeader, currentUserId }
                   )}
 
                   <div className="flex flex-wrap gap-2 pt-1">
-                    {item.url && (
+                    {item.url && !ytEmbed && (
                       <Button asChild size="sm" variant="outline" className="gap-1.5">
                         <a href={item.url} target="_blank" rel="noopener noreferrer">
                           <ExternalLink className="w-3.5 h-3.5" /> Abrir link
+                        </a>
+                      </Button>
+                    )}
+                    {ytEmbed && (
+                      <Button asChild size="sm" variant="outline" className="gap-1.5">
+                        <a href={item.url!} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="w-3.5 h-3.5" /> Abrir no YouTube
                         </a>
                       </Button>
                     )}
@@ -239,16 +264,14 @@ export default function RepertoireView({ departmentId, isLeader, currentUserId }
         />
       )}
 
-      <Dialog open={!!cifraView} onOpenChange={(o) => !o && setCifraView(null)}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle>{cifraView?.titulo}</DialogTitle>
-          </DialogHeader>
-          <pre className="flex-1 overflow-auto text-sm font-mono whitespace-pre-wrap bg-muted/40 rounded-lg p-4">
-            {cifraView?.cifra}
-          </pre>
-        </DialogContent>
-      </Dialog>
+      <CipherViewer
+        open={!!cifraView}
+        onClose={() => setCifraView(null)}
+        title={cifraView?.titulo || ''}
+        cifra={cifraView?.cifra || ''}
+        tom={cifraView?.tom}
+        bpm={cifraView?.bpm}
+      />
     </div>
   );
 }
