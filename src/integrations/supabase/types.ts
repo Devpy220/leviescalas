@@ -2033,6 +2033,10 @@ export type Database = {
         Args: { dept_id: string }
         Returns: string
       }
+      share_department_with: {
+        Args: { _user_a: string; _user_b: string }
+        Returns: boolean
+      }
       transfer_department_leadership: {
         Args: { dept_id: string; new_leader_user_id: string }
         Returns: boolean
