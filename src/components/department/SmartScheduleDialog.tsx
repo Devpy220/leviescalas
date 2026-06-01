@@ -80,6 +80,7 @@ export default function SmartScheduleDialog({
   const [sectorId, setSectorId] = useState<string>('all');
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [sendNotificationsOnConfirm, setSendNotificationsOnConfirm] = useState(true);
+  const [selectedDates, setSelectedDates] = useState<Set<string>>(new Set());
   
   // Results
   const [suggestions, setSuggestions] = useState<SuggestedSchedule[]>([]);
@@ -104,15 +105,33 @@ export default function SmartScheduleDialog({
     setSectors(data || []);
   };
 
-  const getMonthDates = () => {
+  // Candidate dates: all days in selected month matching enabled slots
+  const candidateDates = useMemo(() => {
     const [year, month] = selectedMonth.split('-').map(Number);
     const start = startOfMonth(new Date(year, month - 1));
     const end = endOfMonth(new Date(year, month - 1));
-    const allDays = eachDayOfInterval({ start, end });
-    // Filter days that match any of our fixed slots
-    const validDays = FIXED_SLOTS.map(s => s.dayOfWeek);
-    return allDays.filter(day => validDays.includes(day.getDay()));
+    const enabledDows = new Set(
+      FIXED_SLOTS.filter(s => slotEnabled[s.id] !== false).map(s => s.dayOfWeek)
+    );
+    return eachDayOfInterval({ start, end }).filter(d => enabledDows.has(d.getDay()));
+  }, [selectedMonth, slotEnabled]);
+
+  // Initialize selected dates whenever candidates change (default: all selected)
+  useEffect(() => {
+    setSelectedDates(new Set(candidateDates.map(d => format(d, 'yyyy-MM-dd'))));
+  }, [candidateDates]);
+
+  const toggleDate = (iso: string) => {
+    setSelectedDates(prev => {
+      const next = new Set(prev);
+      if (next.has(iso)) next.delete(iso); else next.add(iso);
+      return next;
+    });
   };
+
+  const selectAllDates = () => setSelectedDates(new Set(candidateDates.map(d => format(d, 'yyyy-MM-dd'))));
+  const clearAllDates = () => setSelectedDates(new Set());
+
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -141,13 +160,24 @@ export default function SmartScheduleDialog({
         return;
       }
       
+      if (selectedDates.size === 0) {
+        toast({
+          variant: 'destructive',
+          title: 'Nenhum dia selecionado',
+          description: 'Selecione pelo menos um dia do mês para gerar escalas.',
+        });
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('generate-smart-schedule', {
         body: {
           department_id: departmentId,
           start_date: startDate,
           end_date: endDate,
           sector_id: sectorId === 'all' ? undefined : sectorId,
-          fixed_slots: configuredSlots
+          fixed_slots: configuredSlots,
+          selected_dates: Array.from(selectedDates).sort(),
         }
       });
 
@@ -407,6 +437,46 @@ export default function SmartScheduleDialog({
                 Domingo Manhã e Quarta: 3 pessoas | Domingo Noite: 5 pessoas (padrão)
               </p>
             </div>
+
+            {/* Day selection */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Dias para escalar ({selectedDates.size}/{candidateDates.length})</Label>
+                <div className="flex gap-1">
+                  <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={selectAllDates}>
+                    Todos
+                  </Button>
+                  <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={clearAllDates}>
+                    Limpar
+                  </Button>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 max-h-48 overflow-y-auto p-1 rounded-lg bg-muted/20">
+                {candidateDates.map(d => {
+                  const iso = format(d, 'yyyy-MM-dd');
+                  const active = selectedDates.has(iso);
+                  return (
+                    <button
+                      key={iso}
+                      type="button"
+                      onClick={() => toggleDate(iso)}
+                      className={`text-xs px-2 py-1.5 rounded-md border transition-colors text-left ${
+                        active
+                          ? 'bg-primary/15 border-primary/40 text-foreground'
+                          : 'bg-background border-border/50 text-muted-foreground opacity-60'
+                      }`}
+                    >
+                      <div className="font-medium capitalize">{format(d, 'EEE', { locale: ptBR })}</div>
+                      <div className="text-[11px]">{format(d, 'dd/MM')}</div>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Desmarque os dias que não devem ter escala (ex.: feriados, eventos especiais).
+              </p>
+            </div>
+
 
             {sectors.length > 0 && (
               <div className="space-y-2">

@@ -88,6 +88,7 @@ serve(async (req) => {
       end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format"),
       sector_id: z.string().uuid("Invalid sector ID").optional(),
       fixed_slots: z.array(fixedSlotSchema).max(20).optional().default([]),
+      selected_dates: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).max(100).optional(),
     });
 
     const rawBody = await req.json();
@@ -103,7 +104,7 @@ serve(async (req) => {
       });
     }
 
-    const { department_id, start_date, end_date, sector_id, fixed_slots } = validationResult.data;
+    const { department_id, start_date, end_date, sector_id, fixed_slots, selected_dates } = validationResult.data;
 
     console.log('Generating schedule for period:', start_date, 'to', end_date);
     console.log('Fixed slots config:', JSON.stringify(fixed_slots));
@@ -133,16 +134,23 @@ serve(async (req) => {
       });
     }
 
-    // Fetch date-specific availability
+    // Fetch date-specific availability (opt-in extras)
     const { data: dateAvailabilities } = await supabase
       .from('member_date_availability')
-      .select('user_id, date')
+      .select('user_id, date, is_available')
       .eq('department_id', department_id)
-      .eq('is_available', true)
       .gte('date', start_date)
       .lte('date', end_date);
 
     console.log('Found date availabilities:', dateAvailabilities?.length || 0);
+
+    // Fetch weekly permanent availability (opt-out model: available unless explicitly false)
+    const { data: weeklyAvailability } = await supabase
+      .from('member_availability')
+      .select('user_id, day_of_week, time_start, time_end, is_available')
+      .eq('department_id', department_id);
+
+    console.log('Found weekly availability rows:', weeklyAvailability?.length || 0);
 
     // Fetch preferences
     const { data: preferences } = await supabase
@@ -178,25 +186,19 @@ serve(async (req) => {
       name: m.name
     }));
 
-    // Group availability by date
-    const availabilityByDate: Record<string, string[]> = {};
-    (dateAvailabilities || []).forEach((a: any) => {
-      if (!availabilityByDate[a.date]) {
-        availabilityByDate[a.date] = [];
-      }
-      const member = membersList.find((m: any) => m.user_id === a.user_id);
-      if (member) {
-        availabilityByDate[a.date].push(member.name);
-      }
+    const norm = (t?: string) => (t ?? '').slice(0, 5);
+
+    // Build weekly opt-out map: key `${user_id}|${dow}|${HH:mm}|${HH:mm}` => is_available
+    const weeklyMap = new Map<string, boolean>();
+    (weeklyAvailability || []).forEach((w: any) => {
+      const key = `${w.user_id}|${w.day_of_week}|${norm(w.time_start)}|${norm(w.time_end)}`;
+      weeklyMap.set(key, w.is_available !== false);
     });
 
-    // Group availability by member
-    const availabilityByMember: Record<string, string[]> = {};
+    // Build date-specific overrides
+    const dateOverride = new Map<string, boolean>(); // `${user_id}|${date}` => is_available
     (dateAvailabilities || []).forEach((a: any) => {
-      if (!availabilityByMember[a.user_id]) {
-        availabilityByMember[a.user_id] = [];
-      }
-      availabilityByMember[a.user_id].push(a.date);
+      dateOverride.set(`${a.user_id}|${a.date}`, a.is_available !== false);
     });
 
     const preferencesMap: Record<string, MemberPreference> = {};
@@ -205,7 +207,7 @@ serve(async (req) => {
         user_id: p.user_id,
         max_schedules_per_month: p.max_schedules_per_month,
         min_days_between_schedules: p.min_days_between_schedules,
-        blackout_dates: p.blackout_dates || []
+        blackout_dates: (p.blackout_dates || []).map((d: any) => typeof d === 'string' ? d : new Date(d).toISOString().split('T')[0])
       };
     });
 
@@ -218,31 +220,73 @@ serve(async (req) => {
       }
     });
 
-    // Generate dates in range
+    // Generate dates in range, respecting leader-selected dates if provided
+    const selectedDatesSet = selected_dates && selected_dates.length > 0 ? new Set(selected_dates) : null;
     const datesToFill: string[] = [];
-    const current = new Date(start_date);
-    const endDateObj = new Date(end_date);
-    
+    // Iterate by parsing the YYYY-MM-DD strings to avoid timezone issues
+    const [sy, sm, sd] = start_date.split('-').map(Number);
+    const [ey, em, ed] = end_date.split('-').map(Number);
+    const current = new Date(sy, sm - 1, sd);
+    const endDateObj = new Date(ey, em - 1, ed);
+
     while (current <= endDateObj) {
-      const dateStr = current.toISOString().split('T')[0];
+      const y = current.getFullYear();
+      const m = String(current.getMonth() + 1).padStart(2, '0');
+      const d = String(current.getDate()).padStart(2, '0');
+      const dateStr = `${y}-${m}-${d}`;
       const dayOfWeek = current.getDay();
-      
-      // Only include dates that match fixed slots
+
       const matchingSlot = fixed_slots.find(s => s.dayOfWeek === dayOfWeek);
-      if (matchingSlot) {
+      if (matchingSlot && (!selectedDatesSet || selectedDatesSet.has(dateStr))) {
         datesToFill.push(dateStr);
       }
       current.setDate(current.getDate() + 1);
     }
 
-    // Filter to only dates where at least one member is available
-    const datesWithAvailability = datesToFill.filter(date => 
+    // Compute availability per date using weekly opt-out + date overrides + blackout
+    // A member is available for a date if:
+    //  - NOT in their blackout_dates
+    //  - AND for at least one slot matching that day: weekly opt-out is not false (default true)
+    //    OR a date-specific override is true
+    //  - AND date-specific override is not false
+    const availabilityByDate: Record<string, string[]> = {};
+    const availabilityByMember: Record<string, string[]> = {};
+
+    for (const date of datesToFill) {
+      const dateObj = new Date(date + 'T12:00:00');
+      const dow = dateObj.getDay();
+      const slotsForDay = fixed_slots.filter(s => s.dayOfWeek === dow);
+      availabilityByDate[date] = [];
+
+      for (const m of membersList) {
+        const pref = preferencesMap[m.user_id];
+        if (pref?.blackout_dates?.includes(date)) continue;
+
+        const override = dateOverride.get(`${m.user_id}|${date}`);
+        if (override === false) continue;
+
+        // Available if override true, OR weekly says available for any slot of that day
+        const weeklyAvailableForAnySlot = slotsForDay.some(slot => {
+          const key = `${m.user_id}|${dow}|${slot.timeStart}|${slot.timeEnd}`;
+          const v = weeklyMap.get(key);
+          return v === undefined ? true : v; // default available if no record
+        });
+
+        if (override === true || weeklyAvailableForAnySlot) {
+          availabilityByDate[date].push(m.name);
+          if (!availabilityByMember[m.user_id]) availabilityByMember[m.user_id] = [];
+          availabilityByMember[m.user_id].push(date);
+        }
+      }
+    }
+
+    const datesWithAvailability = datesToFill.filter(date =>
       (availabilityByDate[date]?.length || 0) > 0
     );
 
     if (datesWithAvailability.length === 0) {
-      return new Response(JSON.stringify({ 
-        error: 'Nenhum membro marcou disponibilidade para o período selecionado. Peça aos membros que marquem suas disponibilidades no calendário.' 
+      return new Response(JSON.stringify({
+        error: 'Nenhum membro disponível para os dias selecionados. Verifique as disponibilidades semanais ou selecione outros dias.'
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
