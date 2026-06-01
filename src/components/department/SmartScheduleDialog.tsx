@@ -80,6 +80,7 @@ export default function SmartScheduleDialog({
   const [sectorId, setSectorId] = useState<string>('all');
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [sendNotificationsOnConfirm, setSendNotificationsOnConfirm] = useState(true);
+  const [selectedDates, setSelectedDates] = useState<Set<string>>(new Set());
   
   // Results
   const [suggestions, setSuggestions] = useState<SuggestedSchedule[]>([]);
