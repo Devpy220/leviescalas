@@ -264,16 +264,14 @@ export default function RepertoireView({ departmentId, isLeader, currentUserId }
         />
       )}
 
-      <Dialog open={!!cifraView} onOpenChange={(o) => !o && setCifraView(null)}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle>{cifraView?.titulo}</DialogTitle>
-          </DialogHeader>
-          <pre className="flex-1 overflow-auto text-sm font-mono whitespace-pre-wrap bg-muted/40 rounded-lg p-4">
-            {cifraView?.cifra}
-          </pre>
-        </DialogContent>
-      </Dialog>
+      <CipherViewer
+        open={!!cifraView}
+        onClose={() => setCifraView(null)}
+        title={cifraView?.titulo || ''}
+        cifra={cifraView?.cifra || ''}
+        tom={cifraView?.tom}
+        bpm={cifraView?.bpm}
+      />
     </div>
   );
 }
