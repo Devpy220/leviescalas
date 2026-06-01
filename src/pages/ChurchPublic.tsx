@@ -281,10 +281,10 @@ export default function ChurchPublic() {
                       Entrar
                     </Button>
                   </Link>
-                  <Link to={`/auth?tab=register&church=${slug}`}>
+                  <Link to={`/auth?tab=register&church=${slug}&redirect=${encodeURIComponent(`/departments/new?church=${slug}`)}`}>
                     <Button size="sm" className="gradient-vibrant text-white">
-                      <UserPlus className="w-4 h-4 mr-1" />
-                      Criar Conta
+                      <Plus className="w-4 h-4 mr-1" />
+                      Criar Departamento
                     </Button>
                   </Link>
                 </div>
