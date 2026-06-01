@@ -434,6 +434,30 @@ export type Database = {
           },
         ]
       }
+      escala_repertorio: {
+        Row: {
+          created_at: string
+          escala_id: string
+          id: string
+          ordem: number
+          repertorio_id: string
+        }
+        Insert: {
+          created_at?: string
+          escala_id: string
+          id?: string
+          ordem?: number
+          repertorio_id: string
+        }
+        Update: {
+          created_at?: string
+          escala_id?: string
+          id?: string
+          ordem?: number
+          repertorio_id?: string
+        }
+        Relationships: []
+      }
       login_logs: {
         Row: {
           id: string
