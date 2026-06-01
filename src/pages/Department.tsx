@@ -12,7 +12,8 @@ import {
   Layers,
   UserCog,
   Megaphone,
-  CalendarSync
+  CalendarSync,
+  Library
 } from 'lucide-react';
 import { DashboardSidebar } from '@/components/DashboardSidebar';
 import { useAdmin } from '@/hooks/useAdmin';
