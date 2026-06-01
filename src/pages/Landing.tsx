@@ -53,6 +53,7 @@ import {
 } from 'lucide-react';
 import { LeviLogo } from '@/components/LeviLogo';
 import { LeviTypewriter } from '@/components/LeviTypewriter';
+import { BibleVerseTypewriter } from '@/components/BibleVerseTypewriter';
 import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable';
 import { TwoFactorVerify } from '@/components/auth/TwoFactorVerify';
@@ -635,8 +636,11 @@ export default function Landing() {
                     </span>
                     <p className="text-xs text-muted-foreground">{t('landing.volunteersRegistered')}</p>
                   </div>
-                </div>
               </div>
+            </div>
+
+            <div className="mt-8 sm:mt-10 max-w-3xl mx-auto animate-slide-up-5">
+              <BibleVerseTypewriter />
             </div>
           </div>
         </div>

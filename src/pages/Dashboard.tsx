@@ -20,6 +20,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { DashboardSidebar } from '@/components/DashboardSidebar';
+import { BibleVerseTypewriter } from '@/components/BibleVerseTypewriter';
 
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useAuth } from '@/hooks/useAuth';
