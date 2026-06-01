@@ -58,7 +58,7 @@ export function BibleVerseTypewriter({ className }: BibleVerseTypewriterProps) {
       className={cn(
         'relative overflow-hidden rounded-2xl border border-white/15 dark:border-white/10',
         'bg-white/40 dark:bg-white/5 backdrop-blur-xl shadow-lg',
-        'px-4 py-3 sm:px-5 sm:py-4',
+        'px-4 py-3 sm:px-5 sm:py-4 max-w-xl w-full min-h-[120px]',
         className,
       )}
       role="region"
