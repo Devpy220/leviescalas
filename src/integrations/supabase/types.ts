@@ -1720,6 +1720,7 @@ export type Database = {
           user_name: string
         }[]
       }
+      get_church_code_by_slug: { Args: { p_slug: string }; Returns: string }
       get_church_departments: {
         Args: { p_church_id: string }
         Returns: {

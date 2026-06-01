@@ -281,10 +281,10 @@ export default function ChurchPublic() {
                       Entrar
                     </Button>
                   </Link>
-                  <Link to={`/auth?tab=register&church=${slug}`}>
+                  <Link to={`/auth?tab=register&church=${slug}&redirect=${encodeURIComponent(`/departments/new?church=${slug}`)}`}>
                     <Button size="sm" className="gradient-vibrant text-white">
-                      <UserPlus className="w-4 h-4 mr-1" />
-                      Criar Conta
+                      <Plus className="w-4 h-4 mr-1" />
+                      Criar Departamento
                     </Button>
                   </Link>
                 </div>
@@ -403,13 +403,16 @@ export default function ChurchPublic() {
                 </>
               ) : (
                 <>
-                  <p className="text-muted-foreground mb-4">
-                    Crie uma conta para participar dos departamentos desta igreja
+                  <p className="text-muted-foreground mb-2 max-w-xl mx-auto">
+                    Este link é para <strong>líderes</strong> cadastrarem um novo departamento/ministério nesta igreja.
                   </p>
-                  <Link to={`/auth?tab=register&church=${slug}`}>
+                  <p className="text-xs text-muted-foreground mb-4 max-w-xl mx-auto">
+                    Se você é voluntário, peça ao líder do seu departamento o link de convite específico.
+                  </p>
+                  <Link to={`/auth?tab=register&church=${slug}&redirect=${encodeURIComponent(`/departments/new?church=${slug}`)}`}>
                     <Button className="gradient-vibrant text-white">
-                      <UserPlus className="w-4 h-4 mr-2" />
-                      Criar Conta
+                      <Plus className="w-4 h-4 mr-2" />
+                      Criar Departamento
                     </Button>
                   </Link>
                 </>

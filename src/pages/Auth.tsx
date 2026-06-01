@@ -791,6 +791,9 @@ export default function Auth() {
       redirectTo = redirectParam;
     } else if (isChurchSetupRedirect) {
       redirectTo = '/church-setup';
+    } else if (redirectParam && redirectParam.startsWith('/departments/new')) {
+      // Explicit redirect to create department (e.g. from church public page)
+      redirectTo = redirectParam;
     } else if (churchCodeParam) {
       // Volunteer coming from church code link - go to create department
       redirectTo = `/departments/new?churchCode=${churchCodeParam.toUpperCase()}`;
