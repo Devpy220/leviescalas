@@ -643,6 +643,7 @@ export default function Landing() {
               <BibleVerseTypewriter />
             </div>
           </div>
+          </div>
         </div>
       </section>
 
