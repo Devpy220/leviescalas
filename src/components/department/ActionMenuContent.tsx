@@ -51,6 +51,12 @@ const navigationItems = [
     labelSuffix: 'Mural', 
     color: 'text-rose-500 hover:text-rose-400 hover:bg-rose-500/10',
   },
+  {
+    id: 'repertorio',
+    icon: Library,
+    labelSuffix: 'Repertório',
+    color: 'text-amber-500 hover:text-amber-400 hover:bg-amber-500/10',
+  },
 ];
 
 const actionItems = [
