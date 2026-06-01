@@ -682,6 +682,14 @@ export default function Department() {
               onUnreadCountChange={setUnreadAnnouncements}
             />
           </TabsContent>
+
+          <TabsContent value="repertorio" className="mt-6 animate-fade-in">
+            <RepertoireView
+              departmentId={id!}
+              isLeader={isLeader}
+              currentUserId={user?.id || ''}
+            />
+          </TabsContent>
         </Tabs>
       </main>
 
