@@ -216,10 +216,17 @@ export default function RepertoireView({ departmentId, isLeader, currentUserId }
                   )}
 
                   <div className="flex flex-wrap gap-2 pt-1">
-                    {item.url && (
+                    {item.url && !ytEmbed && (
                       <Button asChild size="sm" variant="outline" className="gap-1.5">
                         <a href={item.url} target="_blank" rel="noopener noreferrer">
                           <ExternalLink className="w-3.5 h-3.5" /> Abrir link
+                        </a>
+                      </Button>
+                    )}
+                    {ytEmbed && (
+                      <Button asChild size="sm" variant="outline" className="gap-1.5">
+                        <a href={item.url!} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="w-3.5 h-3.5" /> Abrir no YouTube
                         </a>
                       </Button>
                     )}
