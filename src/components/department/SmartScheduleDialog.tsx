@@ -438,6 +438,46 @@ export default function SmartScheduleDialog({
               </p>
             </div>
 
+            {/* Day selection */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Dias para escalar ({selectedDates.size}/{candidateDates.length})</Label>
+                <div className="flex gap-1">
+                  <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={selectAllDates}>
+                    Todos
+                  </Button>
+                  <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={clearAllDates}>
+                    Limpar
+                  </Button>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 max-h-48 overflow-y-auto p-1 rounded-lg bg-muted/20">
+                {candidateDates.map(d => {
+                  const iso = format(d, 'yyyy-MM-dd');
+                  const active = selectedDates.has(iso);
+                  return (
+                    <button
+                      key={iso}
+                      type="button"
+                      onClick={() => toggleDate(iso)}
+                      className={`text-xs px-2 py-1.5 rounded-md border transition-colors text-left ${
+                        active
+                          ? 'bg-primary/15 border-primary/40 text-foreground'
+                          : 'bg-background border-border/50 text-muted-foreground opacity-60'
+                      }`}
+                    >
+                      <div className="font-medium capitalize">{format(d, 'EEE', { locale: ptBR })}</div>
+                      <div className="text-[11px]">{format(d, 'dd/MM')}</div>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Desmarque os dias que não devem ter escala (ex.: feriados, eventos especiais).
+              </p>
+            </div>
+
+
             {sectors.length > 0 && (
               <div className="space-y-2">
                 <Label>Setor (opcional)</Label>
