@@ -54,8 +54,9 @@ export default function CreateDepartment() {
   const { toast } = useToast();
   const { user, loading: authLoading, ensureSession } = useAuth();
 
-  // Check if coming from church page with pre-filled church code
+  // Check if coming from church page with pre-filled church code or slug
   const prefilledChurchCode = searchParams.get('churchCode');
+  const prefilledChurchSlug = searchParams.get('church');
 
   const form = useForm<DepartmentForm>({
     resolver: zodResolver(departmentSchema),
@@ -67,8 +68,17 @@ export default function CreateDepartment() {
     if (prefilledChurchCode) {
       form.setValue('churchCode', prefilledChurchCode);
       validateChurchCode(prefilledChurchCode);
+    } else if (prefilledChurchSlug) {
+      (async () => {
+        const { data } = await supabase.rpc('get_church_code_by_slug' as any, { p_slug: prefilledChurchSlug });
+        const code = (data as string | null) || null;
+        if (code) {
+          form.setValue('churchCode', code);
+          validateChurchCode(code);
+        }
+      })();
     }
-  }, [prefilledChurchCode]);
+  }, [prefilledChurchCode, prefilledChurchSlug]);
 
   const validateChurchCode = async (code: string) => {
     if (!code || code.length < 4) {
