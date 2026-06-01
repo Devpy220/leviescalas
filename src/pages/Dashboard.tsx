@@ -20,6 +20,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { DashboardSidebar } from '@/components/DashboardSidebar';
+import { BibleVerseTypewriter } from '@/components/BibleVerseTypewriter';
 
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useAuth } from '@/hooks/useAuth';
@@ -383,6 +384,8 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
+        <BibleVerseTypewriter className="mb-8" />
 
         {/* Departments Section */}
         <h2 className="font-display text-xl font-semibold text-foreground mb-6">{t('dashboard.myDepartments')}</h2>
