@@ -100,6 +100,10 @@ export default function ScheduleSetlistManager({ scheduleId, departmentId, canEd
 
   return (
     <div className="space-y-2">
+  if (!canEdit && !loading && items.length === 0) return null;
+
+  return (
+    <div className="space-y-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-sm font-medium">
           <ListMusic className="w-4 h-4 text-primary" />
