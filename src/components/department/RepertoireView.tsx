@@ -159,8 +159,22 @@ export default function RepertoireView({ departmentId, isLeader, currentUserId }
           {filtered.map(item => {
             const meta = TIPO_META[item.tipo];
             const Icon = meta.Icon;
+            const ytEmbed = getYouTubeEmbedUrl(item.url);
+            const ytThumb = getYouTubeThumbnail(item.url);
             return (
               <Card key={item.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                {ytEmbed && (
+                  <div className="relative w-full aspect-video bg-black">
+                    <iframe
+                      src={ytEmbed}
+                      title={item.titulo}
+                      loading="lazy"
+                      allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="absolute inset-0 w-full h-full"
+                    />
+                  </div>
+                )}
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-start gap-3">
                     <div className={cn('p-2.5 rounded-xl shrink-0', meta.bg)}>
@@ -168,7 +182,9 @@ export default function RepertoireView({ departmentId, isLeader, currentUserId }
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold leading-tight truncate">{item.titulo}</h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">{meta.label}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {meta.label}{ytEmbed && ' · YouTube'}
+                      </p>
                     </div>
                   </div>
 
