@@ -105,15 +105,33 @@ export default function SmartScheduleDialog({
     setSectors(data || []);
   };
 
-  const getMonthDates = () => {
+  // Candidate dates: all days in selected month matching enabled slots
+  const candidateDates = useMemo(() => {
     const [year, month] = selectedMonth.split('-').map(Number);
     const start = startOfMonth(new Date(year, month - 1));
     const end = endOfMonth(new Date(year, month - 1));
-    const allDays = eachDayOfInterval({ start, end });
-    // Filter days that match any of our fixed slots
-    const validDays = FIXED_SLOTS.map(s => s.dayOfWeek);
-    return allDays.filter(day => validDays.includes(day.getDay()));
+    const enabledDows = new Set(
+      FIXED_SLOTS.filter(s => slotEnabled[s.id] !== false).map(s => s.dayOfWeek)
+    );
+    return eachDayOfInterval({ start, end }).filter(d => enabledDows.has(d.getDay()));
+  }, [selectedMonth, slotEnabled]);
+
+  // Initialize selected dates whenever candidates change (default: all selected)
+  useEffect(() => {
+    setSelectedDates(new Set(candidateDates.map(d => format(d, 'yyyy-MM-dd'))));
+  }, [candidateDates]);
+
+  const toggleDate = (iso: string) => {
+    setSelectedDates(prev => {
+      const next = new Set(prev);
+      if (next.has(iso)) next.delete(iso); else next.add(iso);
+      return next;
+    });
   };
+
+  const selectAllDates = () => setSelectedDates(new Set(candidateDates.map(d => format(d, 'yyyy-MM-dd'))));
+  const clearAllDates = () => setSelectedDates(new Set());
+
 
   const handleGenerate = async () => {
     setLoading(true);
