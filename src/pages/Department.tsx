@@ -43,6 +43,7 @@ import MyAvailabilitySheet from '@/components/department/MyAvailabilitySheet';
 // ActionMenuPopover removed — leader actions are now in the sidebar
 import ScheduleCountDialog from '@/components/department/ScheduleCountDialog';
 import AnnouncementBoard from '@/components/department/AnnouncementBoard';
+import RepertoireView from '@/components/department/RepertoireView';
 
 import CalendarSyncDialog from '@/components/department/CalendarSyncDialog';
 import { LeaderTour } from '@/components/LeaderTour';
