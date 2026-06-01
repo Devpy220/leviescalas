@@ -88,6 +88,7 @@ serve(async (req) => {
       end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format"),
       sector_id: z.string().uuid("Invalid sector ID").optional(),
       fixed_slots: z.array(fixedSlotSchema).max(20).optional().default([]),
+      selected_dates: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).max(100).optional(),
     });
 
     const rawBody = await req.json();
