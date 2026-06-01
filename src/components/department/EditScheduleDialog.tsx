@@ -481,7 +481,18 @@ export default function EditScheduleDialog({
               </Select>
             </div>
           )}
+
+          {/* Setlist (Músicas da Escala) */}
+          <div className="pt-2 border-t">
+            <ScheduleSetlistManager
+              scheduleId={schedule.id}
+              departmentId={departmentId}
+              canEdit
+            />
+          </div>
         </div>
+
+
 
         <DialogFooter className="gap-2 sm:gap-0">
           <Button
