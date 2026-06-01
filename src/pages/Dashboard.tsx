@@ -384,6 +384,8 @@ export default function Dashboard() {
           </div>
         </div>
 
+        <BibleVerseTypewriter className="mb-8" />
+
         {/* Departments Section */}
         <h2 className="font-display text-xl font-semibold text-foreground mb-6">{t('dashboard.myDepartments')}</h2>
 
