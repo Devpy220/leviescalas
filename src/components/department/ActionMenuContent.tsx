@@ -1,4 +1,4 @@
-import { Download, Clock, UserPlus, FileText, FileSpreadsheet, Calendar, Layers, Users, CalendarDays, BarChart2, Megaphone, CalendarSync } from 'lucide-react';
+import { Download, Clock, UserPlus, FileText, FileSpreadsheet, Calendar, Layers, Users, CalendarDays, BarChart2, Megaphone, CalendarSync, Library } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
