@@ -18,6 +18,8 @@ import {
   ExternalLink, Pencil, Trash2, Music2, X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getYouTubeEmbedUrl, getYouTubeThumbnail } from '@/lib/youtube';
+import CipherViewer from './CipherViewer';
 
 type TipoRep = 'musica' | 'video' | 'cifra' | 'documento' | 'link';
 
