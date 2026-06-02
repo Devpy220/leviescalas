@@ -41,7 +41,7 @@ import { cn } from '@/lib/utils';
 interface Member {
   id: string;
   user_id: string;
-  role: 'leader' | 'member';
+  role: 'leader' | 'coleader' | 'member';
   profile: {
     name: string;
     email: string;

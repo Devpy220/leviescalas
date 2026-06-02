@@ -2025,6 +2025,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_department_coleader: {
+        Args: { _department_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_department_coordinator: {
         Args: { _department_id: string; _user_id: string }
         Returns: boolean
@@ -2121,7 +2125,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "user"
       confirmation_status: "pending" | "confirmed" | "declined"
-      member_role: "leader" | "member"
+      member_role: "leader" | "member" | "coleader"
       notification_status: "pending" | "sent" | "failed"
       subscription_status:
         | "active"
@@ -2259,7 +2263,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "user"],
       confirmation_status: ["pending", "confirmed", "declined"],
-      member_role: ["leader", "member"],
+      member_role: ["leader", "member", "coleader"],
       notification_status: ["pending", "sent", "failed"],
       subscription_status: [
         "active",

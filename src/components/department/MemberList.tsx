@@ -8,7 +8,9 @@ import {
   UserPlus,
   Shield,
   Lock,
-  ShieldCheck
+  ShieldCheck,
+  Star,
+  StarOff,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -36,7 +38,7 @@ import { createExtendedMemberColorMap, getMemberColor, getMemberBackgroundStyle 
 interface Member {
   id: string;
   user_id: string;
-  role: 'leader' | 'member';
+  role: 'leader' | 'coleader' | 'member';
   joined_at: string;
   profile: {
     name: string;
@@ -56,6 +58,8 @@ interface MemberContactInfo {
 interface MemberListProps {
   members: Member[];
   isLeader: boolean;
+  /** True only for the actual department owner (not coleaders). Controls role-management UI. */
+  isOwner?: boolean;
   currentUserId: string;
   departmentId: string;
   onMemberRemoved: () => void;
@@ -66,6 +70,7 @@ interface MemberListProps {
 export default function MemberList({
   members,
   isLeader,
+  isOwner = false,
   currentUserId,
   departmentId,
   onMemberRemoved,
@@ -189,6 +194,31 @@ export default function MemberList({
     window.open(`mailto:${email}`, '_blank');
   };
 
+  const handleToggleColeader = async (member: Member) => {
+    const makeColeader = member.role !== 'coleader';
+    try {
+      const { error } = await supabase
+        .from('members')
+        .update({ role: (makeColeader ? 'coleader' : 'member') as any })
+        .eq('id', member.id);
+      if (error) throw error;
+      toast({
+        title: makeColeader ? 'Co-líder definido' : 'Co-líder removido',
+        description: makeColeader
+          ? `${member.profile.name} agora pode criar e editar escalas deste departamento.`
+          : `${member.profile.name} voltou a ser membro comum.`,
+      });
+      onMemberRemoved(); // reuse refresh callback
+    } catch (error: any) {
+      console.error('Error toggling coleader:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: error?.message || 'Não foi possível atualizar o papel.',
+      });
+    }
+  };
+
   const handleTransferLeadership = async () => {
     if (!transferTarget) return;
     setTransferring(true);
@@ -243,6 +273,7 @@ export default function MemberList({
         {sortedMembers.map((member) => {
           const isCurrentUser = member.user_id === currentUserId;
           const isMemberLeader = member.role === 'leader';
+          const isMemberColeader = member.role === 'coleader';
           const initials = member.profile.name
             .split(' ')
             .map((n) => n[0])
@@ -278,8 +309,13 @@ export default function MemberList({
                       {member.profile.name}
                     </h3>
                     {isMemberLeader && (
-                      <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0" title="Líder">
                         <Crown className="w-3 h-3 text-primary" />
+                      </div>
+                    )}
+                    {isMemberColeader && (
+                      <div className="w-5 h-5 rounded-full bg-amber-500/15 flex items-center justify-center flex-shrink-0" title="Co-líder de escalas">
+                        <Star className="w-3 h-3 text-amber-500" />
                       </div>
                     )}
                     {isCurrentUser && (
@@ -300,7 +336,7 @@ export default function MemberList({
                   )}
                   <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
                     <Shield className="w-3 h-3" />
-                    <span>{isMemberLeader ? 'Líder' : 'Membro'}</span>
+                    <span>{isMemberLeader ? 'Líder' : isMemberColeader ? 'Co-líder de escalas' : 'Membro'}</span>
                   </div>
                 </div>
 
@@ -337,15 +373,34 @@ export default function MemberList({
                       {!isMemberLeader && !isCurrentUser && (
                         <>
                           {hasContactAccess && <DropdownMenuSeparator />}
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setTransferTarget(member);
-                              setShowTransferDialog(true);
-                            }}
-                          >
-                            <ShieldCheck className="w-4 h-4 mr-2" />
-                            Tornar líder
-                          </DropdownMenuItem>
+                          {isOwner && (
+                            <DropdownMenuItem
+                              onClick={() => handleToggleColeader(member)}
+                            >
+                              {isMemberColeader ? (
+                                <>
+                                  <StarOff className="w-4 h-4 mr-2" />
+                                  Remover co-líder
+                                </>
+                              ) : (
+                                <>
+                                  <Star className="w-4 h-4 mr-2" />
+                                  Tornar co-líder de escalas
+                                </>
+                              )}
+                            </DropdownMenuItem>
+                          )}
+                          {isOwner && (
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setTransferTarget(member);
+                                setShowTransferDialog(true);
+                              }}
+                            >
+                              <ShieldCheck className="w-4 h-4 mr-2" />
+                              Tornar líder
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem
                             className="text-destructive focus:text-destructive"
                             onClick={() => {

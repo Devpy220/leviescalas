@@ -87,7 +87,7 @@ const isSubscriptionInactive = (status: string | null, trialEndsAt: string | nul
 interface Member {
   id: string;
   user_id: string;
-  role: 'leader' | 'member';
+  role: 'leader' | 'coleader' | 'member';
   joined_at: string;
   profile: {
     name: string;
@@ -260,10 +260,23 @@ export default function Department() {
         max_blackout_dates: deptExtra?.max_blackout_dates ?? 5,
         allow_sunday_double: deptExtra?.allow_sunday_double ?? false,
       });
-      setIsLeader(data.leader_id === currentUser?.id);
+      const isOwner = data.leader_id === currentUser?.id;
+
+      // Check if user is a co-leader (members.role = 'coleader') — grants schedule management rights
+      let isColeader = false;
+      if (!isOwner && currentUser?.id) {
+        const { data: memberRow } = await supabase
+          .from('members')
+          .select('role')
+          .eq('department_id', id)
+          .eq('user_id', currentUser.id)
+          .maybeSingle();
+        isColeader = (memberRow as any)?.role === 'coleader';
+      }
+      setIsLeader(isOwner || isColeader);
 
       // Check if user is a coordinator of this department
-      if (data.leader_id !== currentUser?.id && currentUser?.id) {
+      if (!isOwner && !isColeader && currentUser?.id) {
         const { data: coordRow } = await (supabase as any)
           .from('department_coordinators')
           .select('id')
@@ -324,7 +337,7 @@ export default function Department() {
         return {
           id: m.id,
           user_id: m.user_id,
-          role: m.role as 'leader' | 'member',
+          role: m.role as 'leader' | 'coleader' | 'member',
           joined_at: m.joined_at,
           profile: {
             name: profile?.name || 'Usuário',
@@ -666,6 +679,7 @@ export default function Department() {
             <MemberList 
               members={members}
               isLeader={isLeader}
+              isOwner={department?.leader_id === currentUser?.id}
               currentUserId={user?.id || ''}
               departmentId={id!}
               onMemberRemoved={handleMemberRemoved}
