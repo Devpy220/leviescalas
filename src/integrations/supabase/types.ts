@@ -2025,6 +2025,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_department_coleader: {
+        Args: { _department_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_department_coordinator: {
         Args: { _department_id: string; _user_id: string }
         Returns: boolean
