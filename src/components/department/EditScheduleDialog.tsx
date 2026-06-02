@@ -33,6 +33,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import ScheduleSetlistManager from './ScheduleSetlistManager';
+import SlotNotesEditor from './SlotNotesEditor';
 interface Schedule {
   id: string;
   user_id: string;
@@ -487,6 +488,17 @@ export default function EditScheduleDialog({
             <ScheduleSetlistManager
               scheduleId={schedule.id}
               departmentId={departmentId}
+              canEdit
+            />
+          </div>
+
+          {/* Observações / Links compartilhados do horário */}
+          <div className="pt-2 border-t">
+            <SlotNotesEditor
+              departmentId={departmentId}
+              date={schedule.date}
+              timeStart={schedule.time_start}
+              timeEnd={schedule.time_end}
               canEdit
             />
           </div>

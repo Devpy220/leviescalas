@@ -1249,6 +1249,42 @@ export type Database = {
           },
         ]
       }
+      slot_notes: {
+        Row: {
+          content: string
+          created_at: string
+          date: string
+          department_id: string
+          id: string
+          time_end: string
+          time_start: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          date: string
+          department_id: string
+          id?: string
+          time_end: string
+          time_start: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          date?: string
+          department_id?: string
+          id?: string
+          time_end?: string
+          time_start?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       telegram_link_codes: {
         Row: {
           code: string
@@ -1999,6 +2035,16 @@ export type Database = {
       }
       is_department_member: {
         Args: { _department_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_scheduled_in_slot: {
+        Args: {
+          _date: string
+          _department_id: string
+          _time_end: string
+          _time_start: string
+          _user_id: string
+        }
         Returns: boolean
       }
       join_department_as_coordinator: {

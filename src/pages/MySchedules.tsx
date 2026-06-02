@@ -29,6 +29,7 @@ import { SwapResponseDialog } from '@/components/schedules/SwapResponseDialog';
 import { PendingSwapBadge } from '@/components/schedules/PendingSwapBadge';
 import MyAvailabilitySheet from '@/components/department/MyAvailabilitySheet';
 import ScheduleSetlistManager from '@/components/department/ScheduleSetlistManager';
+import SlotNotesEditor from '@/components/department/SlotNotesEditor';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -572,6 +573,17 @@ export default function MySchedules() {
                       />
                     </div>
 
+                    {/* Observações / Links do horário (compartilhado entre escalados) */}
+                    <div className="pt-3 mt-3 border-t border-border/50">
+                      <SlotNotesEditor
+                        departmentId={schedule.department_id}
+                        date={schedule.date}
+                        timeStart={schedule.time_start}
+                        timeEnd={schedule.time_end}
+                        canEdit
+                      />
+                    </div>
+
                     {/* Swap section */}
                     <div className="pt-3 mt-3 border-t border-border/50">
 
@@ -710,6 +722,19 @@ export default function MySchedules() {
                       })}
                     </div>
                     
+                    {/* Observações / Links do horário (visível p/ todos do slot, editável p/ escalados) */}
+                    {groupSchedules[0] && (
+                      <div className="pt-3 mt-3 border-t border-border/50">
+                        <SlotNotesEditor
+                          departmentId={groupSchedules[0].department_id}
+                          date={groupSchedules[0].date}
+                          timeStart={groupSchedules[0].time_start}
+                          timeEnd={groupSchedules[0].time_end}
+                          canEdit={!!userScheduleInSlot}
+                        />
+                      </div>
+                    )}
+
                     {/* Swap button - only if user is in this slot */}
                     {userScheduleInSlot && (
                       <div className="pt-3 mt-3 border-t border-border/50">
