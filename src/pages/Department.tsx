@@ -679,6 +679,7 @@ export default function Department() {
             <MemberList 
               members={members}
               isLeader={isLeader}
+              isOwner={department?.leader_id === currentUser?.id}
               currentUserId={user?.id || ''}
               departmentId={id!}
               onMemberRemoved={handleMemberRemoved}
