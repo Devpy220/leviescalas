@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 export interface UserDepartment {
   id: string;
   name: string;
-  role: 'leader' | 'member' | 'coordinator';
+  role: 'leader' | 'coleader' | 'member' | 'coordinator';
   church_name?: string | null;
   church_logo_url?: string | null;
   avatar_url?: string | null;
@@ -126,7 +126,7 @@ export function useUserDepartments() {
           deptMap.set(dept.id, {
             id: dept.id,
             name: dept.name,
-            role: m.role as 'leader' | 'member',
+            role: m.role as 'leader' | 'coleader' | 'member',
             avatar_url: dept.avatar_url,
             church_name: dept.church_id ? churchMap[dept.church_id]?.name : null,
             church_logo_url: dept.church_id ? churchMap[dept.church_id]?.logo_url : null,

@@ -260,10 +260,23 @@ export default function Department() {
         max_blackout_dates: deptExtra?.max_blackout_dates ?? 5,
         allow_sunday_double: deptExtra?.allow_sunday_double ?? false,
       });
-      setIsLeader(data.leader_id === currentUser?.id);
+      const isOwner = data.leader_id === currentUser?.id;
+
+      // Check if user is a co-leader (members.role = 'coleader') — grants schedule management rights
+      let isColeader = false;
+      if (!isOwner && currentUser?.id) {
+        const { data: memberRow } = await supabase
+          .from('members')
+          .select('role')
+          .eq('department_id', id)
+          .eq('user_id', currentUser.id)
+          .maybeSingle();
+        isColeader = (memberRow as any)?.role === 'coleader';
+      }
+      setIsLeader(isOwner || isColeader);
 
       // Check if user is a coordinator of this department
-      if (data.leader_id !== currentUser?.id && currentUser?.id) {
+      if (!isOwner && !isColeader && currentUser?.id) {
         const { data: coordRow } = await (supabase as any)
           .from('department_coordinators')
           .select('id')
