@@ -371,8 +371,17 @@ function RepertoireFormDialog({ open, onClose, departmentId, currentUserId, edit
           </div>
 
           <div className="space-y-2">
-            <Label>URL / Link</Label>
-            <Input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://..." />
+            <Label>Link (qualquer URL)</Label>
+            <Input
+              value={url}
+              onChange={e => setUrl(e.target.value)}
+              placeholder="Cole aqui qualquer link (YouTube, Drive, Spotify, PDF, site...)"
+              inputMode="url"
+              type="url"
+            />
+            <p className="text-xs text-muted-foreground">
+              Aceita qualquer link. Se for do YouTube, o vídeo será exibido automaticamente no card.
+            </p>
           </div>
 
           {showTom && (
