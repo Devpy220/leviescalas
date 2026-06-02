@@ -8,7 +8,9 @@ import {
   UserPlus,
   Shield,
   Lock,
-  ShieldCheck
+  ShieldCheck,
+  Star,
+  StarOff,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -246,6 +248,7 @@ export default function MemberList({
         {sortedMembers.map((member) => {
           const isCurrentUser = member.user_id === currentUserId;
           const isMemberLeader = member.role === 'leader';
+          const isMemberColeader = member.role === 'coleader';
           const initials = member.profile.name
             .split(' ')
             .map((n) => n[0])
@@ -281,8 +284,13 @@ export default function MemberList({
                       {member.profile.name}
                     </h3>
                     {isMemberLeader && (
-                      <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0" title="Líder">
                         <Crown className="w-3 h-3 text-primary" />
+                      </div>
+                    )}
+                    {isMemberColeader && (
+                      <div className="w-5 h-5 rounded-full bg-amber-500/15 flex items-center justify-center flex-shrink-0" title="Co-líder de escalas">
+                        <Star className="w-3 h-3 text-amber-500" />
                       </div>
                     )}
                     {isCurrentUser && (
@@ -303,7 +311,7 @@ export default function MemberList({
                   )}
                   <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
                     <Shield className="w-3 h-3" />
-                    <span>{isMemberLeader ? 'Líder' : 'Membro'}</span>
+                    <span>{isMemberLeader ? 'Líder' : isMemberColeader ? 'Co-líder de escalas' : 'Membro'}</span>
                   </div>
                 </div>
 
@@ -340,15 +348,34 @@ export default function MemberList({
                       {!isMemberLeader && !isCurrentUser && (
                         <>
                           {hasContactAccess && <DropdownMenuSeparator />}
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setTransferTarget(member);
-                              setShowTransferDialog(true);
-                            }}
-                          >
-                            <ShieldCheck className="w-4 h-4 mr-2" />
-                            Tornar líder
-                          </DropdownMenuItem>
+                          {isOwner && (
+                            <DropdownMenuItem
+                              onClick={() => handleToggleColeader(member)}
+                            >
+                              {isMemberColeader ? (
+                                <>
+                                  <StarOff className="w-4 h-4 mr-2" />
+                                  Remover co-líder
+                                </>
+                              ) : (
+                                <>
+                                  <Star className="w-4 h-4 mr-2" />
+                                  Tornar co-líder de escalas
+                                </>
+                              )}
+                            </DropdownMenuItem>
+                          )}
+                          {isOwner && (
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setTransferTarget(member);
+                                setShowTransferDialog(true);
+                              }}
+                            >
+                              <ShieldCheck className="w-4 h-4 mr-2" />
+                              Tornar líder
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem
                             className="text-destructive focus:text-destructive"
                             onClick={() => {
