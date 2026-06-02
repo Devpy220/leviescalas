@@ -127,7 +127,7 @@ export default function SlotNotesEditor({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-sm font-medium">
           <FileText className="w-4 h-4 text-primary" />
-          Observações / Links
+          Repertório de Hoje
           {!editing && original && (
             <Badge variant="secondary" className="text-[10px]">
               {original.match(URL_REGEX)?.length || 0} link(s)
@@ -146,12 +146,12 @@ export default function SlotNotesEditor({
           <Textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="Cole links (YouTube, Drive, Spotify, PDF...) ou escreva instruções para a equipe escalada neste horário."
+            placeholder="Cole aqui o repertório de hoje: links do YouTube, Spotify, Drive, PDF ou escreva instruções. Tudo isso será enviado no WhatsApp para a equipe escalada neste horário."
             className="min-h-[120px] text-sm font-mono"
             autoFocus
           />
           <p className="text-[11px] text-muted-foreground">
-            Todos os voluntários escalados neste horário poderão ver e editar este campo.
+            Todos os voluntários escalados neste horário verão e receberão isto no WhatsApp junto com a escala.
           </p>
           <div className="flex justify-end gap-2">
             <Button
