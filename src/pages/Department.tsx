@@ -87,7 +87,7 @@ const isSubscriptionInactive = (status: string | null, trialEndsAt: string | nul
 interface Member {
   id: string;
   user_id: string;
-  role: 'leader' | 'member';
+  role: 'leader' | 'coleader' | 'member';
   joined_at: string;
   profile: {
     name: string;
@@ -337,7 +337,7 @@ export default function Department() {
         return {
           id: m.id,
           user_id: m.user_id,
-          role: m.role as 'leader' | 'member',
+          role: m.role as 'leader' | 'coleader' | 'member',
           joined_at: m.joined_at,
           profile: {
             name: profile?.name || 'Usuário',
