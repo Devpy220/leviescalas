@@ -194,6 +194,31 @@ export default function MemberList({
     window.open(`mailto:${email}`, '_blank');
   };
 
+  const handleToggleColeader = async (member: Member) => {
+    const makeColeader = member.role !== 'coleader';
+    try {
+      const { error } = await supabase
+        .from('members')
+        .update({ role: (makeColeader ? 'coleader' : 'member') as any })
+        .eq('id', member.id);
+      if (error) throw error;
+      toast({
+        title: makeColeader ? 'Co-líder definido' : 'Co-líder removido',
+        description: makeColeader
+          ? `${member.profile.name} agora pode criar e editar escalas deste departamento.`
+          : `${member.profile.name} voltou a ser membro comum.`,
+      });
+      onMemberRemoved(); // reuse refresh callback
+    } catch (error: any) {
+      console.error('Error toggling coleader:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: error?.message || 'Não foi possível atualizar o papel.',
+      });
+    }
+  };
+
   const handleTransferLeadership = async () => {
     if (!transferTarget) return;
     setTransferring(true);
