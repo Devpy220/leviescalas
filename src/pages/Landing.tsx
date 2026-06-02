@@ -271,7 +271,7 @@ function FeatureGrid() {
     {
       icon: HeartHandshake,
       title: 'Gratuito para Igrejas',
-      desc: 'Sem mensalidade. Mantido por doações via PIX e cartão.',
+      desc: 'Sem mensalidade. Mantido por doações via PIX e cartão. Sugestão: R$ 25,00.',
       color: 'from-yellow-500/15 to-yellow-500/5',
       iconColor: 'text-yellow-600',
     },
