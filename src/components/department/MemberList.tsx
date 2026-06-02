@@ -36,7 +36,7 @@ import { createExtendedMemberColorMap, getMemberColor, getMemberBackgroundStyle 
 interface Member {
   id: string;
   user_id: string;
-  role: 'leader' | 'member';
+  role: 'leader' | 'coleader' | 'member';
   joined_at: string;
   profile: {
     name: string;
@@ -56,6 +56,8 @@ interface MemberContactInfo {
 interface MemberListProps {
   members: Member[];
   isLeader: boolean;
+  /** True only for the actual department owner (not coleaders). Controls role-management UI. */
+  isOwner?: boolean;
   currentUserId: string;
   departmentId: string;
   onMemberRemoved: () => void;
@@ -66,6 +68,7 @@ interface MemberListProps {
 export default function MemberList({
   members,
   isLeader,
+  isOwner = false,
   currentUserId,
   departmentId,
   onMemberRemoved,
