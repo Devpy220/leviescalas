@@ -52,6 +52,12 @@ const SupportPix = () => {
             <p className="text-sm text-muted-foreground">
               Sua contribuição mantém o projeto gratuito para todas as igrejas.
             </p>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
+              <Heart className="w-3.5 h-3.5 text-primary" fill="currentColor" />
+              <span className="text-xs font-medium text-primary">
+                Sugestão: R$ 25,00 (qualquer valor é bem-vindo)
+              </span>
+            </div>
           </div>
 
           <Card className="border-primary/20">
