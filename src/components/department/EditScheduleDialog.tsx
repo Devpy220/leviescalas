@@ -52,7 +52,7 @@ interface Schedule {
 interface Member {
   id: string;
   user_id: string;
-  role: 'leader' | 'member';
+  role: 'leader' | 'coleader' | 'member';
   profile: {
     name: string;
     avatar_url: string | null;
