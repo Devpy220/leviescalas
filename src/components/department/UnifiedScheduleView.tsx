@@ -357,6 +357,8 @@ export default function UnifiedScheduleView({
             <SlotCard
               group={group}
               isLeader={isLeader && !readOnly}
+              currentUserId={currentUserId}
+              departmentId={departmentId}
               getMemberColorValue={getMemberColorValue}
               getMemberBgStyle={getMemberBgStyle}
               onAddSchedule={onAddSchedule}
