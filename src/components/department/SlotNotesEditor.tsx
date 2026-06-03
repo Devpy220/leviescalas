@@ -146,12 +146,12 @@ export default function SlotNotesEditor({
           <Textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="Cole aqui o repertório de hoje: links do YouTube, Spotify, Drive, PDF ou escreva instruções. Tudo isso será enviado no WhatsApp para a equipe escalada neste horário."
-            className="min-h-[120px] text-sm font-mono"
+            placeholder={`🎤 Repertório de hoje (ministério de louvor)\n\nCole os links das músicas — YouTube, Spotify, Deezer, cifra, PDF do Drive — um por linha. Pode escrever também tom, BPM ou recados para a equipe escalada neste horário.\n\nEx.:\nhttps://youtu.be/xxxxx — Tom: G\nhttps://open.spotify.com/track/...`}
+            className="min-h-[140px] text-sm font-mono"
             autoFocus
           />
           <p className="text-[11px] text-muted-foreground">
-            Todos os voluntários escalados neste horário verão e receberão isto no WhatsApp junto com a escala.
+            Todos os voluntários escalados neste horário verão o repertório aqui no app e receberão os links no WhatsApp junto com a escala — fácil de copiar e ensaiar.
           </p>
           <div className="flex justify-end gap-2">
             <Button
