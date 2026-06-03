@@ -581,8 +581,8 @@ export default function Department() {
 
         <main className="container mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 max-w-7xl transition-all duration-200">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
-          {/* TabsList only for non-leaders (members) - leaders use sidebar navigation, coordinators see schedules only */}
-          {!isLeader && !isCoordinator && (
+          {/* TabsList shown for members and leaders (coordinators see schedules only) */}
+          {!isCoordinator && (
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <TabsList className="bg-muted/50 self-start w-full sm:w-auto overflow-x-auto">
                 <TabsTrigger 
@@ -592,13 +592,15 @@ export default function Department() {
                   <Calendar className="w-4 h-4" />
                   <span className="hidden xs:inline">Escalas</span>
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="availability" 
-                  className="gap-2 click-scale selection-glow data-[state=active]:gradient-vibrant data-[state=active]:text-white data-[state=active]:shadow-glow-sm transition-all"
-                >
-                  <Clock className="w-4 h-4" />
-                  <span className="hidden xs:inline">Disponibilidade</span>
-                </TabsTrigger>
+                {!isLeader && (
+                  <TabsTrigger 
+                    value="availability" 
+                    className="gap-2 click-scale selection-glow data-[state=active]:gradient-vibrant data-[state=active]:text-white data-[state=active]:shadow-glow-sm transition-all"
+                  >
+                    <Clock className="w-4 h-4" />
+                    <span className="hidden xs:inline">Disponibilidade</span>
+                  </TabsTrigger>
+                )}
                 <TabsTrigger 
                   value="announcements" 
                   className="gap-2 click-scale selection-glow data-[state=active]:gradient-vibrant data-[state=active]:text-white data-[state=active]:shadow-glow-sm transition-all relative"
