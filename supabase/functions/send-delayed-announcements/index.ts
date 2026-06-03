@@ -42,6 +42,23 @@ serve(async (req: Request): Promise<Response> => {
 
     for (const announcement of pendingAnnouncements) {
       try {
+        // ATOMIC CLAIM: mark as notified BEFORE sending so concurrent cron runs
+        // (every minute) don't pick up the same announcement while the batch is
+        // still in progress (batches can take many minutes due to random delays).
+        const { data: claimed, error: claimErr } = await supabaseAdmin
+          .from("department_announcements")
+          .update({ whatsapp_notified: true })
+          .eq("id", announcement.id)
+          .eq("whatsapp_notified", false)
+          .select("id")
+          .maybeSingle();
+
+        if (claimErr || !claimed) {
+          // Already claimed by another concurrent run — skip.
+          console.log(`Announcement ${announcement.id} already claimed, skipping.`);
+          continue;
+        }
+
         // Get department name
         const { data: dept } = await supabaseAdmin
           .from("departments")
@@ -67,8 +84,16 @@ serve(async (req: Request): Promise<Response> => {
             .select("id, name, whatsapp")
             .in("id", memberIds);
 
+          // Dedupe by phone in case the same number appears twice
+          const seenPhones = new Set<string>();
           const recipients = (profiles || [])
-            .filter((p: any) => p.whatsapp)
+            .filter((p: any) => {
+              if (!p.whatsapp) return false;
+              const key = String(p.whatsapp).replace(/\D/g, "");
+              if (!key || seenPhones.has(key)) return false;
+              seenPhones.add(key);
+              return true;
+            })
             .map((p: any) => ({
               phone: p.whatsapp,
               message: buildAnnouncementMessage({
@@ -85,12 +110,6 @@ serve(async (req: Request): Promise<Response> => {
             console.log(`Announcement ${announcement.id}: ${result.sent}/${recipients.length} WhatsApp sent`);
           }
         }
-
-        // Mark as notified
-        await supabaseAdmin
-          .from("department_announcements")
-          .update({ whatsapp_notified: true })
-          .eq("id", announcement.id);
       } catch (err) {
         console.error(`Error processing announcement ${announcement.id}:`, err);
       }
