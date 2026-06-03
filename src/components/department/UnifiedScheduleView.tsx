@@ -37,6 +37,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import EditScheduleDialog from '@/components/department/EditScheduleDialog';
+import SlotNotesEditor from '@/components/department/SlotNotesEditor';
 import { createExtendedMemberColorMap, getMemberColor, getMemberBackgroundStyle } from '@/lib/memberColors';
 import {
   format,
