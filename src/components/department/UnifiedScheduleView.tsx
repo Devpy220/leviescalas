@@ -37,6 +37,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import EditScheduleDialog from '@/components/department/EditScheduleDialog';
+import SlotNotesEditor from '@/components/department/SlotNotesEditor';
 import { createExtendedMemberColorMap, getMemberColor, getMemberBackgroundStyle } from '@/lib/memberColors';
 import {
   format,
@@ -356,6 +357,8 @@ export default function UnifiedScheduleView({
             <SlotCard
               group={group}
               isLeader={isLeader && !readOnly}
+              currentUserId={currentUserId}
+              departmentId={departmentId}
               getMemberColorValue={getMemberColorValue}
               getMemberBgStyle={getMemberBgStyle}
               onAddSchedule={onAddSchedule}
@@ -464,6 +467,8 @@ export default function UnifiedScheduleView({
 interface SlotCardProps {
   group: SlotGroup;
   isLeader: boolean;
+  currentUserId: string;
+  departmentId: string;
   getMemberColorValue: (userId: string) => { bg: string; dot: string };
   getMemberBgStyle: (userId: string) => React.CSSProperties;
   onAddSchedule: (date?: Date) => void;
@@ -474,6 +479,8 @@ interface SlotCardProps {
 function SlotCard({
   group,
   isLeader,
+  currentUserId,
+  departmentId,
   getMemberColorValue,
   getMemberBgStyle,
   onAddSchedule,
@@ -482,7 +489,10 @@ function SlotCard({
 }: SlotCardProps) {
   const { date, slotInfo, schedules } = group;
   const isCurrentDay = isToday(date);
-  
+  const userIsScheduled = schedules.some(s => s.user_id === currentUserId);
+  const canEditNotes = isLeader || userIsScheduled;
+  const dateStr = format(date, 'yyyy-MM-dd');
+
   return (
     <Card className={cn(
       "overflow-hidden transition-all h-fit",
@@ -533,6 +543,17 @@ function SlotCard({
               onDelete={onDelete}
             />
           ))}
+        </div>
+
+        {/* Repertório de Hoje / Observações do slot */}
+        <div className="pt-3 mt-3 border-t border-border/50">
+          <SlotNotesEditor
+            departmentId={departmentId}
+            date={dateStr}
+            timeStart={slotInfo.timeStart}
+            timeEnd={slotInfo.timeEnd}
+            canEdit={canEditNotes}
+          />
         </div>
       </CardContent>
     </Card>
