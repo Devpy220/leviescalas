@@ -29,9 +29,6 @@ function sanitizeFileName(name: string) {
   return name.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80);
 }
-import { cn } from '@/lib/utils';
-import { getYouTubeEmbedUrl, getYouTubeThumbnail } from '@/lib/youtube';
-import CipherViewer from './CipherViewer';
 
 type TipoRep = 'musica' | 'video' | 'cifra' | 'documento' | 'link';
 
