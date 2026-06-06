@@ -15,8 +15,20 @@ import {
 import { toast } from 'sonner';
 import {
   Music, Video, FileText, FileBox, LinkIcon, Plus, Search,
-  ExternalLink, Pencil, Trash2, Music2, X,
+  ExternalLink, Pencil, Trash2, Music2, X, Youtube, Upload, Loader2,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { getYouTubeEmbedUrl, getYouTubeThumbnail } from '@/lib/youtube';
+import CipherViewer from './CipherViewer';
+
+function youtubeSearchUrl(q: string) {
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
+}
+
+function sanitizeFileName(name: string) {
+  return name.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80);
+}
 import { cn } from '@/lib/utils';
 import { getYouTubeEmbedUrl, getYouTubeThumbnail } from '@/lib/youtube';
 import CipherViewer from './CipherViewer';
