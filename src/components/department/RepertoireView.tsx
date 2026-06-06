@@ -417,7 +417,19 @@ function RepertoireFormDialog({ open, onClose, departmentId, currentUserId, edit
           </div>
 
           <div className="space-y-2">
-            <Label>Título *</Label>
+            <Label className="flex items-center justify-between">
+              <span>Título *</span>
+              {titulo.trim() && (
+                <a
+                  href={youtubeSearchUrl(titulo)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[11px] text-rose-600 hover:underline"
+                >
+                  <Youtube className="w-3 h-3" /> Buscar no YouTube
+                </a>
+              )}
+            </Label>
             <Input value={titulo} onChange={e => setTitulo(e.target.value)} placeholder="Ex: Em Espírito, em Verdade" />
           </div>
 
@@ -426,13 +438,42 @@ function RepertoireFormDialog({ open, onClose, departmentId, currentUserId, edit
             <Input
               value={url}
               onChange={e => setUrl(e.target.value)}
-              placeholder="Cole aqui qualquer link (YouTube, Drive, Spotify, PDF, site...)"
+              placeholder="YouTube, Spotify, Deezer, Apple Music, YouTube Music, Drive, PDF..."
               inputMode="url"
               type="url"
             />
             <p className="text-xs text-muted-foreground">
-              Aceita qualquer link. Se for do YouTube, o vídeo será exibido automaticamente no card.
+              Aceita qualquer link de streaming, vídeo ou documento. Se for do YouTube, o vídeo já aparece no card.
             </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <FileText className="w-4 h-4" /> PDF da cifra / partitura
+            </Label>
+            {pdfUrl ? (
+              <div className="flex items-center gap-2 rounded-md border bg-muted/30 px-2.5 py-1.5 text-xs">
+                <FileText className="w-4 h-4 text-violet-500 shrink-0" />
+                <a href={pdfUrl} target="_blank" rel="noopener noreferrer" className="truncate flex-1 text-primary hover:underline">
+                  Ver PDF atual
+                </a>
+                <Button type="button" size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setPdfUrl('')}>
+                  <X className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            ) : (
+              <Button type="button" variant="outline" className="w-full gap-2" onClick={() => pdfInputRef.current?.click()} disabled={uploadingPdf}>
+                {uploadingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                {uploadingPdf ? 'Enviando...' : 'Enviar PDF'}
+              </Button>
+            )}
+            <input
+              ref={pdfInputRef}
+              type="file"
+              accept="application/pdf,image/*"
+              className="hidden"
+              onChange={handlePdfUpload}
+            />
           </div>
 
           {showTom && (
