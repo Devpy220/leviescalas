@@ -240,6 +240,18 @@ export default function RepertoireView({ departmentId, isLeader, currentUserId }
                         </a>
                       </Button>
                     )}
+                    <Button asChild size="sm" variant="outline" className="gap-1.5 text-rose-600 border-rose-200 hover:bg-rose-50 dark:border-rose-900 dark:hover:bg-rose-950/30">
+                      <a href={youtubeSearchUrl(item.titulo)} target="_blank" rel="noopener noreferrer">
+                        <Youtube className="w-3.5 h-3.5" /> Buscar YouTube
+                      </a>
+                    </Button>
+                    {item.pdf_url && (
+                      <Button asChild size="sm" variant="outline" className="gap-1.5">
+                        <a href={item.pdf_url} target="_blank" rel="noopener noreferrer">
+                          <FileText className="w-3.5 h-3.5" /> PDF
+                        </a>
+                      </Button>
+                    )}
                     {item.cifra && (
                       <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setCifraView(item)}>
                         <Music2 className="w-3.5 h-3.5" /> Ver cifra
