@@ -473,6 +473,9 @@ export default function EditScheduleDialog({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Nenhuma</SelectItem>
+                  <SelectItem value="on_duty">🚗 Plantão</SelectItem>
+                  <SelectItem value="participant">⛪ Culto</SelectItem>
+                  <SelectItem value="worship_minister">🎤 Ministro de Louvor</SelectItem>
                   {assignmentRoles.map(r => (
                     <SelectItem key={r.id} value={r.id}>
                       <span>{r.icon} {r.name}</span>
