@@ -483,18 +483,9 @@ export default function EditScheduleDialog({
             </div>
           )}
 
-          {/* Setlist (Músicas da Escala) */}
+          {/* Repertório de Hoje (setlist + anexos + observações) */}
           <div className="pt-2 border-t">
-            <ScheduleSetlistManager
-              scheduleId={schedule.id}
-              departmentId={departmentId}
-              canEdit
-            />
-          </div>
-
-          {/* Observações / Links compartilhados do horário */}
-          <div className="pt-2 border-t">
-            <SlotNotesEditor
+            <SlotRepertoireEditor
               departmentId={departmentId}
               date={schedule.date}
               timeStart={schedule.time_start}
