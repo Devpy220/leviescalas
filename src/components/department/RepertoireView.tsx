@@ -369,6 +369,31 @@ function RepertoireFormDialog({ open, onClose, departmentId, currentUserId, edit
     setSaving(false);
   };
 
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error('PDF muito grande (máx 15MB)');
+      return;
+    }
+    setUploadingPdf(true);
+    const path = `${departmentId}/${Date.now()}_${sanitizeFileName(file.name)}`;
+    const { error: upErr } = await supabase.storage.from('repertoire-files').upload(path, file, {
+      cacheControl: '3600', upsert: false,
+    });
+    if (upErr) {
+      setUploadingPdf(false);
+      toast.error(upErr.message || 'Erro no upload');
+      return;
+    }
+    const { data: pub } = supabase.storage.from('repertoire-files').getPublicUrl(path);
+    setPdfUrl(pub.publicUrl);
+    setUploadingPdf(false);
+    if (pdfInputRef.current) pdfInputRef.current.value = '';
+    toast.success('PDF enviado');
+  };
+
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
