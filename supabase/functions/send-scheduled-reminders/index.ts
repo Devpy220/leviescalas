@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendWhatsAppBatch, scheduleBatch, type WhatsAppRecipient } from "../_shared/whatsapp-queue.ts";
 import { pickVariant, GREETINGS, CLOSINGS, REMINDER_EMOJIS, INSTAGRAM_LINK } from "../_shared/messageVariants.ts";
-import { fetchSetlistBlock } from "../_shared/setlistMessage.ts";
+
 import { fetchSlotNotesBlock } from "../_shared/slotNotesMessage.ts";
 
 const corsHeaders = {
