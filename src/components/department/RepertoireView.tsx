@@ -317,6 +317,9 @@ function RepertoireFormDialog({ open, onClose, departmentId, currentUserId, edit
   const [tags, setTags] = useState<string[]>(editing?.tags || []);
   const [tagInput, setTagInput] = useState('');
   const [observacoes, setObservacoes] = useState(editing?.observacoes || '');
+  const [pdfUrl, setPdfUrl] = useState<string>(editing?.pdf_url || '');
+  const [uploadingPdf, setUploadingPdf] = useState(false);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
 
   const showTom = tipo === 'musica';
