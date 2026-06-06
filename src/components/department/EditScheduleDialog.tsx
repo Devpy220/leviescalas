@@ -32,8 +32,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import ScheduleSetlistManager from './ScheduleSetlistManager';
-import SlotNotesEditor from './SlotNotesEditor';
+import SlotRepertoireEditor from './SlotRepertoireEditor';
+import { REPERTOIRE_EDIT_ROLES } from '@/lib/constants';
 interface Schedule {
   id: string;
   user_id: string;
