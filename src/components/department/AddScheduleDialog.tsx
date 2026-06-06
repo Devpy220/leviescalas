@@ -970,6 +970,9 @@ export default function AddScheduleDialog({
                   <SelectItem value="participant">
                     {ASSIGNMENT_ROLES.participant.icon} {ASSIGNMENT_ROLES.participant.label}
                   </SelectItem>
+                  <SelectItem value="worship_minister">
+                    {ASSIGNMENT_ROLES.worship_minister.icon} {ASSIGNMENT_ROLES.worship_minister.label}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
