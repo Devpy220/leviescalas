@@ -716,15 +716,18 @@ export default function MySchedules() {
                       })}
                     </div>
                     
-                    {/* Observações / Links do horário (visível p/ todos do slot, editável p/ escalados) */}
+                    {/* Repertório de Hoje (setlist + anexos + observações) */}
                     {groupSchedules[0] && (
                       <div className="pt-3 mt-3 border-t border-border/50">
-                        <SlotNotesEditor
+                        <SlotRepertoireEditor
                           departmentId={groupSchedules[0].department_id}
                           date={groupSchedules[0].date}
                           timeStart={groupSchedules[0].time_start}
                           timeEnd={groupSchedules[0].time_end}
-                          canEdit={!!userScheduleInSlot}
+                          canEdit={
+                            !!userScheduleInSlot?.assignment_role
+                            && REPERTOIRE_EDIT_ROLES.includes(userScheduleInSlot.assignment_role as any)
+                          }
                         />
                       </div>
                     )}
