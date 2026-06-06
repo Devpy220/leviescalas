@@ -37,7 +37,8 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import EditScheduleDialog from '@/components/department/EditScheduleDialog';
-import SlotNotesEditor from '@/components/department/SlotNotesEditor';
+import SlotRepertoireEditor from '@/components/department/SlotRepertoireEditor';
+import { REPERTOIRE_EDIT_ROLES } from '@/lib/constants';
 import { createExtendedMemberColorMap, getMemberColor, getMemberBackgroundStyle } from '@/lib/memberColors';
 import {
   format,
@@ -489,8 +490,11 @@ function SlotCard({
 }: SlotCardProps) {
   const { date, slotInfo, schedules } = group;
   const isCurrentDay = isToday(date);
-  const userIsScheduled = schedules.some(s => s.user_id === currentUserId);
-  const canEditNotes = isLeader || userIsScheduled;
+  const userScheduleInSlot = schedules.find(s => s.user_id === currentUserId);
+  const userIsScheduled = !!userScheduleInSlot;
+  const userIsWorshipMinister = !!userScheduleInSlot?.assignment_role
+    && REPERTOIRE_EDIT_ROLES.includes(userScheduleInSlot.assignment_role as any);
+  const canEditRepertoire = isLeader || userIsWorshipMinister;
   const dateStr = format(date, 'yyyy-MM-dd');
 
   return (
@@ -545,14 +549,14 @@ function SlotCard({
           ))}
         </div>
 
-        {/* Repertório de Hoje / Observações do slot */}
+        {/* Repertório de Hoje (setlist + anexos + observações) */}
         <div className="pt-3 mt-3 border-t border-border/50">
-          <SlotNotesEditor
+          <SlotRepertoireEditor
             departmentId={departmentId}
             date={dateStr}
             timeStart={slotInfo.timeStart}
             timeEnd={slotInfo.timeEnd}
-            canEdit={canEditNotes}
+            canEdit={canEditRepertoire}
           />
         </div>
       </CardContent>

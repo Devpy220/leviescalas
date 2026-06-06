@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,11 +15,20 @@ import {
 import { toast } from 'sonner';
 import {
   Music, Video, FileText, FileBox, LinkIcon, Plus, Search,
-  ExternalLink, Pencil, Trash2, Music2, X,
+  ExternalLink, Pencil, Trash2, Music2, X, Youtube, Upload, Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getYouTubeEmbedUrl, getYouTubeThumbnail } from '@/lib/youtube';
 import CipherViewer from './CipherViewer';
+
+function youtubeSearchUrl(q: string) {
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
+}
+
+function sanitizeFileName(name: string) {
+  return name.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80);
+}
 
 type TipoRep = 'musica' | 'video' | 'cifra' | 'documento' | 'link';
 
@@ -34,6 +43,7 @@ interface RepItem {
   bpm: number | null;
   tags: string[] | null;
   observacoes: string | null;
+  pdf_url: string | null;
   criado_por: string;
   criado_em: string;
   ativo: boolean;
@@ -230,6 +240,18 @@ export default function RepertoireView({ departmentId, isLeader, currentUserId }
                         </a>
                       </Button>
                     )}
+                    <Button asChild size="sm" variant="outline" className="gap-1.5 text-rose-600 border-rose-200 hover:bg-rose-50 dark:border-rose-900 dark:hover:bg-rose-950/30">
+                      <a href={youtubeSearchUrl(item.titulo)} target="_blank" rel="noopener noreferrer">
+                        <Youtube className="w-3.5 h-3.5" /> Buscar YouTube
+                      </a>
+                    </Button>
+                    {item.pdf_url && (
+                      <Button asChild size="sm" variant="outline" className="gap-1.5">
+                        <a href={item.pdf_url} target="_blank" rel="noopener noreferrer">
+                          <FileText className="w-3.5 h-3.5" /> PDF
+                        </a>
+                      </Button>
+                    )}
                     {item.cifra && (
                       <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setCifraView(item)}>
                         <Music2 className="w-3.5 h-3.5" /> Ver cifra
@@ -295,6 +317,9 @@ function RepertoireFormDialog({ open, onClose, departmentId, currentUserId, edit
   const [tags, setTags] = useState<string[]>(editing?.tags || []);
   const [tagInput, setTagInput] = useState('');
   const [observacoes, setObservacoes] = useState(editing?.observacoes || '');
+  const [pdfUrl, setPdfUrl] = useState<string>(editing?.pdf_url || '');
+  const [uploadingPdf, setUploadingPdf] = useState(false);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
 
   const showTom = tipo === 'musica';
@@ -324,6 +349,7 @@ function RepertoireFormDialog({ open, onClose, departmentId, currentUserId, edit
       cifra: showCifra ? (cifra.trim() || null) : null,
       tags,
       observacoes: observacoes.trim() || null,
+      pdf_url: pdfUrl.trim() || null,
     };
 
     let error;
@@ -342,6 +368,31 @@ function RepertoireFormDialog({ open, onClose, departmentId, currentUserId, edit
     }
     setSaving(false);
   };
+
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error('PDF muito grande (máx 15MB)');
+      return;
+    }
+    setUploadingPdf(true);
+    const path = `${departmentId}/${Date.now()}_${sanitizeFileName(file.name)}`;
+    const { error: upErr } = await supabase.storage.from('repertoire-files').upload(path, file, {
+      cacheControl: '3600', upsert: false,
+    });
+    if (upErr) {
+      setUploadingPdf(false);
+      toast.error(upErr.message || 'Erro no upload');
+      return;
+    }
+    const { data: pub } = supabase.storage.from('repertoire-files').getPublicUrl(path);
+    setPdfUrl(pub.publicUrl);
+    setUploadingPdf(false);
+    if (pdfInputRef.current) pdfInputRef.current.value = '';
+    toast.success('PDF enviado');
+  };
+
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -366,7 +417,19 @@ function RepertoireFormDialog({ open, onClose, departmentId, currentUserId, edit
           </div>
 
           <div className="space-y-2">
-            <Label>Título *</Label>
+            <Label className="flex items-center justify-between">
+              <span>Título *</span>
+              {titulo.trim() && (
+                <a
+                  href={youtubeSearchUrl(titulo)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[11px] text-rose-600 hover:underline"
+                >
+                  <Youtube className="w-3 h-3" /> Buscar no YouTube
+                </a>
+              )}
+            </Label>
             <Input value={titulo} onChange={e => setTitulo(e.target.value)} placeholder="Ex: Em Espírito, em Verdade" />
           </div>
 
@@ -375,13 +438,42 @@ function RepertoireFormDialog({ open, onClose, departmentId, currentUserId, edit
             <Input
               value={url}
               onChange={e => setUrl(e.target.value)}
-              placeholder="Cole aqui qualquer link (YouTube, Drive, Spotify, PDF, site...)"
+              placeholder="YouTube, Spotify, Deezer, Apple Music, YouTube Music, Drive, PDF..."
               inputMode="url"
               type="url"
             />
             <p className="text-xs text-muted-foreground">
-              Aceita qualquer link. Se for do YouTube, o vídeo será exibido automaticamente no card.
+              Aceita qualquer link de streaming, vídeo ou documento. Se for do YouTube, o vídeo já aparece no card.
             </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <FileText className="w-4 h-4" /> PDF da cifra / partitura
+            </Label>
+            {pdfUrl ? (
+              <div className="flex items-center gap-2 rounded-md border bg-muted/30 px-2.5 py-1.5 text-xs">
+                <FileText className="w-4 h-4 text-violet-500 shrink-0" />
+                <a href={pdfUrl} target="_blank" rel="noopener noreferrer" className="truncate flex-1 text-primary hover:underline">
+                  Ver PDF atual
+                </a>
+                <Button type="button" size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setPdfUrl('')}>
+                  <X className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            ) : (
+              <Button type="button" variant="outline" className="w-full gap-2" onClick={() => pdfInputRef.current?.click()} disabled={uploadingPdf}>
+                {uploadingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                {uploadingPdf ? 'Enviando...' : 'Enviar PDF'}
+              </Button>
+            )}
+            <input
+              ref={pdfInputRef}
+              type="file"
+              accept="application/pdf,image/*"
+              className="hidden"
+              onChange={handlePdfUpload}
+            />
           </div>
 
           {showTom && (

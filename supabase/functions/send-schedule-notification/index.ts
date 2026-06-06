@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { INSTAGRAM_LINK } from "../_shared/messageVariants.ts";
-import { fetchSetlistBlock } from "../_shared/setlistMessage.ts";
+
 import { fetchSlotNotesBlock } from "../_shared/slotNotesMessage.ts";
 
 const corsHeaders = {
@@ -141,11 +141,8 @@ const handler = async (req: Request): Promise<Response> => {
     if (profile.whatsapp) {
       const igLine = `📲 Siga o LEVI no Instagram:\n${INSTAGRAM_LINK}`;
       const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-      const setlistBlock = validationResult.data.schedule_id
-        ? await fetchSetlistBlock(SUPABASE_URL, serviceKey, validationResult.data.schedule_id)
-        : '';
       const slotNotesBlock = await fetchSlotNotesBlock(SUPABASE_URL, serviceKey, department_id, date, time_start, time_end);
-      const extrasBlock = `${setlistBlock}${slotNotesBlock}`;
+      const extrasBlock = slotNotesBlock;
       const whatsappMessage = type === 'new_schedule'
         ? `📅 *Nova Escala — ${department_name}*\n━━━━━━━━━━━━━━━━━━━━\n\nOlá, *${profile.name}*! 👋\n\n📖 _Leia com atenção:_\nVocê foi *escalado(a)* para servir.\n\n━━━━━━━━━━━━━━━━━━━━\n📆 *Data:* ${weekday}, ${dayNum} de ${monthName} de ${year}\n⏰ *Horário:* ${fTimeStart} às ${fTimeEnd}\n${sector_name ? `📍 *Local:* ${sector_name}\n` : ''}${assignment_role_label ? `💼 *Função:* ${assignment_role_label}\n` : ''}━━━━━━━━━━━━━━━━━━━━\n${extrasBlock}\n🙏 Conto com você!\nSe não puder, envie *"troca"* para combinar com um colega.\n\n${igLine}\n\n_LEVI — Escalas Inteligentes_`
         : `⚠️ *Escala Alterada — ${department_name}*\n━━━━━━━━━━━━━━━━━━━━\n\nOlá, *${profile.name}*! 👋\n\n📖 _Leia com atenção:_\nSua escala foi *alterada*. Confira a nova data e horário abaixo.\n\n━━━━━━━━━━━━━━━━━━━━\n📆 *Nova data:* ${weekday}, ${dayNum} de ${monthName} de ${year}\n⏰ *Horário:* ${fTimeStart} às ${fTimeEnd}\n${sector_name ? `📍 *Local:* ${sector_name}\n` : ''}${assignment_role_label ? `💼 *Função:* ${assignment_role_label}\n` : ''}━━━━━━━━━━━━━━━━━━━━\n${extrasBlock}\nSe não puder, envie *"troca"* para combinar com um colega.\n\n${igLine}\n\n_LEVI — Escalas Inteligentes_`;

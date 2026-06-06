@@ -32,8 +32,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import ScheduleSetlistManager from './ScheduleSetlistManager';
-import SlotNotesEditor from './SlotNotesEditor';
+import SlotRepertoireEditor from './SlotRepertoireEditor';
+import { REPERTOIRE_EDIT_ROLES } from '@/lib/constants';
 interface Schedule {
   id: string;
   user_id: string;
@@ -473,6 +473,9 @@ export default function EditScheduleDialog({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Nenhuma</SelectItem>
+                  <SelectItem value="on_duty">🚗 Plantão</SelectItem>
+                  <SelectItem value="participant">⛪ Culto</SelectItem>
+                  <SelectItem value="worship_minister">🎤 Ministro de Louvor</SelectItem>
                   {assignmentRoles.map(r => (
                     <SelectItem key={r.id} value={r.id}>
                       <span>{r.icon} {r.name}</span>
@@ -483,18 +486,9 @@ export default function EditScheduleDialog({
             </div>
           )}
 
-          {/* Setlist (Músicas da Escala) */}
+          {/* Repertório de Hoje (setlist + anexos + observações) */}
           <div className="pt-2 border-t">
-            <ScheduleSetlistManager
-              scheduleId={schedule.id}
-              departmentId={departmentId}
-              canEdit
-            />
-          </div>
-
-          {/* Observações / Links compartilhados do horário */}
-          <div className="pt-2 border-t">
-            <SlotNotesEditor
+            <SlotRepertoireEditor
               departmentId={departmentId}
               date={schedule.date}
               timeStart={schedule.time_start}
