@@ -28,8 +28,8 @@ import { SwapRequestDialog } from '@/components/schedules/SwapRequestDialog';
 import { SwapResponseDialog } from '@/components/schedules/SwapResponseDialog';
 import { PendingSwapBadge } from '@/components/schedules/PendingSwapBadge';
 import MyAvailabilitySheet from '@/components/department/MyAvailabilitySheet';
-import ScheduleSetlistManager from '@/components/department/ScheduleSetlistManager';
-import SlotNotesEditor from '@/components/department/SlotNotesEditor';
+import SlotRepertoireEditor from '@/components/department/SlotRepertoireEditor';
+import { REPERTOIRE_EDIT_ROLES } from '@/lib/constants';
 import {
   DropdownMenu,
   DropdownMenuContent,
