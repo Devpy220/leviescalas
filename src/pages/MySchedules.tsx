@@ -564,23 +564,17 @@ export default function MySchedules() {
                       )}
                     </div>
                     
-                    {/* Setlist - read only */}
+                    {/* Repertório de Hoje (setlist + anexos + observações) */}
                     <div className="pt-3 mt-3 border-t border-border/50">
-                      <ScheduleSetlistManager
-                        scheduleId={schedule.id}
-                        departmentId={schedule.department_id}
-                        canEdit={false}
-                      />
-                    </div>
-
-                    {/* Observações / Links do horário (compartilhado entre escalados) */}
-                    <div className="pt-3 mt-3 border-t border-border/50">
-                      <SlotNotesEditor
+                      <SlotRepertoireEditor
                         departmentId={schedule.department_id}
                         date={schedule.date}
                         timeStart={schedule.time_start}
                         timeEnd={schedule.time_end}
-                        canEdit
+                        canEdit={
+                          !!schedule.assignment_role
+                          && REPERTOIRE_EDIT_ROLES.includes(schedule.assignment_role as any)
+                        }
                       />
                     </div>
 
