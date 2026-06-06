@@ -43,6 +43,7 @@ interface RepItem {
   bpm: number | null;
   tags: string[] | null;
   observacoes: string | null;
+  pdf_url: string | null;
   criado_por: string;
   criado_em: string;
   ativo: boolean;
