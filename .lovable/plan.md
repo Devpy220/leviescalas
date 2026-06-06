@@ -1,94 +1,49 @@
+## O que vai mudar
 
-# Coordenador do Departamento (somente leitura)
+### 1. Nova função "Ministro de Louvor"
+Adiciono `worship_minister` em `src/lib/constants.ts` (ao lado de Plantão e Culto). Disponível em todo departamento — quem for marcado nessa função em uma escala ganha permissão de editar o Repertório de Hoje daquela escala.
 
-Novo papel **coordenador** por departamento: acessa apenas a visualização de escalas (datas, horários e nomes escalados), sem editar nada, sem receber WhatsApp/lembretes, sem aparecer em escalas, disponibilidades, avisos ou configurações. Entra via link de convite separado gerado pelo líder. Se já tem conta, só faz login. Se está em mais de 1 departamento (como membro, líder ou coordenador), escolhe qual acessar — já é o fluxo atual do `/dashboard`.
+### 2. Repertório de Hoje (unificado)
+Hoje existem dois blocos separados: **"Repertório de Hoje"** (texto livre + links) e **"Setlist da Escala"** (lista ordenada de músicas com cifra, tom, BPM). Vou juntar tudo em **um único bloco "Repertório de Hoje"** dentro de cada slot do dia, contendo:
 
-## 1. Banco de dados
+- Lista ordenada de músicas (arrastar para reordenar, com tom/BPM/link)
+- Anexos PDF (cifras, ordem do culto) — upload direto no slot
+- Campo livre de observações/links
 
-Nova tabela `department_coordinators` (separada de `members` para não poluir RLS existente e não disparar gatilhos de notificação/escala):
+Quem pode editar:
+- Líder do departamento (sempre)
+- Voluntário escalado naquele slot **com função "Ministro de Louvor"**
+- Demais voluntários escalados: somente leitura
 
-- `id`, `department_id`, `user_id`, `invited_by`, `created_at`
-- Unique `(department_id, user_id)`
-- GRANTs para `authenticated` e `service_role`
-- RLS:
-  - Líder do depto: full manage
-  - Próprio coordenador: SELECT da sua linha
-  - DELETE próprio (sair)
+Editável apenas no slot da escala daquele dia (continua igual — já é por slot).
 
-Nova coluna em `departments`:
-- `coordinator_invite_code text` (gerado on-the-fly via `gen_random_bytes`, separado do `invite_code` de membro)
+Remoção: `ScheduleSetlistManager.tsx`, tabela `escala_repertorio`, edge helper `setlistMessage.ts` (substituído pelo `slotNotesMessage` ampliado).
 
-Funções SECURITY DEFINER:
-- `is_department_coordinator(_user_id, _department_id) returns boolean`
-- `get_my_department_count` → atualizar para incluir coordenadorias
-- `join_department_as_coordinator(code text)` — valida código, insere em `department_coordinators`, retorna `{success, department_id, department_name}`
-- `validate_coordinator_code_secure(code text)` — análogo ao `validate_invite_code_secure`, com rate limit
+### 3. Biblioteca de Repertório (departamento)
+- Botão **"Buscar no YouTube"** ao lado do título da música — abre `youtube.com/results?search_query=<título>` em nova aba
+- Texto de ajuda do campo de link reforça que aceita YouTube, Spotify, Deezer, Apple Music, YouTube Music, Drive, PDF, etc.
+- Upload de **PDF de cifra** direto no item da biblioteca (bucket público `repertoire-files`)
 
-Atualizar policies de leitura para liberar coordenador:
-- `schedules` SELECT: adicionar `OR is_department_coordinator(auth.uid(), department_id)`
-- `members` SELECT (para exibir nomes/avatars nas escalas): idem
-- `assignment_roles` SELECT: idem
-- `sectors` SELECT: idem
-- `departments` (via `get_department_basic`): permitir coordenador
+### 4. Notificação WhatsApp
+A mensagem da escala e os lembretes passam a montar o bloco **"🎤 Repertório de Hoje"** com: lista de músicas + links das cifras (PDF) + observações. Tudo num único bloco copiável.
 
-**Importante**: nenhum policy de INSERT/UPDATE/DELETE será estendido ao coordenador. `get_department_contacts`, `member_availability`, `member_preferences`, `department_announcements`, `notifications`, `member_date_availability` continuam bloqueados.
+## Detalhes técnicos
 
-## 2. Edge functions / notificações
+**Migration:**
+- `slot_notes`: adicionar `setlist jsonb DEFAULT '[]'` (itens `{title, url, tom, bpm, repertorio_id?}`) e `attachments jsonb DEFAULT '[]'` (`{name, url, size}`)
+- `repertorio`: adicionar `pdf_url text`
+- Buckets públicos: `slot-attachments`, `repertoire-files`
+- Drop tabela `escala_repertorio` (não mais usada)
+- Política RLS de `slot_notes` UPDATE/INSERT atualizada: permite ao líder OU a quem está escalado naquele slot com `assignment_role = 'worship_minister'`
 
-Nada novo. Verificações para **excluir coordenadores** dos disparos:
-- `send-scheduled-reminders`, `auto-notify-schedule`, `send-announcement-notification`, `send-blackout-collection-prompt`, swap flow — todos já consultam `members` ou `schedules` por `user_id`. Como coordenador não vira `member` nem aparece em `schedules`, não recebe nada automaticamente. Sem mudança necessária.
+**Frontend:**
+- Renomear `SlotNotesEditor` para `SlotRepertoireEditor` com 3 seções (setlist / anexos / observações)
+- `UnifiedScheduleView` calcula `canEditRepertoire` consultando `assignment_role` do schedule do usuário no slot
+- Remover bloco "Setlist" de `EditScheduleDialog` e da página `MySchedules`
+- `RepertoireView`: botão YouTube + upload PDF
 
-## 3. Frontend
+**Edge functions:**
+- `slotNotesMessage.ts` lê `setlist` + `attachments` + `content` e formata bloco único
+- `send-schedule-notification` e `send-scheduled-reminders` deixam de chamar `fetchSetlistBlock`
 
-**a) Modal de convite (`InviteMemberDialog.tsx`)**
-- Adicionar seletor de papel no topo: `Membro` | `Coordenador` (Tabs ou RadioGroup)
-- Membro → mostra link atual `/join/:invite_code` (sem mudança)
-- Coordenador → mostra link `/join-coordinator/:coordinator_invite_code` com texto explicativo: "Acesso somente leitura às escalas. Não recebe notificações."
-- Botão "Gerar novo link" para regenerar `coordinator_invite_code` (chama RPC)
-
-**b) Nova rota `/join-coordinator/:code` (`JoinCoordinator.tsx`)**
-- Se não autenticado → redireciona a `/auth?redirect=/join-coordinator/:code` (mantém código no retorno)
-- Se autenticado → chama `join_department_as_coordinator`, mostra toast e redireciona ao `/department/:id`
-- Análogo ao `JoinDepartment.tsx`
-
-**c) `useUserDepartments`**
-- Buscar também `department_coordinators` do usuário e adicionar como `role: 'coordinator'`
-- Tipo `UserDepartment.role` passa a aceitar `'leader' | 'member' | 'coordinator'`
-
-**d) Dashboard / DepartmentPicker**
-- Card de departamento mostra badge "Coordenador" quando aplicável
-- Seleção continua igual (já lida com múltiplos depts)
-
-**e) `Department.tsx` (e `DepartmentBySlug.tsx`)**
-- Detectar papel: se coordenador, renderizar apenas `UnifiedScheduleView` em modo somente-leitura
-- Ocultar: sidebar de ações (gerar escala, manual, avisos, membros, disponibilidades, configurações, FABs)
-- Ocultar dropdowns de editar/excluir/troca em cada escala
-- Header mostra badge "Coordenador — somente leitura"
-
-**f) `UnifiedScheduleView` / `EditScheduleDialog` / swap dialogs**
-- Receber prop `readOnly` (default false). Quando true: sem botões de ação, sem clique em escala abrir edição.
-
-**g) `MemberList`, `MyAvailabilitySheet`, `LeaderBlackoutDatesView`, `AnnouncementBoard`, `SmartScheduleDialog`, `AddScheduleDialog`**
-- Não renderizados para coordenador (gated em `Department.tsx`)
-
-## 4. Itens fora de escopo
-
-- Coordenador não conta como assento de assinatura (`update-subscription-quantity` continua olhando `members`)
-- Coordenador não aparece em "Minhas Escalas" (`MySchedules.tsx`) — ele não tem escalas
-- Nenhum envio de WhatsApp/email automático ao convidar (link copiado manualmente, como hoje)
-
-## 5. Arquivos tocados
-
-Migração SQL única (tabela + coluna + funções + policies estendidas).
-
-Código:
-- `src/components/department/InviteMemberDialog.tsx` — seletor de papel + link de coordenador
-- `src/pages/JoinCoordinator.tsx` — **novo**
-- `src/App.tsx` — registrar rota `/join-coordinator/:code`
-- `src/hooks/useUserDepartments.tsx` — incluir coordenadorias
-- `src/pages/Department.tsx` — gate de coordenador + modo readonly
-- `src/pages/DepartmentBySlug.tsx` — idem (resolve slug → id, mesma lógica)
-- `src/components/department/UnifiedScheduleView.tsx` — prop `readOnly`
-- `src/components/Dashboard.tsx` (`src/pages/Dashboard.tsx`) — badge "Coordenador" no card
-
-Sem alterações em edge functions, sem mudanças em fluxos de notificação.
+Sem mudanças em outras telas.
