@@ -349,6 +349,7 @@ function RepertoireFormDialog({ open, onClose, departmentId, currentUserId, edit
       cifra: showCifra ? (cifra.trim() || null) : null,
       tags,
       observacoes: observacoes.trim() || null,
+      pdf_url: pdfUrl.trim() || null,
     };
 
     let error;
