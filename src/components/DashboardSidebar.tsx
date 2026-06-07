@@ -276,9 +276,9 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
         break;
       case 'dept-settings':
         try {
-          const { data: deptData } = await supabase
-            .from('departments')
-            .select('id, name, description, subscription_status, stripe_customer_id, max_blackout_dates, allow_sunday_double')
+          const { data: deptData } = await (supabase as any)
+            .from('departments_safe')
+            .select('id, name, description, subscription_status, max_blackout_dates, allow_sunday_double')
             .eq('id', dept.id)
             .single();
           if (deptData) {

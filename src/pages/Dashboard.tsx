@@ -161,7 +161,7 @@ export default function Dashboard() {
       // Fetch departments where user is leader (leaders have direct SELECT access)
       const { data: leaderDepts, error: leaderError } = await supabase
         .from('departments')
-        .select('*')
+        .select('id, name, description, leader_id, subscription_status, trial_ends_at, created_at, avatar_url, church_id')
         .eq('leader_id', currentUser.id) as any;
 
       if (leaderError) throw leaderError;
@@ -264,7 +264,7 @@ export default function Dashboard() {
         name: d.name,
         description: d.description,
         leader_id: d.leader_id,
-        invite_code: d.invite_code,
+        invite_code: undefined,
         subscription_status: d.subscription_status,
         trial_ends_at: d.trial_ends_at,
         created_at: d.created_at,

@@ -36,7 +36,7 @@ interface DepartmentSettingsDialogProps {
     name: string;
     description: string | null;
     subscription_status: string;
-    stripe_customer_id?: string | null;
+    
     max_blackout_dates?: number;
     allow_sunday_double?: boolean;
   };
