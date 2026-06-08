@@ -68,6 +68,7 @@ const App = () => (
                   {/* Admin area - restricted to leviescalas@gmail.com */}
                   <Route path="/admin-login" element={<Navigate to="/auth?forceLogin=true" replace />} />
                   <Route path="/admin" element={<Admin />} />
+                  <Route path="/admin/whatsapp-logs" element={<WhatsAppLogs />} />
                   
                   {/* Redirects from old login routes */}
                   <Route path="/login" element={<Navigate to="/auth?forceLogin=true" replace />} />
