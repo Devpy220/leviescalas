@@ -20,8 +20,8 @@ const ROLE_LABELS: Record<string, string> = { on_duty: 'Plantão', participant: 
 // Single reminder window: 12h before schedule start.
 // All departments are merged and shuffled into one humanized batch.
 const REMINDER_WINDOWS = [
-  { type: '36h', hoursAhead: 36, label: 'em 36 horas' },
-  { type: '12h', hoursAhead: 12, label: 'em 12 horas' },
+  { type: '18h', hoursAhead: 18, label: 'em 18 horas' },
+  { type: '6h', hoursAhead: 6, label: 'em 6 horas' },
 ];
 
 const WINDOW_MARGIN_MINUTES = 35;
