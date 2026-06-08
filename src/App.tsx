@@ -24,6 +24,7 @@ import JoinCoordinator from "./pages/JoinCoordinator";
 import MySchedules from "./pages/MySchedules";
 import Security from "./pages/Security";
 import Admin from "./pages/Admin";
+import WhatsAppLogs from "./pages/WhatsAppLogs";
 import Payment from "./pages/Payment";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import Churches from "./pages/Churches";
@@ -67,6 +68,7 @@ const App = () => (
                   {/* Admin area - restricted to leviescalas@gmail.com */}
                   <Route path="/admin-login" element={<Navigate to="/auth?forceLogin=true" replace />} />
                   <Route path="/admin" element={<Admin />} />
+                  <Route path="/admin/whatsapp-logs" element={<WhatsAppLogs />} />
                   
                   {/* Redirects from old login routes */}
                   <Route path="/login" element={<Navigate to="/auth?forceLogin=true" replace />} />

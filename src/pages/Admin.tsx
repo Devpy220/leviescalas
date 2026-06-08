@@ -1029,6 +1029,21 @@ export default function Admin() {
           </DialogContent>
         </Dialog>
 
+        {/* WhatsApp logs shortcut */}
+        <Card className="mb-6 border-violet-500/30 bg-gradient-to-br from-violet-500/5 to-transparent">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div>
+                <CardTitle className="text-base">Logs de envio do WhatsApp</CardTitle>
+                <CardDescription className="text-xs">Veja status, erros e horário de cada mensagem enviada via Z-API</CardDescription>
+              </div>
+              <Button asChild size="sm" className="bg-violet-600 hover:bg-violet-700">
+                <a href="/admin/whatsapp-logs">Abrir logs</a>
+              </Button>
+            </div>
+          </CardHeader>
+        </Card>
+
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <Card>

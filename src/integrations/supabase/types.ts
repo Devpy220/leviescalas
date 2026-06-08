@@ -1426,6 +1426,39 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_logs: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: string
+          message: string
+          origin: string | null
+          phone: string
+          status: string
+          zapi_response: Json | null
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          message: string
+          origin?: string | null
+          phone: string
+          status: string
+          zapi_response?: Json | null
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          message?: string
+          origin?: string | null
+          phone?: string
+          status?: string
+          zapi_response?: Json | null
+        }
+        Relationships: []
+      }
       whatsapp_queue: {
         Row: {
           attempts: number
