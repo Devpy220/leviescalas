@@ -198,7 +198,7 @@ function FeatureGrid() {
     {
       icon: Bell,
       title: 'Lembretes Automáticos',
-      desc: 'Avisos escalonados antes da escala — 48h, 24h e no dia.',
+      desc: 'Avisos no WhatsApp 18 horas e 6 horas antes da escala, com efeito de digitação humanizado.',
       color: 'from-indigo-500/15 to-indigo-500/5',
       iconColor: 'text-indigo-600',
     },
