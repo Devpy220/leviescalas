@@ -467,6 +467,65 @@ Retorne APENAS um JSON válido no formato:
       sector_id
     }));
 
+    // ────────────────────────────────────────────────────────────────────────
+    // DETERMINISTIC POST-FILTER — não confia no LLM. Remove qualquer entrada
+    // que viole disponibilidade semanal, blackout, override de data ou
+    // conflito cross-departamento. Antes só validava em prompt.
+    // ────────────────────────────────────────────────────────────────────────
+    const validUserIds = new Set(membersList.map((m: any) => m.user_id));
+    const memberAvailDates = new Map<string, Set<string>>();
+    for (const [uid, dates] of Object.entries(availabilityByMember)) {
+      memberAvailDates.set(uid, new Set(dates));
+    }
+    // Index cross-dept conflicts: key = `${user_id}|${date}` -> intervals
+    const crossConflicts = new Map<string, Array<{ start: string; end: string }>>();
+    for (const s of crossDeptSchedules || []) {
+      const k = `${s.user_id}|${s.date}`;
+      const arr = crossConflicts.get(k) ?? [];
+      arr.push({ start: norm(s.time_start), end: norm(s.time_end) });
+      crossConflicts.set(k, arr);
+    }
+
+    const rejectedLog: string[] = [];
+    const stage1: SuggestedSchedule[] = [];
+    for (const sch of rawSchedules) {
+      if (!validUserIds.has(sch.user_id)) {
+        rejectedLog.push(`${sch.name} ${sch.date}: user_id desconhecido`);
+        continue;
+      }
+      const pref = preferencesMap[sch.user_id];
+      if (pref?.blackout_dates?.includes(sch.date)) {
+        rejectedLog.push(`${sch.name} ${sch.date}: data bloqueada (blackout)`);
+        continue;
+      }
+      const override = dateOverride.get(`${sch.user_id}|${sch.date}`);
+      if (override === false) {
+        rejectedLog.push(`${sch.name} ${sch.date}: marcou indisponível neste dia`);
+        continue;
+      }
+      // Must be in availabilityByMember (which already considers weekly opt-out)
+      const allowedDates = memberAvailDates.get(sch.user_id);
+      if (!allowedDates || !allowedDates.has(sch.date)) {
+        rejectedLog.push(`${sch.name} ${sch.date}: fora da disponibilidade semanal`);
+        continue;
+      }
+      // Cross-dept conflict on overlapping interval
+      const conflicts = crossConflicts.get(`${sch.user_id}|${sch.date}`) ?? [];
+      const ts = norm(sch.time_start);
+      const te = norm(sch.time_end);
+      const hasConflict = conflicts.some(c => c.start < te && c.end > ts);
+      if (hasConflict) {
+        rejectedLog.push(`${sch.name} ${sch.date} ${ts}: conflito em outro departamento`);
+        continue;
+      }
+      stage1.push(sch);
+    }
+
+    if (rejectedLog.length > 0) {
+      console.log(`[smart-schedule] Filtro determinístico removeu ${rejectedLog.length} entrada(s):`);
+      rejectedLog.slice(0, 30).forEach(l => console.log(`  - ${l}`));
+    }
+
     // Enforce Sunday exclusivity: a member cannot be scheduled for both morning and night on the same Sunday
     const sundayMorningSlots = fixed_slots.filter(s => s.dayOfWeek === 0 && s.timeStart < '12:00');
     const sundayNightSlots = fixed_slots.filter(s => s.dayOfWeek === 0 && s.timeStart >= '12:00');
@@ -474,10 +533,9 @@ Retorne APENAS um JSON válido no formato:
     const sundayNightTimes = new Set(sundayNightSlots.map(s => s.timeStart));
 
     const suggestedSchedules: SuggestedSchedule[] = [];
-    // Track who is already scheduled per Sunday date and shift
     const sundayAssignments: Record<string, { morning: Set<string>; night: Set<string> }> = {};
 
-    for (const schedule of rawSchedules) {
+    for (const schedule of stage1) {
       const dateObj = new Date(schedule.date + 'T12:00:00');
       const dayOfWeek = dateObj.getDay();
 
@@ -505,7 +563,7 @@ Retorne APENAS um JSON válido no formato:
       suggestedSchedules.push(schedule);
     }
 
-    console.log('Generated', suggestedSchedules.length, 'schedules (from', rawSchedules.length, 'raw)');
+    console.log('Generated', suggestedSchedules.length, 'schedules (raw', rawSchedules.length, ', after filter', stage1.length, ')');
 
     return new Response(JSON.stringify({
       success: true,
