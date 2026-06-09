@@ -129,7 +129,7 @@ const INSERT_FORBIDDEN_TABLES = [
   { table: "schedules", payload: { user_id: "00000000-0000-0000-0000-000000000001", department_id: "00000000-0000-0000-0000-000000000001", date: "2030-01-01", time_start: "08:00", time_end: "10:00" } },
   { table: "whatsapp_logs", payload: { phone: "0", message: "x", status: "sent" } },
   { table: "notifications", payload: { user_id: "00000000-0000-0000-0000-000000000001", type: "test", message: "x" } },
-  { table: "admin_broadcasts", payload: { title: "x", message: "x", created_by: "00000000-0000-0000-0000-000000000001" } },
+  { table: "admin_broadcasts", payload: { title: "x", message: "x" } },
 ];
 
 for (const { table, payload } of INSERT_FORBIDDEN_TABLES) {
