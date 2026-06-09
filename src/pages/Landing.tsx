@@ -53,7 +53,7 @@ import {
   Music,
   Fingerprint,
   UserCog,
-  EyeOff as EyePrivacy,
+  Lock,
 } from 'lucide-react';
 import { LeviLogo } from '@/components/LeviLogo';
 import { LeviTypewriter } from '@/components/LeviTypewriter';
