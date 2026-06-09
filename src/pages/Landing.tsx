@@ -50,6 +50,10 @@ import {
   HeartHandshake,
   Crown,
   Settings,
+  Music,
+  Fingerprint,
+  UserCog,
+  EyeOff as EyePrivacy,
 } from 'lucide-react';
 import { LeviLogo } from '@/components/LeviLogo';
 import { LeviTypewriter } from '@/components/LeviTypewriter';
