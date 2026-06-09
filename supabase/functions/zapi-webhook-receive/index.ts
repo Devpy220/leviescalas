@@ -46,6 +46,35 @@ export function parseUserResponse(text: string, targetMonth: Date): ParsedRespon
 
   const found = new Set<string>();
 
+  // ── Weekday names: "toda quarta", "todas as terças", "domingos", "segundas"
+  // Expand to ALL matching dates of the target month.
+  const WEEKDAY_MAP: Record<string, number> = {
+    'domingo': 0, 'domingos': 0,
+    'segunda': 1, 'segundas': 1, 'segunda-feira': 1, 'segundas-feiras': 1,
+    'terca': 2, 'terça': 2, 'tercas': 2, 'terças': 2, 'terca-feira': 2, 'terça-feira': 2,
+    'quarta': 3, 'quartas': 3, 'quarta-feira': 3, 'quartas-feiras': 3,
+    'quinta': 4, 'quintas': 4, 'quinta-feira': 4, 'quintas-feiras': 4,
+    'sexta': 5, 'sextas': 5, 'sexta-feira': 5, 'sextas-feiras': 5,
+    'sabado': 6, 'sábado': 6, 'sabados': 6, 'sábados': 6,
+  };
+  const weekdayPattern = /\b(domingos?|segundas?(?:-feiras?)?|ter[cç]as?(?:-feiras?)?|quartas?(?:-feiras?)?|quintas?(?:-feiras?)?|sextas?(?:-feiras?)?|s[áa]bados?)\b/g;
+  let wm: RegExpExecArray | null;
+  const matchedWeekdays = new Set<number>();
+  while ((wm = weekdayPattern.exec(lower)) !== null) {
+    const dow = WEEKDAY_MAP[wm[1]];
+    if (dow !== undefined) matchedWeekdays.add(dow);
+  }
+  if (matchedWeekdays.size > 0) {
+    const lastDay = new Date(tYear, tMonth + 1, 0).getDate();
+    for (let d = 1; d <= lastDay; d++) {
+      const dt = new Date(tYear, tMonth, d);
+      if (dt < today) continue;
+      if (matchedWeekdays.has(dt.getDay())) {
+        found.add(dt.toISOString().slice(0, 10));
+      }
+    }
+  }
+
   const ddmm = /(\b\d{1,2})[\/\-\.](\d{1,2})(?:[\/\-\.](\d{2,4}))?/g;
   let m: RegExpExecArray | null;
   while ((m = ddmm.exec(lower)) !== null) {
@@ -60,7 +89,7 @@ export function parseUserResponse(text: string, targetMonth: Date): ParsedRespon
     found.add(d.toISOString().slice(0, 10));
   }
 
-  const stripped = lower.replace(ddmm, " ");
+  const stripped = lower.replace(ddmm, " ").replace(weekdayPattern, " ");
   const bareDays = stripped.match(/\b(\d{1,2})\b/g) ?? [];
   for (const ds of bareDays) {
     const day = parseInt(ds, 10);
