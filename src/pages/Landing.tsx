@@ -293,6 +293,34 @@ function FeatureGrid() {
       color: 'from-stone-500/15 to-stone-500/5',
       iconColor: 'text-stone-600',
     },
+    {
+      icon: Music,
+      title: 'Repertório e Cifras',
+      desc: 'Líder anexa repertório, links e cifras direto na escala — voluntário recebe tudo no WhatsApp.',
+      color: 'from-purple-500/15 to-purple-500/5',
+      iconColor: 'text-purple-600',
+    },
+    {
+      icon: Fingerprint,
+      title: 'Login Biométrico',
+      desc: 'Entre com Face ID, Touch ID ou digital — sem digitar senha toda vez.',
+      color: 'from-emerald-500/15 to-emerald-500/5',
+      iconColor: 'text-emerald-600',
+    },
+    {
+      icon: UserCog,
+      title: 'Coordenadores Auxiliares',
+      desc: 'Líder convida coordenadores para ajudar a gerenciar a escala sem dar acesso financeiro.',
+      color: 'from-sky-500/15 to-sky-500/5',
+      iconColor: 'text-sky-600',
+    },
+    {
+      icon: Lock,
+      title: 'Privacidade de Contato',
+      desc: 'Cada voluntário decide se telefone e e-mail ficam visíveis para os outros do departamento.',
+      color: 'from-rose-500/15 to-rose-500/5',
+      iconColor: 'text-rose-600',
+    },
   ];
 
   return (
