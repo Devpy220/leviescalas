@@ -180,16 +180,20 @@ Em *${daysLeft} dia(s)* começa *${targetMonthName}* e precisamos saber quando v
 ${linesStr}${moreLine}
 ━━━━━━━━━━━━━━━━━━━━
 
-✍️ *Como responder* (escolha 1 das 3 opções):
+✍️ *Como responder* (escolha 1 das 4 opções):
 
 🔴 *1) BLOQUEAR alguns dias*
    Envie: _bloquear 5/${targetMonth.getMonth() + 1}, 12/${targetMonth.getMonth() + 1}_
 
-🟢 *2) SERVIR APENAS nestes dias*
+📆 *2) BLOQUEAR um dia da semana inteiro*
+   Ex: _bloquear todas as quartas_ ou _bloquear domingos_
+   (bloqueia todas as datas desse dia da semana em ${targetMonthName})
+
+🟢 *3) SERVIR APENAS nestes dias*
    (o restante fica bloqueado)
    Envie: _servir 18/${targetMonth.getMonth() + 1}, 25/${targetMonth.getMonth() + 1}_
 
-✅ *3) LIBERAR todos os dias*
+✅ *4) LIBERAR todos os dias*
    Envie: _nenhum_
    (ou simplesmente não responda)
 ${limitLine}
