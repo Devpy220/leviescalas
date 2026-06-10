@@ -28,7 +28,7 @@ serve(async (req: Request): Promise<Response> => {
 
     const { data: due, error } = await supabase
       .from("whatsapp_queue")
-      .select("id, phone, message, attempts")
+      .select("id, phone, message, attempts, origin")
       .eq("status", "pending")
       .lte("scheduled_for", new Date().toISOString())
       .order("scheduled_for", { ascending: true })
@@ -45,7 +45,7 @@ serve(async (req: Request): Promise<Response> => {
     let failed = 0;
 
     for (let i = 0; i < due.length; i++) {
-      const item = due[i] as { id: string; phone: string; message: string; attempts: number };
+      const item = due[i] as { id: string; phone: string; message: string; attempts: number; origin: string | null };
       try {
         const delayTyping = randomBetween(3, 8);
         const res = await fetch(`${supabaseUrl}/functions/v1/send-whatsapp-notification`, {
@@ -54,7 +54,7 @@ serve(async (req: Request): Promise<Response> => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${serviceRoleKey}`,
           },
-          body: JSON.stringify({ phone: item.phone, message: item.message, delayTyping }),
+          body: JSON.stringify({ phone: item.phone, message: item.message, delayTyping, origin: item.origin }),
         });
         const body = await res.json().catch(() => ({ sent: false }));
         if (body?.sent === true) {
