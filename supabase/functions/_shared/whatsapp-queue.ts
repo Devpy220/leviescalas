@@ -89,12 +89,12 @@ export function scheduleBatch(
   supabaseUrl: string,
   serviceRoleKey: string,
   recipients: WhatsAppRecipient[],
-  opts: BatchOptions & { backgroundThreshold?: number } = {},
+  opts: BatchOptions & { backgroundThreshold?: number; forceQueue?: boolean } = {},
 ): { backgrounded: boolean; queued: boolean; promise: Promise<BatchResult | { queued: number }> } {
   const valid = recipients.filter((r) => r.phone);
 
-  // Large batch -> persist to DB queue, return immediately.
-  if (valid.length > QUEUE_THRESHOLD) {
+  // forceQueue or large batch -> persist to DB queue (durable; survives function shutdown).
+  if (opts.forceQueue || valid.length > QUEUE_THRESHOLD) {
     const promise = enqueueRecipients(supabaseUrl, serviceRoleKey, valid, opts);
     return { backgrounded: true, queued: true, promise };
   }

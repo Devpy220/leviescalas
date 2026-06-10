@@ -173,15 +173,17 @@ const handler = async (req: Request): Promise<Response> => {
           const j = Math.floor(Math.random() * (i + 1));
           [waRecipients[i], waRecipients[j]] = [waRecipients[j], waRecipients[i]];
         }
-        const { backgrounded, promise } = scheduleBatch(supabaseUrl, serviceRoleKey, waRecipients);
-        if (!backgrounded) {
-          const result = await promise;
-          totalSent += result.sent;
-          totalErrors += result.errors;
-        } else {
-          totalSent += waRecipients.length; // queued
-          console.log(`Queued ${waRecipients.length} reminders in background`);
-        }
+        // ALWAYS persist to the durable queue: in-memory background sending was
+        // being killed by the edge function shutdown, silently dropping reminders.
+        const { promise } = scheduleBatch(supabaseUrl, serviceRoleKey, waRecipients, {
+          forceQueue: true,
+          origin: `schedule_reminder_${window.type}`,
+          minDelayMs: 20_000,
+          maxDelayMs: 90_000,
+        });
+        await promise; // enqueue is fast (single insert) — safe to await
+        totalSent += waRecipients.length;
+        console.log(`Enqueued ${waRecipients.length} reminders (${window.type}) to whatsapp_queue`);
       }
     }
 
