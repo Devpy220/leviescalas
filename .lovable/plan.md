@@ -1,49 +1,46 @@
-## O que vai mudar
+## Objetivo
 
-### 1. Nova função "Ministro de Louvor"
-Adiciono `worship_minister` em `src/lib/constants.ts` (ao lado de Plantão e Culto). Disponível em todo departamento — quem for marcado nessa função em uma escala ganha permissão de editar o Repertório de Hoje daquela escala.
+Mudar quando os lembretes do WhatsApp são enviados, conforme o turno da escala:
 
-### 2. Repertório de Hoje (unificado)
-Hoje existem dois blocos separados: **"Repertório de Hoje"** (texto livre + links) e **"Setlist da Escala"** (lista ordenada de músicas com cifra, tom, BPM). Vou juntar tudo em **um único bloco "Repertório de Hoje"** dentro de cada slot do dia, contendo:
 
-- Lista ordenada de músicas (arrastar para reordenar, com tom/BPM/link)
-- Anexos PDF (cifras, ordem do culto) — upload direto no slot
-- Campo livre de observações/links
+| Turno | Critério (horário de início) | Lembretes       |
+| ----- | ---------------------------- | --------------- |
+| Manhã | antes de 12:00               | 15h e 10h antes |
+| Tarde | entre 12:00 e 17:59          | 7h e 3h antes   |
+| Noite | a partir de 18:00            | 10h e 6h antes  |
 
-Quem pode editar:
-- Líder do departamento (sempre)
-- Voluntário escalado naquele slot **com função "Ministro de Louvor"**
-- Demais voluntários escalados: somente leitura
 
-Editável apenas no slot da escala daquele dia (continua igual — já é por slot).
+## Arquivo afetado
 
-Remoção: `ScheduleSetlistManager.tsx`, tabela `escala_repertorio`, edge helper `setlistMessage.ts` (substituído pelo `slotNotesMessage` ampliado).
+`supabase/functions/send-scheduled-reminders/index.ts`
 
-### 3. Biblioteca de Repertório (departamento)
-- Botão **"Buscar no YouTube"** ao lado do título da música — abre `youtube.com/results?search_query=<título>` em nova aba
-- Texto de ajuda do campo de link reforça que aceita YouTube, Spotify, Deezer, Apple Music, YouTube Music, Drive, PDF, etc.
-- Upload de **PDF de cifra** direto no item da biblioteca (bucket público `repertoire-files`)
+## Mudanças
 
-### 4. Notificação WhatsApp
-A mensagem da escala e os lembretes passam a montar o bloco **"🎤 Repertório de Hoje"** com: lista de músicas + links das cifras (PDF) + observações. Tudo num único bloco copiável.
+1. **Substituir** o array `REMINDER_WINDOWS` (hoje só `18h` e `6h` aplicado a tudo) por uma lista que inclui o turno alvo:
+  ```ts
+   const REMINDER_WINDOWS = [
+     // Manhã: 15h e 10h antes
+     { type: '15h_morning', hoursAhead: 15, shift: 'morning' },
+     { type: '10h_morning', hoursAhead: 10, shift: 'morning' },
+     // Tarde: 18h e 6h antes (padrão)
+     { type: '18h_afternoon', hoursAhead: 18, shift: 'afternoon' },
+     { type: '6h_afternoon',  hoursAhead: 6,  shift: 'afternoon' },
+     // Noite: 10h e 6h antes
+     { type: '10h_evening', hoursAhead: 10, shift: 'evening' },
+     { type: '6h_evening',  hoursAhead: 6,  shift: 'evening' },
+   ];
+  ```
+2. **Filtrar `matchingSchedules**` dentro do loop pelo turno do `time_start`:
+  - `morning` → `hour < 12`
+  - `afternoon` → `12 ≤ hour < 18`
+  - `evening` → `hour ≥ 18`
+3. **Idempotência preservada**: `schedule_reminders_sent.reminder_type` continua sendo `window.type`. Como os tipos novos (`15h_morning`, `10h_evening` etc.) são distintos dos antigos (`18h`, `6h`), escalas já notificadas pelo modelo antigo não serão reenviadas — a checagem `.eq('reminder_type', window.type)` cuida disso naturalmente.
+4. **Sem mudança** no formato da mensagem, no enfileiramento (`whatsapp_queue` com `forceQueue: true`), nem no cron — só a regra de quando cada escala entra em cada janela.
+5. **Redeploy** da função `send-scheduled-reminders`.
 
-## Detalhes técnicos
+## O que não muda
 
-**Migration:**
-- `slot_notes`: adicionar `setlist jsonb DEFAULT '[]'` (itens `{title, url, tom, bpm, repertorio_id?}`) e `attachments jsonb DEFAULT '[]'` (`{name, url, size}`)
-- `repertorio`: adicionar `pdf_url text`
-- Buckets públicos: `slot-attachments`, `repertoire-files`
-- Drop tabela `escala_repertorio` (não mais usada)
-- Política RLS de `slot_notes` UPDATE/INSERT atualizada: permite ao líder OU a quem está escalado naquele slot com `assignment_role = 'worship_minister'`
-
-**Frontend:**
-- Renomear `SlotNotesEditor` para `SlotRepertoireEditor` com 3 seções (setlist / anexos / observações)
-- `UnifiedScheduleView` calcula `canEditRepertoire` consultando `assignment_role` do schedule do usuário no slot
-- Remover bloco "Setlist" de `EditScheduleDialog` e da página `MySchedules`
-- `RepertoireView`: botão YouTube + upload PDF
-
-**Edge functions:**
-- `slotNotesMessage.ts` lê `setlist` + `attachments` + `content` e formata bloco único
-- `send-schedule-notification` e `send-scheduled-reminders` deixam de chamar `fetchSetlistBlock`
-
-Sem mudanças em outras telas.
+- Cron continua rodando como hoje.
+- Layout/conteúdo da mensagem do WhatsApp.
+- Lógica de `slot_notes`, swaps, notificações in-app.
+- Outras funções (`send-blackout-collection-prompt`, etc.).
