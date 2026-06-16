@@ -97,7 +97,7 @@ const handler = async (req: Request): Promise<Response> => {
         .eq('reminder_type', window.type);
 
       const alreadySentIds = new Set((alreadySent || []).map(r => r.schedule_id));
-      const pendingSchedules = matchingSchedules.filter(s => !alreadySentIds.has(s.id));
+      const pendingSchedules = matchingSchedules.filter(s => !alreadySentIds.has(s.id) && shiftOf(s.time_start) === window.shift);
       if (!pendingSchedules.length) continue;
 
       const userIds = [...new Set(pendingSchedules.map(s => s.user_id))];
