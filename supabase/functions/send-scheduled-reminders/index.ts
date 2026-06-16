@@ -17,12 +17,26 @@ const MONTHS_SHORT_PT = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago',
 
 const ROLE_LABELS: Record<string, string> = { on_duty: 'Plantão', participant: 'Culto' };
 
-// Single reminder window: 12h before schedule start.
-// All departments are merged and shuffled into one humanized batch.
-const REMINDER_WINDOWS = [
-  { type: '18h', hoursAhead: 18, label: 'em 18 horas' },
-  { type: '6h', hoursAhead: 6, label: 'em 6 horas' },
+// Reminder windows depend on the schedule's shift (time_start):
+//  - morning   (< 12:00): 15h e 10h antes
+//  - afternoon (12:00–17:59): 18h e 6h antes (padrão)
+//  - evening   (>= 18:00): 10h e 6h antes
+type Shift = 'morning' | 'afternoon' | 'evening';
+const REMINDER_WINDOWS: { type: string; hoursAhead: number; shift: Shift }[] = [
+  { type: '15h_morning',   hoursAhead: 15, shift: 'morning' },
+  { type: '10h_morning',   hoursAhead: 10, shift: 'morning' },
+  { type: '18h_afternoon', hoursAhead: 18, shift: 'afternoon' },
+  { type: '6h_afternoon',  hoursAhead: 6,  shift: 'afternoon' },
+  { type: '10h_evening',   hoursAhead: 10, shift: 'evening' },
+  { type: '6h_evening',    hoursAhead: 6,  shift: 'evening' },
 ];
+
+const shiftOf = (timeStart: string): Shift => {
+  const hour = parseInt(timeStart.slice(0, 2), 10);
+  if (hour < 12) return 'morning';
+  if (hour < 18) return 'afternoon';
+  return 'evening';
+};
 
 const WINDOW_MARGIN_MINUTES = 35;
 
