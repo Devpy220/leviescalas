@@ -745,6 +745,14 @@ export default function Department() {
         onSchedulesCreated={fetchSchedules}
       />
 
+      <AiAssistantDialog
+        open={showAiAssistant}
+        onOpenChange={setShowAiAssistant}
+        departmentId={id!}
+        onSchedulesCreated={fetchSchedules}
+      />
+
+
       {/* My Availability Sheet for leaders */}
       <MyAvailabilitySheet 
         departmentId={id!} 
