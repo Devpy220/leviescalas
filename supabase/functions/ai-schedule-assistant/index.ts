@@ -79,21 +79,32 @@ serve(async (req) => {
       });
     }
 
+    // Helper: today in São Paulo TZ
+    const todayBR = () => {
+      const fmt = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit',
+      });
+      return fmt.format(new Date()); // YYYY-MM-DD
+    };
+
     // ============ CHAT MODE ============
     if (intent === 'chat') {
+      const today = todayBR();
       const systemPrompt = `Você é um assistente especialista em montar escalas de voluntários para igrejas (departamento: ${dept.name}).
 
-Ajude o líder a especificar as condições da escala que ele quer gerar. Faça perguntas claras e curtas para entender:
-- Período (mês, próximas semanas, datas específicas)
-- Quais dias e horários incluir
-- Quantas pessoas por slot
-- Regras especiais (evitar pares, priorizar quem está pouco escalado, etc)
+Hoje é ${today} (fuso America/Sao_Paulo). Sempre interprete datas relativas ("amanhã", "essa sexta", "próximo domingo", "esta semana", "próximo mês") a partir desta data.
 
-IMPORTANTE: Você NÃO precisa perguntar sobre bloqueios diários, disponibilidade semanal nem conflitos com outros departamentos — o sistema JÁ respeita isso automaticamente. Apenas confirme as condições do líder.
+Seu papel: extrair do líder as condições da escala que ele quer gerar. Confirme:
+1. **PERÍODO EXATO**: data única, intervalo de datas, semana ou mês — sempre repita as datas resolvidas ("entendi: domingo 22/06 a 28/06").
+2. Quantas pessoas por slot (se diferente do padrão).
+3. Regras especiais (evitar pares, priorizar quem está pouco escalado, etc).
 
-Quando achar que tem condições suficientes, diga claramente: "Posso gerar a escala agora? Se sim, clique em **Gerar escala**." e espere o líder clicar no botão.
+IMPORTANTE:
+- NÃO pergunte sobre bloqueios diários, disponibilidade semanal ou conflitos — o sistema respeita isso automaticamente.
+- Se o líder pedir um dia específico, NÃO assuma o mês inteiro — confirme o dia exato.
+- Quando tiver tudo, diga: "Posso gerar a escala agora? Clique em **Gerar escala**." e pare.
 
-Seja conciso, amigável e use português brasileiro. Use markdown leve.`;
+Seja conciso, amigável, português brasileiro, markdown leve.`;
 
       const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
@@ -136,11 +147,62 @@ Seja conciso, amigável e use português brasileiro. Use markdown leve.`;
     }
 
     // ============ GENERATE MODE ============
-    const { start_date, end_date, slots } = body;
-    if (!start_date || !end_date || !slots || slots.length === 0) {
-      return new Response(JSON.stringify({ error: 'Período e horários são obrigatórios' }), {
+    let { start_date, end_date, slots } = body;
+    if (!slots || slots.length === 0) {
+      return new Response(JSON.stringify({ error: 'Horários (slots) são obrigatórios' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    // Try to extract date range from conversation; fall back to provided defaults
+    const today = todayBR();
+    try {
+      const userTurns = messages.filter(m => m.role === 'user').map(m => m.content).join('\n');
+      if (userTurns.trim().length > 0) {
+        const extractRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'google/gemini-2.5-flash',
+            messages: [
+              {
+                role: 'system',
+                content: `Hoje é ${today} (America/Sao_Paulo). Extraia o intervalo de datas pedido pelo líder. Se ele pediu um único dia, start_date == end_date. Se pediu uma semana, retorne os 7 dias correspondentes. Se pediu o "mês" sem especificar, retorne o mês inteiro. Se NÃO há data explícita ou inferível, retorne null para ambos. Período padrão entre ${start_date || 'null'} e ${end_date || 'null'}.\nResponda APENAS JSON: {"start_date":"YYYY-MM-DD"|null,"end_date":"YYYY-MM-DD"|null}`,
+              },
+              { role: 'user', content: userTurns },
+            ],
+            response_format: { type: 'json_object' },
+          }),
+        });
+        if (extractRes.ok) {
+          const ed = await extractRes.json();
+          const raw = ed.choices?.[0]?.message?.content || '{}';
+          const m = raw.match(/\{[\s\S]*\}/);
+          const parsed = m ? JSON.parse(m[0]) : {};
+          if (parsed.start_date && /^\d{4}-\d{2}-\d{2}$/.test(parsed.start_date)) {
+            start_date = parsed.start_date;
+          }
+          if (parsed.end_date && /^\d{4}-\d{2}-\d{2}$/.test(parsed.end_date)) {
+            end_date = parsed.end_date;
+          }
+          if (start_date && !end_date) end_date = start_date;
+          if (end_date && !start_date) start_date = end_date;
+        }
+      }
+    } catch (e) {
+      console.warn('Date extraction failed, using defaults:', e);
+    }
+
+    if (!start_date || !end_date) {
+      return new Response(JSON.stringify({ error: 'Período não identificado. Diga as datas no chat ou escolha um mês.' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    if (start_date > end_date) {
+      const tmp = start_date; start_date = end_date; end_date = tmp;
     }
 
     // Fetch members
@@ -423,6 +485,8 @@ Retorne APENAS JSON válido neste formato exato:
     return new Response(JSON.stringify({
       schedules,
       reasoning: parsed.reasoning || '',
+      resolved_start_date: start_date,
+      resolved_end_date: end_date,
       stats: {
         total_slots: targetSlots.length,
         slots_with_zero_eligible: targetSlots.filter(s => s.eligible.length === 0).length,

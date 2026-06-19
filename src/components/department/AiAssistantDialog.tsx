@@ -53,12 +53,13 @@ const WELCOME: ChatMessage = {
   role: 'assistant',
   content: `Olá! Sou o assistente de escalas. 👋
 
-Me diga as **condições** que você quer para a escala. Exemplos:
-- *"Escala para o próximo mês inteiro, 3 pessoas por culto"*
-- *"Evite escalar fulano com ciclano no mesmo turno"*
-- *"Prioriza quem está pouco escalado"*
+Me diga **quando** e **as condições** da escala. Exemplos:
+- *"Escala só para o domingo dia 22"*
+- *"Próxima semana, 2 pessoas por culto"*
+- *"O mês inteiro de janeiro, evite escalar fulano com ciclano"*
+- *"Esta sexta-feira à noite"*
 
-Os **bloqueios diários** e **disponibilidade semanal** são respeitados automaticamente — não precisa se preocupar com isso.`,
+Se você não disser uma data, usarei o **mês selecionado** abaixo. Bloqueios diários e disponibilidade semanal são respeitados automaticamente.`,
 };
 
 export default function AiAssistantDialog({ open, onOpenChange, departmentId, onSchedulesCreated }: Props) {
@@ -71,10 +72,11 @@ export default function AiAssistantDialog({ open, onOpenChange, departmentId, on
   const [saving, setSaving] = useState(false);
   const [suggestions, setSuggestions] = useState<SuggestedSchedule[]>([]);
   const [reasoning, setReasoning] = useState('');
+  const [resolvedRange, setResolvedRange] = useState<{ start: string; end: string } | null>(null);
   const [sendNotifications, setSendNotifications] = useState(true);
 
   const [selectedMonth, setSelectedMonth] = useState(() =>
-    format(addMonths(new Date(), 1), 'yyyy-MM')
+    format(new Date(), 'yyyy-MM')
   );
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -156,6 +158,11 @@ export default function AiAssistantDialog({ open, onOpenChange, departmentId, on
       }
       setSuggestions(list);
       setReasoning(data.reasoning || '');
+      setResolvedRange(
+        data.resolved_start_date && data.resolved_end_date
+          ? { start: data.resolved_start_date, end: data.resolved_end_date }
+          : null
+      );
       setStep('review');
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Erro ao gerar', description: e?.message || 'Tente novamente.' });
@@ -240,8 +247,8 @@ export default function AiAssistantDialog({ open, onOpenChange, departmentId, on
     return acc;
   }, {} as Record<string, any[]>);
 
-  const monthOptions = Array.from({ length: 4 }, (_, i) => {
-    const d = addMonths(new Date(), i);
+  const monthOptions = Array.from({ length: 5 }, (_, i) => {
+    const d = addMonths(new Date(), i - 1);
     return { value: format(d, 'yyyy-MM'), label: format(d, 'MMMM yyyy', { locale: ptBR }) };
   });
 
@@ -321,7 +328,7 @@ export default function AiAssistantDialog({ open, onOpenChange, departmentId, on
 
               <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
                 <div className="flex-1 min-w-0">
-                  <Label className="text-xs text-muted-foreground">Mês alvo</Label>
+                  <Label className="text-xs text-muted-foreground">Mês padrão (usado se você não especificar datas no chat)</Label>
                   <Select value={selectedMonth} onValueChange={setSelectedMonth} disabled={generating}>
                     <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -345,6 +352,17 @@ export default function AiAssistantDialog({ open, onOpenChange, departmentId, on
         ) : (
           <>
             <div className="flex-1 overflow-y-auto space-y-3 py-2 -mx-4 px-4 sm:-mx-6 sm:px-6">
+              {resolvedRange && (
+                <Card className="p-3 bg-primary/5 text-xs">
+                  <div className="font-semibold text-foreground">Período gerado</div>
+                  <div className="text-muted-foreground capitalize">
+                    {format(new Date(resolvedRange.start + 'T12:00:00'), "dd 'de' MMM yyyy", { locale: ptBR })}
+                    {resolvedRange.start !== resolvedRange.end && (
+                      <> — {format(new Date(resolvedRange.end + 'T12:00:00'), "dd 'de' MMM yyyy", { locale: ptBR })}</>
+                    )}
+                  </div>
+                </Card>
+              )}
               {reasoning && (
                 <Card className="p-3 bg-muted/40 text-xs text-muted-foreground">
                   <div className="font-semibold mb-1 flex items-center gap-1 text-foreground">
