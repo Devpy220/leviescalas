@@ -953,14 +953,26 @@ export default function Admin() {
                       onClick={() => setShowBroadcastConfirm(true)}
                     >
                       {sendingBroadcast ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                      {sendingBroadcast ? 'Enviando...' : broadcastMode === 'all' ? 'Enviar para todos' : `Enviar para ${selectedRecipients.length} selecionado(s)`}
+                      {sendingBroadcast
+                        ? 'Enviando...'
+                        : broadcastMode === 'all'
+                          ? 'Enviar para todos'
+                          : broadcastMode === 'leaders'
+                            ? `Enviar para ${new Set(departments.map(d => d.leader_id).filter(Boolean)).size} líder(es)`
+                            : `Enviar para ${selectedRecipients.length} selecionado(s)`}
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
                       <AlertDialogTitle>Confirmar envio do comunicado</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Você está prestes a enviar o comunicado <strong>"{broadcastTitle}"</strong> para <strong>{broadcastMode === 'all' ? `${allProfiles.length} usuários` : `${selectedRecipients.length} usuário(s) selecionado(s)`}</strong> via WhatsApp e notificação interna.
+                        Você está prestes a enviar o comunicado <strong>"{broadcastTitle}"</strong> para <strong>{
+                          broadcastMode === 'all'
+                            ? `${allProfiles.length} usuários`
+                            : broadcastMode === 'leaders'
+                              ? `${new Set(departments.map(d => d.leader_id).filter(Boolean)).size} líder(es)`
+                              : `${selectedRecipients.length} usuário(s) selecionado(s)`
+                        }</strong> via WhatsApp e notificação interna.
                         <br /><br />
                         Esta ação não pode ser desfeita.
                       </AlertDialogDescription>
