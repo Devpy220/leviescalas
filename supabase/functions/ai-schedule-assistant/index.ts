@@ -24,6 +24,8 @@ interface RequestBody {
     label: string;
     membersCount: number;
   }>;
+  member_ids_filter?: string[];
+  explicit_dates?: string[]; // YYYY-MM-DD list to restrict generation
 }
 
 const norm = (t?: string) => (t ?? '').slice(0, 5);
