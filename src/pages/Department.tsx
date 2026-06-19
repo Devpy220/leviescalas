@@ -35,6 +35,7 @@ import InviteMemberDialog from '@/components/department/InviteMemberDialog';
 import DepartmentAvatar from '@/components/department/DepartmentAvatar';
 import DepartmentSettingsDialog from '@/components/department/DepartmentSettingsDialog';
 import SmartScheduleDialog from '@/components/department/SmartScheduleDialog';
+import AiAssistantDialog from '@/components/department/AiAssistantDialog';
 import MemberPreferences from '@/components/department/MemberPreferences';
 import LeaderBlackoutDatesView from '@/components/department/LeaderBlackoutDatesView';
 import SlotAvailability from '@/components/department/SlotAvailability';
