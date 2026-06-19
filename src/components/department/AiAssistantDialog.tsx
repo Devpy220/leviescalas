@@ -296,7 +296,7 @@ export default function AiAssistantDialog({ open, onOpenChange, departmentId, on
               ))}
               {sending && (
                 <div className="flex gap-2">
-                  <Avatar className="w-7 h-7"><AvatarFallback className="bg-accent"><Bot className="w-4 h-4" /></AvatarFallback></Avatar>
+                  <Avatar className="w-7 h-7"><AvatarFallback className="bg-accent"><img src="/levi-icon.svg" className="w-4 h-4 rounded-sm animate-pulse" alt="LEVI" /></AvatarFallback></Avatar>
                   <div className="bg-muted rounded-2xl px-3 py-2 text-sm flex items-center gap-2">
                     <Loader2 className="w-3 h-3 animate-spin" /> pensando…
                   </div>
@@ -343,7 +343,7 @@ export default function AiAssistantDialog({ open, onOpenChange, departmentId, on
                   disabled={generating || sending}
                   className="sm:self-end gap-2"
                 >
-                  {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                  {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <img src="/levi-icon.svg" className="w-4 h-4 rounded-sm" alt="LEVI" />}
                   Gerar escala
                 </Button>
               </div>
@@ -366,7 +366,7 @@ export default function AiAssistantDialog({ open, onOpenChange, departmentId, on
               {reasoning && (
                 <Card className="p-3 bg-muted/40 text-xs text-muted-foreground">
                   <div className="font-semibold mb-1 flex items-center gap-1 text-foreground">
-                    <Bot className="w-3 h-3" /> Raciocínio da IA
+                    <img src="/levi-icon.svg" className="w-3 h-3 rounded-sm" alt="LEVI" /> Raciocínio da IA
                   </div>
                   {reasoning}
                 </Card>
