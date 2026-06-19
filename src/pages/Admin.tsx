@@ -840,7 +840,7 @@ export default function Admin() {
                 {/* Mode Toggle */}
                 <div className="space-y-2">
                   <Label>Destinatários</Label>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button
                       variant={broadcastMode === 'all' ? 'default' : 'outline'}
                       size="sm"
@@ -848,6 +848,14 @@ export default function Admin() {
                     >
                       <Users className="w-4 h-4 mr-1" />
                       Todos ({allProfiles.length})
+                    </Button>
+                    <Button
+                      variant={broadcastMode === 'leaders' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => { setBroadcastMode('leaders'); setSelectedRecipients([]); setRecipientSearch(''); }}
+                    >
+                      <Users className="w-4 h-4 mr-1" />
+                      Apenas líderes ({new Set(departments.map(d => d.leader_id).filter(Boolean)).size})
                     </Button>
                     <Button
                       variant={broadcastMode === 'individual' ? 'default' : 'outline'}
