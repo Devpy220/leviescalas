@@ -150,10 +150,22 @@ Seja conciso, amigável, português brasileiro, markdown leve.`;
 
     // ============ GENERATE MODE ============
     let { start_date, end_date, slots } = body;
+    const { member_ids_filter, explicit_dates } = body;
     if (!slots || slots.length === 0) {
       return new Response(JSON.stringify({ error: 'Horários (slots) são obrigatórios' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    // If explicit dates provided, override range with min/max of the list
+    const explicitDateSet = new Set<string>();
+    if (explicit_dates && explicit_dates.length > 0) {
+      explicit_dates.forEach(d => { if (/^\d{4}-\d{2}-\d{2}$/.test(d)) explicitDateSet.add(d); });
+      const sorted = [...explicitDateSet].sort();
+      if (sorted.length > 0) {
+        start_date = sorted[0];
+        end_date = sorted[sorted.length - 1];
+      }
     }
 
     // Try to extract date range from conversation; fall back to provided defaults
