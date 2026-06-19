@@ -485,6 +485,8 @@ Retorne APENAS JSON válido neste formato exato:
     return new Response(JSON.stringify({
       schedules,
       reasoning: parsed.reasoning || '',
+      resolved_start_date: start_date,
+      resolved_end_date: end_date,
       stats: {
         total_slots: targetSlots.length,
         slots_with_zero_eligible: targetSlots.filter(s => s.eligible.length === 0).length,
