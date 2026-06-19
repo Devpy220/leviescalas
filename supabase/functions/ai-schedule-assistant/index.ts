@@ -24,6 +24,8 @@ interface RequestBody {
     label: string;
     membersCount: number;
   }>;
+  member_ids_filter?: string[];
+  explicit_dates?: string[]; // YYYY-MM-DD list to restrict generation
 }
 
 const norm = (t?: string) => (t ?? '').slice(0, 5);
@@ -148,15 +150,29 @@ Seja conciso, amigável, português brasileiro, markdown leve.`;
 
     // ============ GENERATE MODE ============
     let { start_date, end_date, slots } = body;
+    const { member_ids_filter, explicit_dates } = body;
     if (!slots || slots.length === 0) {
       return new Response(JSON.stringify({ error: 'Horários (slots) são obrigatórios' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
+    // If explicit dates provided, override range with min/max of the list
+    const explicitDateSet = new Set<string>();
+    if (explicit_dates && explicit_dates.length > 0) {
+      explicit_dates.forEach(d => { if (/^\d{4}-\d{2}-\d{2}$/.test(d)) explicitDateSet.add(d); });
+      const sorted = [...explicitDateSet].sort();
+      if (sorted.length > 0) {
+        start_date = sorted[0];
+        end_date = sorted[sorted.length - 1];
+      }
+    }
+
     // Try to extract date range from conversation; fall back to provided defaults
+    // Skipped when líder picked explicit dates in the UI.
     const today = todayBR();
     try {
+      if (explicitDateSet.size > 0) throw new Error('skip: explicit dates');
       const userTurns = messages.filter(m => m.role === 'user').map(m => m.content).join('\n');
       if (userTurns.trim().length > 0) {
         const extractRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -213,7 +229,16 @@ Seja conciso, amigável, português brasileiro, markdown leve.`;
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    const membersList = members.map((m: any) => ({ user_id: m.id, name: m.name }));
+    let membersList = members.map((m: any) => ({ user_id: m.id, name: m.name }));
+    if (member_ids_filter && member_ids_filter.length > 0) {
+      const allowed = new Set(member_ids_filter);
+      membersList = membersList.filter(m => allowed.has(m.user_id));
+      if (membersList.length === 0) {
+        return new Response(JSON.stringify({ error: 'Nenhum voluntário selecionado é membro do departamento' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
     const memberIds = membersList.map(m => m.user_id);
 
     // Fetch availability data
@@ -302,6 +327,12 @@ Seja conciso, amigável, português brasileiro, markdown leve.`;
       const d = String(current.getDate()).padStart(2, '0');
       const dateStr = `${y}-${m}-${d}`;
       const dow = current.getDay();
+
+      if (explicitDateSet.size > 0 && !explicitDateSet.has(dateStr)) {
+        current.setDate(current.getDate() + 1);
+        continue;
+      }
+
 
       for (const slot of slots.filter(s => s.dayOfWeek === dow)) {
         const eligible: Array<{ user_id: string; name: string; recent_count: number }> = [];
