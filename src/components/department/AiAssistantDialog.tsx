@@ -322,7 +322,7 @@ export default function AiAssistantDialog({ open, onOpenChange, departmentId, on
 
               <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
                 <div className="flex-1 min-w-0">
-                  <Label className="text-xs text-muted-foreground">Mês alvo</Label>
+                  <Label className="text-xs text-muted-foreground">Mês padrão (usado se você não especificar datas no chat)</Label>
                   <Select value={selectedMonth} onValueChange={setSelectedMonth} disabled={generating}>
                     <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                     <SelectContent>
