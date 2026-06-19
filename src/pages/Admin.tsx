@@ -161,7 +161,7 @@ export default function Admin() {
   const [broadcastHistory, setBroadcastHistory] = useState<any[]>([]);
   const [loadingBroadcasts, setLoadingBroadcasts] = useState(false);
   const [broadcastsExpanded, setBroadcastsExpanded] = useState(false);
-  const [broadcastMode, setBroadcastMode] = useState<'all' | 'individual'>('all');
+  const [broadcastMode, setBroadcastMode] = useState<'all' | 'leaders' | 'individual'>('all');
   const [selectedRecipients, setSelectedRecipients] = useState<string[]>([]);
   const [recipientSearch, setRecipientSearch] = useState('');
 
