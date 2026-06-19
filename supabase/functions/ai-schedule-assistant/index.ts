@@ -29,6 +29,24 @@ interface RequestBody {
 }
 
 const norm = (t?: string) => (t ?? '').slice(0, 5);
+const isYmd = (value?: string | null) => /^\d{4}-\d{2}-\d{2}$/.test(value || '');
+const parseYmdUtc = (value: string) => {
+  if (!isYmd(value)) return null;
+  const [year, month, day] = value.split('-').map(Number);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day
+  ) return null;
+  return parsed;
+};
+const ymdFromUtc = (date: Date) => {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -92,6 +110,12 @@ serve(async (req) => {
     // ============ CHAT MODE ============
     if (intent === 'chat') {
       const today = todayBR();
+      const selectedDates = (body.explicit_dates || [])
+        .filter((date) => parseYmdUtc(date))
+        .sort();
+      const selectedDatesText = selectedDates.length > 0
+        ? `\n\nDatas já selecionadas no calendário: ${selectedDates.join(', ')}. Se houver datas selecionadas, trate estas datas como prioridade absoluta e não substitua por mês inteiro ou outro período.`
+        : '';
       const systemPrompt = `Você é um assistente especialista em montar escalas de voluntários para igrejas (departamento: ${dept.name}).
 
 Hoje é ${today} (fuso America/Sao_Paulo). Sempre interprete datas relativas ("amanhã", "essa sexta", "próximo domingo", "esta semana", "próximo mês") a partir desta data.
@@ -104,9 +128,10 @@ Seu papel: extrair do líder as condições da escala que ele quer gerar. Confir
 IMPORTANTE:
 - NÃO pergunte sobre bloqueios diários, disponibilidade semanal ou conflitos — o sistema respeita isso automaticamente.
 - Se o líder pedir um dia específico, NÃO assuma o mês inteiro — confirme o dia exato.
+- Se o líder selecionou datas no calendário, reconheça exatamente essas datas selecionadas e não tente trocar pelo mês padrão.
 - Quando tiver tudo, diga: "Posso gerar a escala agora? Clique em **Gerar escala**." e pare.
 
-Seja conciso, amigável, português brasileiro, markdown leve.`;
+Seja conciso, amigável, português brasileiro, markdown leve.${selectedDatesText}`;
 
       const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
