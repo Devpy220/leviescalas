@@ -352,6 +352,17 @@ export default function AiAssistantDialog({ open, onOpenChange, departmentId, on
         ) : (
           <>
             <div className="flex-1 overflow-y-auto space-y-3 py-2 -mx-4 px-4 sm:-mx-6 sm:px-6">
+              {resolvedRange && (
+                <Card className="p-3 bg-primary/5 text-xs">
+                  <div className="font-semibold text-foreground">Período gerado</div>
+                  <div className="text-muted-foreground capitalize">
+                    {format(new Date(resolvedRange.start + 'T12:00:00'), "dd 'de' MMM yyyy", { locale: ptBR })}
+                    {resolvedRange.start !== resolvedRange.end && (
+                      <> — {format(new Date(resolvedRange.end + 'T12:00:00'), "dd 'de' MMM yyyy", { locale: ptBR })}</>
+                    )}
+                  </div>
+                </Card>
+              )}
               {reasoning && (
                 <Card className="p-3 bg-muted/40 text-xs text-muted-foreground">
                   <div className="font-semibold mb-1 flex items-center gap-1 text-foreground">
