@@ -229,7 +229,16 @@ Seja conciso, amigável, português brasileiro, markdown leve.`;
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    const membersList = members.map((m: any) => ({ user_id: m.id, name: m.name }));
+    let membersList = members.map((m: any) => ({ user_id: m.id, name: m.name }));
+    if (member_ids_filter && member_ids_filter.length > 0) {
+      const allowed = new Set(member_ids_filter);
+      membersList = membersList.filter(m => allowed.has(m.user_id));
+      if (membersList.length === 0) {
+        return new Response(JSON.stringify({ error: 'Nenhum voluntário selecionado é membro do departamento' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
     const memberIds = membersList.map(m => m.user_id);
 
     // Fetch availability data
