@@ -158,6 +158,11 @@ export default function AiAssistantDialog({ open, onOpenChange, departmentId, on
       }
       setSuggestions(list);
       setReasoning(data.reasoning || '');
+      setResolvedRange(
+        data.resolved_start_date && data.resolved_end_date
+          ? { start: data.resolved_start_date, end: data.resolved_end_date }
+          : null
+      );
       setStep('review');
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Erro ao gerar', description: e?.message || 'Tente novamente.' });
