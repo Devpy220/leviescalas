@@ -241,8 +241,8 @@ export default function AiAssistantDialog({ open, onOpenChange, departmentId, on
     return acc;
   }, {} as Record<string, any[]>);
 
-  const monthOptions = Array.from({ length: 4 }, (_, i) => {
-    const d = addMonths(new Date(), i);
+  const monthOptions = Array.from({ length: 5 }, (_, i) => {
+    const d = addMonths(new Date(), i - 1);
     return { value: format(d, 'yyyy-MM'), label: format(d, 'MMMM yyyy', { locale: ptBR }) };
   });
 
