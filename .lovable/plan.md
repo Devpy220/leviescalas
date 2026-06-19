@@ -1,46 +1,66 @@
-## Objetivo
+# Assistente de Escalas com IA (Chat)
 
-Mudar quando os lembretes do WhatsApp são enviados, conforme o turno da escala:
+Adicionar um novo assistente conversacional para escalas, **sem remover** o gerador atual (Smart Schedule). O líder conversa em linguagem natural, a IA propõe a escala respeitando bloqueios e disponibilidades, e o líder revisa antes de salvar.
 
+## Como funciona
 
-| Turno | Critério (horário de início) | Lembretes       |
-| ----- | ---------------------------- | --------------- |
-| Manhã | antes de 12:00               | 15h e 10h antes |
-| Tarde | entre 12:00 e 17:59          | 7h e 3h antes   |
-| Noite | a partir de 18:00            | 10h e 6h antes  |
+1. Líder abre o novo FAB **"Assistente IA"** (ícone diferente do Sparkles atual, ex: `MessageSquareSparkles`) ao lado dos FABs existentes.
+2. Abre um **drawer/dialog com chat**:
+  - Líder escreve condições em texto livre. Ex:
+    - *"Escala o mês inteiro, 3 pessoas por culto de domingo manhã"*
+    - *"Evita escalar Maria com João no mesmo turno"*
+    - *"Quem está pouco escalado este mês tem prioridade"*
+    - *pode até ser por voz se possivel* 
+  - IA responde, faz perguntas se preciso, e quando o líder confirma, gera a proposta.
+3. **Tela de revisão** (mesma já usada pelo Smart Schedule atual): lista todos os slots propostos com membro + horário + dia. Líder pode:
+  - Trocar membro slot a slot (dropdown com membros disponíveis)
+  - Remover slot
+  - Adicionar slot manual
+  - **Confirmar e salvar** → grava em `schedules` (passa pelos triggers atuais).
+4. Nada é salvo automaticamente.
 
+## Garantias obrigatórias (a IA NÃO pode violar)
 
-## Arquivo afetado
+Antes da IA propor qualquer pessoa em um slot, o backend filtra a lista de candidatos elegíveis e só envia esses para a IA escolher. Filtros:
 
-`supabase/functions/send-scheduled-reminders/index.ts`
+- **Bloqueios de dia** (`member_date_availability` — blackout dates) — exclui totalmente.
+- **Disponibilidade semanal** (`member_availability`) — só elegível se disponível naquele dia/horário.
+- **Conflitos cross-department** (mesmo horário em outro depto) — exclui.
+- **Exclusividade de domingo** (regra `allow_sunday_double`) — exclui se já escalado no outro turno.
+- **Membro já escalado no mesmo slot** — exclui.
 
-## Mudanças
+A IA recebe a lista pré-filtrada + contagem de escalas no mês de cada membro, e escolhe respeitando as condições do líder. Pode **sugerir membros pouco escalados** quando o líder pedir "balancear".
 
-1. **Substituir** o array `REMINDER_WINDOWS` (hoje só `18h` e `6h` aplicado a tudo) por uma lista que inclui o turno alvo:
-  ```ts
-   const REMINDER_WINDOWS = [
-     // Manhã: 15h e 10h antes
-     { type: '15h_morning', hoursAhead: 15, shift: 'morning' },
-     { type: '10h_morning', hoursAhead: 10, shift: 'morning' },
-     // Tarde: 18h e 6h antes (padrão)
-     { type: '18h_afternoon', hoursAhead: 18, shift: 'afternoon' },
-     { type: '6h_afternoon',  hoursAhead: 6,  shift: 'afternoon' },
-     // Noite: 10h e 6h antes
-     { type: '10h_evening', hoursAhead: 10, shift: 'evening' },
-     { type: '6h_evening',  hoursAhead: 6,  shift: 'evening' },
-   ];
-  ```
-2. **Filtrar `matchingSchedules**` dentro do loop pelo turno do `time_start`:
-  - `morning` → `hour < 12`
-  - `afternoon` → `12 ≤ hour < 18`
-  - `evening` → `hour ≥ 18`
-3. **Idempotência preservada**: `schedule_reminders_sent.reminder_type` continua sendo `window.type`. Como os tipos novos (`15h_morning`, `10h_evening` etc.) são distintos dos antigos (`18h`, `6h`), escalas já notificadas pelo modelo antigo não serão reenviadas — a checagem `.eq('reminder_type', window.type)` cuida disso naturalmente.
-4. **Sem mudança** no formato da mensagem, no enfileiramento (`whatsapp_queue` com `forceQueue: true`), nem no cron — só a regra de quando cada escala entra em cada janela.
-5. **Redeploy** da função `send-scheduled-reminders`.
+## Arquivos
 
-## O que não muda
+**Novos:**
 
-- Cron continua rodando como hoje.
-- Layout/conteúdo da mensagem do WhatsApp.
-- Lógica de `slot_notes`, swaps, notificações in-app.
-- Outras funções (`send-blackout-collection-prompt`, etc.).
+- `supabase/functions/ai-schedule-assistant/index.ts` — edge function com:
+  - Conversa multi-turno (recebe histórico de mensagens)
+  - Quando o líder confirma geração: monta contexto (slots fixos do depto, membros, blackouts, disponibilidades, contagem atual de escalas), pré-filtra candidatos elegíveis por slot, chama Lovable AI Gateway (`google/gemini-3-flash-preview`) com tool calling (`Output.object` retornando array de `{date, time_start, time_end, user_id, slot_label}`)
+  - Valida resposta da IA contra os candidatos elegíveis (rejeita qualquer user_id fora da lista) e retorna proposta
+- `src/components/department/AiAssistantDialog.tsx` — drawer com:
+  - Chat (`message.parts`, markdown, scroll automático, textarea com focus)
+  - Estado: `idle` → `chatting` → `generating` → `reviewing`
+  - Tela de revisão reutilizando `SchedulePreviewList` (extrair do `SmartScheduleDialog` se útil, ou inline)
+  - Ao confirmar, faz `supabase.from('schedules').insert([...])` em lote
+
+**Editados:**
+
+- `src/components/department/UnifiedScheduleView.tsx` — adicionar 3º FAB "Assistente IA" abaixo dos 2 existentes
+- `src/pages/Department.tsx` — wire-up do novo dialog
+- `src/i18n/locales/{pt,en,es}.json` — strings do novo assistente
+
+**Não mexer:** `SmartScheduleDialog.tsx`, `generate-smart-schedule`, schema do banco (sem migração nova).
+
+## Modelo & custos
+
+- Lovable AI Gateway, modelo `google/gemini-3-flash-preview` (rápido e barato).
+- `LOVABLE_API_KEY` já existe.
+- Tratar erros 429/402 da gateway com toast claro.
+
+## Fora do escopo
+
+- Salvar histórico de conversas (cada abertura começa nova conversa em memória).
+- Mexer no Smart Schedule existente.
+- Mudar regras de negócio ou banco.
