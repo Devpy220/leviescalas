@@ -328,6 +328,12 @@ Seja conciso, amigável, português brasileiro, markdown leve.`;
       const dateStr = `${y}-${m}-${d}`;
       const dow = current.getDay();
 
+      if (explicitDateSet.size > 0 && !explicitDateSet.has(dateStr)) {
+        current.setDate(current.getDate() + 1);
+        continue;
+      }
+
+
       for (const slot of slots.filter(s => s.dayOfWeek === dow)) {
         const eligible: Array<{ user_id: string; name: string; recent_count: number }> = [];
         for (const m of membersList) {
