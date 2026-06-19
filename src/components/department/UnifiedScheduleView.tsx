@@ -9,7 +9,8 @@ import {
   Users,
   Sparkles,
   Calendar as CalendarIcon,
-  CalendarPlus
+  CalendarPlus,
+  MessageSquareText
 } from 'lucide-react';
 import { ASSIGNMENT_ROLES } from '@/lib/constants';
 import { FIXED_SLOTS, FixedSlot, findSlotByDayAndTime, normalizeTime } from '@/lib/fixedSlots';
