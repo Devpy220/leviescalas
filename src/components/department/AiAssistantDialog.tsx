@@ -345,6 +345,112 @@ export default function AiAssistantDialog({ open, onOpenChange, departmentId, on
                 </Button>
               </div>
 
+              <div className="grid grid-cols-2 gap-2">
+                {/* Members picker */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="justify-start gap-2 h-9 font-normal">
+                      <Users className="w-4 h-4 text-primary" />
+                      <span className="truncate text-xs">
+                        {memberFilter.length === 0
+                          ? 'Todos os voluntários'
+                          : `${memberFilter.length} selecionado(s)`}
+                      </span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-72 p-0" align="start">
+                    <div className="p-2 border-b flex items-center justify-between">
+                      <span className="text-xs font-medium">Filtrar voluntários</span>
+                      {memberFilter.length > 0 && (
+                        <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => setMemberFilter([])}>
+                          Limpar
+                        </Button>
+                      )}
+                    </div>
+                    <ScrollArea className="max-h-64">
+                      <div className="p-2 space-y-1">
+                        {allMembers.map(m => {
+                          const checked = memberFilter.includes(m.user_id);
+                          return (
+                            <label key={m.user_id} className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent cursor-pointer">
+                              <Checkbox
+                                checked={checked}
+                                onCheckedChange={(v) => {
+                                  setMemberFilter(prev =>
+                                    v ? [...prev, m.user_id] : prev.filter(x => x !== m.user_id)
+                                  );
+                                }}
+                              />
+                              <span className="text-sm">{m.name}</span>
+                            </label>
+                          );
+                        })}
+                        {allMembers.length === 0 && (
+                          <p className="text-xs text-muted-foreground px-2 py-1">Sem voluntários</p>
+                        )}
+                      </div>
+                    </ScrollArea>
+                  </PopoverContent>
+                </Popover>
+
+                {/* Calendar */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="justify-start gap-2 h-9 font-normal">
+                      <CalendarDays className="w-4 h-4 text-primary" />
+                      <span className="truncate text-xs">
+                        {explicitDates.length === 0
+                          ? 'Datas (opcional)'
+                          : `${explicitDates.length} dia(s)`}
+                      </span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <div className="p-2 border-b flex items-center justify-between">
+                      <span className="text-xs font-medium">Escolher datas</span>
+                      {explicitDates.length > 0 && (
+                        <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => setExplicitDates([])}>
+                          Limpar
+                        </Button>
+                      )}
+                    </div>
+                    <Calendar
+                      mode="multiple"
+                      selected={explicitDates}
+                      onSelect={(d) => setExplicitDates(d || [])}
+                      locale={ptBR}
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {(memberFilter.length > 0 || explicitDates.length > 0) && (
+                <div className="flex flex-wrap gap-1.5">
+                  {memberFilter.map(id => {
+                    const m = allMembers.find(x => x.user_id === id);
+                    if (!m) return null;
+                    return (
+                      <Badge key={id} variant="secondary" className="gap-1 text-xs">
+                        {m.name}
+                        <button onClick={() => setMemberFilter(prev => prev.filter(x => x !== id))}>
+                          <X className="w-3 h-3" />
+                        </button>
+                      </Badge>
+                    );
+                  })}
+                  {explicitDates.map((d, i) => (
+                    <Badge key={i} variant="outline" className="gap-1 text-xs">
+                      {format(d, "dd/MM", { locale: ptBR })}
+                      <button onClick={() => setExplicitDates(prev => prev.filter((_, idx) => idx !== i))}>
+                        <X className="w-3 h-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+
               <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
                 <div className="flex-1 min-w-0">
                   <Label className="text-xs text-muted-foreground">Mês padrão (usado se você não especificar datas no chat)</Label>
