@@ -162,6 +162,10 @@ export default function AiAssistantDialog({ open, onOpenChange, departmentId, on
           start_date: start,
           end_date: end,
           slots,
+          member_ids_filter: memberFilter.length > 0 ? memberFilter : undefined,
+          explicit_dates: explicitDates.length > 0
+            ? explicitDates.map(d => format(d, 'yyyy-MM-dd'))
+            : undefined,
         },
       });
       if (error) throw error;
