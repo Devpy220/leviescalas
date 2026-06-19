@@ -703,6 +703,12 @@ export default function Admin() {
 
       if (broadcastMode === 'individual' && selectedRecipients.length > 0) {
         body.recipientIds = selectedRecipients;
+      } else if (broadcastMode === 'leaders') {
+        const leaderIds = Array.from(
+          new Set(departments.map(d => d.leader_id).filter(Boolean))
+        );
+        if (leaderIds.length === 0) throw new Error('Nenhum líder encontrado.');
+        body.recipientIds = leaderIds;
       }
 
       const { data, error } = await supabase.functions.invoke('send-admin-broadcast', {
