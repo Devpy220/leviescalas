@@ -51,7 +51,7 @@ interface Props {
 
 const WELCOME: ChatMessage = {
   role: 'assistant',
-  content: `Olá! Sou o assistente de escalas. 👋
+  content: `Olá! Sou o **LEVI**, seu assistente de escalas. 👋
 
 Me diga **quando** e **as condições** da escala. Exemplos:
 - *"Escala só para o domingo dia 22"*
