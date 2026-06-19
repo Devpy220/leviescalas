@@ -280,7 +280,7 @@ export default function AiAssistantDialog({ open, onOpenChange, departmentId, on
                 <div key={i} className={`flex gap-2 ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
                   <Avatar className="w-7 h-7 shrink-0">
                     <AvatarFallback className={m.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-accent'}>
-                      {m.role === 'user' ? <UserIcon className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                      {m.role === 'user' ? <UserIcon className="w-4 h-4" /> : <img src="/levi-icon.svg" className="w-4 h-4 rounded-sm animate-pulse" alt="LEVI" />}
                     </AvatarFallback>
                   </Avatar>
                   <div className={`rounded-2xl px-3 py-2 text-sm max-w-[80%] ${
