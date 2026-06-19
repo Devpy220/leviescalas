@@ -1,0 +1,1 @@
+ALTER PUBLICATION supabase_realtime SET TABLE public.schedules (id, department_id, user_id, date, time_start, time_end, notes, created_by, created_at, updated_at, sector_id, confirmation_status, confirmed_at, decline_reason, assignment_role);
