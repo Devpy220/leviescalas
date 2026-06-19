@@ -185,7 +185,7 @@ Seja conciso, amigável, português brasileiro, markdown leve.${selectedDatesTex
     // If explicit dates provided, override range with min/max of the list
     const explicitDateSet = new Set<string>();
     if (explicit_dates && explicit_dates.length > 0) {
-      explicit_dates.forEach(d => { if (/^\d{4}-\d{2}-\d{2}$/.test(d)) explicitDateSet.add(d); });
+      explicit_dates.forEach(d => { if (parseYmdUtc(d)) explicitDateSet.add(d); });
       const sorted = [...explicitDateSet].sort();
       if (sorted.length > 0) {
         start_date = sorted[0];
@@ -223,10 +223,10 @@ Seja conciso, amigável, português brasileiro, markdown leve.${selectedDatesTex
           const raw = ed.choices?.[0]?.message?.content || '{}';
           const m = raw.match(/\{[\s\S]*\}/);
           const parsed = m ? JSON.parse(m[0]) : {};
-          if (parsed.start_date && /^\d{4}-\d{2}-\d{2}$/.test(parsed.start_date)) {
+          if (parseYmdUtc(parsed.start_date)) {
             start_date = parsed.start_date;
           }
-          if (parsed.end_date && /^\d{4}-\d{2}-\d{2}$/.test(parsed.end_date)) {
+          if (parseYmdUtc(parsed.end_date)) {
             end_date = parsed.end_date;
           }
           if (start_date && !end_date) end_date = start_date;
@@ -239,6 +239,11 @@ Seja conciso, amigável, português brasileiro, markdown leve.${selectedDatesTex
 
     if (!start_date || !end_date) {
       return new Response(JSON.stringify({ error: 'Período não identificado. Diga as datas no chat ou escolha um mês.' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    if (!parseYmdUtc(start_date) || !parseYmdUtc(end_date)) {
+      return new Response(JSON.stringify({ error: 'Formato de data inválido. Use datas no calendário ou informe dia/mês/ano.' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -336,10 +341,8 @@ Seja conciso, amigável, português brasileiro, markdown leve.${selectedDatesTex
     });
 
     // Enumerate target slots (date + slot)
-    const [sy, sm, sd] = start_date.split('-').map(Number);
-    const [ey, em, ed] = end_date.split('-').map(Number);
-    const current = new Date(sy, sm - 1, sd);
-    const endObj = new Date(ey, em - 1, ed);
+    const current = parseYmdUtc(start_date)!;
+    const endObj = parseYmdUtc(end_date)!;
     const targetSlots: Array<{
       date: string; dow: number; label: string;
       timeStart: string; timeEnd: string; membersCount: number;
@@ -347,14 +350,11 @@ Seja conciso, amigável, português brasileiro, markdown leve.${selectedDatesTex
     }> = [];
 
     while (current <= endObj) {
-      const y = current.getFullYear();
-      const m = String(current.getMonth() + 1).padStart(2, '0');
-      const d = String(current.getDate()).padStart(2, '0');
-      const dateStr = `${y}-${m}-${d}`;
-      const dow = current.getDay();
+      const dateStr = ymdFromUtc(current);
+      const dow = current.getUTCDay();
 
       if (explicitDateSet.size > 0 && !explicitDateSet.has(dateStr)) {
-        current.setDate(current.getDate() + 1);
+        current.setUTCDate(current.getUTCDate() + 1);
         continue;
       }
 
@@ -406,7 +406,7 @@ Seja conciso, amigável, português brasileiro, markdown leve.${selectedDatesTex
           membersCount: slot.membersCount, eligible,
         });
       }
-      current.setDate(current.getDate() + 1);
+      current.setUTCDate(current.getUTCDate() + 1);
     }
 
     if (targetSlots.length === 0) {
