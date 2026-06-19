@@ -85,6 +85,10 @@ export default function AiAssistantDialog({ open, onOpenChange, departmentId, on
     format(new Date(), 'yyyy-MM')
   );
 
+  const [allMembers, setAllMembers] = useState<DeptMember[]>([]);
+  const [memberFilter, setMemberFilter] = useState<string[]>([]);
+  const [explicitDates, setExplicitDates] = useState<Date[]>([]);
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -95,9 +99,14 @@ export default function AiAssistantDialog({ open, onOpenChange, departmentId, on
       setInput('');
       setSuggestions([]);
       setReasoning('');
+      setMemberFilter([]);
+      setExplicitDates([]);
       setTimeout(() => inputRef.current?.focus(), 100);
+      supabase.rpc('get_department_member_profiles', { dept_id: departmentId }).then(({ data }) => {
+        setAllMembers((data || []).map((m: any) => ({ user_id: m.id, name: m.name })));
+      });
     }
-  }, [open]);
+  }, [open, departmentId]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
