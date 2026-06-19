@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import {
-  Loader2, MessageSquareText, Sparkles, Send, Bot, User as UserIcon,
+  Loader2, MessageSquareText, Send, User as UserIcon,
   ArrowLeft, Check, Trash2, Bell,
 } from 'lucide-react';
 import { format, addMonths, startOfMonth, endOfMonth } from 'date-fns';
