@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import {
-  Loader2, MessageSquareText, Sparkles, Send, Bot, User as UserIcon,
+  Loader2, MessageSquareText, Send, User as UserIcon,
   ArrowLeft, Check, Trash2, Bell,
 } from 'lucide-react';
 import { format, addMonths, startOfMonth, endOfMonth } from 'date-fns';
@@ -51,7 +51,7 @@ interface Props {
 
 const WELCOME: ChatMessage = {
   role: 'assistant',
-  content: `Olá! Sou o assistente de escalas. 👋
+  content: `Olá! Sou o **LEVI**, seu assistente de escalas. 👋
 
 Me diga **quando** e **as condições** da escala. Exemplos:
 - *"Escala só para o domingo dia 22"*
@@ -280,7 +280,7 @@ export default function AiAssistantDialog({ open, onOpenChange, departmentId, on
                 <div key={i} className={`flex gap-2 ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
                   <Avatar className="w-7 h-7 shrink-0">
                     <AvatarFallback className={m.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-accent'}>
-                      {m.role === 'user' ? <UserIcon className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                      {m.role === 'user' ? <UserIcon className="w-4 h-4" /> : <img src="/levi-icon.svg" className="w-4 h-4 rounded-sm animate-pulse" alt="LEVI" />}
                     </AvatarFallback>
                   </Avatar>
                   <div className={`rounded-2xl px-3 py-2 text-sm max-w-[80%] ${
@@ -296,7 +296,7 @@ export default function AiAssistantDialog({ open, onOpenChange, departmentId, on
               ))}
               {sending && (
                 <div className="flex gap-2">
-                  <Avatar className="w-7 h-7"><AvatarFallback className="bg-accent"><Bot className="w-4 h-4" /></AvatarFallback></Avatar>
+                  <Avatar className="w-7 h-7"><AvatarFallback className="bg-accent"><img src="/levi-icon.svg" className="w-4 h-4 rounded-sm animate-pulse" alt="LEVI" /></AvatarFallback></Avatar>
                   <div className="bg-muted rounded-2xl px-3 py-2 text-sm flex items-center gap-2">
                     <Loader2 className="w-3 h-3 animate-spin" /> pensando…
                   </div>
@@ -343,7 +343,7 @@ export default function AiAssistantDialog({ open, onOpenChange, departmentId, on
                   disabled={generating || sending}
                   className="sm:self-end gap-2"
                 >
-                  {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                  {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <img src="/levi-icon.svg" className="w-4 h-4 rounded-sm" alt="LEVI" />}
                   Gerar escala
                 </Button>
               </div>
@@ -366,7 +366,7 @@ export default function AiAssistantDialog({ open, onOpenChange, departmentId, on
               {reasoning && (
                 <Card className="p-3 bg-muted/40 text-xs text-muted-foreground">
                   <div className="font-semibold mb-1 flex items-center gap-1 text-foreground">
-                    <Bot className="w-3 h-3" /> Raciocínio da IA
+                    <img src="/levi-icon.svg" className="w-3 h-3 rounded-sm" alt="LEVI" /> Raciocínio da IA
                   </div>
                   {reasoning}
                 </Card>
