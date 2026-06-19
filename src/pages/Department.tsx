@@ -145,6 +145,7 @@ export default function Department() {
   const [showInviteMember, setShowInviteMember] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showSmartSchedule, setShowSmartSchedule] = useState(false);
+  const [showAiAssistant, setShowAiAssistant] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   // Removed sidebar state - now using popover
   const [activeTab, setActiveTab] = useState('schedules');
