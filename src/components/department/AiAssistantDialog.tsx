@@ -75,7 +75,7 @@ export default function AiAssistantDialog({ open, onOpenChange, departmentId, on
   const [sendNotifications, setSendNotifications] = useState(true);
 
   const [selectedMonth, setSelectedMonth] = useState(() =>
-    format(addMonths(new Date(), 1), 'yyyy-MM')
+    format(new Date(), 'yyyy-MM')
   );
 
   const scrollRef = useRef<HTMLDivElement>(null);
