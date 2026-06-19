@@ -390,128 +390,64 @@ Seja conciso, amigável, português brasileiro, markdown leve.`;
       });
     }
 
-    // Build compact context for AI
-    const conversationContext = messages
-      .filter(m => m.role !== 'system')
-      .map(m => `${m.role === 'user' ? 'LÍDER' : 'IA'}: ${m.content}`)
-      .join('\n');
-
-    const slotsContext = targetSlots.map((s, idx) => {
-      const elig = s.eligible
-        .sort((a, b) => a.recent_count - b.recent_count)
-        .map(e => `${e.name}[${e.user_id}](${e.recent_count}esc)`)
-        .join(', ');
-      return `#${idx} ${s.date} ${s.label} ${s.timeStart}-${s.timeEnd} (${s.membersCount}p) elegíveis: ${elig || 'NENHUM'}`;
-    }).join('\n');
-
-    const maxLimits = Object.entries(maxByUser)
-      .map(([uid, max]) => {
-        const name = membersList.find(m => m.user_id === uid)?.name;
-        return name ? `${name}: máx ${max}/mês` : null;
-      })
-      .filter(Boolean).join('; ');
-
-    const generatePrompt = `Você é um assistente que distribui voluntários em escalas de igreja.
-
-CONVERSA COM O LÍDER (suas condições):
-${conversationContext}
-
-SLOTS A PREENCHER (cada um lista APENAS os membros elegíveis - você SÓ pode escolher dentre esses):
-${slotsContext}
-
-LIMITES (use como diretriz):
-${maxLimits || 'sem limites específicos'}
-
-REGRAS RÍGIDAS:
-1. Para cada slot, escolha exatamente "membersCount" pessoas DA LISTA DE ELEGÍVEIS daquele slot.
-2. Se não houver elegíveis suficientes, escolha quantas houver (não invente IDs).
-3. NUNCA use um user_id que não esteja na lista de elegíveis do slot.
-4. Distribua de forma JUSTA: prefira membros com menor número de escalas recentes (recent_count menor).
-5. Evite a mesma pessoa em dias consecutivos quando possível.
-6. Respeite as condições do líder na conversa.
-
-Retorne APENAS JSON válido neste formato exato:
-{
-  "assignments": [
-    { "slot_index": 0, "user_ids": ["uuid1", "uuid2"] }
-  ],
-  "reasoning": "breve explicação"
-}`;
-
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: 'Você gera escalas como JSON válido, sempre respeitando as listas de elegíveis.' },
-          { role: 'user', content: generatePrompt },
-        ],
-        response_format: { type: 'json_object' },
-      }),
-    });
-
-    if (!aiResponse.ok) {
-      const txt = await aiResponse.text();
-      console.error('AI generate error:', aiResponse.status, txt);
-      if (aiResponse.status === 429) {
-        return new Response(JSON.stringify({ error: 'Muitas requisições. Aguarde alguns instantes.' }), {
-          status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      if (aiResponse.status === 402) {
-        return new Response(JSON.stringify({ error: 'Créditos da IA esgotados.' }), {
-          status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      return new Response(JSON.stringify({ error: 'Erro ao gerar escala' }), {
-        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const aiData = await aiResponse.json();
-    const content = aiData.choices?.[0]?.message?.content || '{}';
-    let parsed: { assignments: Array<{ slot_index: number; user_ids: string[] }>; reasoning?: string };
-    try {
-      const match = content.match(/\{[\s\S]*\}/);
-      parsed = match ? JSON.parse(match[0]) : JSON.parse(content);
-    } catch (e) {
-      console.error('Failed to parse AI JSON:', content);
-      return new Response(JSON.stringify({ error: 'Resposta da IA inválida' }), {
-        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Validate AI choices against eligible lists
+    // ============ DETERMINISTIC ASSIGNMENT ============
+    // Pure logic — avoids AI hallucinations and guarantees membersCount when
+    // enough eligibles exist. Round-robin by lowest (recent_count + assignedInRun).
     const schedules: Array<{
       date: string; user_id: string; name: string;
       time_start: string; time_end: string; slotLabel: string;
     }> = [];
 
-    for (const a of parsed.assignments || []) {
-      const slot = targetSlots[a.slot_index];
-      if (!slot) continue;
-      const eligibleIds = new Set(slot.eligible.map(e => e.user_id));
-      const used = new Set<string>();
-      for (const uid of a.user_ids || []) {
-        if (!eligibleIds.has(uid)) {
-          console.warn(`AI tried to use ineligible user ${uid} for slot ${a.slot_index}`);
-          continue;
-        }
-        if (used.has(uid)) continue;
-        used.add(uid);
-        const name = membersList.find(m => m.user_id === uid)?.name || '';
+    const assignedInRun: Record<string, number> = {};
+    const assignedDates: Record<string, Set<string>> = {}; // user -> set of dates already taken in run
+
+    // Sort slots chronologically for fair distribution
+    const orderedSlots = [...targetSlots].sort((a, b) =>
+      a.date === b.date ? a.timeStart.localeCompare(b.timeStart) : a.date.localeCompare(b.date)
+    );
+
+    for (const slot of orderedSlots) {
+      const need = slot.membersCount;
+      // Filter eligibles: exclude anyone already scheduled in this run for this date+time
+      const pool = slot.eligible.filter(e => {
+        const taken = assignedDates[e.user_id];
+        if (!taken) return true;
+        // already scheduled at this exact slot in this run?
+        return !taken.has(`${slot.date}|${slot.timeStart}|${slot.timeEnd}`);
+      });
+
+      // Sort: least recent + least assigned in this run first
+      pool.sort((a, b) => {
+        const scoreA = a.recent_count + (assignedInRun[a.user_id] || 0);
+        const scoreB = b.recent_count + (assignedInRun[b.user_id] || 0);
+        if (scoreA !== scoreB) return scoreA - scoreB;
+        return a.name.localeCompare(b.name);
+      });
+
+      const picked = pool.slice(0, need);
+      for (const p of picked) {
         schedules.push({
-          date: slot.date, user_id: uid, name,
+          date: slot.date, user_id: p.user_id, name: p.name,
           time_start: slot.timeStart, time_end: slot.timeEnd,
           slotLabel: slot.label,
         });
-        if (used.size >= slot.membersCount) break;
+        assignedInRun[p.user_id] = (assignedInRun[p.user_id] || 0) + 1;
+        if (!assignedDates[p.user_id]) assignedDates[p.user_id] = new Set();
+        assignedDates[p.user_id].add(`${slot.date}|${slot.timeStart}|${slot.timeEnd}`);
       }
     }
+
+    // Build short summary instead of AI reasoning
+    const slotsShort = targetSlots.length;
+    const slotsZero = targetSlots.filter(s => s.eligible.length === 0).length;
+    const slotsUnder = targetSlots.filter(s => s.eligible.length > 0 && s.eligible.length < s.membersCount).length;
+    const summaryParts: string[] = [
+      `${schedules.length} escala(s) distribuída(s) em ${slotsShort} slot(s).`,
+    ];
+    if (slotsZero > 0) summaryParts.push(`${slotsZero} slot(s) sem voluntários elegíveis.`);
+    if (slotsUnder > 0) summaryParts.push(`${slotsUnder} slot(s) com menos voluntários disponíveis que o necessário.`);
+    summaryParts.push('Distribuído priorizando quem está menos escalado.');
+    const parsed = { reasoning: summaryParts.join(' ') };
 
     return new Response(JSON.stringify({
       schedules,
