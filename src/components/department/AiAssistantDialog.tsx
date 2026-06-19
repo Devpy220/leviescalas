@@ -72,6 +72,7 @@ export default function AiAssistantDialog({ open, onOpenChange, departmentId, on
   const [saving, setSaving] = useState(false);
   const [suggestions, setSuggestions] = useState<SuggestedSchedule[]>([]);
   const [reasoning, setReasoning] = useState('');
+  const [resolvedRange, setResolvedRange] = useState<{ start: string; end: string } | null>(null);
   const [sendNotifications, setSendNotifications] = useState(true);
 
   const [selectedMonth, setSelectedMonth] = useState(() =>
