@@ -53,12 +53,13 @@ const WELCOME: ChatMessage = {
   role: 'assistant',
   content: `Olá! Sou o assistente de escalas. 👋
 
-Me diga as **condições** que você quer para a escala. Exemplos:
-- *"Escala para o próximo mês inteiro, 3 pessoas por culto"*
-- *"Evite escalar fulano com ciclano no mesmo turno"*
-- *"Prioriza quem está pouco escalado"*
+Me diga **quando** e **as condições** da escala. Exemplos:
+- *"Escala só para o domingo dia 22"*
+- *"Próxima semana, 2 pessoas por culto"*
+- *"O mês inteiro de janeiro, evite escalar fulano com ciclano"*
+- *"Esta sexta-feira à noite"*
 
-Os **bloqueios diários** e **disponibilidade semanal** são respeitados automaticamente — não precisa se preocupar com isso.`,
+Se você não disser uma data, usarei o **mês selecionado** abaixo. Bloqueios diários e disponibilidade semanal são respeitados automaticamente.`,
 };
 
 export default function AiAssistantDialog({ open, onOpenChange, departmentId, onSchedulesCreated }: Props) {
