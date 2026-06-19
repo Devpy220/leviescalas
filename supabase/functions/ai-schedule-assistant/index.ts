@@ -169,8 +169,10 @@ Seja conciso, amigável, português brasileiro, markdown leve.`;
     }
 
     // Try to extract date range from conversation; fall back to provided defaults
+    // Skipped when líder picked explicit dates in the UI.
     const today = todayBR();
     try {
+      if (explicitDateSet.size > 0) throw new Error('skip: explicit dates');
       const userTurns = messages.filter(m => m.role === 'user').map(m => m.content).join('\n');
       if (userTurns.trim().length > 0) {
         const extractRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
