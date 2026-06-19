@@ -646,6 +646,7 @@ export default function Department() {
                 onDeleteSchedule={handleScheduleDeleted}
                 departmentId={id!}
                 onOpenSmartSchedule={() => setShowSmartSchedule(true)}
+                onOpenAiAssistant={() => setShowAiAssistant(true)}
                 readOnly={isCoordinator}
               />
               
