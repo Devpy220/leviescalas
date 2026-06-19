@@ -29,6 +29,24 @@ interface RequestBody {
 }
 
 const norm = (t?: string) => (t ?? '').slice(0, 5);
+const isYmd = (value?: string | null) => /^\d{4}-\d{2}-\d{2}$/.test(value || '');
+const parseYmdUtc = (value: string) => {
+  if (!isYmd(value)) return null;
+  const [year, month, day] = value.split('-').map(Number);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day
+  ) return null;
+  return parsed;
+};
+const ymdFromUtc = (date: Date) => {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -92,6 +110,12 @@ serve(async (req) => {
     // ============ CHAT MODE ============
     if (intent === 'chat') {
       const today = todayBR();
+      const selectedDates = (body.explicit_dates || [])
+        .filter((date) => parseYmdUtc(date))
+        .sort();
+      const selectedDatesText = selectedDates.length > 0
+        ? `\n\nDatas já selecionadas no calendário: ${selectedDates.join(', ')}. Se houver datas selecionadas, trate estas datas como prioridade absoluta e não substitua por mês inteiro ou outro período.`
+        : '';
       const systemPrompt = `Você é um assistente especialista em montar escalas de voluntários para igrejas (departamento: ${dept.name}).
 
 Hoje é ${today} (fuso America/Sao_Paulo). Sempre interprete datas relativas ("amanhã", "essa sexta", "próximo domingo", "esta semana", "próximo mês") a partir desta data.
@@ -104,9 +128,10 @@ Seu papel: extrair do líder as condições da escala que ele quer gerar. Confir
 IMPORTANTE:
 - NÃO pergunte sobre bloqueios diários, disponibilidade semanal ou conflitos — o sistema respeita isso automaticamente.
 - Se o líder pedir um dia específico, NÃO assuma o mês inteiro — confirme o dia exato.
+- Se o líder selecionou datas no calendário, reconheça exatamente essas datas selecionadas e não tente trocar pelo mês padrão.
 - Quando tiver tudo, diga: "Posso gerar a escala agora? Clique em **Gerar escala**." e pare.
 
-Seja conciso, amigável, português brasileiro, markdown leve.`;
+Seja conciso, amigável, português brasileiro, markdown leve.${selectedDatesText}`;
 
       const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
@@ -160,7 +185,7 @@ Seja conciso, amigável, português brasileiro, markdown leve.`;
     // If explicit dates provided, override range with min/max of the list
     const explicitDateSet = new Set<string>();
     if (explicit_dates && explicit_dates.length > 0) {
-      explicit_dates.forEach(d => { if (/^\d{4}-\d{2}-\d{2}$/.test(d)) explicitDateSet.add(d); });
+      explicit_dates.forEach(d => { if (parseYmdUtc(d)) explicitDateSet.add(d); });
       const sorted = [...explicitDateSet].sort();
       if (sorted.length > 0) {
         start_date = sorted[0];
@@ -198,10 +223,10 @@ Seja conciso, amigável, português brasileiro, markdown leve.`;
           const raw = ed.choices?.[0]?.message?.content || '{}';
           const m = raw.match(/\{[\s\S]*\}/);
           const parsed = m ? JSON.parse(m[0]) : {};
-          if (parsed.start_date && /^\d{4}-\d{2}-\d{2}$/.test(parsed.start_date)) {
+          if (parseYmdUtc(parsed.start_date)) {
             start_date = parsed.start_date;
           }
-          if (parsed.end_date && /^\d{4}-\d{2}-\d{2}$/.test(parsed.end_date)) {
+          if (parseYmdUtc(parsed.end_date)) {
             end_date = parsed.end_date;
           }
           if (start_date && !end_date) end_date = start_date;
@@ -214,6 +239,11 @@ Seja conciso, amigável, português brasileiro, markdown leve.`;
 
     if (!start_date || !end_date) {
       return new Response(JSON.stringify({ error: 'Período não identificado. Diga as datas no chat ou escolha um mês.' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    if (!parseYmdUtc(start_date) || !parseYmdUtc(end_date)) {
+      return new Response(JSON.stringify({ error: 'Formato de data inválido. Use datas no calendário ou informe dia/mês/ano.' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -311,10 +341,8 @@ Seja conciso, amigável, português brasileiro, markdown leve.`;
     });
 
     // Enumerate target slots (date + slot)
-    const [sy, sm, sd] = start_date.split('-').map(Number);
-    const [ey, em, ed] = end_date.split('-').map(Number);
-    const current = new Date(sy, sm - 1, sd);
-    const endObj = new Date(ey, em - 1, ed);
+    const current = parseYmdUtc(start_date)!;
+    const endObj = parseYmdUtc(end_date)!;
     const targetSlots: Array<{
       date: string; dow: number; label: string;
       timeStart: string; timeEnd: string; membersCount: number;
@@ -322,14 +350,11 @@ Seja conciso, amigável, português brasileiro, markdown leve.`;
     }> = [];
 
     while (current <= endObj) {
-      const y = current.getFullYear();
-      const m = String(current.getMonth() + 1).padStart(2, '0');
-      const d = String(current.getDate()).padStart(2, '0');
-      const dateStr = `${y}-${m}-${d}`;
-      const dow = current.getDay();
+      const dateStr = ymdFromUtc(current);
+      const dow = current.getUTCDay();
 
       if (explicitDateSet.size > 0 && !explicitDateSet.has(dateStr)) {
-        current.setDate(current.getDate() + 1);
+        current.setUTCDate(current.getUTCDate() + 1);
         continue;
       }
 
@@ -381,7 +406,7 @@ Seja conciso, amigável, português brasileiro, markdown leve.`;
           membersCount: slot.membersCount, eligible,
         });
       }
-      current.setDate(current.getDate() + 1);
+      current.setUTCDate(current.getUTCDate() + 1);
     }
 
     if (targetSlots.length === 0) {

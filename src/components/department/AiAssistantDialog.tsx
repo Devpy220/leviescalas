@@ -31,6 +31,19 @@ import { Calendar } from '@/components/ui/calendar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 
+const toLocalYmd = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const sortUniqueDates = (dates: Date[]) => {
+  const unique = new Map<string, Date>();
+  dates.forEach((date) => unique.set(toLocalYmd(date), date));
+  return [...unique.values()].sort((a, b) => toLocalYmd(a).localeCompare(toLocalYmd(b)));
+};
+
 interface DeptMember { user_id: string; name: string }
 
 interface ChatMessage {
@@ -116,6 +129,7 @@ export default function AiAssistantDialog({ open, onOpenChange, departmentId, on
     const text = input.trim();
     if (!text || sending) return;
     const newHistory: ChatMessage[] = [...messages, { role: 'user', content: text }];
+    const selectedDateStrings = explicitDates.map(toLocalYmd);
     setMessages(newHistory);
     setInput('');
     setSending(true);
@@ -125,6 +139,7 @@ export default function AiAssistantDialog({ open, onOpenChange, departmentId, on
           department_id: departmentId,
           intent: 'chat',
           messages: newHistory,
+          explicit_dates: selectedDateStrings.length > 0 ? selectedDateStrings : undefined,
         },
       });
       if (error) throw error;
@@ -164,7 +179,7 @@ export default function AiAssistantDialog({ open, onOpenChange, departmentId, on
           slots,
           member_ids_filter: memberFilter.length > 0 ? memberFilter : undefined,
           explicit_dates: explicitDates.length > 0
-            ? explicitDates.map(d => format(d, 'yyyy-MM-dd'))
+            ? explicitDates.map(toLocalYmd)
             : undefined,
         },
       });
@@ -417,7 +432,7 @@ export default function AiAssistantDialog({ open, onOpenChange, departmentId, on
                     <Calendar
                       mode="multiple"
                       selected={explicitDates}
-                      onSelect={(d) => setExplicitDates(d || [])}
+                      onSelect={(d) => setExplicitDates(sortUniqueDates(d || []))}
                       locale={ptBR}
                       className="pointer-events-auto"
                     />
@@ -440,7 +455,7 @@ export default function AiAssistantDialog({ open, onOpenChange, departmentId, on
                     );
                   })}
                   {explicitDates.map((d, i) => (
-                    <Badge key={i} variant="outline" className="gap-1 text-xs">
+                    <Badge key={toLocalYmd(d)} variant="outline" className="gap-1 text-xs">
                       {format(d, "dd/MM", { locale: ptBR })}
                       <button onClick={() => setExplicitDates(prev => prev.filter((_, idx) => idx !== i))}>
                         <X className="w-3 h-3" />
