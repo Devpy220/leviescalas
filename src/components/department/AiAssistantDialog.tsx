@@ -19,13 +19,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import {
   Loader2, MessageSquareText, Send, User as UserIcon,
-  ArrowLeft, Check, Trash2, Bell,
+  ArrowLeft, Check, Trash2, Bell, Users, CalendarDays, X,
 } from 'lucide-react';
 import { format, addMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import ReactMarkdown from 'react-markdown';
 import { SMART_SLOTS as FIXED_SLOTS } from '@/lib/fixedSlots';
 import { createExtendedMemberColorMap, getMemberBackgroundStyle } from '@/lib/memberColors';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+
+interface DeptMember { user_id: string; name: string }
 
 interface ChatMessage {
   role: 'user' | 'assistant';
