@@ -460,31 +460,34 @@ export default function EditScheduleDialog({
             </div>
           )}
 
-          {/* Assignment Role */}
-          {assignmentRoles.length > 0 && (
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <UserCog className="w-4 h-4 text-muted-foreground" />
-                Função
-              </Label>
-              <Select value={selectedAssignmentRole || 'none'} onValueChange={setSelectedAssignmentRole}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecionar função" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nenhuma</SelectItem>
-                  <SelectItem value="on_duty">🚗 Plantão</SelectItem>
-                  <SelectItem value="participant">⛪ Culto</SelectItem>
-                  <SelectItem value="worship_minister">🎤 Ministro de Louvor</SelectItem>
-                  {assignmentRoles.map(r => (
-                    <SelectItem key={r.id} value={r.id}>
-                      <span>{r.icon} {r.name}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          {/* Assignment Role — always visible so leaders can set/clear it */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <UserCog className="w-4 h-4 text-muted-foreground" />
+              Função
+            </Label>
+            <Select value={selectedAssignmentRole || 'none'} onValueChange={setSelectedAssignmentRole}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecionar função" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Nenhuma</SelectItem>
+                <SelectItem value="on_duty">🚗 Plantão</SelectItem>
+                <SelectItem value="participant">⛪ Culto</SelectItem>
+                <SelectItem value="worship_minister">🎤 Ministro de Louvor</SelectItem>
+                {assignmentRoles.map(r => (
+                  <SelectItem key={r.id} value={r.id}>
+                    <span>{r.icon} {r.name}</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {assignmentRoles.length === 0 && (
+              <p className="text-xs text-muted-foreground">
+                Dica: você pode cadastrar funções personalizadas em "Funções" no menu lateral do departamento.
+              </p>
+            )}
+          </div>
 
           {/* Repertório de Hoje (setlist + anexos + observações) */}
           <div className="pt-2 border-t">
