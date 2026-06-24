@@ -56,6 +56,7 @@ import {
   Lock,
 } from 'lucide-react';
 import { LeviLogo } from '@/components/LeviLogo';
+import { VideoBackground } from '@/components/VideoBackground';
 import { LeviTypewriter } from '@/components/LeviTypewriter';
 import { BibleVerseTypewriter } from '@/components/BibleVerseTypewriter';
 import { supabase } from '@/integrations/supabase/client';

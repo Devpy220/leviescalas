@@ -21,6 +21,7 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/comp
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { DashboardSidebar } from '@/components/DashboardSidebar';
 import { BibleVerseTypewriter } from '@/components/BibleVerseTypewriter';
+import { VideoBackground } from '@/components/VideoBackground';
 
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useAuth } from '@/hooks/useAuth';
@@ -358,7 +359,8 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden">
+    <div className="relative min-h-screen overflow-x-hidden">
+      <VideoBackground />
       <DashboardSidebar 
         isAdmin={isAdmin}
         shouldShowInstallPrompt={shouldShowInstallPrompt()}
