@@ -56,6 +56,7 @@ import {
   Lock,
 } from 'lucide-react';
 import { LeviLogo } from '@/components/LeviLogo';
+import { VideoBackground } from '@/components/VideoBackground';
 import { LeviTypewriter } from '@/components/LeviTypewriter';
 import { BibleVerseTypewriter } from '@/components/BibleVerseTypewriter';
 import { supabase } from '@/integrations/supabase/client';
@@ -574,7 +575,8 @@ export default function Landing() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+    <div className="relative min-h-screen text-foreground overflow-x-hidden">
+      <VideoBackground />
       <PWAInstallPrompt open={showInstallPrompt} onOpenChange={setShowInstallPrompt} />
 
       {/* ── NAV ── */}
