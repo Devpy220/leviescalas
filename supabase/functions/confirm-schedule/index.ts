@@ -238,7 +238,7 @@ function generateHtmlResponse(
     </div>
     <div class="card-footer">
       <span class="footer-text">Powered by <span class="footer-brand">LEVI</span></span>
-      <span class="footer-text"><a href="https://www.instagram.com/levi_escalas" target="_blank" style="color:#6366f1;text-decoration:none;">📲 @levi_escalas</a></span>
+      <span class="footer-text"><a href="https://instagram.com/elsdigital_tech" target="_blank" style="color:#6366f1;text-decoration:none;">📲 @elsdigital_tech</a></span>
     </div>
   </div>
 </body>
