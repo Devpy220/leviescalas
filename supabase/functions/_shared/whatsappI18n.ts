@@ -179,7 +179,7 @@ export function t(lang: Lang, key: string, params: TParams = {}): string {
   const result = interp(s, params);
   // Add Instagram link before _LEVI_ closing in all WhatsApp messages
   if (result.includes("\n\n_LEVI_")) {
-    return result.replace("\n\n_LEVI_", `\n\n📲 Siga o LEVI no Instagram:\nhttps://www.instagram.com/levi_escalas\n\n_LEVI_`);
+    return result.replace("\n\n_LEVI_", `\n\n📲 Siga a ELSD no Instagram:\nhttps://instagram.com/elsdigital_tech\n\n_LEVI_`);
   }
   return result;
 }

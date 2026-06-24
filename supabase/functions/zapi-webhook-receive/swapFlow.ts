@@ -137,7 +137,7 @@ async function startSwap(deps: SwapFlowDeps, profile: Profile): Promise<void> {
 
   await cancelOldSessions(deps, profile.id);
 
-  const igLine = "📲 Siga o LEVI no Instagram:\nhttps://www.instagram.com/levi_escalas";
+  const igLine = "📲 Siga a ELSD no Instagram:\nhttps://instagram.com/elsdigital_tech";
 
   let msg =
     `${t(lang, "swap_start_title")}\n━━━━━━━━━━━━━━━━━━━━\n\n` +
@@ -330,7 +330,7 @@ async function handleSchedulePick(
       te: fmtTime(c.time_end),
     }) + "\n\n";
   });
-  const igLine2 = "📲 Siga o LEVI no Instagram:\nhttps://www.instagram.com/levi_escalas";
+  const igLine2 = "📲 Siga a ELSD no Instagram:\nhttps://instagram.com/elsdigital_tech";
   msg += `━━━━━━━━━━━━━━━━━━━━\n${t(lang, "swap_target_footer")}\n\n${igLine2}\n\n_LEVI_`;
 
   await deps.supabase
@@ -440,7 +440,7 @@ async function askTarget(
   const deptName = reqSchedule.departments?.name ?? "";
 
   // Notify target — in target's language
-  const igLine3 = "📲 Siga o LEVI no Instagram:\nhttps://www.instagram.com/levi_escalas";
+  const igLine3 = "📲 Siga a ELSD no Instagram:\nhttps://instagram.com/elsdigital_tech";
   const msg =
     `${t(tgtLang, "swap_request_title")}\n━━━━━━━━━━━━━━━━━━━━\n\n` +
     `${t(tgtLang, "swap_request_body", { tgt: tgtFname, req: reqFname, dept: deptName })}\n\n` +

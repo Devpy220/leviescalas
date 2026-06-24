@@ -139,7 +139,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Send WhatsApp
     let whatsappSent = false;
     if (profile.whatsapp) {
-      const igLine = `📲 Siga o LEVI no Instagram:\n${INSTAGRAM_LINK}`;
+      const igLine = `📲 Siga a ELSD no Instagram:\n${INSTAGRAM_LINK}`;
       const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
       const slotNotesBlock = await fetchSlotNotesBlock(SUPABASE_URL, serviceKey, department_id, date, time_start, time_end);
       const extrasBlock = slotNotesBlock;
