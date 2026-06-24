@@ -83,7 +83,7 @@ export function buildBroadcastMessage(params: {
   const greeting = pickVariant(seed + "g", GREETINGS);
   const closing = pickVariant(seed + "c", CLOSINGS);
   const igLine = `📲 Siga a ELSD no Instagram:\n${INSTAGRAM_LINK}`;
-  return `${emoji} *Comunicado LEVI*\n\n${greeting}, *${params.userName}*!\n\n*${params.title}*\n\n${params.message}\n\n${igLine}\n\n${closing}`;
+  return `${emoji} *Comunicado LEVI*\n\n${greeting}, *${params.userName}*!\n\n*${params.title}*\n\n${params.message}\n\n${LEVI_COMMANDS_HINT}\n\n${igLine}\n\n${closing}`;
 }
 
 export function buildSupportMessage(params: {
