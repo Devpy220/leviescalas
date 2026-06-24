@@ -294,6 +294,22 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
+    // Only treat as blackout response if it's a recent reply to LEVI's prompt
+    // (within 60 min) OR the user used explicit blackout keywords / a date.
+    // This prevents LEVI from replying to every random message the user sends.
+    const lowerText = (text || "").toLowerCase();
+    const hasBlackoutKeyword =
+      /\b(servir|bloquear|bloqueio|bloqueado|livre|liberado|liberada|nenhum|nenhuma|nada|todos|disponivel|disponível|domingos?|segundas?|ter[cç]as?|quartas?|quintas?|sextas?|s[áa]bados?)\b/.test(lowerText) ||
+      /\d{1,2}[\/\-\.]\d{1,2}/.test(lowerText) ||
+      /\b\d{1,2}\b/.test(lowerText);
+    const sentAt = prompt.sent_at ? new Date(prompt.sent_at).getTime() : 0;
+    const recentReply = sentAt > 0 && (Date.now() - sentAt) <= 60 * 60 * 1000;
+    if (!recentReply && !hasBlackoutKeyword) {
+      return new Response(JSON.stringify({ ignored: true, reason: "no keyword and not a recent reply" }), {
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
     const targetMonth = new Date(prompt.target_month + "T00:00:00");
     const windowStart = new Date(targetMonth.getFullYear(), targetMonth.getMonth() - 1, 28);
     const windowEnd = new Date(targetMonth.getFullYear(), targetMonth.getMonth(), 5, 23, 59, 59);
