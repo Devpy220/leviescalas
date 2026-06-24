@@ -36,6 +36,9 @@ function firstName(name: string): string {
 serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  const authFail = requireCronAuth(req, corsHeaders);
+  if (authFail) return authFail;
+
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
