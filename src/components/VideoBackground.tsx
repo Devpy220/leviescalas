@@ -14,9 +14,9 @@ interface VideoBackgroundProps {
  * Sits behind app content (z-[-1]) and is purely decorative.
  */
 export const VideoBackground = ({
-  opacityClass = "opacity-25",
-  blurClass = "blur-2xl",
-  overlayClass = "bg-background/70",
+  opacityClass = "opacity-80",
+  blurClass = "blur-md",
+  overlayClass = "bg-background/30",
 }: VideoBackgroundProps) => {
   return (
     <div
