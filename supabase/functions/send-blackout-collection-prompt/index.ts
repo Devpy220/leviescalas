@@ -8,6 +8,7 @@ import {
   getActiveSlotsForUser,
   type AvailabilityRow,
 } from "../_shared/scheduleDates.ts";
+import { requireCronAuth } from "../_shared/cronAuth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
