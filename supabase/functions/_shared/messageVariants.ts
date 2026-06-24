@@ -68,7 +68,7 @@ export function buildAnnouncementMessage(params: {
   const greeting = pickVariant(seed + "g", GREETINGS);
   const closing = pickVariant(seed + "c", CLOSINGS);
   const igLine = `📲 Siga a ELSD no Instagram:\n${INSTAGRAM_LINK}`;
-  return `${emoji} *Aviso — ${params.deptName}*\n\n${greeting}, *${params.userName}*!\n\n${params.title}\n\n${igLine}\n\n${closing}`;
+  return `${emoji} *Aviso — ${params.deptName}*\n\n${greeting}, *${params.userName}*!\n\n${params.title}\n\n${LEVI_COMMANDS_HINT}\n\n${igLine}\n\n${closing}`;
 }
 
 export function buildBroadcastMessage(params: {
