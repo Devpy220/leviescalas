@@ -8,6 +8,7 @@ import {
   getActiveSlotsForUser,
   type AvailabilityRow,
 } from "../_shared/scheduleDates.ts";
+import { requireCronAuth } from "../_shared/cronAuth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -35,6 +36,9 @@ function firstName(name: string): string {
 
 serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  const authFail = requireCronAuth(req, corsHeaders);
+  if (authFail) return authFail;
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;

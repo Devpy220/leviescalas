@@ -26,7 +26,14 @@ serve(async (req) => {
     }
 
     const { amount } = parsed.data;
-    const origin = req.headers.get("origin") || "https://leviescalas.lovable.app";
+    // Hardcoded allowlist — never trust client Origin header for redirect URLs
+    const ALLOWED_ORIGINS = [
+      "https://leviescalas.com.br",
+      "https://www.leviescalas.com.br",
+      "https://leviescalas.lovable.app",
+    ];
+    const requestOrigin = req.headers.get("origin") || "";
+    const origin = ALLOWED_ORIGINS.includes(requestOrigin) ? requestOrigin : "https://leviescalas.com.br";
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",

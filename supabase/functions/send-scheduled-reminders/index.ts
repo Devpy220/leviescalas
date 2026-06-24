@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendWhatsAppBatch, scheduleBatch, type WhatsAppRecipient } from "../_shared/whatsapp-queue.ts";
 import { pickVariant, GREETINGS, CLOSINGS, REMINDER_EMOJIS, INSTAGRAM_LINK, LEVI_COMMANDS_HINT } from "../_shared/messageVariants.ts";
+import { requireCronAuth } from "../_shared/cronAuth.ts";
 
 import { fetchSlotNotesBlock } from "../_shared/slotNotesMessage.ts";
 
@@ -44,6 +45,9 @@ const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const authFail = requireCronAuth(req, corsHeaders);
+  if (authFail) return authFail;
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";

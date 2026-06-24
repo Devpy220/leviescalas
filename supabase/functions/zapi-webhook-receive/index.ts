@@ -131,11 +131,18 @@ const fmt = (s: string) => {
 serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  // Verify webhook source via shared secret. Configure ZAPI_WEBHOOK_SECRET in env
-  // and set the same value in the Z-API webhook custom header (X-Webhook-Secret)
-  // or as a query string parameter (?secret=...).
+  // Verify webhook source via shared secret. ZAPI_WEBHOOK_SECRET MUST be set;
+  // configure the same value in the Z-API webhook custom header (X-Webhook-Secret)
+  // or as a query string parameter (?secret=...). Missing secret = hard 500.
   const expectedSecret = Deno.env.get("ZAPI_WEBHOOK_SECRET");
-  if (expectedSecret) {
+  if (!expectedSecret) {
+    console.error("zapi-webhook-receive: ZAPI_WEBHOOK_SECRET not configured — refusing all requests");
+    return new Response(JSON.stringify({ error: "Server misconfigured: webhook secret missing" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
+  }
+  {
     const url = new URL(req.url);
     const provided =
       req.headers.get("x-webhook-secret") ||
@@ -149,8 +156,6 @@ serve(async (req: Request): Promise<Response> => {
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
-  } else {
-    console.warn("zapi-webhook-receive: ZAPI_WEBHOOK_SECRET not configured — webhook is unauthenticated");
   }
 
   try {

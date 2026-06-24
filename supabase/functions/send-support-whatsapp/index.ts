@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { scheduleBatch } from "../_shared/whatsapp-queue.ts";
 import { buildSupportMessage } from "../_shared/messageVariants.ts";
+import { requireCronAuth } from "../_shared/cronAuth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,6 +13,9 @@ serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const authFail = requireCronAuth(req, corsHeaders);
+  if (authFail) return authFail;
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
