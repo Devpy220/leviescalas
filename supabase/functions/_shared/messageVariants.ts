@@ -3,6 +3,15 @@
 
 export const INSTAGRAM_LINK = "https://instagram.com/elsdigital_tech";
 
+// Quick guide so volunteers know which words the LEVI bot understands.
+// Outside of these keywords (or a recent reply to a LEVI prompt), the bot stays quiet.
+export const LEVI_COMMANDS_HINT =
+  `🤖 *Como falar comigo (LEVI Escalas):*\n` +
+  `• *escala* — ver suas próximas escalas\n` +
+  `• *troca* — pedir troca de uma escala\n` +
+  `• *servir* / *bloquear* / datas (ex: 12/10) — responder o aviso de disponibilidade\n` +
+  `_Só respondo a essas palavras ou quando você responde uma mensagem minha._`;
+
 function hashString(s: string): number {
   let h = 0;
   for (let i = 0; i < s.length; i++) {
@@ -59,7 +68,7 @@ export function buildAnnouncementMessage(params: {
   const greeting = pickVariant(seed + "g", GREETINGS);
   const closing = pickVariant(seed + "c", CLOSINGS);
   const igLine = `📲 Siga a ELSD no Instagram:\n${INSTAGRAM_LINK}`;
-  return `${emoji} *Aviso — ${params.deptName}*\n\n${greeting}, *${params.userName}*!\n\n${params.title}\n\n${igLine}\n\n${closing}`;
+  return `${emoji} *Aviso — ${params.deptName}*\n\n${greeting}, *${params.userName}*!\n\n${params.title}\n\n${LEVI_COMMANDS_HINT}\n\n${igLine}\n\n${closing}`;
 }
 
 export function buildBroadcastMessage(params: {
@@ -74,7 +83,7 @@ export function buildBroadcastMessage(params: {
   const greeting = pickVariant(seed + "g", GREETINGS);
   const closing = pickVariant(seed + "c", CLOSINGS);
   const igLine = `📲 Siga a ELSD no Instagram:\n${INSTAGRAM_LINK}`;
-  return `${emoji} *Comunicado LEVI*\n\n${greeting}, *${params.userName}*!\n\n*${params.title}*\n\n${params.message}\n\n${igLine}\n\n${closing}`;
+  return `${emoji} *Comunicado LEVI*\n\n${greeting}, *${params.userName}*!\n\n*${params.title}*\n\n${params.message}\n\n${LEVI_COMMANDS_HINT}\n\n${igLine}\n\n${closing}`;
 }
 
 export function buildSupportMessage(params: {
@@ -89,5 +98,5 @@ export function buildSupportMessage(params: {
   const greeting = pickVariant(seed + "g", GREETINGS);
   const closing = pickVariant(seed + "c", CLOSINGS);
   const igLine = `📲 Siga a ELSD no Instagram:\n${INSTAGRAM_LINK}`;
-  return `${emoji} *Apoie o LEVI*\n\n${greeting}, *${params.userName}*!\n\nO LEVI é gratuito e depende do seu apoio para continuar funcionando. Qualquer valor faz a diferença!\n\n💡 *Sugestão de contribuição: R$ 25,00*\n(você pode escolher qualquer valor)\n\n💛 *Toque no link abaixo para copiar a chave PIX com 1 clique:*\n\n👉 https://leviescalas.com.br/apoiar\n\n_(QR Code, chave PIX e opção de cartão disponíveis na página)_\n\n👤 *Titular:* ${params.titular}\n\n🙏 Obrigado pelo carinho!\n\n${igLine}\n\n${closing}`;
+  return `${emoji} *Apoie o LEVI*\n\n${greeting}, *${params.userName}*!\n\nO LEVI é gratuito e depende do seu apoio para continuar funcionando. Qualquer valor faz a diferença!\n\n💡 *Sugestão de contribuição: R$ 25,00*\n(você pode escolher qualquer valor)\n\n💛 *Toque no link abaixo para copiar a chave PIX com 1 clique:*\n\n👉 https://leviescalas.com.br/apoiar\n\n_(QR Code, chave PIX e opção de cartão disponíveis na página)_\n\n👤 *Titular:* ${params.titular}\n\n🙏 Obrigado pelo carinho!\n\n${LEVI_COMMANDS_HINT}\n\n${igLine}\n\n${closing}`;
 }
