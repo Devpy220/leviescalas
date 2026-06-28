@@ -131,33 +131,20 @@ serve(async (req) => {
       if (!phone) {
         return { sent: false, channel: null, error: `email_failed: ${reason}; no_phone` };
       }
-      const instanceId = Deno.env.get("ZAPI_INSTANCE_ID");
-      const zToken = Deno.env.get("ZAPI_TOKEN");
-      const clientToken = Deno.env.get("ZAPI_CLIENT_TOKEN");
-      if (!instanceId || !zToken || !clientToken) {
-        return { sent: false, channel: null, error: `email_failed: ${reason}; zapi_not_configured` };
-      }
-      const cleanNumber = String(phone).replace(/\D/g, "");
-      if (cleanNumber.length < 10) {
+      const { sendUazapiText, getNormalizedNumber } = await import("../_shared/uazapi.ts");
+      const fullNumber = getNormalizedNumber(String(phone));
+      if (!fullNumber) {
         return { sent: false, channel: null, error: `email_failed: ${reason}; invalid_phone` };
       }
-      const fullNumber = cleanNumber.startsWith("55") ? cleanNumber : `55${cleanNumber}`;
       const message =
         `🎉 *LEVI* — Igreja *${church.name}* cadastrada com sucesso!\n\n` +
         `Próximo passo: crie os departamentos/ministérios da sua igreja.\n\n` +
         `👉 ${createDeptUrl}\n\n` +
         (churchPageUrl ? `Página pública: ${churchPageUrl}\n\n` : "") +
         `⚠️ Igrejas sem departamentos em até 5 dias são removidas automaticamente.`;
-      const res = await fetch(
-        `https://api.z-api.io/instances/${instanceId}/token/${zToken}/send-text`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Client-Token": clientToken },
-          body: JSON.stringify({ phone: fullNumber, message, delayMessage: 2 }),
-        },
-      );
-      if (!res.ok) {
-        const errText = await res.text();
+      const r = await sendUazapiText(fullNumber, message, 2);
+      if (!r.ok) {
+        const errText = r.error ?? (typeof r.response === "string" ? r.response : JSON.stringify(r.response));
         return { sent: false, channel: null, error: `email_failed: ${reason}; whatsapp_failed: ${errText}` };
       }
       return { sent: true, channel: "whatsapp", phone: fullNumber };

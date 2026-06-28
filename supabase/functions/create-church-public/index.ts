@@ -84,37 +84,22 @@ serve(async (req) => {
     const createDeptUrl = `${origin}/auth?tab=register&churchCode=${church.code}&redirect=${encodeURIComponent(`/departments/new?churchCode=${church.code}`)}`;
     const churchPageUrl = church.slug ? `${origin}/igreja/${church.slug}` : null;
 
-    // Send WhatsApp via Z-API
+    // Send WhatsApp via UAZAPI
     let whatsappSent = false;
     let whatsappError: string | null = null;
     try {
-      const instanceId = Deno.env.get("ZAPI_INSTANCE_ID");
-      const zToken = Deno.env.get("ZAPI_TOKEN");
-      const clientToken = Deno.env.get("ZAPI_CLIENT_TOKEN");
-      if (!instanceId || !zToken || !clientToken) {
-        whatsappError = "zapi_not_configured";
+      const { sendUazapiText } = await import("../_shared/uazapi.ts");
+      const message =
+        `🎉 *LEVI* — Igreja *${church.name}* cadastrada com sucesso!\n\n` +
+        `Próximo passo: crie uma conta e os departamentos/ministérios da sua igreja usando o link abaixo:\n\n` +
+        `👉 ${createDeptUrl}\n\n` +
+        (churchPageUrl ? `Página pública: ${churchPageUrl}\n\n` : "") +
+        `⚠️ Igrejas sem departamentos em até 5 dias são removidas automaticamente.`;
+      const r = await sendUazapiText(String(d.registrantPhone), message, 2);
+      if (r.ok) {
+        whatsappSent = true;
       } else {
-        const cleanNumber = String(d.registrantPhone).replace(/\D/g, "");
-        const fullNumber = cleanNumber.startsWith("55") ? cleanNumber : `55${cleanNumber}`;
-        const message =
-          `🎉 *LEVI* — Igreja *${church.name}* cadastrada com sucesso!\n\n` +
-          `Próximo passo: crie uma conta e os departamentos/ministérios da sua igreja usando o link abaixo:\n\n` +
-          `👉 ${createDeptUrl}\n\n` +
-          (churchPageUrl ? `Página pública: ${churchPageUrl}\n\n` : "") +
-          `⚠️ Igrejas sem departamentos em até 5 dias são removidas automaticamente.`;
-        const res = await fetch(
-          `https://api.z-api.io/instances/${instanceId}/token/${zToken}/send-text`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "Client-Token": clientToken },
-            body: JSON.stringify({ phone: fullNumber, message, delayMessage: 2 }),
-          },
-        );
-        if (!res.ok) {
-          whatsappError = await res.text();
-        } else {
-          whatsappSent = true;
-        }
+        whatsappError = r.error ?? (typeof r.response === "string" ? r.response : JSON.stringify(r.response));
       }
     } catch (e: any) {
       whatsappError = e?.message || "unknown";
