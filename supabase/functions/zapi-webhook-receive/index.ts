@@ -131,12 +131,14 @@ const fmt = (s: string) => {
 serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  // Verify webhook source via shared secret. ZAPI_WEBHOOK_SECRET MUST be set;
-  // configure the same value in the Z-API webhook custom header (X-Webhook-Secret)
-  // or as a query string parameter (?secret=...). Missing secret = hard 500.
-  const expectedSecret = Deno.env.get("ZAPI_WEBHOOK_SECRET");
+  // Verify webhook source via shared secret. Accept either UAZAPI_WEBHOOK_SECRET
+  // (preferred — new provider) or legacy ZAPI_WEBHOOK_SECRET during the transition
+  // window. Configure the same value in the UAZAPI webhook custom header
+  // (X-Webhook-Secret) or as a ?secret=... query string parameter.
+  const expectedSecret =
+    Deno.env.get("UAZAPI_WEBHOOK_SECRET") || Deno.env.get("ZAPI_WEBHOOK_SECRET");
   if (!expectedSecret) {
-    console.error("zapi-webhook-receive: ZAPI_WEBHOOK_SECRET not configured — refusing all requests");
+    console.error("whatsapp-webhook-receive: webhook secret not configured — refusing all requests");
     return new Response(JSON.stringify({ error: "Server misconfigured: webhook secret missing" }), {
       status: 500,
       headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -146,11 +148,12 @@ serve(async (req: Request): Promise<Response> => {
     const url = new URL(req.url);
     const provided =
       req.headers.get("x-webhook-secret") ||
+      req.headers.get("x-uazapi-secret") ||
       req.headers.get("x-zapi-secret") ||
       url.searchParams.get("secret") ||
       "";
     if (provided !== expectedSecret) {
-      console.warn("zapi-webhook-receive: invalid webhook secret");
+      console.warn("whatsapp-webhook-receive: invalid webhook secret");
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -164,17 +167,29 @@ serve(async (req: Request): Promise<Response> => {
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     const payload = await req.json().catch(() => ({} as any));
-    console.log("Z-API webhook payload:", JSON.stringify(payload).slice(0, 500));
+    console.log("WhatsApp webhook payload:", JSON.stringify(payload).slice(0, 500));
 
+    // UAZAPI payloads nest under `message`. Z-API uses flat fields. Support both.
+    const uaMsg = payload.message ?? payload.Message ?? {};
     const phoneRaw =
-      payload.phone ?? payload.from ?? payload.sender ?? payload.author ?? "";
+      // UAZAPI fields (chat/sender are jids like "5511...@s.whatsapp.net")
+      uaMsg.sender ?? uaMsg.chatid ?? uaMsg.chatId ?? uaMsg.from ??
+      payload.sender ?? payload.chatid ?? payload.chatId ?? payload.chat?.id ??
+      // Z-API fields (legacy)
+      payload.phone ?? payload.from ?? payload.author ?? "";
     const text =
+      // UAZAPI text fields
+      (typeof uaMsg.text === "string" ? uaMsg.text : null) ??
+      uaMsg.messageText ?? uaMsg.content ?? uaMsg.body ??
+      // Z-API legacy fields
       payload.text?.message ??
-      payload.message ??
+      (typeof payload.message === "string" ? payload.message : null) ??
       payload.body ??
-      payload.text ??
+      (typeof payload.text === "string" ? payload.text : null) ??
       "";
-    const fromMe = payload.fromMe === true || payload.isFromMe === true;
+    const fromMe =
+      uaMsg.fromMe === true || uaMsg.fromme === true ||
+      payload.fromMe === true || payload.isFromMe === true;
 
     if (fromMe || !phoneRaw || typeof text !== "string" || !text.trim()) {
       return new Response(JSON.stringify({ ignored: true }), {
