@@ -1,66 +1,60 @@
-# Assistente de Escalas com IA (Chat)
+## Migração Z-API → UAZAPI
 
-Adicionar um novo assistente conversacional para escalas, **sem remover** o gerador atual (Smart Schedule). O líder conversa em linguagem natural, a IA propõe a escala respeitando bloqueios e disponibilidades, e o líder revisa antes de salvar.
+Substituir totalmente o Z-API pela UAZAPI, mantendo idêntico o fluxo de respostas ("troca", "servir", coleta de bloqueios, menus interativos, efeito "digitando…", etc.).
 
-## Como funciona
+### Pré-requisito (você precisa fazer antes)
 
-1. Líder abre o novo FAB **"Assistente IA"** (ícone diferente do Sparkles atual, ex: `MessageSquareSparkles`) ao lado dos FABs existentes.
-2. Abre um **drawer/dialog com chat**:
-  - Líder escreve condições em texto livre. Ex:
-    - *"Escala o mês inteiro, 3 pessoas por culto de domingo manhã"*
-    - *"Evita escalar Maria com João no mesmo turno"*
-    - *"Quem está pouco escalado este mês tem prioridade"*
-    - *pode até ser por voz se possivel* 
-  - IA responde, faz perguntas se preciso, e quando o líder confirma, gera a proposta.
-3. **Tela de revisão** (mesma já usada pelo Smart Schedule atual): lista todos os slots propostos com membro + horário + dia. Líder pode:
-  - Trocar membro slot a slot (dropdown com membros disponíveis)
-  - Remover slot
-  - Adicionar slot manual
-  - **Confirmar e salvar** → grava em `schedules` (passa pelos triggers atuais).
-4. Nada é salvo automaticamente.
+1. Criar conta em https://uazapi.com
+2. Criar uma **instância** e conectar o WhatsApp (QR Code) — usar o MESMO número que está no Z-API hoje para não perder o histórico de conversas.
+3. Anotar:
+   - **Token da instância** (UAZAPI_TOKEN)
+   - **URL base do servidor** (UAZAPI_BASE_URL — algo como `https://free.uazapi.com` ou o host dedicado que a UAZAPI fornecer)
+4. Na UAZAPI, configurar o **Webhook** apontando para:
+   `https://zuksvsxnchwskqytuxxq.supabase.co/functions/v1/zapi-webhook-receive`
+   (mantemos o mesmo nome de função para não quebrar nada externamente; ele passa a tratar o payload UAZAPI)
+   Eventos: `messages` (mensagens recebidas).
 
-## Garantias obrigatórias (a IA NÃO pode violar)
+Quando estiver pronto, eu peço via formulário seguro:
+- `UAZAPI_TOKEN`
+- `UAZAPI_BASE_URL`
+- `UAZAPI_WEBHOOK_SECRET` (rotacionado — substitui o `ZAPI_WEBHOOK_SECRET`)
 
-Antes da IA propor qualquer pessoa em um slot, o backend filtra a lista de candidatos elegíveis e só envia esses para a IA escolher. Filtros:
+### O que vai mudar no código
 
-- **Bloqueios de dia** (`member_date_availability` — blackout dates) — exclui totalmente.
-- **Disponibilidade semanal** (`member_availability`) — só elegível se disponível naquele dia/horário.
-- **Conflitos cross-department** (mesmo horário em outro depto) — exclui.
-- **Exclusividade de domingo** (regra `allow_sunday_double`) — exclui se já escalado no outro turno.
-- **Membro já escalado no mesmo slot** — exclui.
+**Novo módulo compartilhado** `supabase/functions/_shared/uazapi.ts`:
+- `sendText(phone, message)` → POST `${UAZAPI_BASE_URL}/send/text` com headers `token: UAZAPI_TOKEN`, body `{ number, text, delay }`.
+- `sendPresence(phone, action: "composing"|"paused", delayMs)` → POST `/message/presence` para manter o efeito "digitando…" humanizado já existente.
+- Mantém a mesma assinatura usada hoje pelo wrapper Z-API para minimizar diff.
 
-A IA recebe a lista pré-filtrada + contagem de escalas no mês de cada membro, e escolhe respeitando as condições do líder. Pode **sugerir membros pouco escalados** quando o líder pedir "balancear".
+**Edge functions atualizadas** (trocam chamada direta `api.z-api.io` pelo novo helper):
+- `send-whatsapp-notification/index.ts`
+- `create-church-public/index.ts`
+- `send-church-code-email/index.ts`
+- `_shared/whatsapp-queue.ts` (fila de lembretes)
+- `_shared/messageVariants.ts` (sem mudança lógica — só consome o helper)
 
-## Arquivos
+**Webhook inbound** `zapi-webhook-receive/index.ts`:
+- Renomeado internamente, mas mantém a rota.
+- Passa a ler o payload UAZAPI (`event: "messages.upsert"`, campos `message.text`, `chat.id`, `sender.id`). Mantém parser antigo como fallback durante a janela de corte, depois removido.
+- Verifica `UAZAPI_WEBHOOK_SECRET` via header `x-webhook-secret` (UAZAPI permite header customizado).
+- Toda a lógica de "troca", "servir", menus numéricos, coleta de bloqueios, rate-limit de 60min continua intacta.
 
-**Novos:**
+**Logs**: a tabela `whatsapp_logs` continua igual — só passa a registrar `provider: "uazapi"` no campo de resposta para auditoria.
 
-- `supabase/functions/ai-schedule-assistant/index.ts` — edge function com:
-  - Conversa multi-turno (recebe histórico de mensagens)
-  - Quando o líder confirma geração: monta contexto (slots fixos do depto, membros, blackouts, disponibilidades, contagem atual de escalas), pré-filtra candidatos elegíveis por slot, chama Lovable AI Gateway (`google/gemini-3-flash-preview`) com tool calling (`Output.object` retornando array de `{date, time_start, time_end, user_id, slot_label}`)
-  - Valida resposta da IA contra os candidatos elegíveis (rejeita qualquer user_id fora da lista) e retorna proposta
-- `src/components/department/AiAssistantDialog.tsx` — drawer com:
-  - Chat (`message.parts`, markdown, scroll automático, textarea com focus)
-  - Estado: `idle` → `chatting` → `generating` → `reviewing`
-  - Tela de revisão reutilizando `SchedulePreviewList` (extrair do `SmartScheduleDialog` se útil, ou inline)
-  - Ao confirmar, faz `supabase.from('schedules').insert([...])` em lote
+**Limpeza de secrets** (após validação): remover `ZAPI_INSTANCE_ID`, `ZAPI_TOKEN`, `ZAPI_CLIENT_TOKEN`, `ZAPI_WEBHOOK_SECRET`.
 
-**Editados:**
+### Plano de validação
 
-- `src/components/department/UnifiedScheduleView.tsx` — adicionar 3º FAB "Assistente IA" abaixo dos 2 existentes
-- `src/pages/Department.tsx` — wire-up do novo dialog
-- `src/i18n/locales/{pt,en,es}.json` — strings do novo assistente
+1. Após deploy, enviar 1 mensagem de teste via Admin Broadcast para o seu número.
+2. Responder "troca" para validar webhook inbound + menu interativo.
+3. Conferir registros em `WhatsApp Logs`.
+4. Disparar 1 lembrete agendado manual e validar efeito "digitando…".
+5. Só então remover os secrets antigos do Z-API.
 
-**Não mexer:** `SmartScheduleDialog.tsx`, `generate-smart-schedule`, schema do banco (sem migração nova).
+### Riscos
 
-## Modelo & custos
+- **Formato de telefone**: UAZAPI aceita `5511999999999` (sem `+`, sem `@c.us`). Vou normalizar no helper, igual fazemos hoje.
+- **Rate / delay**: UAZAPI tem parâmetro `delay` nativo (ms) — vou aproveitar em vez do `setTimeout` manual, reduzindo tempo de execução das edge functions.
+- **Mídia**: hoje não enviamos mídia pelo Z-API, só texto — então sem impacto.
 
-- Lovable AI Gateway, modelo `google/gemini-3-flash-preview` (rápido e barato).
-- `LOVABLE_API_KEY` já existe.
-- Tratar erros 429/402 da gateway com toast claro.
-
-## Fora do escopo
-
-- Salvar histórico de conversas (cada abertura começa nova conversa em memória).
-- Mexer no Smart Schedule existente.
-- Mudar regras de negócio ou banco.
+Quando aprovar, eu já começo pelos secrets e pela função compartilhada.
