@@ -282,21 +282,21 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // ─── Swap-over-WhatsApp router ───
-    // Try to handle as a swap initiation / continuation.
-    // If handled, short-circuit. Otherwise fall through to blackout-prompt logic.
+    console.log(`[router] profile=${profile.id} name=${profile.name} text="${text}" trying swap`);
     try {
       const handledSwap = await tryHandleSwapMessage(
         { supabase, supabaseUrl, serviceRoleKey },
         { id: profile.id, name: profile.name, whatsapp: profile.whatsapp },
         text,
       );
+      console.log(`[router] swap handled=${handledSwap}`);
       if (handledSwap) {
         return new Response(JSON.stringify({ ok: true, handled: "swap" }), {
           headers: { "Content-Type": "application/json", ...corsHeaders },
         });
       }
     } catch (e) {
-      console.error("swap flow error:", e);
+      console.error("swap flow error:", e instanceof Error ? `${e.message}\n${e.stack}` : e);
     }
 
     const { data: prompts } = await supabase

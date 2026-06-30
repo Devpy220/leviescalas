@@ -35,7 +35,8 @@ async function sendWA(
   message: string,
 ): Promise<void> {
   try {
-    await fetch(`${deps.supabaseUrl}/functions/v1/send-whatsapp-notification`, {
+    console.log(`[sendWA] -> ${phone} chars=${message.length}`);
+    const res = await fetch(`${deps.supabaseUrl}/functions/v1/send-whatsapp-notification`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -47,8 +48,10 @@ async function sendWA(
         delayTyping: Math.floor(Math.random() * 4) + 2,
       }),
     });
+    const txt = await res.text();
+    console.log(`[sendWA] status=${res.status} body=${txt.slice(0, 200)}`);
   } catch (e) {
-    console.error("swapFlow sendWA error:", e);
+    console.error("swapFlow sendWA error:", e instanceof Error ? `${e.message}\n${e.stack}` : e);
   }
 }
 
@@ -106,21 +109,24 @@ async function cancelOldSessions(deps: SwapFlowDeps, userId: string) {
 // ─────────────────────────────────────────────────────────────────────
 
 async function startSwap(deps: SwapFlowDeps, profile: Profile): Promise<void> {
+  console.log(`[startSwap] user=${profile.id}`);
   const lang = detectLang(profile.whatsapp);
   const fname = (profile.name || "").split(" ")[0] || "👋";
 
-  const { data: memberships } = await deps.supabase
+  const { data: memberships, error: memErr } = await deps.supabase
     .from("members")
     .select("department_id")
     .eq("user_id", profile.id);
+  if (memErr) console.error("[startSwap] memberships error:", memErr);
   const deptIds = (memberships ?? []).map((m: any) => m.department_id);
+  console.log(`[startSwap] deptIds=${JSON.stringify(deptIds)}`);
   if (deptIds.length === 0) {
     await sendWA(deps, profile.whatsapp, t(lang, "no_active_dept", { fname }));
     return;
   }
 
   const today = new Date().toISOString().slice(0, 10);
-  const { data: schedules } = await deps.supabase
+  const { data: schedules, error: schErr } = await deps.supabase
     .from("schedules")
     .select("id, date, time_start, time_end, department_id, departments(name)")
     .eq("user_id", profile.id)
@@ -129,6 +135,8 @@ async function startSwap(deps: SwapFlowDeps, profile: Profile): Promise<void> {
     .order("date", { ascending: true })
     .order("time_start", { ascending: true })
     .limit(MAX_MY_SCHEDULES);
+  if (schErr) console.error("[startSwap] schedules error:", schErr);
+  console.log(`[startSwap] schedulesCount=${schedules?.length ?? 0}`);
 
   if (!schedules || schedules.length === 0) {
     await sendWA(deps, profile.whatsapp, t(lang, "no_swap_schedules", { fname }));
