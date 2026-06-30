@@ -64,7 +64,7 @@ interface Department {
   trial_ends_at: string | null;
   created_at: string;
   avatar_url: string | null;
-  stripe_customer_id: string | null;
+  
   max_blackout_dates?: number;
   allow_sunday_double?: boolean;
 }
