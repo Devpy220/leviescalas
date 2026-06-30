@@ -196,7 +196,10 @@ serve(async (req: Request): Promise<Response> => {
       uaMsg.fromMe === true || uaMsg.fromme === true ||
       payload.fromMe === true || payload.isFromMe === true;
 
+    console.log(`[extract] fromMe=${fromMe} phoneRaw="${phoneRaw}" textLen=${text.length} text="${text.slice(0,40)}"`);
+
     if (fromMe || !phoneRaw || typeof text !== "string" || !text.trim()) {
+      console.log(`[extract] -> ignored (fromMe=${fromMe}, hasPhone=${!!phoneRaw}, hasText=${!!text.trim()})`);
       return new Response(JSON.stringify({ ignored: true }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
@@ -218,7 +221,10 @@ serve(async (req: Request): Promise<Response> => {
       (p: any) => normalizePhone(p.whatsapp).slice(-10) === tail,
     );
 
+    console.log(`[lookup] phoneDigits=${phoneDigits} tail=${tail} candidates=${candidates?.length ?? 0} profileFound=${!!profile}`);
+
     if (!profile) {
+      console.log(`[lookup] -> no profile match for tail=${tail}`);
       return new Response(JSON.stringify({ ignored: true, reason: "phone not found" }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
