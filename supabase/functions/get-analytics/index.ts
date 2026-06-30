@@ -26,8 +26,8 @@ serve(async (req) => {
 
     const token = authHeader.replace("Bearer ", "");
 
-    const { data: userData, error: userErr } = await supabase.auth.getUser(token);
-    const userId = userData?.user?.id;
+    const { data: claimsData, error: userErr } = await supabase.auth.getClaims(token);
+    const userId = claimsData?.claims?.sub as string | undefined;
 
     if (userErr || !userId) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
