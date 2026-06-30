@@ -12,7 +12,8 @@ export const LEVI_COMMANDS_HINT =
   `• *ajuda* / *comandos* / *menu* — ver esta lista de novo\n` +
   `\n📅 *Para o aviso mensal de disponibilidade, responda com:*\n` +
   `• *bloquear 5/7, 12/7* — bloqueia datas específicas\n` +
-  `• *bloquear todas as quartas* — bloqueia um dia da semana inteiro\n` +
+  `• *bloquear todas as quartas* — bloqueia o dia da semana inteiro\n` +
+  `• *bloquear domingos de manhã* / *bloquear domingos de noite* — bloqueio permanente do turno\n` +
   `• *servir 18/7, 25/7* — só vou servir nesses dias\n` +
   `• *nenhum* — liberar todos os dias do mês\n` +
   `\n_Fora dessas palavras (ou de uma resposta direta a uma mensagem minha) eu fico quieto._`;
