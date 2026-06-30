@@ -429,7 +429,7 @@ serve(async (req: Request): Promise<Response> => {
 
     // If user is replying to the prompt but we couldn't extract dates AND it's not "liberar todos",
     // send a friendly "não entendi" + commands hint instead of silently doing nothing.
-    if (parsed.mode !== "none" && parsed.dates.length === 0) {
+    if (parsed.mode !== "none" && parsed.dates.length === 0 && (parsed.weeklyBlocks?.length ?? 0) === 0) {
       await sendConfirmation(
         supabaseUrl,
         serviceRoleKey,
