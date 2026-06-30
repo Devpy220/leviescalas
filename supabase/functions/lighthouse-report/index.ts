@@ -1,4 +1,22 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+
+function getUserIdFromJwt(authHeader: string | null): { token: string; userId: string } | null {
+  if (!authHeader?.startsWith("Bearer ")) return null;
+  const token = authHeader.replace("Bearer ", "").trim();
+  const [, payload] = token.split(".");
+  if (!payload) return null;
+  try {
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(normalized.length + ((4 - normalized.length % 4) % 4), "=");
+    const claims = JSON.parse(atob(padded));
+    const userId = typeof claims.sub === "string" ? claims.sub : "";
+    const exp = typeof claims.exp === "number" ? claims.exp : 0;
+    if (!userId || !exp || exp <= Math.floor(Date.now() / 1000)) return null;
+    return { token, userId };
+  } catch {
+    return null;
+  }
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -64,30 +82,36 @@ Deno.serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    const auth = req.headers.get("Authorization");
-    if (!auth) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    const token = auth.replace("Bearer ", "");
-    const { data: userData, error: userErr } = await supabase.auth.getUser(token);
-    const userId = userData?.user?.id;
-    if (userErr || !userId) {
+    const authInfo = getUserIdFromJwt(req.headers.get("Authorization"));
+    if (!authInfo) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const { data: isAdmin } = await supabase.rpc("has_role", {
-      _user_id: userId,
+    const userSupabase = createClient(supabaseUrl, anonKey, {
+      auth: { persistSession: false },
+      global: { headers: { Authorization: `Bearer ${authInfo.token}` } },
+    });
+    const supabase = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { persistSession: false },
+    });
+
+    const { data: isAdmin, error: roleError } = await userSupabase.rpc("has_role", {
+      _user_id: authInfo.userId,
       _role: "admin",
     });
+    if (roleError) {
+      console.error("[lighthouse-report] role check failed:", roleError);
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     if (!isAdmin) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403,
