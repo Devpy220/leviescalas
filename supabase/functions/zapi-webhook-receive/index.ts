@@ -167,7 +167,7 @@ serve(async (req: Request): Promise<Response> => {
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     const payload = await req.json().catch(() => ({} as any));
-    console.log("WhatsApp webhook payload:", JSON.stringify(payload).slice(0, 500));
+    console.log("WhatsApp webhook payload:", JSON.stringify(payload).slice(0, 2000));
 
     // UAZAPI payloads nest under `message`. Z-API uses flat fields. Support both.
     const uaMsg = payload.message ?? payload.Message ?? {};
