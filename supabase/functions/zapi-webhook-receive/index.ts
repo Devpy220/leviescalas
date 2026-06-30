@@ -246,6 +246,21 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
+    // ─── "ajuda" / "comandos" / "menu" / "?" / standalone "levi" → send commands list ───
+    const helpRegex = /^(ajuda|help|comandos?|menu|\?|oi\s+levi|ol[áa]\s+levi|levi)\s*[!?.]*$/i;
+    if (helpRegex.test((text || "").trim())) {
+      const fname = (profile.name || "").split(" ")[0] || "👋";
+      await sendConfirmation(
+        supabaseUrl,
+        serviceRoleKey,
+        profile.whatsapp,
+        `Olá *${fname}*!\n\n${LEVI_COMMANDS_HINT}`,
+      );
+      return new Response(JSON.stringify({ ok: true, handled: "help" }), {
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
     // ─── "escala" command: list user's upcoming schedules ───
     try {
       if (isScheduleListCommand(text)) {
