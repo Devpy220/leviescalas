@@ -48,9 +48,14 @@ serve(async (req: Request): Promise<Response> => {
     const nowBRT = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
     const url = new URL(req.url);
     const force = url.searchParams.get("force") === "1";
-    const sendToAll = url.searchParams.get("all") === "1";
+    const sendToAllParam = url.searchParams.get("all") === "1";
 
-    if (!force && !isThirdToLastDayOfMonth(nowBRT)) {
+    // One-shot: on 2026-07-01 BRT, behave as force + all (send to everyone).
+    const isoBRT = `${nowBRT.getFullYear()}-${String(nowBRT.getMonth() + 1).padStart(2, "0")}-${String(nowBRT.getDate()).padStart(2, "0")}`;
+    const oneShot = isoBRT === "2026-07-01";
+    const sendToAll = sendToAllParam || oneShot;
+
+    if (!force && !oneShot && !isThirdToLastDayOfMonth(nowBRT)) {
       return new Response(JSON.stringify({ skipped: true, reason: "not third-to-last day of month" }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
