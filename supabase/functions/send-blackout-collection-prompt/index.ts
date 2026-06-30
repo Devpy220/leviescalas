@@ -116,7 +116,7 @@ serve(async (req: Request): Promise<Response> => {
     const promptRows: any[] = [];
 
     for (const p of profiles ?? []) {
-      if (alreadyPrompted.has(p.id)) continue;
+      if (!sendToAll && alreadyPrompted.has(p.id)) continue;
       if (!p.whatsapp) continue;
 
       // Aggregate availability rows: a slot is blocked if blocked in ALL the user's departments
