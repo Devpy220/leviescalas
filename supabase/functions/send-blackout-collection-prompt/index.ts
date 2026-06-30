@@ -257,13 +257,19 @@ ${close}`;
       [recipients[i], recipients[j]] = [recipients[j], recipients[i]];
     }
 
-    const { backgrounded } = scheduleBatch(supabaseUrl, serviceRoleKey, recipients);
+    const { backgrounded, promise } = scheduleBatch(supabaseUrl, serviceRoleKey, recipients, {
+      forceQueue: true,
+      origin: "blackout_collection_prompt",
+      minDelayMs: 20_000,
+      maxDelayMs: 90_000,
+    });
+    const queuedResult = await promise;
 
     return new Response(
       JSON.stringify({
         success: true,
         target_month: targetMonthIso,
-        queued: recipients.length,
+        queued: "queued" in queuedResult ? queuedResult.queued : recipients.length,
         backgrounded,
       }),
       { headers: { "Content-Type": "application/json", ...corsHeaders } },
