@@ -94,11 +94,15 @@ export async function createCaktoCheckout(input: CreateCheckoutInput) {
   );
 }
 
-// HMAC-SHA256 webhook signature verification
+// HMAC-SHA256 webhook signature verification — tolerant to header format variations
 export async function verifyCaktoSignature(rawBody: string, signature: string | null): Promise<boolean> {
   const secret = Deno.env.get("CAKTO_WEBHOOK_SECRET");
   if (!secret) return false;
-  if (!signature) return false;
+  if (!signature) {
+    // Fallback: some Cakto setups send the secret as a bearer/plain token in a header
+    // The caller handles that path separately.
+    return false;
+  }
 
   const key = await crypto.subtle.importKey(
     "raw",
@@ -108,8 +112,19 @@ export async function verifyCaktoSignature(rawBody: string, signature: string | 
     ["sign"],
   );
   const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(rawBody));
-  const hex = Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("");
-  // Accept "sha256=..." prefix or bare hex
-  const provided = signature.replace(/^sha256=/, "").trim().toLowerCase();
-  return provided === hex;
+  const bytes = new Uint8Array(sig);
+  const hex = Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+  const b64 = btoa(String.fromCharCode(...bytes));
+
+  // Strip common prefixes: "sha256=", "hmac-sha256=", "t=...,v1=..." (stripe-style)
+  let provided = signature.trim();
+  const stripeMatch = provided.match(/v1=([A-Fa-f0-9+/=]+)/);
+  if (stripeMatch) provided = stripeMatch[1];
+  provided = provided.replace(/^sha256=/i, "").replace(/^hmac-sha256=/i, "").trim();
+
+  return (
+    provided.toLowerCase() === hex ||
+    provided === b64 ||
+    provided === secret // direct shared-secret header
+  );
 }

@@ -7,12 +7,38 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
 
   const rawBody = await req.text();
-  const signature = req.headers.get('x-cakto-signature') || req.headers.get('cakto-signature');
+  // Collect every header that might carry the signature/token
+  const headerCandidates = [
+    'x-cakto-signature', 'cakto-signature', 'x-signature', 'signature',
+    'x-webhook-signature', 'x-hub-signature-256', 'x-cakto-token',
+    'cakto-token', 'x-webhook-secret', 'authorization',
+  ];
+  const headerDump: Record<string, string> = {};
+  for (const h of headerCandidates) {
+    const v = req.headers.get(h);
+    if (v) headerDump[h] = v;
+  }
+  const signature =
+    req.headers.get('x-cakto-signature') ||
+    req.headers.get('cakto-signature') ||
+    req.headers.get('x-signature') ||
+    req.headers.get('signature') ||
+    req.headers.get('x-webhook-signature') ||
+    req.headers.get('x-hub-signature-256') ||
+    req.headers.get('x-cakto-token') ||
+    req.headers.get('cakto-token') ||
+    req.headers.get('x-webhook-secret') ||
+    req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ||
+    null;
 
   const ok = await verifyCaktoSignature(rawBody, signature);
   if (!ok) {
-    console.warn('[cakto-webhook] invalid signature');
-    return new Response('invalid signature', { status: 401 });
+    console.warn('[cakto-webhook] invalid signature. Headers seen:', JSON.stringify(headerDump), 'Body preview:', rawBody.slice(0, 300));
+    // Allow disabling strict verification temporarily for diagnostics
+    if (Deno.env.get('CAKTO_WEBHOOK_INSECURE') !== '1') {
+      return new Response('invalid signature', { status: 401 });
+    }
+    console.warn('[cakto-webhook] CAKTO_WEBHOOK_INSECURE=1 — proceeding without signature check');
   }
 
   let event: any;
