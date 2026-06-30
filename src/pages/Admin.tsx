@@ -1087,12 +1087,21 @@ export default function Admin() {
                 onClick={async () => {
                   if (!confirm('Enviar agora para TODOS os voluntários?')) return;
                   try {
-                    const { data, error } = await supabase.functions.invoke(
-                      'send-blackout-collection-prompt?force=1&all=1',
-                      { method: 'POST' }
+                    const { data: { session } } = await supabase.auth.getSession();
+                    const res = await fetch(
+                      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-blackout-collection-prompt?force=1&all=1`,
+                      {
+                        method: 'POST',
+                        headers: {
+                          Authorization: `Bearer ${session?.access_token ?? ''}`,
+                          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                          'Content-Type': 'application/json',
+                        },
+                      }
                     );
-                    if (error) throw error;
-                    toast({ title: 'Disparado', description: `Fila: ${data?.queued ?? 0}` });
+                    const body = await res.json().catch(() => ({}));
+                    if (!res.ok) throw new Error(body?.error || `HTTP ${res.status}`);
+                    toast({ title: 'Disparado', description: `Fila: ${body?.queued ?? 0}` });
                   } catch (e: any) {
                     toast({ title: 'Erro', description: e?.message || 'Falha', variant: 'destructive' });
                   }
