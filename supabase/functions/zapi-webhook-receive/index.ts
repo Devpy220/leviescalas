@@ -196,7 +196,10 @@ serve(async (req: Request): Promise<Response> => {
       uaMsg.fromMe === true || uaMsg.fromme === true ||
       payload.fromMe === true || payload.isFromMe === true;
 
+    console.log(`[extract] fromMe=${fromMe} phoneRaw="${phoneRaw}" textLen=${text.length} text="${text.slice(0,40)}"`);
+
     if (fromMe || !phoneRaw || typeof text !== "string" || !text.trim()) {
+      console.log(`[extract] -> ignored (fromMe=${fromMe}, hasPhone=${!!phoneRaw}, hasText=${!!text.trim()})`);
       return new Response(JSON.stringify({ ignored: true }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
