@@ -31,10 +31,22 @@ Deno.serve(async (req) => {
     req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ||
     null;
 
-  const ok = await verifyCaktoSignature(rawBody, signature);
-  if (!ok) {
-    console.warn('[cakto-webhook] invalid signature. Headers seen:', JSON.stringify(headerDump), 'Body preview:', rawBody.slice(0, 300));
-    // Allow disabling strict verification temporarily for diagnostics
+  // Cakto sends the secret inside the JSON body as `secret`, not as a header.
+  // We still accept header-based signatures as a fallback for future changes.
+  const expectedSecret = Deno.env.get('CAKTO_WEBHOOK_SECRET') || '';
+  let bodySecret: string | null = null;
+  try {
+    const parsed = JSON.parse(rawBody);
+    bodySecret = parsed?.secret || parsed?.webhook_secret || parsed?.token || null;
+  } catch { /* ignore */ }
+
+  const bodyOk = !!expectedSecret && !!bodySecret &&
+    bodySecret.length === expectedSecret.length &&
+    bodySecret === expectedSecret;
+  const headerOk = signature ? await verifyCaktoSignature(rawBody, signature) : false;
+
+  if (!bodyOk && !headerOk) {
+    console.warn('[cakto-webhook] invalid signature. Headers seen:', JSON.stringify(headerDump), 'Body secret present:', !!bodySecret, 'Body preview:', rawBody.slice(0, 200));
     if (Deno.env.get('CAKTO_WEBHOOK_INSECURE') !== '1') {
       return new Response('invalid signature', { status: 401 });
     }
@@ -53,8 +65,9 @@ Deno.serve(async (req) => {
   );
 
   const type = (event.type || event.event || '').toString().toLowerCase();
-  const data = event.data || event.payload || event;
-  const reference = data.reference || data.metadata?.reference;
+  const rawData = event.data || event.payload || event;
+  const data = Array.isArray(rawData) ? (rawData[0] || {}) : rawData;
+  const reference = data.reference || data.metadata?.reference || data.refId || data.ref_id;
   const sessionId = data.checkout_id || data.session_id || data.id;
   const subscriptionId = data.subscription_id || data.subscription?.id;
   const paymentId = data.payment_id || data.id;
