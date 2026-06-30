@@ -6,11 +6,16 @@ export const INSTAGRAM_LINK = "https://instagram.com/elsdigital_tech";
 // Quick guide so volunteers know which words the LEVI bot understands.
 // Outside of these keywords (or a recent reply to a LEVI prompt), the bot stays quiet.
 export const LEVI_COMMANDS_HINT =
-  `🤖 *Como falar comigo (LEVI Escalas):*\n` +
+  `🤖 *Palavras que eu entendo (LEVI Escalas):*\n` +
   `• *escala* — ver suas próximas escalas\n` +
   `• *troca* — pedir troca de uma escala\n` +
-  `• *servir* / *bloquear* / datas (ex: 12/10) — responder o aviso de disponibilidade\n` +
-  `_Só respondo a essas palavras ou quando você responde uma mensagem minha._`;
+  `• *ajuda* / *comandos* / *menu* — ver esta lista de novo\n` +
+  `\n📅 *Para o aviso mensal de disponibilidade, responda com:*\n` +
+  `• *bloquear 5/7, 12/7* — bloqueia datas específicas\n` +
+  `• *bloquear todas as quartas* — bloqueia um dia da semana inteiro\n` +
+  `• *servir 18/7, 25/7* — só vou servir nesses dias\n` +
+  `• *nenhum* — liberar todos os dias do mês\n` +
+  `\n_Fora dessas palavras (ou de uma resposta direta a uma mensagem minha) eu fico quieto._`;
 
 function hashString(s: string): number {
   let h = 0;

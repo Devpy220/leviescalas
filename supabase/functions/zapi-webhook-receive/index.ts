@@ -7,6 +7,7 @@ import {
 } from "../_shared/scheduleDates.ts";
 import { tryHandleSwapMessage } from "./swapFlow.ts";
 import { detectLang, t, fmtTime, DOW, isScheduleListCommand, translateRole } from "../_shared/whatsappI18n.ts";
+import { LEVI_COMMANDS_HINT } from "../_shared/messageVariants.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -245,6 +246,21 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
+    // ─── "ajuda" / "comandos" / "menu" / "?" / standalone "levi" → send commands list ───
+    const helpRegex = /^(ajuda|help|comandos?|menu|\?|oi\s+levi|ol[áa]\s+levi|levi)\s*[!?.]*$/i;
+    if (helpRegex.test((text || "").trim())) {
+      const fname = (profile.name || "").split(" ")[0] || "👋";
+      await sendConfirmation(
+        supabaseUrl,
+        serviceRoleKey,
+        profile.whatsapp,
+        `Olá *${fname}*!\n\n${LEVI_COMMANDS_HINT}`,
+      );
+      return new Response(JSON.stringify({ ok: true, handled: "help" }), {
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
     // ─── "escala" command: list user's upcoming schedules ───
     try {
       if (isScheduleListCommand(text)) {
@@ -368,6 +384,21 @@ serve(async (req: Request): Promise<Response> => {
 
     const parsed = parseUserResponse(text, targetMonth);
     const fname = (profile.name || "").split(" ")[0] || "amigo(a)";
+
+    // If user is replying to the prompt but we couldn't extract dates AND it's not "liberar todos",
+    // send a friendly "não entendi" + commands hint instead of silently doing nothing.
+    if (parsed.mode !== "none" && parsed.dates.length === 0) {
+      await sendConfirmation(
+        supabaseUrl,
+        serviceRoleKey,
+        profile.whatsapp,
+        `🤔 *Não entendi, ${fname}.*\n\nNão consegui identificar datas na sua resposta.\n\n${LEVI_COMMANDS_HINT}`,
+      );
+      return new Response(JSON.stringify({ ok: true, handled: "unparsed" }), {
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
 
     // Departments + memberships + availability
     const { data: memberships } = await supabase
