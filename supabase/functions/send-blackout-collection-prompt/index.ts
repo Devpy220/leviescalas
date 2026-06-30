@@ -206,6 +206,14 @@ ${limitLine}
 
 ⏳ Prazo: até *dia ${lastDayCurrent}*.
 
+${LEVI_COMMANDS_HINT}
+
+━━━━━━━━━━━━━━━━━━━━
+💛 *Apoie o LEVI* — o projeto é gratuito e se mantém com a sua ajuda.
+💡 Sugestão: *R$ 25,00* (qualquer valor é bem-vindo)
+👉 https://leviescalas.com.br/apoiar
+━━━━━━━━━━━━━━━━━━━━
+
 ${igLine}
 
 ${close}`;
