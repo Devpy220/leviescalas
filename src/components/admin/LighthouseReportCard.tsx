@@ -168,8 +168,12 @@ export function LighthouseReportCard() {
               </a>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <StrategyCard result={report.mobile} icon={<Smartphone className="w-4 h-4" />} />
-              <StrategyCard result={report.desktop} icon={<Monitor className="w-4 h-4" />} />
+              {isStrategyError(report.mobile)
+                ? <StrategyErrorCard strategy="mobile" result={report.mobile} icon={<Smartphone className="w-4 h-4" />} />
+                : <StrategyCard result={report.mobile} icon={<Smartphone className="w-4 h-4" />} />}
+              {isStrategyError(report.desktop)
+                ? <StrategyErrorCard strategy="desktop" result={report.desktop} icon={<Monitor className="w-4 h-4" />} />
+                : <StrategyCard result={report.desktop} icon={<Monitor className="w-4 h-4" />} />}
             </div>
             <a
               href={`https://pagespeed.web.dev/analysis?url=${encodeURIComponent(report.url)}`}
