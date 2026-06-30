@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { scheduleBatch } from "../_shared/whatsapp-queue.ts";
-import { pickVariant, INSTAGRAM_LINK } from "../_shared/messageVariants.ts";
+import { pickVariant, INSTAGRAM_LINK, LEVI_COMMANDS_HINT } from "../_shared/messageVariants.ts";
 import {
   buildCandidateDays,
   formatCandidateLine,
@@ -37,18 +37,44 @@ function firstName(name: string): string {
 serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  const authFail = requireCronAuth(req, corsHeaders);
-  if (authFail) return authFail;
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+  // Allow admin users to trigger via the dashboard, otherwise require cron auth.
+  let isAdminCaller = false;
+  const auth = req.headers.get("Authorization") ?? req.headers.get("authorization") ?? "";
+  if (auth.toLowerCase().startsWith("bearer ")) {
+    const jwt = auth.slice(7).trim();
+    const { data: u } = await supabase.auth.getUser(jwt);
+    if (u?.user) {
+      const { data: role } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", u.user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+      if (role) isAdminCaller = true;
+    }
+  }
+  if (!isAdminCaller) {
+    const authFail = requireCronAuth(req, corsHeaders);
+    if (authFail) return authFail;
+  }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     const nowBRT = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
-    const force = new URL(req.url).searchParams.get("force") === "1";
+    const url = new URL(req.url);
+    const force = url.searchParams.get("force") === "1";
+    const sendToAllParam = url.searchParams.get("all") === "1";
 
-    if (!force && !isThirdToLastDayOfMonth(nowBRT)) {
+    // One-shot: on 2026-07-01 BRT, behave as force + all (send to everyone).
+    const isoBRT = `${nowBRT.getFullYear()}-${String(nowBRT.getMonth() + 1).padStart(2, "0")}-${String(nowBRT.getDate()).padStart(2, "0")}`;
+    const oneShot = isoBRT === "2026-07-01";
+    const sendToAll = sendToAllParam || oneShot;
+
+    if (!force && !oneShot && !isThirdToLastDayOfMonth(nowBRT)) {
       return new Response(JSON.stringify({ skipped: true, reason: "not third-to-last day of month" }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
@@ -114,7 +140,7 @@ serve(async (req: Request): Promise<Response> => {
     const promptRows: any[] = [];
 
     for (const p of profiles ?? []) {
-      if (alreadyPrompted.has(p.id)) continue;
+      if (!sendToAll && alreadyPrompted.has(p.id)) continue;
       if (!p.whatsapp) continue;
 
       // Aggregate availability rows: a slot is blocked if blocked in ALL the user's departments
@@ -204,6 +230,14 @@ ${limitLine}
 
 ⏳ Prazo: até *dia ${lastDayCurrent}*.
 
+${LEVI_COMMANDS_HINT}
+
+━━━━━━━━━━━━━━━━━━━━
+💛 *Apoie o LEVI* — o projeto é gratuito e se mantém com a sua ajuda.
+💡 Sugestão: *R$ 25,00* (qualquer valor é bem-vindo)
+👉 https://leviescalas.com.br/apoiar
+━━━━━━━━━━━━━━━━━━━━
+
 ${igLine}
 
 ${close}`;
@@ -215,7 +249,7 @@ ${close}`;
     if (promptRows.length > 0) {
       await supabase
         .from("blackout_collection_prompts")
-        .insert(promptRows);
+        .upsert(promptRows, { onConflict: "user_id,target_month", ignoreDuplicates: true });
     }
 
     for (let i = recipients.length - 1; i > 0; i--) {

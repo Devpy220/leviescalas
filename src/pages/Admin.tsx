@@ -1061,7 +1061,7 @@ export default function Admin() {
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div>
                 <CardTitle className="text-base">Logs de envio do WhatsApp</CardTitle>
-                <CardDescription className="text-xs">Veja status, erros e horário de cada mensagem enviada via Z-API</CardDescription>
+                <CardDescription className="text-xs">Veja status, erros e horário de cada mensagem enviada via UAZAPI</CardDescription>
               </div>
               <Button asChild size="sm" className="bg-violet-600 hover:bg-violet-700">
                 <a href="/admin/whatsapp-logs">Abrir logs</a>
@@ -1069,6 +1069,50 @@ export default function Admin() {
             </div>
           </CardHeader>
         </Card>
+
+        {/* Blackout collection blast (admin trigger) */}
+        <Card className="mb-6 border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-transparent">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div>
+                <CardTitle className="text-base">Coletar disponibilidade — enviar a TODOS</CardTitle>
+                <CardDescription className="text-xs">
+                  Dispara agora o aviso de bloqueios/datas do próximo mês para todos os voluntários com WhatsApp.
+                  Inclui guia de comandos do LEVI e CTA de apoio (R$ 25).
+                </CardDescription>
+              </div>
+              <Button
+                size="sm"
+                className="bg-amber-600 hover:bg-amber-700"
+                onClick={async () => {
+                  if (!confirm('Enviar agora para TODOS os voluntários?')) return;
+                  try {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    const res = await fetch(
+                      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-blackout-collection-prompt?force=1&all=1`,
+                      {
+                        method: 'POST',
+                        headers: {
+                          Authorization: `Bearer ${session?.access_token ?? ''}`,
+                          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                          'Content-Type': 'application/json',
+                        },
+                      }
+                    );
+                    const body = await res.json().catch(() => ({}));
+                    if (!res.ok) throw new Error(body?.error || `HTTP ${res.status}`);
+                    toast({ title: 'Disparado', description: `Fila: ${body?.queued ?? 0}` });
+                  } catch (e: any) {
+                    toast({ title: 'Erro', description: e?.message || 'Falha', variant: 'destructive' });
+                  }
+                }}
+              >
+                Disparar agora
+              </Button>
+            </div>
+          </CardHeader>
+        </Card>
+
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
