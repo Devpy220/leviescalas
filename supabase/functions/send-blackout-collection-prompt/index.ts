@@ -46,7 +46,9 @@ serve(async (req: Request): Promise<Response> => {
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     const nowBRT = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
-    const force = new URL(req.url).searchParams.get("force") === "1";
+    const url = new URL(req.url);
+    const force = url.searchParams.get("force") === "1";
+    const sendToAll = url.searchParams.get("all") === "1";
 
     if (!force && !isThirdToLastDayOfMonth(nowBRT)) {
       return new Response(JSON.stringify({ skipped: true, reason: "not third-to-last day of month" }), {
