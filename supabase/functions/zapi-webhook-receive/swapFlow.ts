@@ -123,7 +123,7 @@ async function startSwap(deps: SwapFlowDeps, profile: Profile): Promise<void> {
   }
 
   const today = new Date().toISOString().slice(0, 10);
-  const { data: schedules } = await deps.supabase
+  const { data: schedules, error: schErr } = await deps.supabase
     .from("schedules")
     .select("id, date, time_start, time_end, department_id, departments(name)")
     .eq("user_id", profile.id)
@@ -132,6 +132,8 @@ async function startSwap(deps: SwapFlowDeps, profile: Profile): Promise<void> {
     .order("date", { ascending: true })
     .order("time_start", { ascending: true })
     .limit(MAX_MY_SCHEDULES);
+  if (schErr) console.error("[startSwap] schedules error:", schErr);
+  console.log(`[startSwap] schedulesCount=${schedules?.length ?? 0}`);
 
   if (!schedules || schedules.length === 0) {
     await sendWA(deps, profile.whatsapp, t(lang, "no_swap_schedules", { fname }));
