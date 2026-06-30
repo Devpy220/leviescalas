@@ -612,10 +612,14 @@ _LEVI_`;
 `🔴 *Anotado, ${fname}!*
 ━━━━━━━━━━━━━━━━━━━━
 
-📖 _Leia com atenção:_
+📖 _Leia com atenção:_${acceptedIso.length > 0 ? `
 
 🚫 *Dias bloqueados:*
-${acceptedList || "(nenhuma data válida)"}`;
+${acceptedList}` : ""}${appliedWeekly.length > 0 ? `
+
+🔁 *Bloqueio permanente do dia da semana:*
+${appliedWeekly.map((w) => `• ${w.label} (${w.timeStart}–${w.timeEnd})`).join("\n")}
+_(vale para todos os meses; me responda novamente para liberar)_` : ""}${acceptedIso.length === 0 && appliedWeekly.length === 0 ? "\n\n(nenhuma data válida)" : ""}`;
       if (Object.keys(rejectedByDept).length > 0) {
         msg += `\n\n━━━━━━━━━━━━━━━━━━━━\n⚠️ *Limite atingido em alguns departamentos.*\nNão consegui bloquear estes dias:\n`;
         for (const [deptName, list] of Object.entries(rejectedByDept)) {
