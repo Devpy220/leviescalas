@@ -193,6 +193,42 @@ export type Database = {
         }
         Relationships: []
       }
+      cakto_products: {
+        Row: {
+          amount_cents: number | null
+          cakto_offer_id: string | null
+          cakto_price_id: string | null
+          cakto_product_id: string | null
+          created_at: string
+          id: string
+          kind: string
+          metadata: Json
+          updated_at: string
+        }
+        Insert: {
+          amount_cents?: number | null
+          cakto_offer_id?: string | null
+          cakto_price_id?: string | null
+          cakto_product_id?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          metadata?: Json
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number | null
+          cakto_offer_id?: string | null
+          cakto_price_id?: string | null
+          cakto_product_id?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          metadata?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       calendar_sync_tokens: {
         Row: {
           created_at: string
@@ -368,8 +404,6 @@ export type Database = {
           leader_id: string
           max_blackout_dates: number
           name: string
-          stripe_customer_id: string | null
-          stripe_subscription_id: string | null
           subscription_status: Database["public"]["Enums"]["subscription_status"]
           trial_ends_at: string | null
           updated_at: string
@@ -386,8 +420,6 @@ export type Database = {
           leader_id: string
           max_blackout_dates?: number
           name: string
-          stripe_customer_id?: string | null
-          stripe_subscription_id?: string | null
           subscription_status?: Database["public"]["Enums"]["subscription_status"]
           trial_ends_at?: string | null
           updated_at?: string
@@ -404,8 +436,6 @@ export type Database = {
           leader_id?: string
           max_blackout_dates?: number
           name?: string
-          stripe_customer_id?: string | null
-          stripe_subscription_id?: string | null
           subscription_status?: Database["public"]["Enums"]["subscription_status"]
           trial_ends_at?: string | null
           updated_at?: string
@@ -433,6 +463,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      donations: {
+        Row: {
+          amount_cents: number
+          cakto_payment_id: string | null
+          cakto_session_id: string | null
+          cakto_subscription_id: string | null
+          created_at: string
+          currency: string
+          donor_email: string | null
+          donor_name: string | null
+          donor_whatsapp: string | null
+          id: string
+          mode: string
+          paid_at: string | null
+          payment_method: string | null
+          raw_payload: Json | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount_cents: number
+          cakto_payment_id?: string | null
+          cakto_session_id?: string | null
+          cakto_subscription_id?: string | null
+          created_at?: string
+          currency?: string
+          donor_email?: string | null
+          donor_name?: string | null
+          donor_whatsapp?: string | null
+          id?: string
+          mode: string
+          paid_at?: string | null
+          payment_method?: string | null
+          raw_payload?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          cakto_payment_id?: string | null
+          cakto_session_id?: string | null
+          cakto_subscription_id?: string | null
+          created_at?: string
+          currency?: string
+          donor_email?: string | null
+          donor_name?: string | null
+          donor_whatsapp?: string | null
+          id?: string
+          mode?: string
+          paid_at?: string | null
+          payment_method?: string | null
+          raw_payload?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       escala_repertorio: {
         Row: {
@@ -738,51 +825,6 @@ export type Database = {
         }
         Relationships: []
       }
-      payment_receipts: {
-        Row: {
-          department_id: string
-          id: string
-          notes: string | null
-          receipt_url: string
-          status: string
-          uploaded_at: string
-          user_id: string
-        }
-        Insert: {
-          department_id: string
-          id?: string
-          notes?: string | null
-          receipt_url: string
-          status?: string
-          uploaded_at?: string
-          user_id: string
-        }
-        Update: {
-          department_id?: string
-          id?: string
-          notes?: string | null
-          receipt_url?: string
-          status?: string
-          uploaded_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "payment_receipts_department_id_fkey"
-            columns: ["department_id"]
-            isOneToOne: false
-            referencedRelation: "departments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "payment_receipts_department_id_fkey"
-            columns: ["department_id"]
-            isOneToOne: false
-            referencedRelation: "departments_safe"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       profile_access_audit: {
         Row: {
           accessed_at: string | null
@@ -857,63 +899,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      push_subscriptions: {
-        Row: {
-          auth: string
-          created_at: string
-          endpoint: string
-          id: string
-          p256dh: string
-          updated_at: string
-          user_agent: string | null
-          user_id: string
-        }
-        Insert: {
-          auth: string
-          created_at?: string
-          endpoint: string
-          id?: string
-          p256dh: string
-          updated_at?: string
-          user_agent?: string | null
-          user_id: string
-        }
-        Update: {
-          auth?: string
-          created_at?: string
-          endpoint?: string
-          id?: string
-          p256dh?: string
-          updated_at?: string
-          user_agent?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      pushalert_subscribers: {
-        Row: {
-          created_at: string
-          id: string
-          subscriber_id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          subscriber_id: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          subscriber_id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
       }
       rate_limits: {
         Row: {
@@ -1282,60 +1267,6 @@ export type Database = {
           time_start?: string
           updated_at?: string
           updated_by?: string | null
-        }
-        Relationships: []
-      }
-      telegram_link_codes: {
-        Row: {
-          code: string
-          created_at: string
-          expires_at: string
-          id: string
-          used: boolean
-          user_id: string
-        }
-        Insert: {
-          code: string
-          created_at?: string
-          expires_at?: string
-          id?: string
-          used?: boolean
-          user_id: string
-        }
-        Update: {
-          code?: string
-          created_at?: string
-          expires_at?: string
-          id?: string
-          used?: boolean
-          user_id?: string
-        }
-        Relationships: []
-      }
-      telegram_links: {
-        Row: {
-          chat_id: number
-          id: string
-          is_active: boolean
-          linked_at: string
-          user_id: string
-          username: string | null
-        }
-        Insert: {
-          chat_id: number
-          id?: string
-          is_active?: boolean
-          linked_at?: string
-          user_id: string
-          username?: string | null
-        }
-        Update: {
-          chat_id?: number
-          id?: string
-          is_active?: boolean
-          linked_at?: string
-          user_id?: string
-          username?: string | null
         }
         Relationships: []
       }
@@ -1970,8 +1901,6 @@ export type Database = {
           invite_code: string
           leader_id: string
           name: string
-          stripe_customer_id: string
-          stripe_subscription_id: string
           subscription_status: string
           trial_ends_at: string
           updated_at: string
@@ -2009,8 +1938,6 @@ export type Database = {
           invite_code: string
           leader_id: string
           name: string
-          stripe_customer_id: string
-          stripe_subscription_id: string
           subscription_status: string
           trial_ends_at: string
           updated_at: string
