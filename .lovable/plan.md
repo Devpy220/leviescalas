@@ -1,60 +1,80 @@
-## Migração Z-API → UAZAPI
+# Plano: Migrar para Cakto Pay + Faxina de Integrações
 
-Substituir totalmente o Z-API pela UAZAPI, mantendo idêntico o fluxo de respostas ("troca", "servir", coleta de bloqueios, menus interativos, efeito "digitando…", etc.).
+## 1. O que você precisa fornecer (1 vez só)
 
-### Pré-requisito (você precisa fazer antes)
+A Cakto usa **OAuth2** com `client_id` + `client_secret` que você gera no painel:
+👉 https://app.cakto.com.br/dashboard/cakto-api
 
-1. Criar conta em https://uazapi.com
-2. Criar uma **instância** e conectar o WhatsApp (QR Code) — usar o MESMO número que está no Z-API hoje para não perder o histórico de conversas.
-3. Anotar:
-   - **Token da instância** (UAZAPI_TOKEN)
-   - **URL base do servidor** (UAZAPI_BASE_URL — algo como `https://free.uazapi.com` ou o host dedicado que a UAZAPI fornecer)
-4. Na UAZAPI, configurar o **Webhook** apontando para:
-   `https://zuksvsxnchwskqytuxxq.supabase.co/functions/v1/zapi-webhook-receive`
-   (mantemos o mesmo nome de função para não quebrar nada externamente; ele passa a tratar o payload UAZAPI)
-   Eventos: `messages` (mensagens recebidas).
+Vou pedir via `add_secret` (formulário seguro) DEPOIS deste plano ser aprovado:
+- `CAKTO_CLIENT_ID`
+- `CAKTO_CLIENT_SECRET`
+- `CAKTO_WEBHOOK_SECRET` (você define ao criar o webhook — pode ser uma string aleatória)
 
-Quando estiver pronto, eu peço via formulário seguro:
-- `UAZAPI_TOKEN`
-- `UAZAPI_BASE_URL`
-- `UAZAPI_WEBHOOK_SECRET` (rotacionado — substitui o `ZAPI_WEBHOOK_SECRET`)
+**Você NÃO precisa criar produto/link no painel** — vou criar via API.
 
-### O que vai mudar no código
+## 2. O que vou criar via API da Cakto
 
-**Novo módulo compartilhado** `supabase/functions/_shared/uazapi.ts`:
-- `sendText(phone, message)` → POST `${UAZAPI_BASE_URL}/send/text` com headers `token: UAZAPI_TOKEN`, body `{ number, text, delay }`.
-- `sendPresence(phone, action: "composing"|"paused", delayMs)` → POST `/message/presence` para manter o efeito "digitando…" humanizado já existente.
-- Mantém a mesma assinatura usada hoje pelo wrapper Z-API para minimizar diff.
+Edge function `cakto-setup` (executada 1 vez por você, botão no Admin):
+- Cria **2 produtos** automaticamente:
+  - "Apoio LEVI — Avulso" (oferta única, R$ 25 sugerido, PIX + cartão)
+  - "Apoio LEVI — Mensal" (assinatura, R$ 25/mês, PIX recorrente + cartão)
+- Cria **webhook** apontando para `https://zuksvsxnchwskqytuxxq.supabase.co/functions/v1/cakto-webhook` com o `CAKTO_WEBHOOK_SECRET`
+- Salva IDs retornados em `app_settings` (nova tabela kv simples)
 
-**Edge functions atualizadas** (trocam chamada direta `api.z-api.io` pelo novo helper):
-- `send-whatsapp-notification/index.ts`
-- `create-church-public/index.ts`
-- `send-church-code-email/index.ts`
-- `_shared/whatsapp-queue.ts` (fila de lembretes)
-- `_shared/messageVariants.ts` (sem mudança lógica — só consome o helper)
+## 3. Edge functions novas
 
-**Webhook inbound** `zapi-webhook-receive/index.ts`:
-- Renomeado internamente, mas mantém a rota.
-- Passa a ler o payload UAZAPI (`event: "messages.upsert"`, campos `message.text`, `chat.id`, `sender.id`). Mantém parser antigo como fallback durante a janela de corte, depois removido.
-- Verifica `UAZAPI_WEBHOOK_SECRET` via header `x-webhook-secret` (UAZAPI permite header customizado).
-- Toda a lógica de "troca", "servir", menus numéricos, coleta de bloqueios, rate-limit de 60min continua intacta.
+| Função | Papel |
+|---|---|
+| `cakto-setup` | Roda 1x, cria produtos + webhook |
+| `cakto-create-payment` | Recebe `{type: "once"\|"subscription", amount}`, retorna `checkout_url` (ou QR PIX direto) |
+| `cakto-webhook` | Recebe eventos `purchase.approved`, `subscription.created`, etc. Valida assinatura. Loga em `payment_receipts`. |
 
-**Logs**: a tabela `whatsapp_logs` continua igual — só passa a registrar `provider: "uazapi"` no campo de resposta para auditoria.
+## 4. Frontend — apoio (`/apoiar` e `/payment`)
 
-**Limpeza de secrets** (após validação): remover `ZAPI_INSTANCE_ID`, `ZAPI_TOKEN`, `ZAPI_CLIENT_TOKEN`, `ZAPI_WEBHOOK_SECRET`.
+- `/payment` (interno Stripe) → **removida**
+- `/apoiar` (`SupportPix.tsx`) vira a única tela de apoio com 3 ações:
+  - **Apoio único** → botão "Pagar R$ 25 (ou outro valor)" → abre Checkout Cakto em nova aba
+  - **Apoio mensal (PIX/cartão)** → botão "Apoiar todo mês" → abre Checkout assinatura Cakto
+  - **PIX manual** (chave copy/paste) — mantém como fallback
+- Mantém R$ 25 como sugestão padrão; campo editável.
+- Links em mensagens WhatsApp (`messageVariants.ts`) trocados para `/apoiar`.
 
-### Plano de validação
+## 5. Faxina (remoções)
 
-1. Após deploy, enviar 1 mensagem de teste via Admin Broadcast para o seu número.
-2. Responder "troca" para validar webhook inbound + menu interativo.
-3. Conferir registros em `WhatsApp Logs`.
-4. Disparar 1 lembrete agendado manual e validar efeito "digitando…".
-5. Só então remover os secrets antigos do Z-API.
+### Edge functions removidas
+- `create-donation-checkout` (Stripe)
+- `update-subscription-quantity` (Stripe — planos de igreja não usam mais)
+- `send-telegram-notification`, `setup-telegram-webhook`, `telegram-webhook`
+- `send-push-notification`
 
-### Riscos
+### Tabelas/colunas (migração SQL)
+- Drop colunas `stripe_customer_id`, `stripe_subscription_id`, `trial_ends_at` de `departments` (se aceito)
+- Drop tabelas: `push_subscriptions`, `pushalert_subscribers`, `telegram_links`, `telegram_link_codes`
+- Atualizar funções `get_department_secure`, `get_department_full`, `log_billing_access` para remover refs a stripe
 
-- **Formato de telefone**: UAZAPI aceita `5511999999999` (sem `+`, sem `@c.us`). Vou normalizar no helper, igual fazemos hoje.
-- **Rate / delay**: UAZAPI tem parâmetro `delay` nativo (ms) — vou aproveitar em vez do `setTimeout` manual, reduzindo tempo de execução das edge functions.
-- **Mídia**: hoje não enviamos mídia pelo Z-API, só texto — então sem impacto.
+### Páginas/componentes removidos
+- `src/pages/Payment.tsx`, `src/pages/PaymentSuccess.tsx` (substituídos por `/apoiar/sucesso` simples)
+- Qualquer card no `DepartmentSettingsDialog` relacionado a assinatura Stripe
 
-Quando aprovar, eu já começo pelos secrets e pela função compartilhada.
+### Secrets para apagar
+`STRIPE_SECRET_KEY`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM`, `TELEGRAM_BOT_TOKEN`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_D`, `VAPID_X`, `VAPID_Y`, `WONDERPUSH_APPLICATION_ID`, `WONDERPUSH_ACCESS_TOKEN`, `PUSHALERT_API_KEY`, `SMSDEV_API_KEY`
+
+Mantidos: UAZAPI_*, RESEND_API_KEY, CRON_SECRET, LOVABLE_API_KEY, PAGESPEED_API_KEY, FIQON_WEBHOOK_URL, GOOGLE_SEARCH_CONSOLE_API_KEY.
+
+## 6. Validação final
+
+- Build/typecheck.
+- Botão "Apoiar" abre checkout Cakto real (sandbox primeiro, se você tiver).
+- Webhook recebe e grava em `payment_receipts`.
+- Confirmar via Admin que nenhum import órfão sobrou (Telegram/Push/Stripe).
+
+## Detalhes técnicos
+
+- Auth Cakto: `POST /oauth/token` com `grant_type=client_credentials`, cachear `access_token` por TTL no `app_settings`.
+- PIX recorrente: Cakto chama "Assinatura" com `payment_method=pix` na oferta — gera novo QR a cada ciclo, notifica via webhook.
+- Validação webhook: header `X-Cakto-Signature` (HMAC-SHA256 com `CAKTO_WEBHOOK_SECRET`).
+- Sem código Stripe restante; remoção de `npm:stripe` do `import_map` das funções.
+
+---
+
+**Confirme o plano** e em seguida abro o formulário seguro pra você colar `CAKTO_CLIENT_ID` e `CAKTO_CLIENT_SECRET`. Depois rodo tudo na sequência.
