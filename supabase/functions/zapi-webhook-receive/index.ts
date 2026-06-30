@@ -221,7 +221,10 @@ serve(async (req: Request): Promise<Response> => {
       (p: any) => normalizePhone(p.whatsapp).slice(-10) === tail,
     );
 
+    console.log(`[lookup] phoneDigits=${phoneDigits} tail=${tail} candidates=${candidates?.length ?? 0} profileFound=${!!profile}`);
+
     if (!profile) {
+      console.log(`[lookup] -> no profile match for tail=${tail}`);
       return new Response(JSON.stringify({ ignored: true, reason: "phone not found" }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
