@@ -258,7 +258,6 @@ export default function Department() {
         trial_ends_at: data.trial_ends_at || null,
         created_at: data.created_at,
         avatar_url: (data as any).avatar_url || null,
-        stripe_customer_id: data.stripe_customer_id || null,
         max_blackout_dates: deptExtra?.max_blackout_dates ?? 5,
         allow_sunday_double: deptExtra?.allow_sunday_double ?? false,
       });
