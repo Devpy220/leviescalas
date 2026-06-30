@@ -57,6 +57,20 @@ function ScoreTile({ label, value }: { label: string; value: number }) {
   );
 }
 
+function StrategyErrorCard({ strategy, result, icon }: { strategy: 'mobile' | 'desktop'; result: StrategyError; icon: React.ReactNode }) {
+  return (
+    <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 space-y-2">
+      <div className="flex items-center gap-2 font-medium capitalize">{icon} {strategy}</div>
+      <div className="text-sm text-amber-600 dark:text-amber-400">
+        {result.error === 'QUOTA_EXCEEDED'
+          ? 'Cota da API do PageSpeed excedida. Tente novamente em alguns minutos.'
+          : 'Serviço temporariamente indisponível.'}
+      </div>
+      {result.message && <div className="text-xs text-muted-foreground break-words">{result.message}</div>}
+    </div>
+  );
+}
+
 function StrategyCard({ result, icon }: { result: StrategyResult; icon: React.ReactNode }) {
   return (
     <div className="rounded-2xl border bg-card/50 p-4 space-y-4">
