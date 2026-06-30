@@ -171,18 +171,33 @@ serve(async (req: Request): Promise<Response> => {
 
     // UAZAPI payloads nest under `message`. Z-API uses flat fields. Support both.
     const uaMsg = payload.message ?? payload.Message ?? {};
-    const phoneRaw =
-      // UAZAPI fields (chat/sender are jids like "5511...@s.whatsapp.net")
-      uaMsg.sender ?? uaMsg.chatid ?? uaMsg.chatId ?? uaMsg.from ??
-      payload.sender ?? payload.chatid ?? payload.chatId ?? payload.chat?.id ??
-      // Z-API fields (legacy)
-      payload.phone ?? payload.from ?? payload.author ?? "";
     const pickStr = (...vals: any[]): string => {
       for (const v of vals) {
         if (typeof v === "string" && v.trim()) return v;
       }
       return "";
     };
+    const pickPhone = (...vals: any[]): string => {
+      const candidates = vals.filter((v) => typeof v === "string" && v.trim()) as string[];
+      // UAZAPI can send `sender/chatlid` as a WhatsApp LID (e.g. 176...@lid),
+      // which is not the volunteer phone. Prefer the canonical chat id/phone.
+      return (
+        candidates.find((v) => !/@lid\b/i.test(v) && normalizePhone(v).length >= 10) ||
+        candidates.find((v) => normalizePhone(v).length >= 10) ||
+        candidates[0] ||
+        ""
+      );
+    };
+    const phoneRaw = pickPhone(
+      // UAZAPI canonical phone/JID fields — these must be preferred over LID sender fields.
+      uaMsg.chatid, uaMsg.chatId, uaMsg.remoteJid, uaMsg.key?.remoteJid,
+      payload.chat?.wa_chatid, payload.chat?.phone, payload.chat?.wa_fastid,
+      payload.phone, payload.chatid, payload.chatId,
+      // Legacy Z-API / fallback sender fields.
+      payload.from, payload.author, uaMsg.from, uaMsg.sender,
+      uaMsg.chatlid, uaMsg.chatLid, payload.sender, payload.chatlid, payload.chat?.wa_chatlid,
+      payload.chat?.wa_lastMessageSender, payload.chat?.id,
+    );
     const text = pickStr(
       // UAZAPI text fields
       uaMsg.text, uaMsg.messageText, uaMsg.content, uaMsg.body,
