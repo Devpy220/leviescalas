@@ -35,7 +35,8 @@ async function sendWA(
   message: string,
 ): Promise<void> {
   try {
-    await fetch(`${deps.supabaseUrl}/functions/v1/send-whatsapp-notification`, {
+    console.log(`[sendWA] -> ${phone} chars=${message.length}`);
+    const res = await fetch(`${deps.supabaseUrl}/functions/v1/send-whatsapp-notification`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -47,8 +48,10 @@ async function sendWA(
         delayTyping: Math.floor(Math.random() * 4) + 2,
       }),
     });
+    const txt = await res.text();
+    console.log(`[sendWA] status=${res.status} body=${txt.slice(0, 200)}`);
   } catch (e) {
-    console.error("swapFlow sendWA error:", e);
+    console.error("swapFlow sendWA error:", e instanceof Error ? `${e.message}\n${e.stack}` : e);
   }
 }
 
