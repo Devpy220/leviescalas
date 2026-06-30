@@ -119,10 +119,10 @@ const App = () => (
                       <Security />
                     </ProtectedRoute>
                   } />
-                  <Route path="/payment" element={<Payment />} />
-                  <Route path="/apoio" element={<Payment />} />
-                  <Route path="/apoiar" element={<SupportPix />} />
-                  <Route path="/payment-success" element={<PaymentSuccess />} />
+                  <Route path="/payment" element={<Navigate to="/apoiar" replace />} />
+                  <Route path="/apoio" element={<Navigate to="/apoiar" replace />} />
+                  <Route path="/apoiar" element={<Apoiar />} />
+                  <Route path="/payment-success" element={<Navigate to="/apoiar?status=success" replace />} />
                   
                   {/* Church management - protected routes */}
                   <Route path="/churches" element={
