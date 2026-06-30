@@ -101,12 +101,22 @@ Deno.serve(async (req) => {
     }
     const targetUrl = (body.url && /^https?:\/\//.test(body.url)) ? body.url : DEFAULT_URL;
 
-    const [mobile, desktop] = await Promise.all([
+    const [mobileRes, desktopRes] = await Promise.allSettled([
       runPSI(targetUrl, "mobile"),
       runPSI(targetUrl, "desktop"),
     ]);
 
-    return new Response(JSON.stringify({ url: targetUrl, mobile, desktop }), {
+    const pickError = (r: PromiseRejectedResult) => {
+      const msg = r.reason instanceof Error ? r.reason.message : String(r.reason);
+      const isQuota = /\[429\]|Quota exceeded/i.test(msg);
+      return { error: isQuota ? "QUOTA_EXCEEDED" : "SERVICE_UNAVAILABLE", message: msg.slice(0, 200), fallback: true };
+    };
+
+    const mobile = mobileRes.status === "fulfilled" ? mobileRes.value : pickError(mobileRes);
+    const desktop = desktopRes.status === "fulfilled" ? desktopRes.value : pickError(desktopRes);
+    const allFailed = mobileRes.status === "rejected" && desktopRes.status === "rejected";
+
+    return new Response(JSON.stringify({ url: targetUrl, mobile, desktop, fallback: allFailed }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
