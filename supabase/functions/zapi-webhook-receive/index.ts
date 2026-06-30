@@ -20,9 +20,17 @@ function normalizePhone(p: string): string {
 
 export type ResponseMode = "block" | "serve_only" | "none";
 
+export interface WeeklyBlock {
+  dow: number;          // 0..6
+  timeStart: string;    // HH:mm
+  timeEnd: string;      // HH:mm
+  label: string;        // e.g. "Domingo de Manhã"
+}
+
 export interface ParsedResponse {
   mode: ResponseMode;
   dates: string[]; // ISO YYYY-MM-DD
+  weeklyBlocks?: WeeklyBlock[];
 }
 
 // Parse the user's reply. Detects mode from keywords, plus dates.
@@ -60,18 +68,52 @@ export function parseUserResponse(text: string, targetMonth: Date): ParsedRespon
   };
   const weekdayPattern = /\b(domingos?|segundas?(?:-feiras?)?|ter[cç]as?(?:-feiras?)?|quartas?(?:-feiras?)?|quintas?(?:-feiras?)?|sextas?(?:-feiras?)?|s[áa]bados?)\b/g;
   let wm: RegExpExecArray | null;
-  const matchedWeekdays = new Set<number>();
+  // dow -> shift ('manha' | 'noite' | undefined for whole day)
+  const weekdayShifts = new Map<number, 'manha' | 'noite' | undefined>();
   while ((wm = weekdayPattern.exec(lower)) !== null) {
     const dow = WEEKDAY_MAP[wm[1]];
-    if (dow !== undefined) matchedWeekdays.add(dow);
+    if (dow === undefined) continue;
+    // look ±40 chars around the match for a shift word
+    const start = Math.max(0, wm.index - 5);
+    const end = Math.min(lower.length, wm.index + wm[0].length + 40);
+    const ctx = lower.slice(start, end);
+    let shift: 'manha' | 'noite' | undefined;
+    if (/\b(manh[ãa]|cedo|matutin[oa]s?)\b/.test(ctx)) shift = 'manha';
+    else if (/\b(noite|noturn[oa]s?|tarde|vespertin[oa]s?)\b/.test(ctx)) shift = 'noite';
+    // If we already saw this dow with a stronger (shift) marker, keep the shift.
+    if (!weekdayShifts.has(dow) || (shift && !weekdayShifts.get(dow))) {
+      weekdayShifts.set(dow, shift);
+    }
   }
-  if (matchedWeekdays.size > 0) {
+
+  const weeklyBlocks: WeeklyBlock[] = [];
+  const WEEKDAY_LABELS = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+
+  if (weekdayShifts.size > 0) {
     const lastDay = new Date(tYear, tMonth + 1, 0).getDate();
-    for (let d = 1; d <= lastDay; d++) {
-      const dt = new Date(tYear, tMonth, d);
-      if (dt < today) continue;
-      if (matchedWeekdays.has(dt.getDay())) {
-        found.add(dt.toISOString().slice(0, 10));
+    for (const [dow, shift] of weekdayShifts.entries()) {
+      if (shift) {
+        // Map shift -> slot. Only Sunday has a morning slot in FIXED_SLOTS.
+        if (shift === 'manha' && dow === 0) {
+          weeklyBlocks.push({ dow: 0, timeStart: '08:00', timeEnd: '12:00', label: 'Domingo de Manhã' });
+        } else if (shift === 'noite') {
+          const ts = dow === 0 ? '18:00' : '19:00';
+          weeklyBlocks.push({ dow, timeStart: ts, timeEnd: '22:00', label: `${WEEKDAY_LABELS[dow]} à noite` });
+        } else if (shift === 'manha' && dow !== 0) {
+          // No morning slot for weekdays — fall back to enumerating all dates of that dow.
+          for (let d = 1; d <= lastDay; d++) {
+            const dt = new Date(tYear, tMonth, d);
+            if (dt < today) continue;
+            if (dt.getDay() === dow) found.add(dt.toISOString().slice(0, 10));
+          }
+        }
+      } else {
+        // No shift modifier — block the entire weekday (all dates of that dow this month)
+        for (let d = 1; d <= lastDay; d++) {
+          const dt = new Date(tYear, tMonth, d);
+          if (dt < today) continue;
+          if (dt.getDay() === dow) found.add(dt.toISOString().slice(0, 10));
+        }
       }
     }
   }
@@ -103,7 +145,7 @@ export function parseUserResponse(text: string, targetMonth: Date): ParsedRespon
 
   const dates = Array.from(found).sort();
   const mode: ResponseMode = serveOnly ? "serve_only" : "block";
-  return { mode, dates };
+  return { mode, dates, weeklyBlocks };
 }
 
 // Backward-compat export name (legacy callers)
@@ -387,7 +429,7 @@ serve(async (req: Request): Promise<Response> => {
 
     // If user is replying to the prompt but we couldn't extract dates AND it's not "liberar todos",
     // send a friendly "não entendi" + commands hint instead of silently doing nothing.
-    if (parsed.mode !== "none" && parsed.dates.length === 0) {
+    if (parsed.mode !== "none" && parsed.dates.length === 0 && (parsed.weeklyBlocks?.length ?? 0) === 0) {
       await sendConfirmation(
         supabaseUrl,
         serviceRoleKey,
@@ -518,6 +560,31 @@ serve(async (req: Request): Promise<Response> => {
         );
     }
 
+    // Apply permanent weekly blocks (e.g. "domingos de manhã") across all the user's depts.
+    const appliedWeekly: WeeklyBlock[] = [];
+    if (parsed.weeklyBlocks && parsed.weeklyBlocks.length > 0) {
+      for (const dept of depts ?? []) {
+        for (const wb of parsed.weeklyBlocks) {
+          const { error: wErr } = await supabase
+            .from("member_availability")
+            .upsert(
+              {
+                user_id: profile.id,
+                department_id: dept.id,
+                day_of_week: wb.dow,
+                time_start: `${wb.timeStart}:00`,
+                time_end: `${wb.timeEnd}:00`,
+                is_available: false,
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: "user_id,department_id,day_of_week,time_start,time_end" },
+            );
+          if (wErr) console.error("weekly block upsert error:", wErr);
+        }
+      }
+      appliedWeekly.push(...parsed.weeklyBlocks);
+    }
+
     await supabase
       .from("blackout_collection_prompts")
       .update({ responded_at: new Date().toISOString(), parsed_dates: parsed.dates })
@@ -545,10 +612,14 @@ _LEVI_`;
 `🔴 *Anotado, ${fname}!*
 ━━━━━━━━━━━━━━━━━━━━
 
-📖 _Leia com atenção:_
+📖 _Leia com atenção:_${acceptedIso.length > 0 ? `
 
 🚫 *Dias bloqueados:*
-${acceptedList || "(nenhuma data válida)"}`;
+${acceptedList}` : ""}${appliedWeekly.length > 0 ? `
+
+🔁 *Bloqueio permanente do dia da semana:*
+${appliedWeekly.map((w) => `• ${w.label} (${w.timeStart}–${w.timeEnd})`).join("\n")}
+_(vale para todos os meses; me responda novamente para liberar)_` : ""}${acceptedIso.length === 0 && appliedWeekly.length === 0 ? "\n\n(nenhuma data válida)" : ""}`;
       if (Object.keys(rejectedByDept).length > 0) {
         msg += `\n\n━━━━━━━━━━━━━━━━━━━━\n⚠️ *Limite atingido em alguns departamentos.*\nNão consegui bloquear estes dias:\n`;
         for (const [deptName, list] of Object.entries(rejectedByDept)) {
