@@ -113,6 +113,14 @@ Deno.serve(async (req) => {
       ? (amountNumber > 1000 ? Math.round(amountNumber) : Math.round(amountNumber * 100))
       : 2500;
     const isSubscription = type.includes('subscription') || type.includes('renewed') || !!subscriptionId || String(data.recurrence || data.recurrence_type || '').toLowerCase().includes('month');
+    const rawMethod = String(data.payment_method || data.paymentMethod || data.method || '').toLowerCase();
+    const paymentMethod = rawMethod.includes('pix')
+      ? 'pix'
+      : rawMethod.includes('card') || rawMethod.includes('credit') || rawMethod.includes('cart')
+        ? 'credit_card'
+        : rawMethod.includes('boleto')
+          ? 'boleto'
+          : null;
 
     const { data: inserted, error: insertErr } = await supabase.from('donations').insert({
       donor_name: customer.name || customer.full_name || data.customer_name || data.name || null,
@@ -120,7 +128,7 @@ Deno.serve(async (req) => {
       donor_whatsapp: customer.phone || customer.whatsapp || data.customer_phone || data.phone || null,
       amount_cents: amountCents > 0 ? amountCents : 2500,
       mode: isSubscription ? 'subscription' : 'one_time',
-      payment_method: data.payment_method || data.paymentMethod || data.method || null,
+      payment_method: paymentMethod,
       status: newStatus,
       cakto_session_id: sessionId || null,
       cakto_subscription_id: subscriptionId || null,
