@@ -65,8 +65,9 @@ Deno.serve(async (req) => {
   );
 
   const type = (event.type || event.event || '').toString().toLowerCase();
-  const data = event.data || event.payload || event;
-  const reference = data.reference || data.metadata?.reference;
+  const rawData = event.data || event.payload || event;
+  const data = Array.isArray(rawData) ? (rawData[0] || {}) : rawData;
+  const reference = data.reference || data.metadata?.reference || data.refId || data.ref_id;
   const sessionId = data.checkout_id || data.session_id || data.id;
   const subscriptionId = data.subscription_id || data.subscription?.id;
   const paymentId = data.payment_id || data.id;
