@@ -20,9 +20,17 @@ function normalizePhone(p: string): string {
 
 export type ResponseMode = "block" | "serve_only" | "none";
 
+export interface WeeklyBlock {
+  dow: number;          // 0..6
+  timeStart: string;    // HH:mm
+  timeEnd: string;      // HH:mm
+  label: string;        // e.g. "Domingo de Manhã"
+}
+
 export interface ParsedResponse {
   mode: ResponseMode;
   dates: string[]; // ISO YYYY-MM-DD
+  weeklyBlocks?: WeeklyBlock[];
 }
 
 // Parse the user's reply. Detects mode from keywords, plus dates.
