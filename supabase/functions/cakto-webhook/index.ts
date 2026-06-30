@@ -4,9 +4,13 @@ import { verifyCaktoSignature } from '../_shared/cakto.ts';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
-  if (req.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
+  if (req.method !== 'POST') return new Response('Method Not Allowed', { status: 405, headers: corsHeaders });
 
   const rawBody = await req.text();
+  let event: any;
+  try { event = JSON.parse(rawBody); } catch {
+    return new Response('invalid json', { status: 400, headers: corsHeaders });
+  }
   // Collect every header that might carry the signature/token
   const headerCandidates = [
     'x-cakto-signature', 'cakto-signature', 'x-signature', 'signature',
@@ -31,18 +35,18 @@ Deno.serve(async (req) => {
     req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ||
     null;
 
-  // Cakto sends the secret inside the JSON body as `secret`, not as a header.
-  // We still accept header-based signatures as a fallback for future changes.
-  const expectedSecret = Deno.env.get('CAKTO_WEBHOOK_SECRET') || '';
-  let bodySecret: string | null = null;
-  try {
-    const parsed = JSON.parse(rawBody);
-    bodySecret = parsed?.secret || parsed?.webhook_secret || parsed?.token || null;
-  } catch { /* ignore */ }
+  // Cakto sends the webhook token inside the JSON body as `secret`, not as a header.
+  // Keep CAKTO_WEBHOOK_SECRET for production and CAKTO_WEBHOOK_BODY_SECRET for
+  // Cakto's panel/test token when it differs from the originally configured value.
+  const expectedSecrets = [
+    Deno.env.get('CAKTO_WEBHOOK_SECRET'),
+    Deno.env.get('CAKTO_WEBHOOK_BODY_SECRET'),
+  ].filter((s): s is string => !!s);
+  const bodySecret = (event?.secret || event?.webhook_secret || event?.token || '').toString().trim();
 
-  const bodyOk = !!expectedSecret && !!bodySecret &&
-    bodySecret.length === expectedSecret.length &&
-    bodySecret === expectedSecret;
+  const bodyOk = !!bodySecret && expectedSecrets.some((expectedSecret) =>
+    bodySecret.length === expectedSecret.length && bodySecret === expectedSecret
+  );
   const headerOk = signature ? await verifyCaktoSignature(rawBody, signature) : false;
 
   if (!bodyOk && !headerOk) {
@@ -51,11 +55,6 @@ Deno.serve(async (req) => {
       return new Response('invalid signature', { status: 401 });
     }
     console.warn('[cakto-webhook] CAKTO_WEBHOOK_INSECURE=1 — proceeding without signature check');
-  }
-
-  let event: any;
-  try { event = JSON.parse(rawBody); } catch {
-    return new Response('invalid json', { status: 400 });
   }
 
   const supabase = createClient(
@@ -73,8 +72,8 @@ Deno.serve(async (req) => {
   const paymentId = data.payment_id || data.id;
 
   let newStatus: string | null = null;
-  if (type.includes('paid') || type.includes('approved') || type.includes('succeeded')) newStatus = 'paid';
-  else if (type.includes('failed') || type.includes('declined')) newStatus = 'failed';
+  if (type.includes('paid') || type.includes('approved') || type.includes('succeeded') || type.includes('renewed')) newStatus = 'paid';
+  else if (type.includes('failed') || type.includes('declined') || type.includes('refused')) newStatus = 'failed';
   else if (type.includes('canceled') || type.includes('cancelled')) newStatus = 'canceled';
   else if (type.includes('refund')) newStatus = 'refunded';
 
@@ -120,5 +119,5 @@ Deno.serve(async (req) => {
     }
   }
 
-  return new Response('ok', { status: 200 });
+  return new Response('ok', { status: 200, headers: corsHeaders });
 });
