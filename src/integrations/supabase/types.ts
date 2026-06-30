@@ -193,6 +193,42 @@ export type Database = {
         }
         Relationships: []
       }
+      cakto_offers: {
+        Row: {
+          active: boolean
+          amount_cents: number
+          checkout_url: string
+          created_at: string
+          id: string
+          label: string
+          mode: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          amount_cents: number
+          checkout_url: string
+          created_at?: string
+          id?: string
+          label: string
+          mode: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          amount_cents?: number
+          checkout_url?: string
+          created_at?: string
+          id?: string
+          label?: string
+          mode?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cakto_products: {
         Row: {
           amount_cents: number | null
