@@ -68,18 +68,52 @@ export function parseUserResponse(text: string, targetMonth: Date): ParsedRespon
   };
   const weekdayPattern = /\b(domingos?|segundas?(?:-feiras?)?|ter[cç]as?(?:-feiras?)?|quartas?(?:-feiras?)?|quintas?(?:-feiras?)?|sextas?(?:-feiras?)?|s[áa]bados?)\b/g;
   let wm: RegExpExecArray | null;
-  const matchedWeekdays = new Set<number>();
+  // dow -> shift ('manha' | 'noite' | undefined for whole day)
+  const weekdayShifts = new Map<number, 'manha' | 'noite' | undefined>();
   while ((wm = weekdayPattern.exec(lower)) !== null) {
     const dow = WEEKDAY_MAP[wm[1]];
-    if (dow !== undefined) matchedWeekdays.add(dow);
+    if (dow === undefined) continue;
+    // look ±40 chars around the match for a shift word
+    const start = Math.max(0, wm.index - 5);
+    const end = Math.min(lower.length, wm.index + wm[0].length + 40);
+    const ctx = lower.slice(start, end);
+    let shift: 'manha' | 'noite' | undefined;
+    if (/\b(manh[ãa]|cedo|matutin[oa]s?)\b/.test(ctx)) shift = 'manha';
+    else if (/\b(noite|noturn[oa]s?|tarde|vespertin[oa]s?)\b/.test(ctx)) shift = 'noite';
+    // If we already saw this dow with a stronger (shift) marker, keep the shift.
+    if (!weekdayShifts.has(dow) || (shift && !weekdayShifts.get(dow))) {
+      weekdayShifts.set(dow, shift);
+    }
   }
-  if (matchedWeekdays.size > 0) {
+
+  const weeklyBlocks: WeeklyBlock[] = [];
+  const WEEKDAY_LABELS = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+
+  if (weekdayShifts.size > 0) {
     const lastDay = new Date(tYear, tMonth + 1, 0).getDate();
-    for (let d = 1; d <= lastDay; d++) {
-      const dt = new Date(tYear, tMonth, d);
-      if (dt < today) continue;
-      if (matchedWeekdays.has(dt.getDay())) {
-        found.add(dt.toISOString().slice(0, 10));
+    for (const [dow, shift] of weekdayShifts.entries()) {
+      if (shift) {
+        // Map shift -> slot. Only Sunday has a morning slot in FIXED_SLOTS.
+        if (shift === 'manha' && dow === 0) {
+          weeklyBlocks.push({ dow: 0, timeStart: '08:00', timeEnd: '12:00', label: 'Domingo de Manhã' });
+        } else if (shift === 'noite') {
+          const ts = dow === 0 ? '18:00' : '19:00';
+          weeklyBlocks.push({ dow, timeStart: ts, timeEnd: '22:00', label: `${WEEKDAY_LABELS[dow]} à noite` });
+        } else if (shift === 'manha' && dow !== 0) {
+          // No morning slot for weekdays — fall back to enumerating all dates of that dow.
+          for (let d = 1; d <= lastDay; d++) {
+            const dt = new Date(tYear, tMonth, d);
+            if (dt < today) continue;
+            if (dt.getDay() === dow) found.add(dt.toISOString().slice(0, 10));
+          }
+        }
+      } else {
+        // No shift modifier — block the entire weekday (all dates of that dow this month)
+        for (let d = 1; d <= lastDay; d++) {
+          const dt = new Date(tYear, tMonth, d);
+          if (dt < today) continue;
+          if (dt.getDay() === dow) found.add(dt.toISOString().slice(0, 10));
+        }
       }
     }
   }
