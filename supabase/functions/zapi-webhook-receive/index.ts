@@ -560,6 +560,31 @@ serve(async (req: Request): Promise<Response> => {
         );
     }
 
+    // Apply permanent weekly blocks (e.g. "domingos de manhã") across all the user's depts.
+    const appliedWeekly: WeeklyBlock[] = [];
+    if (parsed.weeklyBlocks && parsed.weeklyBlocks.length > 0) {
+      for (const dept of depts ?? []) {
+        for (const wb of parsed.weeklyBlocks) {
+          const { error: wErr } = await supabase
+            .from("member_availability")
+            .upsert(
+              {
+                user_id: profile.id,
+                department_id: dept.id,
+                day_of_week: wb.dow,
+                time_start: `${wb.timeStart}:00`,
+                time_end: `${wb.timeEnd}:00`,
+                is_available: false,
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: "user_id,department_id,day_of_week,time_start,time_end" },
+            );
+          if (wErr) console.error("weekly block upsert error:", wErr);
+        }
+      }
+      appliedWeekly.push(...parsed.weeklyBlocks);
+    }
+
     await supabase
       .from("blackout_collection_prompts")
       .update({ responded_at: new Date().toISOString(), parsed_dates: parsed.dates })
