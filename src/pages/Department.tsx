@@ -64,7 +64,7 @@ interface Department {
   trial_ends_at: string | null;
   created_at: string;
   avatar_url: string | null;
-  stripe_customer_id: string | null;
+  
   max_blackout_dates?: number;
   allow_sunday_double?: boolean;
 }
@@ -237,7 +237,7 @@ export default function Department() {
           title: 'Assinatura expirada',
           description: 'Seu período de teste expirou. Renove para continuar usando.',
         });
-        navigate('/payment');
+        navigate('/apoiar');
         return;
       }
       
@@ -258,7 +258,6 @@ export default function Department() {
         trial_ends_at: data.trial_ends_at || null,
         created_at: data.created_at,
         avatar_url: (data as any).avatar_url || null,
-        stripe_customer_id: data.stripe_customer_id || null,
         max_blackout_dates: deptExtra?.max_blackout_dates ?? 5,
         allow_sunday_double: deptExtra?.allow_sunday_double ?? false,
       });

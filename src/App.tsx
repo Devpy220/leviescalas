@@ -25,8 +25,6 @@ import MySchedules from "./pages/MySchedules";
 import Security from "./pages/Security";
 import Admin from "./pages/Admin";
 import WhatsAppLogs from "./pages/WhatsAppLogs";
-import Payment from "./pages/Payment";
-import PaymentSuccess from "./pages/PaymentSuccess";
 import Churches from "./pages/Churches";
 import ChurchDetail from "./pages/ChurchDetail";
 import ChurchSetup from "./pages/ChurchSetup";
@@ -37,7 +35,7 @@ import CompleteProfile from "./pages/CompleteProfile";
 import NotFound from "./pages/NotFound";
 
 import ConfirmSchedule from "./pages/ConfirmSchedule";
-import SupportPix from "./pages/SupportPix";
+import Apoiar from "./pages/Apoiar";
 
 const queryClient = new QueryClient();
 
@@ -121,10 +119,10 @@ const App = () => (
                       <Security />
                     </ProtectedRoute>
                   } />
-                  <Route path="/payment" element={<Payment />} />
-                  <Route path="/apoio" element={<Payment />} />
-                  <Route path="/apoiar" element={<SupportPix />} />
-                  <Route path="/payment-success" element={<PaymentSuccess />} />
+                  <Route path="/payment" element={<Navigate to="/apoiar" replace />} />
+                  <Route path="/apoio" element={<Navigate to="/apoiar" replace />} />
+                  <Route path="/apoiar" element={<Apoiar />} />
+                  <Route path="/payment-success" element={<Navigate to="/apoiar?status=success" replace />} />
                   
                   {/* Church management - protected routes */}
                   <Route path="/churches" element={

@@ -1113,6 +1113,36 @@ export default function Admin() {
           </CardHeader>
         </Card>
 
+        {/* Cakto setup (one-time, creates products + webhook) */}
+        <Card className="mb-6 border-violet-500/30 bg-gradient-to-br from-violet-500/5 to-transparent">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div>
+                <CardTitle className="text-base">Cakto Pay — configurar produtos e webhook</CardTitle>
+                <CardDescription className="text-xs">
+                  Cria na Cakto os produtos de Apoio único e Assinatura mensal, e registra o webhook do LEVI. Rodar apenas 1 vez (ou ao trocar credenciais).
+                </CardDescription>
+              </div>
+              <Button
+                size="sm"
+                className="bg-violet-600 hover:bg-violet-700"
+                onClick={async () => {
+                  if (!confirm('Rodar setup Cakto agora?')) return;
+                  try {
+                    const { data, error } = await supabase.functions.invoke('cakto-setup');
+                    if (error) throw error;
+                    toast({ title: 'Setup concluído', description: JSON.stringify(data).slice(0, 200) });
+                  } catch (e: any) {
+                    toast({ title: 'Erro', description: e?.message || 'Falha', variant: 'destructive' });
+                  }
+                }}
+              >
+                Rodar setup Cakto
+              </Button>
+            </div>
+          </CardHeader>
+        </Card>
+
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">

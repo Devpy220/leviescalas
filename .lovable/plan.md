@@ -1,80 +1,48 @@
-# Plano: Migrar para Cakto Pay + Faxina de Integrações
 
-## 1. O que você precisa fornecer (1 vez só)
+# Migração para Cakto Pay + Faxina de integrações
 
-A Cakto usa **OAuth2** com `client_id` + `client_secret` que você gera no painel:
-👉 https://app.cakto.com.br/dashboard/cakto-api
+## 1. Cakto Pay (apoio único + assinatura recorrente)
 
-Vou pedir via `add_secret` (formulário seguro) DEPOIS deste plano ser aprovado:
-- `CAKTO_CLIENT_ID`
-- `CAKTO_CLIENT_SECRET`
-- `CAKTO_WEBHOOK_SECRET` (você define ao criar o webhook — pode ser uma string aleatória)
+**Backend (edge functions)**
+- `_shared/cakto.ts` — cliente OAuth2 (cache de access_token), helpers `createCheckout` e `verifyWebhookSignature` usando `CAKTO_WEBHOOK_SECRET`.
+- `cakto-setup` — função admin chamada uma vez para criar/atualizar os 2 produtos na Cakto (Apoio único e Assinatura mensal) e registrar o webhook apontando para `cakto-webhook`. Guarda IDs em uma tabela `cakto_products`.
+- `cakto-create-payment` — pública, recebe `{ amount, mode: "one_time" | "subscription", payment_method: "pix" | "credit_card", donor_name?, donor_email? }`, valida com Zod, gera checkout Cakto e devolve `{ url }`. Allowlist de Origin (mesma usada no Stripe).
+- `cakto-webhook` — pública (sem JWT), valida assinatura HMAC com `CAKTO_WEBHOOK_SECRET`, atualiza `donations` (status pago/falhou/cancelado) e dispara WhatsApp de agradecimento via UAZAPI quando houver telefone.
 
-**Você NÃO precisa criar produto/link no painel** — vou criar via API.
+**Banco de dados (1 migração)**
+- `cakto_products(kind, cakto_product_id, cakto_price_id, amount_cents)` — admin-only.
+- `donations(donor_name, donor_email, donor_whatsapp, amount_cents, mode, payment_method, status, cakto_session_id, cakto_subscription_id, paid_at)` — insert público via edge function; SELECT só admin.
+- Remover colunas `stripe_customer_id`, `stripe_subscription_id` de `departments` e funções `get_department_secure`/`get_department_full` (regerar sem essas colunas).
+- Remover tabela `payment_receipts` se realmente não usada (verifico antes; caso contrário, mantenho).
 
-## 2. O que vou criar via API da Cakto
+**Frontend**
+- `src/pages/Apoiar.tsx` (renomeio do antigo Apoiar/SupportPix) com tabs **Doação única** / **Assinatura mensal**, valores pré-definidos (10, 25, 50, 100, livre), seleção PIX / Cartão e botão único que chama `cakto-create-payment`.
+- Atualizar todos os CTAs e mensagens WhatsApp para apontar para `/apoiar` (já apontam — só conferir).
+- Remover `Payment.tsx`, `PaymentSuccess.tsx`, `SupportPix.tsx` (se não usados após migração).
 
-Edge function `cakto-setup` (executada 1 vez por você, botão no Admin):
-- Cria **2 produtos** automaticamente:
-  - "Apoio LEVI — Avulso" (oferta única, R$ 25 sugerido, PIX + cartão)
-  - "Apoio LEVI — Mensal" (assinatura, R$ 25/mês, PIX recorrente + cartão)
-- Cria **webhook** apontando para `https://zuksvsxnchwskqytuxxq.supabase.co/functions/v1/cakto-webhook` com o `CAKTO_WEBHOOK_SECRET`
-- Salva IDs retornados em `app_settings` (nova tabela kv simples)
+## 2. Faxina de integrações mortas
 
-## 3. Edge functions novas
+**Edge functions removidas**: nenhuma específica do Stripe existe além de `create-donation-checkout` e `update-subscription-quantity` — ambas serão deletadas. Não há funções Twilio/Telegram/Push/SMSDev/Fiqon.
 
-| Função | Papel |
-|---|---|
-| `cakto-setup` | Roda 1x, cria produtos + webhook |
-| `cakto-create-payment` | Recebe `{type: "once"\|"subscription", amount}`, retorna `checkout_url` (ou QR PIX direto) |
-| `cakto-webhook` | Recebe eventos `purchase.approved`, `subscription.created`, etc. Valida assinatura. Loga em `payment_receipts`. |
+**Secrets deletados**: `STRIPE_SECRET_KEY`, `TWILIO_*` (3), `TELEGRAM_BOT_TOKEN`, `WONDERPUSH_*` (2), `PUSHALERT_API_KEY`, `VAPID_*` (5), `SMSDEV_API_KEY`, `FIQON_WEBHOOK_URL`.
 
-## 4. Frontend — apoio (`/apoiar` e `/payment`)
+**Tabelas/colunas removidas**: `telegram_link_codes`, `telegram_links`, `push_subscriptions`, `pushalert_subscribers`. Colunas Stripe em `departments` (acima).
 
-- `/payment` (interno Stripe) → **removida**
-- `/apoiar` (`SupportPix.tsx`) vira a única tela de apoio com 3 ações:
-  - **Apoio único** → botão "Pagar R$ 25 (ou outro valor)" → abre Checkout Cakto em nova aba
-  - **Apoio mensal (PIX/cartão)** → botão "Apoiar todo mês" → abre Checkout assinatura Cakto
-  - **PIX manual** (chave copy/paste) — mantém como fallback
-- Mantém R$ 25 como sugestão padrão; campo editável.
-- Links em mensagens WhatsApp (`messageVariants.ts`) trocados para `/apoiar`.
+**Código frontend removido**: qualquer import/uso de Push/Telegram/Stripe restante (vou varrer com `rg` e apagar componentes mortos).
 
-## 5. Faxina (remoções)
+## 3. Ordem de execução
 
-### Edge functions removidas
-- `create-donation-checkout` (Stripe)
-- `update-subscription-quantity` (Stripe — planos de igreja não usam mais)
-- `send-telegram-notification`, `setup-telegram-webhook`, `telegram-webhook`
-- `send-push-notification`
-
-### Tabelas/colunas (migração SQL)
-- Drop colunas `stripe_customer_id`, `stripe_subscription_id`, `trial_ends_at` de `departments` (se aceito)
-- Drop tabelas: `push_subscriptions`, `pushalert_subscribers`, `telegram_links`, `telegram_link_codes`
-- Atualizar funções `get_department_secure`, `get_department_full`, `log_billing_access` para remover refs a stripe
-
-### Páginas/componentes removidos
-- `src/pages/Payment.tsx`, `src/pages/PaymentSuccess.tsx` (substituídos por `/apoiar/sucesso` simples)
-- Qualquer card no `DepartmentSettingsDialog` relacionado a assinatura Stripe
-
-### Secrets para apagar
-`STRIPE_SECRET_KEY`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM`, `TELEGRAM_BOT_TOKEN`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_D`, `VAPID_X`, `VAPID_Y`, `WONDERPUSH_APPLICATION_ID`, `WONDERPUSH_ACCESS_TOKEN`, `PUSHALERT_API_KEY`, `SMSDEV_API_KEY`
-
-Mantidos: UAZAPI_*, RESEND_API_KEY, CRON_SECRET, LOVABLE_API_KEY, PAGESPEED_API_KEY, FIQON_WEBHOOK_URL, GOOGLE_SEARCH_CONSOLE_API_KEY.
-
-## 6. Validação final
-
-- Build/typecheck.
-- Botão "Apoiar" abre checkout Cakto real (sandbox primeiro, se você tiver).
-- Webhook recebe e grava em `payment_receipts`.
-- Confirmar via Admin que nenhum import órfão sobrou (Telegram/Push/Stripe).
+1. Migração DB (cria tabelas Cakto + remove colunas/tabelas legadas).
+2. Edge functions Cakto (setup, create-payment, webhook).
+3. Frontend `/apoiar` reescrito.
+4. Faxina: delete de funções, arquivos, secrets.
+5. Você roda **Disparar setup Cakto** (botão no Admin) → cria produtos e webhook.
+6. Teste rápido: doação única PIX + assinatura cartão.
 
 ## Detalhes técnicos
 
-- Auth Cakto: `POST /oauth/token` com `grant_type=client_credentials`, cachear `access_token` por TTL no `app_settings`.
-- PIX recorrente: Cakto chama "Assinatura" com `payment_method=pix` na oferta — gera novo QR a cada ciclo, notifica via webhook.
-- Validação webhook: header `X-Cakto-Signature` (HMAC-SHA256 com `CAKTO_WEBHOOK_SECRET`).
-- Sem código Stripe restante; remoção de `npm:stripe` do `import_map` das funções.
+- API Cakto: OAuth2 client credentials em `https://api.cakto.com.br/oauth/token`; checkout em `POST /v1/checkouts`. Webhook envia header `X-Cakto-Signature` = HMAC-SHA256(body, secret).
+- Webhook precisa estar publicado **antes** do `cakto-setup` rodar (URL: `https://zuksvsxnchwskqytuxxq.supabase.co/functions/v1/cakto-webhook`).
+- `verify_jwt = false` no `cakto-webhook` e `cakto-create-payment` (público).
 
----
-
-**Confirme o plano** e em seguida abro o formulário seguro pra você colar `CAKTO_CLIENT_ID` e `CAKTO_CLIENT_SECRET`. Depois rodo tudo na sequência.
+Confirma para eu começar pela migração?

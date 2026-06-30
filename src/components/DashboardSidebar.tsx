@@ -499,7 +499,7 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
 
           {/* Footer */}
           <div className="p-2 space-y-0.5 border-t border-sidebar-border">
-            <SidebarItem expanded={expanded} icon={Heart} label={t('sidebar.supportLevi')} variant="nav" active={isActive('/payment')} onClick={() => navigate('/payment')} />
+            <SidebarItem expanded={expanded} icon={Heart} label={t('sidebar.supportLevi')} variant="nav" active={isActive('/apoiar')} onClick={() => navigate('/apoiar')} />
             
             <div className={`flex ${expanded ? 'flex-row justify-center' : 'flex-col'} items-center gap-1 py-1`}>
               <ThemeToggle />
