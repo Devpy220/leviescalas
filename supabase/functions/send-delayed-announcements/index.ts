@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { sendWhatsAppBatch } from "../_shared/whatsapp-queue.ts";
+import { scheduleBatch } from "../_shared/whatsapp-queue.ts";
 import { buildAnnouncementMessage } from "../_shared/messageVariants.ts";
 import { requireCronAuth } from "../_shared/cronAuth.ts";
 
@@ -14,7 +14,7 @@ serve(async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const authFail = requireCronAuth(req, corsHeaders);
+  const authFail = await requireCronAuth(req, corsHeaders);
   if (authFail) return authFail;
 
   try {
@@ -109,9 +109,15 @@ serve(async (req: Request): Promise<Response> => {
             }));
 
           if (recipients.length > 0) {
-            const result = await sendWhatsAppBatch(supabaseUrl, serviceRoleKey, recipients);
-            totalSent += result.sent;
-            console.log(`Announcement ${announcement.id}: ${result.sent}/${recipients.length} WhatsApp sent`);
+            const { promise } = scheduleBatch(supabaseUrl, serviceRoleKey, recipients, {
+              forceQueue: true,
+              origin: "department_announcement_delayed",
+              minDelayMs: 20_000,
+              maxDelayMs: 90_000,
+            });
+            await promise;
+            totalSent += recipients.length;
+            console.log(`Announcement ${announcement.id}: ${recipients.length} WhatsApp queued`);
           }
         }
       } catch (err) {

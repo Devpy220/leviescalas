@@ -14,7 +14,7 @@ serve(async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const authFail = requireCronAuth(req, corsHeaders);
+  const authFail = await requireCronAuth(req, corsHeaders);
   if (authFail) return authFail;
 
   try {
@@ -69,7 +69,13 @@ serve(async (req: Request): Promise<Response> => {
       }));
 
     const queued = recipients.length;
-    scheduleBatch(supabaseUrl, serviceRoleKey, recipients);
+    const { promise } = scheduleBatch(supabaseUrl, serviceRoleKey, recipients, {
+      forceQueue: true,
+      origin: "support_whatsapp",
+      minDelayMs: 20_000,
+      maxDelayMs: 90_000,
+    });
+    await promise;
 
     return new Response(
       JSON.stringify({ success: true, queued, total: profiles.length }),

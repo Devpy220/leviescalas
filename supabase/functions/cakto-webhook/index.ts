@@ -4,9 +4,13 @@ import { verifyCaktoSignature } from '../_shared/cakto.ts';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
-  if (req.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
+  if (req.method !== 'POST') return new Response('Method Not Allowed', { status: 405, headers: corsHeaders });
 
   const rawBody = await req.text();
+  let event: any;
+  try { event = JSON.parse(rawBody); } catch {
+    return new Response('invalid json', { status: 400, headers: corsHeaders });
+  }
   // Collect every header that might carry the signature/token
   const headerCandidates = [
     'x-cakto-signature', 'cakto-signature', 'x-signature', 'signature',
@@ -31,18 +35,18 @@ Deno.serve(async (req) => {
     req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ||
     null;
 
-  // Cakto sends the secret inside the JSON body as `secret`, not as a header.
-  // We still accept header-based signatures as a fallback for future changes.
-  const expectedSecret = Deno.env.get('CAKTO_WEBHOOK_SECRET') || '';
-  let bodySecret: string | null = null;
-  try {
-    const parsed = JSON.parse(rawBody);
-    bodySecret = parsed?.secret || parsed?.webhook_secret || parsed?.token || null;
-  } catch { /* ignore */ }
+  // Cakto sends the webhook token inside the JSON body as `secret`, not as a header.
+  // Keep CAKTO_WEBHOOK_SECRET for production and CAKTO_WEBHOOK_BODY_SECRET for
+  // Cakto's panel/test token when it differs from the originally configured value.
+  const expectedSecrets = [
+    Deno.env.get('CAKTO_WEBHOOK_SECRET'),
+    Deno.env.get('CAKTO_WEBHOOK_BODY_SECRET'),
+  ].filter((s): s is string => !!s);
+  const bodySecret = (event?.secret || event?.webhook_secret || event?.token || '').toString().trim();
 
-  const bodyOk = !!expectedSecret && !!bodySecret &&
-    bodySecret.length === expectedSecret.length &&
-    bodySecret === expectedSecret;
+  const bodyOk = !!bodySecret && expectedSecrets.some((expectedSecret) =>
+    bodySecret.length === expectedSecret.length && bodySecret === expectedSecret
+  );
   const headerOk = signature ? await verifyCaktoSignature(rawBody, signature) : false;
 
   if (!bodyOk && !headerOk) {
@@ -53,30 +57,26 @@ Deno.serve(async (req) => {
     console.warn('[cakto-webhook] CAKTO_WEBHOOK_INSECURE=1 — proceeding without signature check');
   }
 
-  let event: any;
-  try { event = JSON.parse(rawBody); } catch {
-    return new Response('invalid json', { status: 400 });
-  }
-
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     { auth: { persistSession: false } },
   );
 
-  const type = (event.type || event.event || '').toString().toLowerCase();
+  const type = (event.type || event.event || event.event_name || event.status || '').toString().toLowerCase();
   const rawData = event.data || event.payload || event;
   const data = Array.isArray(rawData) ? (rawData[0] || {}) : rawData;
-  const reference = data.reference || data.metadata?.reference || data.refId || data.ref_id;
-  const sessionId = data.checkout_id || data.session_id || data.id;
-  const subscriptionId = data.subscription_id || data.subscription?.id;
-  const paymentId = data.payment_id || data.id;
+  const reference = data.reference || data.metadata?.reference || data.refId || data.ref_id || data.order_id || data.order?.id;
+  const checkoutUrl = data.checkout_url || data.checkoutUrl || data.url || data.payment_url || data.paymentUrl || data.product?.checkout_url;
+  const sessionId = data.checkout_id || data.session_id || data.sessionId || data.transaction_id || data.transactionId || data.id;
+  const subscriptionId = data.subscription_id || data.subscriptionId || data.subscription?.id;
+  const paymentId = data.payment_id || data.paymentId || data.transaction_id || data.transactionId || data.id;
 
   let newStatus: string | null = null;
-  if (type.includes('paid') || type.includes('approved') || type.includes('succeeded')) newStatus = 'paid';
-  else if (type.includes('failed') || type.includes('declined')) newStatus = 'failed';
-  else if (type.includes('canceled') || type.includes('cancelled')) newStatus = 'canceled';
-  else if (type.includes('refund')) newStatus = 'refunded';
+  if (type.includes('paid') || type.includes('approved') || type.includes('succeeded') || type.includes('renewed') || type.includes('completed')) newStatus = 'paid';
+  else if (type.includes('failed') || type.includes('declined') || type.includes('refused') || type.includes('rejected')) newStatus = 'failed';
+  else if (type.includes('canceled') || type.includes('cancelled') || type.includes('cancel')) newStatus = 'canceled';
+  else if (type.includes('refund') || type.includes('chargeback')) newStatus = 'refunded';
 
   const update: Record<string, any> = { raw_payload: event };
   if (newStatus) update.status = newStatus;
@@ -84,13 +84,62 @@ Deno.serve(async (req) => {
   if (subscriptionId) update.cakto_subscription_id = subscriptionId;
   if (paymentId) update.cakto_payment_id = paymentId;
 
-  // Try by reference (donation.id) first
+  let matchedDonationId: string | null = null;
+
+  // Try by reference (donation.id) first, then known Cakto ids.
   if (reference) {
-    await supabase.from('donations').update(update).eq('id', reference);
-  } else if (sessionId) {
-    await supabase.from('donations').update(update).eq('cakto_session_id', sessionId);
-  } else if (subscriptionId) {
-    await supabase.from('donations').update(update).eq('cakto_subscription_id', subscriptionId);
+    const { data: updated } = await supabase.from('donations').update(update).eq('id', reference).select('id').maybeSingle();
+    matchedDonationId = updated?.id ?? null;
+  }
+  if (!matchedDonationId && sessionId) {
+    const { data: updated } = await supabase.from('donations').update(update).eq('cakto_session_id', sessionId).select('id').maybeSingle();
+    matchedDonationId = updated?.id ?? null;
+  }
+  if (!matchedDonationId && subscriptionId) {
+    const { data: updated } = await supabase.from('donations').update(update).eq('cakto_subscription_id', subscriptionId).select('id').maybeSingle();
+    matchedDonationId = updated?.id ?? null;
+  }
+
+  // Static Cakto checkout links do not carry our donation reference. When Cakto
+  // sends a real payment without a matching row, create one so the admin panel
+  // still records the event instead of looking like a webhook error.
+  if (!matchedDonationId && newStatus) {
+    const customer = data.customer || data.client || data.buyer || data.user || {};
+    const amountRaw = data.amount_cents ?? data.amountCents ?? data.amount ?? data.total_amount ?? data.totalAmount ?? data.value ?? data.price;
+    const amountNumber = typeof amountRaw === 'number'
+      ? amountRaw
+      : Number(String(amountRaw ?? '').replace(/[^\d,.-]/g, '').replace(',', '.'));
+    const amountCents = Number.isFinite(amountNumber)
+      ? (amountNumber > 1000 ? Math.round(amountNumber) : Math.round(amountNumber * 100))
+      : 2500;
+    const isSubscription = type.includes('subscription') || type.includes('renewed') || !!subscriptionId || String(data.recurrence || data.recurrence_type || '').toLowerCase().includes('month');
+    const rawMethod = String(data.payment_method || data.paymentMethod || data.method || '').toLowerCase();
+    const paymentMethod = rawMethod.includes('pix')
+      ? 'pix'
+      : rawMethod.includes('card') || rawMethod.includes('credit') || rawMethod.includes('cart')
+        ? 'credit_card'
+        : rawMethod.includes('boleto')
+          ? 'boleto'
+          : null;
+
+    const { data: inserted, error: insertErr } = await supabase.from('donations').insert({
+      donor_name: customer.name || customer.full_name || data.customer_name || data.name || null,
+      donor_email: customer.email || data.customer_email || data.email || null,
+      donor_whatsapp: customer.phone || customer.whatsapp || data.customer_phone || data.phone || null,
+      amount_cents: amountCents > 0 ? amountCents : 2500,
+      mode: isSubscription ? 'subscription' : 'one_time',
+      payment_method: paymentMethod,
+      status: newStatus,
+      cakto_session_id: sessionId || null,
+      cakto_subscription_id: subscriptionId || null,
+      cakto_payment_id: paymentId || null,
+      raw_payload: event,
+      paid_at: newStatus === 'paid' ? new Date().toISOString() : null,
+    }).select('id').maybeSingle();
+
+    if (insertErr) console.error('[cakto-webhook] donation insert err', insertErr);
+    matchedDonationId = inserted?.id ?? null;
+    console.log('[cakto-webhook] created donation from static checkout webhook', { matchedDonationId, type, sessionId, checkoutUrl });
   }
 
   // Optional: send WhatsApp thank-you on first payment
@@ -99,7 +148,7 @@ Deno.serve(async (req) => {
       const { data: donation } = await supabase
         .from('donations')
         .select('donor_name, donor_whatsapp, amount_cents, mode')
-        .eq(reference ? 'id' : 'cakto_session_id', reference || sessionId)
+        .eq(matchedDonationId ? 'id' : (reference ? 'id' : 'cakto_session_id'), matchedDonationId || reference || sessionId)
         .maybeSingle();
       const phone = donation?.donor_whatsapp?.replace(/\D/g, '');
       if (phone && phone.length >= 10) {
@@ -120,5 +169,5 @@ Deno.serve(async (req) => {
     }
   }
 
-  return new Response('ok', { status: 200 });
+  return new Response('ok', { status: 200, headers: corsHeaders });
 });
