@@ -177,16 +177,21 @@ serve(async (req: Request): Promise<Response> => {
       payload.sender ?? payload.chatid ?? payload.chatId ?? payload.chat?.id ??
       // Z-API fields (legacy)
       payload.phone ?? payload.from ?? payload.author ?? "";
-    const text =
+    const pickStr = (...vals: any[]): string => {
+      for (const v of vals) {
+        if (typeof v === "string" && v.trim()) return v;
+      }
+      return "";
+    };
+    const text = pickStr(
       // UAZAPI text fields
-      (typeof uaMsg.text === "string" ? uaMsg.text : null) ??
-      uaMsg.messageText ?? uaMsg.content ?? uaMsg.body ??
+      uaMsg.text, uaMsg.messageText, uaMsg.content, uaMsg.body,
       // Z-API legacy fields
-      payload.text?.message ??
-      (typeof payload.message === "string" ? payload.message : null) ??
-      payload.body ??
-      (typeof payload.text === "string" ? payload.text : null) ??
-      "";
+      payload.text?.message,
+      typeof payload.message === "string" ? payload.message : "",
+      payload.body,
+      typeof payload.text === "string" ? payload.text : "",
+    );
     const fromMe =
       uaMsg.fromMe === true || uaMsg.fromme === true ||
       payload.fromMe === true || payload.isFromMe === true;
