@@ -58,7 +58,7 @@ serve(async (req: Request): Promise<Response> => {
     }
   }
   if (!isAdminCaller) {
-    const authFail = requireCronAuth(req, corsHeaders);
+    const authFail = await requireCronAuth(req, corsHeaders);
     if (authFail) return authFail;
   }
 

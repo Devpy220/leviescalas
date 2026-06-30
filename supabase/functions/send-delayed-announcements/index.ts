@@ -14,7 +14,7 @@ serve(async (req: Request): Promise<Response> => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const authFail = requireCronAuth(req, corsHeaders);
+  const authFail = await requireCronAuth(req, corsHeaders);
   if (authFail) return authFail;
 
   try {
