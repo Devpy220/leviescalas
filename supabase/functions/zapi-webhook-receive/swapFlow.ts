@@ -106,14 +106,17 @@ async function cancelOldSessions(deps: SwapFlowDeps, userId: string) {
 // ─────────────────────────────────────────────────────────────────────
 
 async function startSwap(deps: SwapFlowDeps, profile: Profile): Promise<void> {
+  console.log(`[startSwap] user=${profile.id}`);
   const lang = detectLang(profile.whatsapp);
   const fname = (profile.name || "").split(" ")[0] || "👋";
 
-  const { data: memberships } = await deps.supabase
+  const { data: memberships, error: memErr } = await deps.supabase
     .from("members")
     .select("department_id")
     .eq("user_id", profile.id);
+  if (memErr) console.error("[startSwap] memberships error:", memErr);
   const deptIds = (memberships ?? []).map((m: any) => m.department_id);
+  console.log(`[startSwap] deptIds=${JSON.stringify(deptIds)}`);
   if (deptIds.length === 0) {
     await sendWA(deps, profile.whatsapp, t(lang, "no_active_dept", { fname }));
     return;
