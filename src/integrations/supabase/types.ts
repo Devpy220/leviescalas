@@ -88,6 +88,27 @@ export type Database = {
           },
         ]
       }
+      app_runtime_secrets: {
+        Row: {
+          created_at: string
+          name: string
+          secret_value: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          name: string
+          secret_value: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          name?: string
+          secret_value?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       assignment_roles: {
         Row: {
           color: string
