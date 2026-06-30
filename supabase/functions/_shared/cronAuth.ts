@@ -2,7 +2,9 @@
 // Accepts either a Bearer CRON_SECRET (preferred for pg_cron jobs) or the
 // SUPABASE_SERVICE_ROLE_KEY (used by some legacy scheduled jobs). Returns
 // a Response when the request is unauthorized; otherwise returns null.
-export function requireCronAuth(req: Request, corsHeaders: Record<string, string>): Response | null {
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+export async function requireCronAuth(req: Request, corsHeaders: Record<string, string>): Promise<Response | null> {
   const cronSecret = Deno.env.get("CRON_SECRET") ?? "";
   const serviceRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
@@ -25,8 +27,37 @@ export function requireCronAuth(req: Request, corsHeaders: Record<string, string
     return null;
   }
 
+  const dbSecret = await getDatabaseCronSecret(serviceRole);
+  if (dbSecret && ((token && token === dbSecret) || (headerSecret && headerSecret === dbSecret))) {
+    return null;
+  }
+
   return new Response(JSON.stringify({ error: "Unauthorized" }), {
     status: 401,
     headers: { "Content-Type": "application/json", ...corsHeaders },
   });
+}
+
+let cachedDbSecret: { value: string; expiresAt: number } | null = null;
+
+async function getDatabaseCronSecret(serviceRole: string): Promise<string | null> {
+  if (!serviceRole) return null;
+  if (cachedDbSecret && cachedDbSecret.expiresAt > Date.now()) return cachedDbSecret.value;
+
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    if (!supabaseUrl) return null;
+    const supabase = createClient(supabaseUrl, serviceRole, { auth: { persistSession: false } });
+    const { data, error } = await supabase
+      .from("app_runtime_secrets")
+      .select("secret_value")
+      .eq("name", "cron_secret")
+      .maybeSingle();
+
+    if (error || !data?.secret_value) return null;
+    cachedDbSecret = { value: data.secret_value, expiresAt: Date.now() + 5 * 60 * 1000 };
+    return data.secret_value;
+  } catch {
+    return null;
+  }
 }
