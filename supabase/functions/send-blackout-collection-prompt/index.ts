@@ -37,13 +37,32 @@ function firstName(name: string): string {
 serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  const authFail = requireCronAuth(req, corsHeaders);
-  if (authFail) return authFail;
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+  // Allow admin users to trigger via the dashboard, otherwise require cron auth.
+  let isAdminCaller = false;
+  const auth = req.headers.get("Authorization") ?? req.headers.get("authorization") ?? "";
+  if (auth.toLowerCase().startsWith("bearer ")) {
+    const jwt = auth.slice(7).trim();
+    const { data: u } = await supabase.auth.getUser(jwt);
+    if (u?.user) {
+      const { data: role } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", u.user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+      if (role) isAdminCaller = true;
+    }
+  }
+  if (!isAdminCaller) {
+    const authFail = requireCronAuth(req, corsHeaders);
+    if (authFail) return authFail;
+  }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     const nowBRT = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
     const url = new URL(req.url);
