@@ -7,6 +7,7 @@ import {
 } from "../_shared/scheduleDates.ts";
 import { tryHandleSwapMessage } from "./swapFlow.ts";
 import { detectLang, t, fmtTime, DOW, isScheduleListCommand, translateRole } from "../_shared/whatsappI18n.ts";
+import { LEVI_COMMANDS_HINT } from "../_shared/messageVariants.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
