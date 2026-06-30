@@ -145,7 +145,7 @@ export function parseUserResponse(text: string, targetMonth: Date): ParsedRespon
 
   const dates = Array.from(found).sort();
   const mode: ResponseMode = serveOnly ? "serve_only" : "block";
-  return { mode, dates };
+  return { mode, dates, weeklyBlocks };
 }
 
 // Backward-compat export name (legacy callers)
