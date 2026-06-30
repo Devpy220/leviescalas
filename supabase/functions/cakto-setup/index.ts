@@ -4,30 +4,66 @@ import { caktoFetch } from '../_shared/cakto.ts';
 
 const WEBHOOK_URL = `${Deno.env.get('SUPABASE_URL')}/functions/v1/cakto-webhook`;
 
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+function getUserIdFromJwt(authHeader: string | null): { token: string; userId: string } | null {
+  if (!authHeader?.startsWith('Bearer ')) return null;
+
+  const token = authHeader.replace('Bearer ', '').trim();
+  const [, payload] = token.split('.');
+  if (!payload) return null;
+
+  try {
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = normalized.padEnd(normalized.length + ((4 - normalized.length % 4) % 4), '=');
+    const claims = JSON.parse(atob(padded));
+    const userId = typeof claims.sub === 'string' ? claims.sub : '';
+    const exp = typeof claims.exp === 'number' ? claims.exp : 0;
+
+    if (!userId || !exp || exp <= Math.floor(Date.now() / 1000)) return null;
+    return { token, userId };
+  } catch {
+    return null;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
-  // Admin-only (JWT via getClaims — compatible with signing-keys)
-  const authHeader = req.headers.get('Authorization') || '';
-  if (!authHeader.startsWith('Bearer ')) {
-    return new Response('Unauthorized', { status: 401, headers: corsHeaders });
-  }
-  const token = authHeader.replace('Bearer ', '');
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+
+  const auth = getUserIdFromJwt(req.headers.get('Authorization'));
+  if (!auth) return jsonResponse({ error: 'Unauthorized' }, 401);
+
+  const userSupabase = createClient(supabaseUrl, anonKey, {
+    auth: { persistSession: false },
+    global: { headers: { Authorization: `Bearer ${auth.token}` } },
+  });
 
   const admin = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    supabaseUrl,
+    serviceRoleKey,
     { auth: { persistSession: false } },
   );
 
-  const { data: claimsData, error: claimsError } = await admin.auth.getClaims(token);
-  if (claimsError || !claimsData?.claims?.sub) {
-    console.error('[cakto-setup] auth error', claimsError);
-    return new Response('Unauthorized', { status: 401, headers: corsHeaders });
+  const { data: isAdmin, error: roleError } = await userSupabase.rpc('has_role', {
+    _user_id: auth.userId,
+    _role: 'admin',
+  });
+
+  if (roleError) {
+    console.error('[cakto-setup] admin role check failed:', roleError);
+    return jsonResponse({ error: 'Unauthorized' }, 401);
   }
-  const userId = claimsData.claims.sub as string;
-  const { data: isAdmin } = await admin.rpc('has_role', { _user_id: userId, _role: 'admin' });
-  if (!isAdmin) return new Response('Forbidden', { status: 403, headers: corsHeaders });
+
+  if (!isAdmin) return jsonResponse({ error: 'Forbidden' }, 403);
 
   const results: any = { products: {}, webhook: null };
 
@@ -71,13 +107,9 @@ Deno.serve(async (req) => {
       results.webhook = { error: (e as Error).message };
     }
 
-    return new Response(JSON.stringify(results, null, 2), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return jsonResponse(results);
   } catch (err) {
     console.error('[cakto-setup] error', err);
-    return new Response(JSON.stringify({ error: (err as Error).message, results }), {
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return jsonResponse({ error: (err as Error).message, results }, 500);
   }
 });
