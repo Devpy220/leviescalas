@@ -22,11 +22,20 @@ interface StrategyResult {
   scores: Scores;
   metrics: Metrics;
 }
+interface StrategyError {
+  error: string;
+  message?: string;
+  fallback: true;
+}
+type StrategyOutcome = StrategyResult | StrategyError;
 interface Report {
   url: string;
-  mobile: StrategyResult;
-  desktop: StrategyResult;
+  mobile: StrategyOutcome;
+  desktop: StrategyOutcome;
+  fallback?: boolean;
 }
+const isStrategyError = (r: StrategyOutcome): r is StrategyError =>
+  (r as StrategyError).error !== undefined || !(r as StrategyResult).scores;
 
 const scoreColor = (n: number) => {
   if (n >= 90) return 'text-emerald-500';
