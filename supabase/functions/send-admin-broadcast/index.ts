@@ -87,7 +87,13 @@ const handler = async (req: Request): Promise<Response> => {
       }));
 
     const whatsappQueued = whatsappRecipients.length;
-    scheduleBatch(supabaseUrl, serviceRoleKey, whatsappRecipients);
+    const { promise } = scheduleBatch(supabaseUrl, serviceRoleKey, whatsappRecipients, {
+      forceQueue: true,
+      origin: "admin_broadcast",
+      minDelayMs: 20_000,
+      maxDelayMs: 90_000,
+    });
+    await promise;
 
     // Save broadcast record
     await supabase.from("admin_broadcasts").insert({

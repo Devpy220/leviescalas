@@ -100,7 +100,13 @@ serve(async (req: Request): Promise<Response> => {
         }));
 
       whatsappQueued = recipients.length;
-      scheduleBatch(supabaseUrl, serviceRoleKey, recipients);
+      const { promise } = scheduleBatch(supabaseUrl, serviceRoleKey, recipients, {
+        forceQueue: true,
+        origin: "department_announcement",
+        minDelayMs: 20_000,
+        maxDelayMs: 90_000,
+      });
+      await promise;
     }
     console.log(`Announcement: ${memberIds.length} notified, ${whatsappQueued} WhatsApp queued`);
 
