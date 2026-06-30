@@ -385,6 +385,21 @@ serve(async (req: Request): Promise<Response> => {
     const parsed = parseUserResponse(text, targetMonth);
     const fname = (profile.name || "").split(" ")[0] || "amigo(a)";
 
+    // If user is replying to the prompt but we couldn't extract dates AND it's not "liberar todos",
+    // send a friendly "não entendi" + commands hint instead of silently doing nothing.
+    if (parsed.mode !== "none" && parsed.dates.length === 0) {
+      await sendConfirmation(
+        supabaseUrl,
+        serviceRoleKey,
+        profile.whatsapp,
+        `🤔 *Não entendi, ${fname}.*\n\nNão consegui identificar datas na sua resposta.\n\n${LEVI_COMMANDS_HINT}`,
+      );
+      return new Response(JSON.stringify({ ok: true, handled: "unparsed" }), {
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+
     // Departments + memberships + availability
     const { data: memberships } = await supabase
       .from("members")
