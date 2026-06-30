@@ -225,7 +225,7 @@ ${close}`;
     if (promptRows.length > 0) {
       await supabase
         .from("blackout_collection_prompts")
-        .insert(promptRows);
+        .upsert(promptRows, { onConflict: "user_id,target_month", ignoreDuplicates: true });
     }
 
     for (let i = recipients.length - 1; i > 0; i--) {
