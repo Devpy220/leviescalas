@@ -63,19 +63,20 @@ Deno.serve(async (req) => {
     { auth: { persistSession: false } },
   );
 
-  const type = (event.type || event.event || '').toString().toLowerCase();
+  const type = (event.type || event.event || event.event_name || event.status || '').toString().toLowerCase();
   const rawData = event.data || event.payload || event;
   const data = Array.isArray(rawData) ? (rawData[0] || {}) : rawData;
-  const reference = data.reference || data.metadata?.reference || data.refId || data.ref_id;
-  const sessionId = data.checkout_id || data.session_id || data.id;
-  const subscriptionId = data.subscription_id || data.subscription?.id;
-  const paymentId = data.payment_id || data.id;
+  const reference = data.reference || data.metadata?.reference || data.refId || data.ref_id || data.order_id || data.order?.id;
+  const checkoutUrl = data.checkout_url || data.checkoutUrl || data.url || data.payment_url || data.paymentUrl || data.product?.checkout_url;
+  const sessionId = data.checkout_id || data.session_id || data.sessionId || data.transaction_id || data.transactionId || data.id;
+  const subscriptionId = data.subscription_id || data.subscriptionId || data.subscription?.id;
+  const paymentId = data.payment_id || data.paymentId || data.transaction_id || data.transactionId || data.id;
 
   let newStatus: string | null = null;
-  if (type.includes('paid') || type.includes('approved') || type.includes('succeeded') || type.includes('renewed')) newStatus = 'paid';
-  else if (type.includes('failed') || type.includes('declined') || type.includes('refused')) newStatus = 'failed';
-  else if (type.includes('canceled') || type.includes('cancelled')) newStatus = 'canceled';
-  else if (type.includes('refund')) newStatus = 'refunded';
+  if (type.includes('paid') || type.includes('approved') || type.includes('succeeded') || type.includes('renewed') || type.includes('completed')) newStatus = 'paid';
+  else if (type.includes('failed') || type.includes('declined') || type.includes('refused') || type.includes('rejected')) newStatus = 'failed';
+  else if (type.includes('canceled') || type.includes('cancelled') || type.includes('cancel')) newStatus = 'canceled';
+  else if (type.includes('refund') || type.includes('chargeback')) newStatus = 'refunded';
 
   const update: Record<string, any> = { raw_payload: event };
   if (newStatus) update.status = newStatus;
@@ -83,13 +84,54 @@ Deno.serve(async (req) => {
   if (subscriptionId) update.cakto_subscription_id = subscriptionId;
   if (paymentId) update.cakto_payment_id = paymentId;
 
-  // Try by reference (donation.id) first
+  let matchedDonationId: string | null = null;
+
+  // Try by reference (donation.id) first, then known Cakto ids.
   if (reference) {
-    await supabase.from('donations').update(update).eq('id', reference);
-  } else if (sessionId) {
-    await supabase.from('donations').update(update).eq('cakto_session_id', sessionId);
-  } else if (subscriptionId) {
-    await supabase.from('donations').update(update).eq('cakto_subscription_id', subscriptionId);
+    const { data: updated } = await supabase.from('donations').update(update).eq('id', reference).select('id').maybeSingle();
+    matchedDonationId = updated?.id ?? null;
+  }
+  if (!matchedDonationId && sessionId) {
+    const { data: updated } = await supabase.from('donations').update(update).eq('cakto_session_id', sessionId).select('id').maybeSingle();
+    matchedDonationId = updated?.id ?? null;
+  }
+  if (!matchedDonationId && subscriptionId) {
+    const { data: updated } = await supabase.from('donations').update(update).eq('cakto_subscription_id', subscriptionId).select('id').maybeSingle();
+    matchedDonationId = updated?.id ?? null;
+  }
+
+  // Static Cakto checkout links do not carry our donation reference. When Cakto
+  // sends a real payment without a matching row, create one so the admin panel
+  // still records the event instead of looking like a webhook error.
+  if (!matchedDonationId && newStatus) {
+    const customer = data.customer || data.client || data.buyer || data.user || {};
+    const amountRaw = data.amount_cents ?? data.amountCents ?? data.amount ?? data.total_amount ?? data.totalAmount ?? data.value ?? data.price;
+    const amountNumber = typeof amountRaw === 'number'
+      ? amountRaw
+      : Number(String(amountRaw ?? '').replace(/[^\d,.-]/g, '').replace(',', '.'));
+    const amountCents = Number.isFinite(amountNumber)
+      ? (amountNumber > 1000 ? Math.round(amountNumber) : Math.round(amountNumber * 100))
+      : 2500;
+    const isSubscription = type.includes('subscription') || type.includes('renewed') || !!subscriptionId || String(data.recurrence || data.recurrence_type || '').toLowerCase().includes('month');
+
+    const { data: inserted, error: insertErr } = await supabase.from('donations').insert({
+      donor_name: customer.name || customer.full_name || data.customer_name || data.name || null,
+      donor_email: customer.email || data.customer_email || data.email || null,
+      donor_whatsapp: customer.phone || customer.whatsapp || data.customer_phone || data.phone || null,
+      amount_cents: amountCents > 0 ? amountCents : 2500,
+      mode: isSubscription ? 'subscription' : 'one_time',
+      payment_method: data.payment_method || data.paymentMethod || data.method || null,
+      status: newStatus,
+      cakto_session_id: sessionId || null,
+      cakto_subscription_id: subscriptionId || null,
+      cakto_payment_id: paymentId || null,
+      raw_payload: event,
+      paid_at: newStatus === 'paid' ? new Date().toISOString() : null,
+    }).select('id').maybeSingle();
+
+    if (insertErr) console.error('[cakto-webhook] donation insert err', insertErr);
+    matchedDonationId = inserted?.id ?? null;
+    console.log('[cakto-webhook] created donation from static checkout webhook', { matchedDonationId, type, sessionId, checkoutUrl });
   }
 
   // Optional: send WhatsApp thank-you on first payment
@@ -98,7 +140,7 @@ Deno.serve(async (req) => {
       const { data: donation } = await supabase
         .from('donations')
         .select('donor_name, donor_whatsapp, amount_cents, mode')
-        .eq(reference ? 'id' : 'cakto_session_id', reference || sessionId)
+        .eq(matchedDonationId ? 'id' : (reference ? 'id' : 'cakto_session_id'), matchedDonationId || reference || sessionId)
         .maybeSingle();
       const phone = donation?.donor_whatsapp?.replace(/\D/g, '');
       if (phone && phone.length >= 10) {
