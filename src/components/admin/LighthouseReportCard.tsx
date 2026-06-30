@@ -22,11 +22,20 @@ interface StrategyResult {
   scores: Scores;
   metrics: Metrics;
 }
+interface StrategyError {
+  error: string;
+  message?: string;
+  fallback: true;
+}
+type StrategyOutcome = StrategyResult | StrategyError;
 interface Report {
   url: string;
-  mobile: StrategyResult;
-  desktop: StrategyResult;
+  mobile: StrategyOutcome;
+  desktop: StrategyOutcome;
+  fallback?: boolean;
 }
+const isStrategyError = (r: StrategyOutcome): r is StrategyError =>
+  (r as StrategyError).error !== undefined || !(r as StrategyResult).scores;
 
 const scoreColor = (n: number) => {
   if (n >= 90) return 'text-emerald-500';
@@ -44,6 +53,20 @@ function ScoreTile({ label, value }: { label: string; value: number }) {
     <div className={`rounded-2xl border p-4 flex flex-col items-center justify-center ${scoreBg(value)}`}>
       <div className={`text-3xl font-bold ${scoreColor(value)}`}>{value}</div>
       <div className="text-xs text-muted-foreground mt-1 text-center">{label}</div>
+    </div>
+  );
+}
+
+function StrategyErrorCard({ strategy, result, icon }: { strategy: 'mobile' | 'desktop'; result: StrategyError; icon: React.ReactNode }) {
+  return (
+    <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 space-y-2">
+      <div className="flex items-center gap-2 font-medium capitalize">{icon} {strategy}</div>
+      <div className="text-sm text-amber-600 dark:text-amber-400">
+        {result.error === 'QUOTA_EXCEEDED'
+          ? 'Cota da API do PageSpeed excedida. Tente novamente em alguns minutos.'
+          : 'Serviço temporariamente indisponível.'}
+      </div>
+      {result.message && <div className="text-xs text-muted-foreground break-words">{result.message}</div>}
     </div>
   );
 }
@@ -145,8 +168,12 @@ export function LighthouseReportCard() {
               </a>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <StrategyCard result={report.mobile} icon={<Smartphone className="w-4 h-4" />} />
-              <StrategyCard result={report.desktop} icon={<Monitor className="w-4 h-4" />} />
+              {isStrategyError(report.mobile)
+                ? <StrategyErrorCard strategy="mobile" result={report.mobile} icon={<Smartphone className="w-4 h-4" />} />
+                : <StrategyCard result={report.mobile} icon={<Smartphone className="w-4 h-4" />} />}
+              {isStrategyError(report.desktop)
+                ? <StrategyErrorCard strategy="desktop" result={report.desktop} icon={<Monitor className="w-4 h-4" />} />
+                : <StrategyCard result={report.desktop} icon={<Monitor className="w-4 h-4" />} />}
             </div>
             <a
               href={`https://pagespeed.web.dev/analysis?url=${encodeURIComponent(report.url)}`}
