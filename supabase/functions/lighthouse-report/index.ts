@@ -1,4 +1,22 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+
+function getUserIdFromJwt(authHeader: string | null): { token: string; userId: string } | null {
+  if (!authHeader?.startsWith("Bearer ")) return null;
+  const token = authHeader.replace("Bearer ", "").trim();
+  const [, payload] = token.split(".");
+  if (!payload) return null;
+  try {
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(normalized.length + ((4 - normalized.length % 4) % 4), "=");
+    const claims = JSON.parse(atob(padded));
+    const userId = typeof claims.sub === "string" ? claims.sub : "";
+    const exp = typeof claims.exp === "number" ? claims.exp : 0;
+    if (!userId || !exp || exp <= Math.floor(Date.now() / 1000)) return null;
+    return { token, userId };
+  } catch {
+    return null;
+  }
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
