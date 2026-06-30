@@ -237,7 +237,7 @@ export default function Department() {
           title: 'Assinatura expirada',
           description: 'Seu período de teste expirou. Renove para continuar usando.',
         });
-        navigate('/payment');
+        navigate('/apoiar');
         return;
       }
       
