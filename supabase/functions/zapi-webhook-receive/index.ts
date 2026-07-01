@@ -92,29 +92,20 @@ export function parseUserResponse(text: string, targetMonth: Date): ParsedRespon
   if (weekdayShifts.size > 0) {
     const lastDay = new Date(tYear, tMonth + 1, 0).getDate();
     for (const [dow, shift] of weekdayShifts.entries()) {
-      if (shift) {
-        // Map shift -> slot. Only Sunday has a morning slot in FIXED_SLOTS.
-        if (shift === 'manha' && dow === 0) {
-          weeklyBlocks.push({ dow: 0, timeStart: '08:00', timeEnd: '12:00', label: 'Domingo de Manhã' });
-        } else if (shift === 'noite') {
-          const ts = dow === 0 ? '18:00' : '19:00';
-          weeklyBlocks.push({ dow, timeStart: ts, timeEnd: '22:00', label: `${WEEKDAY_LABELS[dow]} à noite` });
-        } else if (shift === 'manha' && dow !== 0) {
-          // No morning slot for weekdays — fall back to enumerating all dates of that dow.
-          for (let d = 1; d <= lastDay; d++) {
-            const dt = new Date(tYear, tMonth, d);
-            if (dt < today) continue;
-            if (dt.getDay() === dow) found.add(dt.toISOString().slice(0, 10));
-          }
-        }
-      } else {
-        // No shift modifier — block the entire weekday (all dates of that dow this month)
-        for (let d = 1; d <= lastDay; d++) {
-          const dt = new Date(tYear, tMonth, d);
-          if (dt < today) continue;
-          if (dt.getDay() === dow) found.add(dt.toISOString().slice(0, 10));
-        }
+      // Keywords like "domingos de manhã", "domingos de noite", "quartas"
+      // apply ONLY to the upcoming month — enumerate all matching dates.
+      // (Not permanent — user must resend next month if they want to reblock.)
+      for (let d = 1; d <= lastDay; d++) {
+        const dt = new Date(tYear, tMonth, d);
+        if (dt < today) continue;
+        if (dt.getDay() === dow) found.add(dt.toISOString().slice(0, 10));
       }
+      const label = shift === 'manha'
+        ? `${WEEKDAY_LABELS[dow]}s de manhã`
+        : shift === 'noite'
+        ? `${WEEKDAY_LABELS[dow]}s à noite`
+        : `${WEEKDAY_LABELS[dow]}s (dia inteiro)`;
+      weeklyBlocks.push({ dow, timeStart: '', timeEnd: '', label });
     }
   }
 
