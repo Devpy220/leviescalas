@@ -587,9 +587,9 @@ _LEVI_`;
 🚫 *Dias bloqueados:*
 ${acceptedList}` : ""}${appliedWeekly.length > 0 ? `
 
-🔁 *Bloqueio permanente do dia da semana:*
-${appliedWeekly.map((w) => `• ${w.label} (${w.timeStart}–${w.timeEnd})`).join("\n")}
-_(vale para todos os meses; me responda novamente para liberar)_` : ""}${acceptedIso.length === 0 && appliedWeekly.length === 0 ? "\n\n(nenhuma data válida)" : ""}`;
+🔁 *Turnos bloqueados neste mês:*
+${appliedWeekly.map((w) => `• ${w.label}`).join("\n")}
+_(vale só para o mês em curso; se quiser bloquear no próximo mês, me responda de novo quando eu perguntar)_` : ""}${acceptedIso.length === 0 && appliedWeekly.length === 0 ? "\n\n(nenhuma data válida)" : ""}`;
       if (Object.keys(rejectedByDept).length > 0) {
         msg += `\n\n━━━━━━━━━━━━━━━━━━━━\n⚠️ *Limite atingido em alguns departamentos.*\nNão consegui bloquear estes dias:\n`;
         for (const [deptName, list] of Object.entries(rejectedByDept)) {
