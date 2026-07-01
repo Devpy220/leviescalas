@@ -16,7 +16,6 @@ export const LEVI_COMMANDS_HINT =
   `• *bloquear domingos de manhã* / *bloquear domingos de noite* — bloqueia esses turnos no próximo mês\n` +
   `• *servir 18/7, 25/7* — só vou servir nesses dias\n` +
   `• *nenhum* — liberar todos os dias do mês\n` +
-  `• *nenhum* — liberar todos os dias do mês\n` +
   `\n_Fora dessas palavras (ou de uma resposta direta a uma mensagem minha) eu fico quieto._`;
 
 function hashString(s: string): number {
