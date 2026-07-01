@@ -92,29 +92,20 @@ export function parseUserResponse(text: string, targetMonth: Date): ParsedRespon
   if (weekdayShifts.size > 0) {
     const lastDay = new Date(tYear, tMonth + 1, 0).getDate();
     for (const [dow, shift] of weekdayShifts.entries()) {
-      if (shift) {
-        // Map shift -> slot. Only Sunday has a morning slot in FIXED_SLOTS.
-        if (shift === 'manha' && dow === 0) {
-          weeklyBlocks.push({ dow: 0, timeStart: '08:00', timeEnd: '12:00', label: 'Domingo de Manhã' });
-        } else if (shift === 'noite') {
-          const ts = dow === 0 ? '18:00' : '19:00';
-          weeklyBlocks.push({ dow, timeStart: ts, timeEnd: '22:00', label: `${WEEKDAY_LABELS[dow]} à noite` });
-        } else if (shift === 'manha' && dow !== 0) {
-          // No morning slot for weekdays — fall back to enumerating all dates of that dow.
-          for (let d = 1; d <= lastDay; d++) {
-            const dt = new Date(tYear, tMonth, d);
-            if (dt < today) continue;
-            if (dt.getDay() === dow) found.add(dt.toISOString().slice(0, 10));
-          }
-        }
-      } else {
-        // No shift modifier — block the entire weekday (all dates of that dow this month)
-        for (let d = 1; d <= lastDay; d++) {
-          const dt = new Date(tYear, tMonth, d);
-          if (dt < today) continue;
-          if (dt.getDay() === dow) found.add(dt.toISOString().slice(0, 10));
-        }
+      // Keywords like "domingos de manhã", "domingos de noite", "quartas"
+      // apply ONLY to the upcoming month — enumerate all matching dates.
+      // (Not permanent — user must resend next month if they want to reblock.)
+      for (let d = 1; d <= lastDay; d++) {
+        const dt = new Date(tYear, tMonth, d);
+        if (dt < today) continue;
+        if (dt.getDay() === dow) found.add(dt.toISOString().slice(0, 10));
       }
+      const label = shift === 'manha'
+        ? `${WEEKDAY_LABELS[dow]}s de manhã`
+        : shift === 'noite'
+        ? `${WEEKDAY_LABELS[dow]}s à noite`
+        : `${WEEKDAY_LABELS[dow]}s (dia inteiro)`;
+      weeklyBlocks.push({ dow, timeStart: '', timeEnd: '', label });
     }
   }
 
@@ -560,30 +551,9 @@ serve(async (req: Request): Promise<Response> => {
         );
     }
 
-    // Apply permanent weekly blocks (e.g. "domingos de manhã") across all the user's depts.
-    const appliedWeekly: WeeklyBlock[] = [];
-    if (parsed.weeklyBlocks && parsed.weeklyBlocks.length > 0) {
-      for (const dept of depts ?? []) {
-        for (const wb of parsed.weeklyBlocks) {
-          const { error: wErr } = await supabase
-            .from("member_availability")
-            .upsert(
-              {
-                user_id: profile.id,
-                department_id: dept.id,
-                day_of_week: wb.dow,
-                time_start: `${wb.timeStart}:00`,
-                time_end: `${wb.timeEnd}:00`,
-                is_available: false,
-                updated_at: new Date().toISOString(),
-              },
-              { onConflict: "user_id,department_id,day_of_week,time_start,time_end" },
-            );
-          if (wErr) console.error("weekly block upsert error:", wErr);
-        }
-      }
-      appliedWeekly.push(...parsed.weeklyBlocks);
-    }
+    // Weekly-shift keywords ("domingos de manhã", "quartas", etc.) are month-only —
+    // the parser already expanded them into `parsed.dates`. Track for the reply text.
+    const appliedWeekly: WeeklyBlock[] = parsed.weeklyBlocks ?? [];
 
     await supabase
       .from("blackout_collection_prompts")
@@ -617,9 +587,9 @@ _LEVI_`;
 🚫 *Dias bloqueados:*
 ${acceptedList}` : ""}${appliedWeekly.length > 0 ? `
 
-🔁 *Bloqueio permanente do dia da semana:*
-${appliedWeekly.map((w) => `• ${w.label} (${w.timeStart}–${w.timeEnd})`).join("\n")}
-_(vale para todos os meses; me responda novamente para liberar)_` : ""}${acceptedIso.length === 0 && appliedWeekly.length === 0 ? "\n\n(nenhuma data válida)" : ""}`;
+🔁 *Turnos bloqueados neste mês:*
+${appliedWeekly.map((w) => `• ${w.label}`).join("\n")}
+_(vale só para o mês em curso; se quiser bloquear no próximo mês, me responda de novo quando eu perguntar)_` : ""}${acceptedIso.length === 0 && appliedWeekly.length === 0 ? "\n\n(nenhuma data válida)" : ""}`;
       if (Object.keys(rejectedByDept).length > 0) {
         msg += `\n\n━━━━━━━━━━━━━━━━━━━━\n⚠️ *Limite atingido em alguns departamentos.*\nNão consegui bloquear estes dias:\n`;
         for (const [deptName, list] of Object.entries(rejectedByDept)) {
