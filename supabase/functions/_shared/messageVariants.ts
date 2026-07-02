@@ -9,13 +9,17 @@ export const LEVI_COMMANDS_HINT =
   `🤖 *Palavras que eu entendo (LEVI Escalas):*\n` +
   `• *escala* — ver suas próximas escalas\n` +
   `• *troca* — pedir troca de uma escala\n` +
-  `• *ajuda* / *comandos* / *menu* — ver esta lista de novo\n` +
-  `\n📅 *Para o aviso mensal de disponibilidade, responda com:*\n` +
+  `• *apoiar* — link e PIX para apoiar o LEVI\n` +
+  `• *bloqueios* — ver seus bloqueios do próximo mês\n` +
+  `• *ajuda* / *comandos* — ver esta lista de novo\n` +
+  `\n📅 *No aviso mensal de disponibilidade, responda com:*\n` +
   `• *bloquear 5/7, 12/7* — bloqueia datas específicas\n` +
-  `• *bloquear todas as quartas* — bloqueia todas as quartas do próximo mês\n` +
-  `• *bloquear domingos de manhã* / *bloquear domingos de noite* — bloqueia esses turnos no próximo mês\n` +
+  `• *bloquear segundas* / *terças* / *quartas* / *quintas* / *sextas* / *sábados* / *domingos* — bloqueia todos esses dias no próximo mês\n` +
+  `• *bloquear domingos de manhã* / *bloquear domingos de noite* — só o turno\n` +
+  `• *servir segundas* … *servir domingos* — só vou servir nesse dia da semana\n` +
   `• *servir 18/7, 25/7* — só vou servir nesses dias\n` +
   `• *nenhum* — liberar todos os dias do mês\n` +
+  `\n⏳ Os comandos de *bloquear* e *servir* valem até o *último dia do mês em curso*. Depois disso o próximo mês reabre.\n` +
   `\n_Fora dessas palavras (ou de uma resposta direta a uma mensagem minha) eu fico quieto._`;
 
 function hashString(s: string): number {
@@ -54,14 +58,34 @@ export const REMINDER_EMOJIS = ["⏰", "🔔", "📅", "⏳"];
 export const BROADCAST_EMOJIS = ["📢", "📣", "💬"];
 export const SUPPORT_EMOJIS = ["❤️", "🙏", "💝", "✨"];
 
-export const SCHEDULE_CONNECTORS = [
-  "você foi escalado para",
-  "sua escala foi marcada para",
-  "você está na escala de",
-  "você tem uma escala em",
-];
+// ─────────────────────────────────────────────────────────────
+// Split-message helpers (msg principal + apoio + comandos).
+// The main-message builders below do NOT include commands hint,
+// Instagram or support block — those go in separate follow-ups.
+// ─────────────────────────────────────────────────────────────
 
-// Build a humanized announcement message
+export function buildSupportOnlyMessage(userName: string): string {
+  const first = (userName || "").split(/\s+/)[0] || "amigo(a)";
+  return (
+`💛 *Apoie o LEVI, ${first}!*
+━━━━━━━━━━━━━━━━━━━━
+
+O LEVI é gratuito e depende do seu apoio para continuar no ar.
+
+💡 *Sugestão: R$ 25,00* (você escolhe o valor)
+
+👉 https://leviescalas.com.br/apoiar
+_(PIX com 1 clique, cartão ou assinatura mensal)_
+
+🙏 Obrigado pelo carinho!`
+  );
+}
+
+export function buildCommandsOnlyMessage(): string {
+  return LEVI_COMMANDS_HINT;
+}
+
+// Build an announcement message (main content only — no hint / IG / support)
 export function buildAnnouncementMessage(params: {
   userId: string;
   userName: string;
@@ -73,8 +97,7 @@ export function buildAnnouncementMessage(params: {
   const emoji = pickVariant(seed + "e", ANNOUNCEMENT_EMOJIS);
   const greeting = pickVariant(seed + "g", GREETINGS);
   const closing = pickVariant(seed + "c", CLOSINGS);
-  const igLine = `📲 Siga a ELSD no Instagram:\n${INSTAGRAM_LINK}`;
-  return `${emoji} *Aviso — ${params.deptName}*\n\n${greeting}, *${params.userName}*!\n\n${params.title}\n\n${LEVI_COMMANDS_HINT}\n\n${igLine}\n\n${closing}`;
+  return `${emoji} *Aviso — ${params.deptName}*\n\n${greeting}, *${params.userName}*!\n\n${params.title}\n\n${closing}`;
 }
 
 export function buildBroadcastMessage(params: {
@@ -88,10 +111,10 @@ export function buildBroadcastMessage(params: {
   const emoji = pickVariant(seed + "e", BROADCAST_EMOJIS);
   const greeting = pickVariant(seed + "g", GREETINGS);
   const closing = pickVariant(seed + "c", CLOSINGS);
-  const igLine = `📲 Siga a ELSD no Instagram:\n${INSTAGRAM_LINK}`;
-  return `${emoji} *Comunicado LEVI*\n\n${greeting}, *${params.userName}*!\n\n*${params.title}*\n\n${params.message}\n\n${LEVI_COMMANDS_HINT}\n\n${igLine}\n\n${closing}`;
+  return `${emoji} *Comunicado LEVI*\n\n${greeting}, *${params.userName}*!\n\n*${params.title}*\n\n${params.message}\n\n${closing}`;
 }
 
+// Kept for back-compat; the primary support flow now uses buildSupportOnlyMessage.
 export function buildSupportMessage(params: {
   userId: string;
   userName: string;
@@ -99,10 +122,5 @@ export function buildSupportMessage(params: {
   titular: string;
   today?: string;
 }): string {
-  const seed = `${params.userId}-${params.today ?? new Date().toISOString().slice(0, 10)}-sup`;
-  const emoji = pickVariant(seed + "e", SUPPORT_EMOJIS);
-  const greeting = pickVariant(seed + "g", GREETINGS);
-  const closing = pickVariant(seed + "c", CLOSINGS);
-  const igLine = `📲 Siga a ELSD no Instagram:\n${INSTAGRAM_LINK}`;
-  return `${emoji} *Apoie o LEVI*\n\n${greeting}, *${params.userName}*!\n\nO LEVI é gratuito e depende do seu apoio para continuar funcionando. Qualquer valor faz a diferença!\n\n💡 *Sugestão de contribuição: R$ 25,00*\n(você pode escolher qualquer valor)\n\n💛 *Toque no link abaixo para copiar a chave PIX com 1 clique:*\n\n👉 https://leviescalas.com.br/apoiar\n\n_(QR Code, chave PIX e opção de cartão disponíveis na página)_\n\n👤 *Titular:* ${params.titular}\n\n🙏 Obrigado pelo carinho!\n\n${LEVI_COMMANDS_HINT}\n\n${igLine}\n\n${closing}`;
+  return buildSupportOnlyMessage(params.userName);
 }
