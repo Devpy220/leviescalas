@@ -395,7 +395,8 @@ export default function MemberList({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="w-8 h-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                        aria-label="Ações do membro"
+                        className="w-8 h-8 opacity-100 md:opacity-60 md:group-hover:opacity-100 transition-opacity"
                       >
                         <MoreVertical className="w-4 h-4" />
                       </Button>
