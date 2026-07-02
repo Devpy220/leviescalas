@@ -302,43 +302,38 @@ export default function UnifiedScheduleView({
           </div>
         </CardHeader>
       </Card>
-      {/* Floating action buttons for leaders */}
+      {/* Floating (inline) action buttons for leaders — soltos, não fixos */}
       {isLeader && !readOnly && (
-        <div className="fixed bottom-6 right-6 flex flex-col gap-2 z-40">
+        <div className="flex flex-wrap items-center justify-end gap-3 my-2">
           {/* Smart Schedule Button */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button 
-                size="icon"
-                className="w-12 h-12 rounded-full shadow-lg bg-primary hover:bg-primary/90 hover:shadow-glow-sm transition-all"
+              <Button
+                size="lg"
                 onClick={onOpenSmartSchedule}
+                className="h-14 w-14 rounded-2xl shadow-lg bg-primary hover:bg-primary/90 hover:shadow-glow-sm transition-all"
               >
-                <Sparkles className="w-5 h-5" />
+                <Sparkles className="w-6 h-6" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="left">
-              Gerar Escalas (rápido)
-            </TooltipContent>
+            <TooltipContent side="top">Gerar Escalas (rápido)</TooltipContent>
           </Tooltip>
-          
-          
+
           {/* Manual Schedule Button */}
           <Popover open={showCalendarPicker} onOpenChange={setShowCalendarPicker}>
             <Tooltip>
               <TooltipTrigger asChild>
                 <PopoverTrigger asChild>
-                  <Button 
-                    size="icon"
+                  <Button
+                    size="lg"
                     variant="outline"
-                    className="w-12 h-12 rounded-full shadow-lg bg-background hover:bg-accent transition-all"
+                    className="h-14 w-14 rounded-2xl shadow-lg bg-background hover:bg-accent transition-all"
                   >
-                    <CalendarPlus className="w-5 h-5" />
+                    <CalendarPlus className="w-6 h-6" />
                   </Button>
                 </PopoverTrigger>
               </TooltipTrigger>
-              <TooltipContent side="left">
-                Adicionar Escala Manual
-              </TooltipContent>
+              <TooltipContent side="top">Adicionar Escala Manual</TooltipContent>
             </Tooltip>
             <PopoverContent className="w-auto p-0" align="end" side="top">
               <Calendar
