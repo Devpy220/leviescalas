@@ -6,6 +6,8 @@ interface DraggableFloatingProps {
   defaultPosition?: { right: number; bottom: number };
   className?: string;
   onClick?: () => void;
+  title?: string;
+  'aria-label'?: string;
   children: React.ReactNode;
 }
 
@@ -19,6 +21,8 @@ export function DraggableFloating({
   defaultPosition = { right: 24, bottom: 24 },
   className,
   onClick,
+  title,
+  'aria-label': ariaLabel,
   children,
 }: DraggableFloatingProps) {
   const ref = useRef<HTMLDivElement>(null);
@@ -108,6 +112,9 @@ export function DraggableFloating({
   return (
     <div
       ref={ref}
+      title={title}
+      aria-label={ariaLabel}
+      role={onClick ? 'button' : undefined}
       onMouseDown={(e) => startDrag(e.clientX, e.clientY)}
       onTouchStart={(e) => {
         if (e.touches[0]) startDrag(e.touches[0].clientX, e.touches[0].clientY);
