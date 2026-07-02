@@ -311,6 +311,8 @@ export default function UnifiedScheduleView({
             storageKey="dept-fab-smart"
             defaultPosition={{ right: 24, bottom: 96 }}
             onClick={onOpenSmartSchedule}
+            title="Gerar escalas rápido (IA)"
+            aria-label="Gerar escalas rápido"
             className="h-14 w-14 rounded-2xl shadow-lg bg-primary hover:bg-primary/90 hover:shadow-glow-sm transition-all flex items-center justify-center text-primary-foreground"
           >
             <Sparkles className="w-6 h-6 pointer-events-none" />
@@ -320,6 +322,8 @@ export default function UnifiedScheduleView({
             storageKey="dept-fab-manual"
             defaultPosition={{ right: 24, bottom: 24 }}
             onClick={() => onAddSchedule()}
+            title="Adicionar escala manual"
+            aria-label="Adicionar escala manual"
             className="h-14 w-14 rounded-2xl shadow-lg bg-background hover:bg-accent border border-border flex items-center justify-center"
           >
             <CalendarPlus className="w-6 h-6 pointer-events-none" />
