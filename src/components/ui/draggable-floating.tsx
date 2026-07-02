@@ -112,6 +112,9 @@ export function DraggableFloating({
   return (
     <div
       ref={ref}
+      title={title}
+      aria-label={ariaLabel}
+      role={onClick ? 'button' : undefined}
       onMouseDown={(e) => startDrag(e.clientX, e.clientY)}
       onTouchStart={(e) => {
         if (e.touches[0]) startDrag(e.touches[0].clientX, e.touches[0].clientY);
