@@ -365,6 +365,12 @@ export default function MemberList({
                         Você
                       </span>
                     )}
+                    {blockedMap[member.user_id] && (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] bg-destructive/10 text-destructive flex items-center gap-1" title="Bloqueado — não será escalado">
+                        <Ban className="w-2.5 h-2.5" />
+                        Bloqueado
+                      </span>
+                    )}
                   </div>
                   {hasContactAccess ? (
                     <p className="text-sm text-muted-foreground truncate">
