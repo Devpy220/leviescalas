@@ -10,7 +10,9 @@ import {
   Sparkles,
   Calendar as CalendarIcon,
   CalendarPlus,
+  GripVertical,
 } from 'lucide-react';
+import { DraggableFloating } from '@/components/ui/draggable-floating';
 import { ASSIGNMENT_ROLES } from '@/lib/constants';
 import { FIXED_SLOTS, FixedSlot, findSlotByDayAndTime, normalizeTime } from '@/lib/fixedSlots';
 import { Button } from '@/components/ui/button';
