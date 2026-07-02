@@ -304,59 +304,71 @@ export default function UnifiedScheduleView({
           </div>
         </CardHeader>
       </Card>
-      {/* Draggable floating action buttons for leaders — arraste pela alça ⋮⋮ */}
+      {/* Individually draggable floating buttons for leaders */}
       {isLeader && !readOnly && (
-        <DraggableFloating storageKey={`dept-fab-${''}`}>
-          <div className="flex flex-col items-center gap-2 rounded-2xl bg-background/80 backdrop-blur-md border border-border shadow-xl p-2">
-            <div
-              data-drag-handle
-              className="w-full flex items-center justify-center py-1 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground"
-              aria-label="Arrastar"
-              title="Arrastar"
-            >
-              <GripVertical className="w-4 h-4" />
-            </div>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="lg"
-                  onClick={onOpenSmartSchedule}
-                  className="h-14 w-14 rounded-2xl shadow-lg bg-primary hover:bg-primary/90 hover:shadow-glow-sm transition-all"
-                >
-                  <Sparkles className="w-6 h-6" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="left">Gerar Escalas (rápido)</TooltipContent>
-            </Tooltip>
-
-            <Popover open={showCalendarPicker} onOpenChange={setShowCalendarPicker}>
+        <>
+          <DraggableFloating storageKey="dept-fab-smart" defaultPosition={{ right: 24, bottom: 96 }}>
+            <div className="flex items-center gap-1 rounded-2xl bg-background/80 backdrop-blur-md border border-border shadow-xl p-1.5">
+              <div
+                data-drag-handle
+                className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground px-1"
+                title="Arrastar"
+              >
+                <GripVertical className="w-4 h-4" />
+              </div>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <PopoverTrigger asChild>
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      className="h-14 w-14 rounded-2xl shadow-lg bg-background hover:bg-accent transition-all"
-                    >
-                      <CalendarPlus className="w-6 h-6" />
-                    </Button>
-                  </PopoverTrigger>
+                  <Button
+                    size="lg"
+                    onClick={onOpenSmartSchedule}
+                    className="h-14 w-14 rounded-2xl shadow-lg bg-primary hover:bg-primary/90 hover:shadow-glow-sm transition-all"
+                  >
+                    <Sparkles className="w-6 h-6" />
+                  </Button>
                 </TooltipTrigger>
-                <TooltipContent side="left">Adicionar Escala Manual</TooltipContent>
+                <TooltipContent side="left">Gerar Escalas (rápido)</TooltipContent>
               </Tooltip>
-              <PopoverContent className="w-auto p-0" align="end" side="top">
-                <Calendar
-                  mode="single"
-                  selected={undefined}
-                  onSelect={handleDateSelect}
-                  initialFocus
-                  locale={ptBR}
-                  className={cn("p-3 pointer-events-auto")}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-        </DraggableFloating>
+            </div>
+          </DraggableFloating>
+
+          <DraggableFloating storageKey="dept-fab-manual" defaultPosition={{ right: 24, bottom: 24 }}>
+            <div className="flex items-center gap-1 rounded-2xl bg-background/80 backdrop-blur-md border border-border shadow-xl p-1.5">
+              <div
+                data-drag-handle
+                className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground px-1"
+                title="Arrastar"
+              >
+                <GripVertical className="w-4 h-4" />
+              </div>
+              <Popover open={showCalendarPicker} onOpenChange={setShowCalendarPicker}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <PopoverTrigger asChild>
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        className="h-14 w-14 rounded-2xl shadow-lg bg-background hover:bg-accent transition-all"
+                      >
+                        <CalendarPlus className="w-6 h-6" />
+                      </Button>
+                    </PopoverTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">Adicionar Escala Manual</TooltipContent>
+                </Tooltip>
+                <PopoverContent className="w-auto p-0" align="end" side="top">
+                  <Calendar
+                    mode="single"
+                    selected={undefined}
+                    onSelect={handleDateSelect}
+                    initialFocus
+                    locale={ptBR}
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </DraggableFloating>
+        </>
       )}
 
       {/* Horizontal Grid of Slot Cards */}
