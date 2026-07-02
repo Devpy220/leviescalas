@@ -304,70 +304,48 @@ export default function UnifiedScheduleView({
           </div>
         </CardHeader>
       </Card>
-      {/* Individually draggable floating buttons for leaders */}
+      {/* Individually draggable floating buttons — drag anywhere on the button */}
       {isLeader && !readOnly && (
         <>
-          <DraggableFloating storageKey="dept-fab-smart" defaultPosition={{ right: 24, bottom: 96 }}>
-            <div className="flex items-center gap-1 rounded-2xl bg-background/80 backdrop-blur-md border border-border shadow-xl p-1.5">
-              <div
-                data-drag-handle
-                className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground px-1"
-                title="Arrastar"
-              >
-                <GripVertical className="w-4 h-4" />
-              </div>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="lg"
-                    onClick={onOpenSmartSchedule}
-                    className="h-14 w-14 rounded-2xl shadow-lg bg-primary hover:bg-primary/90 hover:shadow-glow-sm transition-all"
-                  >
-                    <Sparkles className="w-6 h-6" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="left">Gerar Escalas (rápido)</TooltipContent>
-              </Tooltip>
-            </div>
+          <DraggableFloating
+            storageKey="dept-fab-smart"
+            defaultPosition={{ right: 24, bottom: 96 }}
+            onClick={onOpenSmartSchedule}
+            className="h-14 w-14 rounded-2xl shadow-lg bg-primary hover:bg-primary/90 hover:shadow-glow-sm transition-all flex items-center justify-center text-primary-foreground"
+          >
+            <Sparkles className="w-6 h-6 pointer-events-none" />
           </DraggableFloating>
 
-          <DraggableFloating storageKey="dept-fab-manual" defaultPosition={{ right: 24, bottom: 24 }}>
-            <div className="flex items-center gap-1 rounded-2xl bg-background/80 backdrop-blur-md border border-border shadow-xl p-1.5">
-              <div
-                data-drag-handle
-                className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground px-1"
-                title="Arrastar"
-              >
-                <GripVertical className="w-4 h-4" />
-              </div>
-              <Popover open={showCalendarPicker} onOpenChange={setShowCalendarPicker}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <PopoverTrigger asChild>
-                      <Button
-                        size="lg"
-                        variant="outline"
-                        className="h-14 w-14 rounded-2xl shadow-lg bg-background hover:bg-accent transition-all"
-                      >
-                        <CalendarPlus className="w-6 h-6" />
-                      </Button>
-                    </PopoverTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent side="left">Adicionar Escala Manual</TooltipContent>
-                </Tooltip>
-                <PopoverContent className="w-auto p-0" align="end" side="top">
-                  <Calendar
-                    mode="single"
-                    selected={undefined}
-                    onSelect={handleDateSelect}
-                    initialFocus
-                    locale={ptBR}
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+          <DraggableFloating
+            storageKey="dept-fab-manual"
+            defaultPosition={{ right: 24, bottom: 24 }}
+            onClick={() => setShowCalendarPicker(true)}
+            className="h-14 w-14 rounded-2xl shadow-lg bg-background hover:bg-accent border border-border flex items-center justify-center"
+          >
+            <CalendarPlus className="w-6 h-6 pointer-events-none" />
           </DraggableFloating>
+
+          {/* Detached calendar popover for manual scheduling */}
+          {showCalendarPicker && (
+            <div
+              className="fixed inset-0 z-[9998] bg-black/30"
+              onClick={() => setShowCalendarPicker(false)}
+            >
+              <div
+                className="absolute right-6 bottom-24 bg-popover rounded-2xl shadow-xl border border-border"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Calendar
+                  mode="single"
+                  selected={undefined}
+                  onSelect={handleDateSelect}
+                  initialFocus
+                  locale={ptBR}
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </div>
+            </div>
+          )}
         </>
       )}
 
