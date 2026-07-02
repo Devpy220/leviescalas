@@ -6,6 +6,8 @@ interface DraggableFloatingProps {
   defaultPosition?: { right: number; bottom: number };
   className?: string;
   onClick?: () => void;
+  title?: string;
+  'aria-label'?: string;
   children: React.ReactNode;
 }
 
