@@ -74,12 +74,13 @@ const handler = async (req: Request): Promise<Response> => {
       .from("notifications")
       .insert(notifications as any);
 
-    // WhatsApp — humanized batch
+    // WhatsApp — triplet (main + apoio + comandos), sem Instagram
     const whatsappRecipients = recipients
       .filter((p) => p.whatsapp)
       .map((p) => ({
         phone: p.whatsapp as string,
-        message: buildBroadcastMessage({
+        userName: p.name || "Voluntário",
+        mainMessage: buildBroadcastMessage({
           userId: p.id,
           userName: p.name || "Voluntário",
           title,
@@ -88,13 +89,11 @@ const handler = async (req: Request): Promise<Response> => {
       }));
 
     const whatsappQueued = whatsappRecipients.length;
-    const { promise } = scheduleBatch(supabaseUrl, serviceRoleKey, whatsappRecipients, {
-      forceQueue: true,
+    await enqueueTriplets(supabaseUrl, serviceRoleKey, whatsappRecipients, {
       origin: "admin_broadcast",
-      minDelayMs: 20_000,
-      maxDelayMs: 90_000,
+      includeInstagram: false,
     });
-    await promise;
+
 
     // Save broadcast record
     await supabase.from("admin_broadcasts").insert({
