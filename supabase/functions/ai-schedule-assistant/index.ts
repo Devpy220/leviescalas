@@ -461,6 +461,15 @@ REGRAS:
       for (const slot of slots.filter(s => s.dayOfWeek === dow)) {
         const eligible: Array<{ user_id: string; name: string; recent_count: number }> = [];
         for (const m of membersList) {
+          // chat-extracted hard restrictions
+          if (bannedUsers.has(m.user_id)) continue;
+          const okDows = allowedDowsByUser.get(m.user_id);
+          const okShifts = allowedShiftsByUser.get(m.user_id);
+          if (okShifts) {
+            if (!okShifts.has(shiftKey(dow, slot.timeStart))) continue;
+          } else if (okDows) {
+            if (!okDows.has(dow)) continue;
+          }
           // blackout
           if (blackoutByUser[m.user_id]?.has(dateStr)) continue;
           // date override
