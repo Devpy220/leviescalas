@@ -295,6 +295,33 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
+    // ─── "desbloquear" / "voltar" → self-unblock in all departments ───
+    const unblockRegex = /^(desbloquear|desbloqueio|desbloq|voltar|voltar\s+a\s+servir|liberar\s+meu\s+bloqueio)\s*[!?.]*$/i;
+    if (unblockRegex.test((text || "").trim())) {
+      const fname = (profile.name || "").split(" ")[0] || "👋";
+      try {
+        const { data: unblocked } = await supabase.rpc("unblock_member_by_phone", {
+          p_phone: profile.whatsapp,
+        });
+        const list = (unblocked ?? []) as Array<{ department_id: string; department_name: string }>;
+        const msg = list.length === 0
+          ? `Olá *${fname}*!\n\nVocê não está bloqueado em nenhum departamento no momento. 🙌`
+          : `✅ *Desbloqueado, ${fname}!*\n\nVocê voltou a ficar disponível para escalas em:\n${list.map((r) => `• ${r.department_name}`).join("\n")}\n\nSeu líder poderá te escalar normalmente a partir de agora.`;
+        await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, msg);
+      } catch (e) {
+        console.error("unblock error:", e);
+        await sendConfirmation(
+          supabaseUrl,
+          serviceRoleKey,
+          profile.whatsapp,
+          `Olá *${fname}*! Não consegui processar seu desbloqueio agora. Tente novamente em instantes.`,
+        );
+      }
+      return new Response(JSON.stringify({ ok: true, handled: "unblock" }), {
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
     // ─── "escala" command: list user's upcoming schedules ───
     try {
       if (isScheduleListCommand(text)) {

@@ -11,6 +11,7 @@ export const LEVI_COMMANDS_HINT =
   `• *troca* — pedir troca de uma escala\n` +
   `• *apoiar* — link e PIX para apoiar o LEVI\n` +
   `• *bloqueios* — ver seus bloqueios do próximo mês\n` +
+  `• *desbloquear* / *voltar* — se seu líder te bloqueou, você volta a ficar disponível\n` +
   `• *ajuda* / *comandos* — ver esta lista de novo\n` +
   `\n📅 *No aviso mensal de disponibilidade, responda com:*\n` +
   `• *bloquear 5/7, 12/7* — bloqueia datas específicas\n` +

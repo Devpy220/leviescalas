@@ -730,22 +730,31 @@ export type Database = {
       }
       members: {
         Row: {
+          blocked_at: string | null
+          blocked_by: string | null
           department_id: string
           id: string
+          is_blocked: boolean
           joined_at: string
           role: Database["public"]["Enums"]["member_role"]
           user_id: string
         }
         Insert: {
+          blocked_at?: string | null
+          blocked_by?: string | null
           department_id: string
           id?: string
+          is_blocked?: boolean
           joined_at?: string
           role?: Database["public"]["Enums"]["member_role"]
           user_id: string
         }
         Update: {
+          blocked_at?: string | null
+          blocked_by?: string | null
           department_id?: string
           id?: string
+          is_blocked?: boolean
           joined_at?: string
           role?: Database["public"]["Enums"]["member_role"]
           user_id?: string
@@ -2100,6 +2109,10 @@ export type Database = {
         Args: { dept_id: string }
         Returns: string
       }
+      set_member_blocked: {
+        Args: { blocked: boolean; dept_id: string; target_user_id: string }
+        Returns: boolean
+      }
       share_department_with: {
         Args: { _user_a: string; _user_b: string }
         Returns: boolean
@@ -2107,6 +2120,13 @@ export type Database = {
       transfer_department_leadership: {
         Args: { dept_id: string; new_leader_user_id: string }
         Returns: boolean
+      }
+      unblock_member_by_phone: {
+        Args: { p_phone: string }
+        Returns: {
+          department_id: string
+          department_name: string
+        }[]
       }
       update_contact_privacy: { Args: { share: boolean }; Returns: undefined }
       validate_church_code: {
