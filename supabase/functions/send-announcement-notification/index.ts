@@ -92,7 +92,8 @@ serve(async (req: Request): Promise<Response> => {
         .filter((p: any) => p.whatsapp)
         .map((p: any) => ({
           phone: p.whatsapp,
-          message: buildAnnouncementMessage({
+          userName: p.name || "Voluntário",
+          mainMessage: buildAnnouncementMessage({
             userId: p.id,
             userName: p.name || "Voluntário",
             deptName: department_name,
@@ -101,14 +102,12 @@ serve(async (req: Request): Promise<Response> => {
         }));
 
       whatsappQueued = recipients.length;
-      const { promise } = scheduleBatch(supabaseUrl, serviceRoleKey, recipients, {
-        forceQueue: true,
+      await enqueueTriplets(supabaseUrl, serviceRoleKey, recipients, {
         origin: "department_announcement",
-        minDelayMs: 20_000,
-        maxDelayMs: 90_000,
+        includeInstagram: false,
       });
-      await promise;
     }
+
     console.log(`Announcement: ${memberIds.length} notified, ${whatsappQueued} WhatsApp queued`);
 
     return new Response(
