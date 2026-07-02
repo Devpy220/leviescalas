@@ -319,33 +319,11 @@ export default function UnifiedScheduleView({
           <DraggableFloating
             storageKey="dept-fab-manual"
             defaultPosition={{ right: 24, bottom: 24 }}
-            onClick={() => setShowCalendarPicker(true)}
+            onClick={() => onAddSchedule()}
             className="h-14 w-14 rounded-2xl shadow-lg bg-background hover:bg-accent border border-border flex items-center justify-center"
           >
             <CalendarPlus className="w-6 h-6 pointer-events-none" />
           </DraggableFloating>
-
-          {/* Detached calendar popover for manual scheduling */}
-          {showCalendarPicker && (
-            <div
-              className="fixed inset-0 z-[9998] bg-black/30"
-              onClick={() => setShowCalendarPicker(false)}
-            >
-              <div
-                className="absolute right-6 bottom-24 bg-popover rounded-2xl shadow-xl border border-border"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Calendar
-                  mode="single"
-                  selected={undefined}
-                  onSelect={handleDateSelect}
-                  initialFocus
-                  locale={ptBR}
-                  className={cn("p-3 pointer-events-auto")}
-                />
-              </div>
-            </div>
-          )}
         </>
       )}
 
