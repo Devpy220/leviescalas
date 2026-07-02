@@ -286,6 +286,90 @@ Responda APENAS JSON: {"dates": ["YYYY-MM-DD", ...], "start_date": "YYYY-MM-DD"|
     }
     const memberIds = membersList.map(m => m.user_id);
 
+    // ============ EXTRACT PER-MEMBER RESTRICTIONS FROM CHAT ============
+    // The chat may say "Jomar não pode", "Sergio só domingo", "Lucas nunca quarta".
+    // These are NOT in the DB — we must parse them and enforce as filters.
+    const shiftKey = (dow: number, timeStart: string) => {
+      const t = timeStart;
+      const period = t < '12:00' ? 'morning' : t >= '18:00' ? 'night' : 'afternoon';
+      return `${dow}-${period}`;
+    };
+    const bannedUsers = new Set<string>();
+    const allowedDowsByUser = new Map<string, Set<number>>();
+    const allowedShiftsByUser = new Map<string, Set<string>>();
+    try {
+      const userTurns = messages.filter(m => m.role === 'user').map(m => m.content).join('\n');
+      if (userTurns.trim().length > 20) {
+        const namesList = membersList.map(m => `- ${m.name} (id: ${m.user_id})`).join('\n');
+        const restrRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'google/gemini-2.5-pro',
+            messages: [
+              {
+                role: 'system',
+                content: `Você extrai restrições de voluntários do texto do líder.
+
+MEMBROS DO DEPARTAMENTO:
+${namesList}
+
+Extraia:
+- "banned": lista de user_id de pessoas que NÃO podem ser escaladas em nenhum dia (ex: "Jomar não pode", "indisponíveis: X, Y").
+- "allowed_dows": objeto {user_id: [0-6]} para quem só pode em determinados dias da semana (0=domingo, 3=quarta, etc). Ex: "Sergio só domingos" -> {sergio_id: [0]}. "Lucas quarta e domingo à noite" -> {lucas_id: [0,3]}.
+- "allowed_shifts": objeto {user_id: ["dow-period"]} onde period ∈ {"morning","afternoon","night"}. Use quando o líder restringe TURNO específico (ex: "Douglas só domingo à noite" -> {douglas_id: ["0-night"]}. "Henrique só domingo à noite" -> {henrique_id: ["0-night"]}).
+
+REGRAS:
+- Faça match FUZZY de nome (primeiro nome, apelidos comuns). Ignore quem não bate.
+- Se o líder disser "só pode X" e "só pode Y" para a mesma pessoa, combine ambos.
+- Se nada for dito sobre uma pessoa, NÃO inclua na resposta.
+- Se allowed_shifts tiver entrada para um user, allowed_dows para ele é redundante (não inclua).
+- Retorne APENAS JSON: {"banned":["id"],"allowed_dows":{"id":[0,3]},"allowed_shifts":{"id":["0-night"]}}`,
+              },
+              { role: 'user', content: userTurns },
+            ],
+            response_format: { type: 'json_object' },
+          }),
+        });
+        if (restrRes.ok) {
+          const rd = await restrRes.json();
+          const raw = rd.choices?.[0]?.message?.content || '{}';
+          const m = raw.match(/\{[\s\S]*\}/);
+          const p = m ? JSON.parse(m[0]) : {};
+          const validIds = new Set(memberIds);
+          (Array.isArray(p.banned) ? p.banned : []).forEach((id: any) => {
+            if (typeof id === 'string' && validIds.has(id)) bannedUsers.add(id);
+          });
+          if (p.allowed_dows && typeof p.allowed_dows === 'object') {
+            for (const [id, dows] of Object.entries(p.allowed_dows)) {
+              if (!validIds.has(id) || !Array.isArray(dows)) continue;
+              const s = new Set<number>();
+              (dows as any[]).forEach((d) => { const n = Number(d); if (n >= 0 && n <= 6) s.add(n); });
+              if (s.size > 0) allowedDowsByUser.set(id, s);
+            }
+          }
+          if (p.allowed_shifts && typeof p.allowed_shifts === 'object') {
+            for (const [id, sh] of Object.entries(p.allowed_shifts)) {
+              if (!validIds.has(id) || !Array.isArray(sh)) continue;
+              const s = new Set<string>();
+              (sh as any[]).forEach((x) => { if (typeof x === 'string' && /^[0-6]-(morning|afternoon|night)$/.test(x)) s.add(x); });
+              if (s.size > 0) allowedShiftsByUser.set(id, s);
+            }
+          }
+          console.log('Extracted restrictions:', {
+            banned: [...bannedUsers],
+            allowed_dows: [...allowedDowsByUser.entries()].map(([k,v])=>[k,[...v]]),
+            allowed_shifts: [...allowedShiftsByUser.entries()].map(([k,v])=>[k,[...v]]),
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Restriction extraction failed:', e);
+    }
+
     // Fetch availability data
     const { data: weeklyAvail } = await supabase
       .from('member_availability')
