@@ -21,6 +21,8 @@ export function DraggableFloating({
   defaultPosition = { right: 24, bottom: 24 },
   className,
   onClick,
+  title,
+  'aria-label': ariaLabel,
   children,
 }: DraggableFloatingProps) {
   const ref = useRef<HTMLDivElement>(null);
