@@ -1,115 +1,125 @@
-import { useEffect, useRef, useState, PointerEvent as ReactPointerEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 interface DraggableFloatingProps {
   storageKey: string;
   defaultPosition?: { right: number; bottom: number };
   className?: string;
+  onClick?: () => void;
   children: React.ReactNode;
 }
 
 /**
- * Floating container that can be dragged around the viewport.
- * Position is persisted in localStorage per storageKey.
- * Uses left/top with clamping so it stays inside the viewport on resize.
+ * Floating element draggable from anywhere on itself.
+ * Click only fires if pointer moved less than 5px (no drag).
+ * Position persisted in localStorage per storageKey.
  */
 export function DraggableFloating({
   storageKey,
   defaultPosition = { right: 24, bottom: 24 },
   className,
+  onClick,
   children,
 }: DraggableFloatingProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
-  const dragState = useRef<{
-    startX: number; startY: number;
-    origX: number; origY: number;
-    moved: boolean;
-    pointerId: number;
-  } | null>(null);
+  const dragging = useRef(false);
+  const start = useRef({ offX: 0, offY: 0, moved: false });
 
-  // Initialize from storage or default (bottom-right)
   useEffect(() => {
+    const el = ref.current;
+    const w = el?.offsetWidth ?? 64;
+    const h = el?.offsetHeight ?? 64;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
     const stored = localStorage.getItem(`floating:${storageKey}`);
-    const compute = () => {
-      const el = ref.current;
-      const w = el?.offsetWidth ?? 140;
-      const h = el?.offsetHeight ?? 140;
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-      if (stored) {
-        try {
-          const p = JSON.parse(stored);
-          return {
-            x: Math.min(Math.max(0, p.x), vw - w),
-            y: Math.min(Math.max(0, p.y), vh - h),
-          };
-        } catch { /* fallthrough */ }
-      }
-      return {
-        x: vw - w - defaultPosition.right,
-        y: vh - h - defaultPosition.bottom,
-      };
-    };
-    setPos(compute());
-    const onResize = () => setPos(p => (p ? compute() : p));
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    if (stored) {
+      try {
+        const p = JSON.parse(stored);
+        setPos({
+          x: Math.min(Math.max(0, p.x), vw - w),
+          y: Math.min(Math.max(0, p.y), vh - h),
+        });
+        return;
+      } catch { /* fallthrough */ }
+    }
+    setPos({
+      x: vw - w - defaultPosition.right,
+      y: vh - h - defaultPosition.bottom,
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storageKey]);
 
-  const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+  const startDrag = (clientX: number, clientY: number) => {
     if (!pos) return;
-    // Only initiate drag from the handle (data-drag-handle) area
-    const target = e.target as HTMLElement;
-    if (!target.closest('[data-drag-handle]')) return;
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-    dragState.current = {
-      startX: e.clientX,
-      startY: e.clientY,
-      origX: pos.x,
-      origY: pos.y,
-      moved: false,
-      pointerId: e.pointerId,
-    };
+    dragging.current = true;
+    start.current = { offX: clientX - pos.x, offY: clientY - pos.y, moved: false };
   };
 
-  const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
-    const st = dragState.current;
-    if (!st) return;
-    const dx = e.clientX - st.startX;
-    const dy = e.clientY - st.startY;
-    if (!st.moved && Math.abs(dx) + Math.abs(dy) < 4) return;
-    st.moved = true;
+  const move = (clientX: number, clientY: number) => {
+    if (!dragging.current) return;
     const el = ref.current;
-    const w = el?.offsetWidth ?? 140;
-    const h = el?.offsetHeight ?? 140;
-    const nx = Math.min(Math.max(0, st.origX + dx), window.innerWidth - w);
-    const ny = Math.min(Math.max(0, st.origY + dy), window.innerHeight - h);
-    setPos({ x: nx, y: ny });
+    if (!el) return;
+    let x = clientX - start.current.offX;
+    let y = clientY - start.current.offY;
+    if (Math.abs(clientX - (pos!.x + start.current.offX)) > 5 ||
+        Math.abs(clientY - (pos!.y + start.current.offY)) > 5) {
+      start.current.moved = true;
+    }
+    const maxX = window.innerWidth - el.offsetWidth;
+    const maxY = window.innerHeight - el.offsetHeight;
+    x = Math.max(0, Math.min(x, maxX));
+    y = Math.max(0, Math.min(y, maxY));
+    setPos({ x, y });
   };
 
-  const onPointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
-    const st = dragState.current;
-    if (!st) return;
-    try { (e.currentTarget as HTMLElement).releasePointerCapture(st.pointerId); } catch { /* ignore */ }
-    if (st.moved && pos) {
+  const release = () => {
+    if (!dragging.current) return;
+    if (start.current.moved && pos) {
       localStorage.setItem(`floating:${storageKey}`, JSON.stringify(pos));
+    } else {
+      onClick?.();
     }
-    dragState.current = null;
+    dragging.current = false;
   };
+
+  useEffect(() => {
+    const mm = (e: MouseEvent) => move(e.clientX, e.clientY);
+    const mu = () => release();
+    const tm = (e: TouchEvent) => {
+      if (e.touches[0]) move(e.touches[0].clientX, e.touches[0].clientY);
+    };
+    const tu = () => release();
+    document.addEventListener('mousemove', mm);
+    document.addEventListener('mouseup', mu);
+    document.addEventListener('touchmove', tm, { passive: false });
+    document.addEventListener('touchend', tu);
+    return () => {
+      document.removeEventListener('mousemove', mm);
+      document.removeEventListener('mouseup', mu);
+      document.removeEventListener('touchmove', tm);
+      document.removeEventListener('touchend', tu);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pos]);
 
   if (!pos) return null;
 
   return (
     <div
       ref={ref}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerUp}
-      style={{ position: 'fixed', left: pos.x, top: pos.y, touchAction: 'none' }}
-      className={cn('z-50 select-none', className)}
+      onMouseDown={(e) => startDrag(e.clientX, e.clientY)}
+      onTouchStart={(e) => {
+        if (e.touches[0]) startDrag(e.touches[0].clientX, e.touches[0].clientY);
+      }}
+      style={{
+        position: 'fixed',
+        left: pos.x,
+        top: pos.y,
+        touchAction: 'none',
+        cursor: 'grab',
+      }}
+      className={cn('z-[9999] select-none', className)}
     >
       {children}
     </div>
