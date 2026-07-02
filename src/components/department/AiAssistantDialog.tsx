@@ -382,7 +382,7 @@ export default function AiAssistantDialog({ open, onOpenChange, departmentId, on
                         </Button>
                       )}
                     </div>
-                    <ScrollArea className="max-h-64">
+                    <ScrollArea className="h-72">
                       <div className="p-2 space-y-1">
                         {allMembers.map(m => {
                           const checked = memberFilter.includes(m.user_id);
