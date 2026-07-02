@@ -35,7 +35,7 @@ import InviteMemberDialog from '@/components/department/InviteMemberDialog';
 import DepartmentAvatar from '@/components/department/DepartmentAvatar';
 import DepartmentSettingsDialog from '@/components/department/DepartmentSettingsDialog';
 import SmartScheduleDialog from '@/components/department/SmartScheduleDialog';
-import AiAssistantDialog from '@/components/department/AiAssistantDialog';
+
 import MemberPreferences from '@/components/department/MemberPreferences';
 import LeaderBlackoutDatesView from '@/components/department/LeaderBlackoutDatesView';
 import SlotAvailability from '@/components/department/SlotAvailability';
@@ -145,7 +145,7 @@ export default function Department() {
   const [showInviteMember, setShowInviteMember] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showSmartSchedule, setShowSmartSchedule] = useState(false);
-  const [showAiAssistant, setShowAiAssistant] = useState(false);
+  
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   // Removed sidebar state - now using popover
   const [activeTab, setActiveTab] = useState('schedules');
@@ -652,7 +652,7 @@ export default function Department() {
                 onDeleteSchedule={handleScheduleDeleted}
                 departmentId={id!}
                 onOpenSmartSchedule={() => setShowSmartSchedule(true)}
-                onOpenAiAssistant={() => setShowAiAssistant(true)}
+                
                 readOnly={isCoordinator}
               />
               
@@ -751,12 +751,6 @@ export default function Department() {
         onSchedulesCreated={fetchSchedules}
       />
 
-      <AiAssistantDialog
-        open={showAiAssistant}
-        onOpenChange={setShowAiAssistant}
-        departmentId={id!}
-        onSchedulesCreated={fetchSchedules}
-      />
 
 
       {/* My Availability Sheet for leaders */}
