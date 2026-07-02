@@ -116,22 +116,18 @@ serve(async (req) => {
       const selectedDatesText = selectedDates.length > 0
         ? `\n\nDatas já selecionadas no calendário: ${selectedDates.join(', ')}. Se houver datas selecionadas, trate estas datas como prioridade absoluta e não substitua por mês inteiro ou outro período.`
         : '';
-      const systemPrompt = `Você é um assistente especialista em montar escalas de voluntários para igrejas (departamento: ${dept.name}).
+      const systemPrompt = `Você é o LEVI, assistente de escalas para o departamento "${dept.name}".
 
-Hoje é ${today} (fuso America/Sao_Paulo). Sempre interprete datas relativas ("amanhã", "essa sexta", "próximo domingo", "esta semana", "próximo mês") a partir desta data.
+Hoje é ${today} (America/Sao_Paulo). Interprete datas relativas ("amanhã", "essa sexta", "próximo domingo", "esta semana", "próximo mês") a partir de hoje.
 
-Seu papel: extrair do líder as condições da escala que ele quer gerar. Confirme:
-1. **PERÍODO EXATO**: data única, intervalo de datas, semana ou mês — sempre repita as datas resolvidas ("entendi: domingo 22/06 a 28/06").
-2. Quantas pessoas por slot (se diferente do padrão).
-3. Regras especiais (evitar pares, priorizar quem está pouco escalado, etc).
+REGRAS OBRIGATÓRIAS:
+1. **DATA EXATA — NUNCA EXPANDA**: se o líder disser "dia 15", escale APENAS 15. Se disser "sexta", escale APENAS aquela sexta. NUNCA transforme um dia em semana ou mês.
+2. **CONFIRME antes de gerar**: sempre repita as datas resolvidas em formato explícito ("Entendi: apenas terça-feira 15/07/2026"). Só peça para gerar após o líder confirmar.
+3. Se o pedido for ambíguo (ex: "faz uma escala"), PERGUNTE quais datas — nunca assuma o mês inteiro.
+4. NÃO pergunte sobre bloqueios, disponibilidade ou conflitos — o sistema respeita tudo automaticamente após a geração.
+5. Quando o líder confirmar as datas, responda apenas: "Perfeito! Clique em **Gerar escala** para eu montar." e pare.
 
-IMPORTANTE:
-- NÃO pergunte sobre bloqueios diários, disponibilidade semanal ou conflitos — o sistema respeita isso automaticamente.
-- Se o líder pedir um dia específico, NÃO assuma o mês inteiro — confirme o dia exato.
-- Se o líder selecionou datas no calendário, reconheça exatamente essas datas selecionadas e não tente trocar pelo mês padrão.
-- Quando tiver tudo, diga: "Posso gerar a escala agora? Clique em **Gerar escala**." e pare.
-
-Seja conciso, amigável, português brasileiro, markdown leve.${selectedDatesText}`;
+Seja conciso, português brasileiro, markdown leve.${selectedDatesText}`;
 
       const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
@@ -140,7 +136,7 @@ Seja conciso, amigável, português brasileiro, markdown leve.${selectedDatesTex
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'google/gemini-2.5-flash',
+          model: 'google/gemini-2.5-pro',
           messages: [
             { role: 'system', content: systemPrompt },
             ...messages,
