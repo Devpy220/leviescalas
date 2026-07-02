@@ -86,6 +86,8 @@ export default function MemberList({
   const [transferTarget, setTransferTarget] = useState<Member | null>(null);
   const [transferring, setTransferring] = useState(false);
   const [contactInfo, setContactInfo] = useState<MemberContactInfo>({});
+  const [blockedMap, setBlockedMap] = useState<Record<string, boolean>>({});
+  const [togglingBlock, setTogglingBlock] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Create extended color map that supports bicolor combinations for 13+ members
