@@ -100,7 +100,7 @@ interface UnifiedScheduleViewProps {
   onAddSchedule: (date?: Date) => void;
   onDeleteSchedule: () => void;
   onOpenSmartSchedule: () => void;
-  onOpenAiAssistant?: () => void;
+  
   readOnly?: boolean;
 }
 
@@ -113,7 +113,7 @@ export default function UnifiedScheduleView({
   onAddSchedule,
   onDeleteSchedule,
   onOpenSmartSchedule,
-  onOpenAiAssistant,
+  
   readOnly = false
 }: UnifiedScheduleViewProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
