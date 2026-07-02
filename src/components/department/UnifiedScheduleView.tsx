@@ -306,23 +306,6 @@ export default function UnifiedScheduleView({
       {/* Floating action buttons for leaders */}
       {isLeader && !readOnly && (
         <div className="fixed bottom-6 right-6 flex flex-col gap-2 z-40">
-          {/* AI Assistant Chat Button */}
-          {onOpenAiAssistant && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  size="icon"
-                  className="w-12 h-12 rounded-full shadow-lg bg-gradient-to-br from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white hover:shadow-glow-sm transition-all"
-                  onClick={onOpenAiAssistant}
-                >
-                  <MessageSquareText className="w-5 h-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="left">
-                Assistente de Escala IA (chat)
-              </TooltipContent>
-            </Tooltip>
-          )}
           {/* Smart Schedule Button */}
           <Tooltip>
             <TooltipTrigger asChild>
