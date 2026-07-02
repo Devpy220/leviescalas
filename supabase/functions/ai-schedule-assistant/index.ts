@@ -275,6 +275,18 @@ Responda APENAS JSON: {"dates": ["YYYY-MM-DD", ...], "start_date": "YYYY-MM-DD"|
       });
     }
     let membersList = members.map((m: any) => ({ user_id: m.id, name: m.name }));
+
+    // Exclude blocked members from candidate pool (leader blocked them; only self-unblock via WhatsApp restores)
+    const { data: blockedRows } = await supabase
+      .from('members')
+      .select('user_id')
+      .eq('department_id', department_id)
+      .eq('is_blocked', true);
+    const blockedSet = new Set((blockedRows ?? []).map((r: any) => r.user_id));
+    if (blockedSet.size > 0) {
+      membersList = membersList.filter(m => !blockedSet.has(m.user_id));
+    }
+
     if (member_ids_filter && member_ids_filter.length > 0) {
       const allowed = new Set(member_ids_filter);
       membersList = membersList.filter(m => allowed.has(m.user_id));
