@@ -1,8 +1,9 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { scheduleBatch } from "../_shared/whatsapp-queue.ts";
-import { buildSupportMessage } from "../_shared/messageVariants.ts";
+import { buildSupportOnlyMessage, buildCommandsOnlyMessage, randomBetween } from "../_shared/messageVariants.ts";
 import { requireCronAuth } from "../_shared/cronAuth.ts";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -53,29 +54,40 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    const PIX_KEY = "suport@leviescalas.com.br";
-    const TITULAR = "EDUARDO LINO DA SILVA";
+    // Support message + commands hint (2 msgs, no Instagram).
+    // We flatten into a single flat queue: for each recipient add both parts
+    // interleaved with other recipients via scheduleBatch's random delays.
+    const flat: { phone: string; message: string }[] = [];
+    for (const p of profiles as any[]) {
+      if (!p.whatsapp) continue;
+      flat.push({ phone: p.whatsapp, message: buildSupportOnlyMessage(p.name || "Voluntário") });
+      flat.push({ phone: p.whatsapp, message: buildCommandsOnlyMessage() });
+    }
 
-    const recipients = profiles
-      .filter((p: any) => p.whatsapp)
-      .map((p: any) => ({
-        phone: p.whatsapp,
-        message: buildSupportMessage({
-          userId: p.id,
-          userName: p.name || "Voluntário",
-          pixKey: PIX_KEY,
-          titular: TITULAR,
-        }),
-      }));
+    // Shuffle recipient pairs together (keep support -> commands order per phone
+    // by grouping and randomizing groups).
+    const groups = new Map<string, { phone: string; message: string }[]>();
+    for (const r of flat) {
+      const g = groups.get(r.phone) ?? [];
+      g.push(r);
+      groups.set(r.phone, g);
+    }
+    const groupArr = Array.from(groups.values());
+    for (let i = groupArr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [groupArr[i], groupArr[j]] = [groupArr[j], groupArr[i]];
+    }
+    const recipients = groupArr.flat();
 
     const queued = recipients.length;
     const { promise } = scheduleBatch(supabaseUrl, serviceRoleKey, recipients, {
       forceQueue: true,
       origin: "support_whatsapp",
-      minDelayMs: 20_000,
-      maxDelayMs: 90_000,
+      minDelayMs: 15_000,
+      maxDelayMs: 60_000,
     });
     await promise;
+
 
     return new Response(
       JSON.stringify({ success: true, queued, total: profiles.length }),

@@ -83,3 +83,42 @@ export function formatCandidateLine(cd: CandidateDay): string {
   const shiftsStr = cd.shifts.length > 1 ? `${cd.shifts.join(" e/ou ")}` : cd.shifts[0];
   return `• ${cd.weekdayLabel} ${dd}/${mm} — ${shiftsStr}`;
 }
+
+const MONTH_NAMES_UPPER = [
+  "JANEIRO","FEVEREIRO","MARÇO","ABRIL","MAIO","JUNHO",
+  "JULHO","AGOSTO","SETEMBRO","OUTUBRO","NOVEMBRO","DEZEMBRO",
+];
+
+// Build a compact ASCII calendar of the target month, marking candidate days
+// (dates the user could be scheduled) with square brackets, others with a dot.
+// Returned string is meant to be wrapped in ``` on WhatsApp for monospace.
+export function buildAsciiMonthCalendar(
+  year: number,
+  monthIndex: number,
+  candidateIsoDates: string[],
+): string {
+  const cand = new Set(candidateIsoDates);
+  const lastDay = new Date(year, monthIndex + 1, 0).getDate();
+  const firstDow = new Date(year, monthIndex, 1).getDay(); // 0=Sun..6=Sat
+
+  const header = `📅 ${MONTH_NAMES_UPPER[monthIndex]} ${year}`;
+  const dowRow = "Dom Seg Ter Qua Qui Sex Sáb";
+
+  const cells: string[] = [];
+  for (let i = 0; i < firstDow; i++) cells.push("   ");
+  for (let d = 1; d <= lastDay; d++) {
+    const iso = `${year}-${String(monthIndex + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    const num = String(d).padStart(2, " ");
+    cells.push(cand.has(iso) ? `[${num}]`.padStart(3, " ") : ` ${num}`);
+  }
+  // Pad to complete last week
+  while (cells.length % 7 !== 0) cells.push("   ");
+
+  const rows: string[] = [];
+  for (let i = 0; i < cells.length; i += 7) {
+    rows.push(cells.slice(i, i + 7).join(" "));
+  }
+
+  return [header, dowRow, ...rows, "", "Legenda: [ dia ] = você pode ser escalado"].join("\n");
+}
+

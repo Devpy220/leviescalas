@@ -1,14 +1,16 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { scheduleBatch } from "../_shared/whatsapp-queue.ts";
-import { pickVariant, INSTAGRAM_LINK, LEVI_COMMANDS_HINT } from "../_shared/messageVariants.ts";
+import { enqueueTriplets, type TripletRecipient } from "../_shared/whatsapp-queue.ts";
+import { pickVariant } from "../_shared/messageVariants.ts";
 import {
   buildCandidateDays,
   formatCandidateLine,
   getActiveSlotsForUser,
+  buildAsciiMonthCalendar,
   type AvailabilityRow,
 } from "../_shared/scheduleDates.ts";
 import { requireCronAuth } from "../_shared/cronAuth.ts";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -131,7 +133,7 @@ serve(async (req: Request): Promise<Response> => {
       userDepts.set(m.user_id, arr);
     }
 
-    const recipients: { phone: string; message: string }[] = [];
+    const recipients: TripletRecipient[] = [];
     const promptRows: any[] = [];
 
     for (const p of profiles ?? []) {
@@ -152,7 +154,6 @@ serve(async (req: Request): Promise<Response> => {
         const matching = userRows.filter(
           (r) => `${r.day_of_week}-${r.time_start}-${r.time_end}` === key,
         );
-        // blocked only if blocked in all depts the user belongs to AND we have a row for each
         const blockedInAll = depIds.length > 0 && matching.length === depIds.length && matching.every((r) => r.is_available === false);
         userActiveRows.push({
           day_of_week: parseInt(dow, 10),
@@ -166,20 +167,18 @@ serve(async (req: Request): Promise<Response> => {
       const candidates = buildCandidateDays(targetMonth.getFullYear(), targetMonth.getMonth(), activeSlots);
       if (candidates.length === 0) continue;
 
-      // Show all candidates if <= 12, otherwise top-12
       const shown = candidates.slice(0, 12);
       const moreCount = candidates.length - shown.length;
       const linesStr = shown.map(formatCandidateLine).join("\n");
       const moreLine = moreCount > 0 ? `\n…e mais ${moreCount} dia(s)` : "";
 
-      // Compute max-blackout summary across user's departments
       const userDeptInfos = (userDepts.get(p.id) ?? [])
         .map((id) => deptById.get(id))
         .filter(Boolean) as { name: string; max: number }[];
       const minMax = userDeptInfos.length > 0
         ? Math.min(...userDeptInfos.map((d) => d.max))
         : 5;
-      const limitLine = `\n\nℹ️ Você pode bloquear até *${minMax} dia(s)* por departamento. Se passar do limite, o LEVI ignora os extras e avisa para falar com seu líder.`;
+      const limitLine = `\n\nℹ️ Você pode bloquear até *${minMax} dia(s)* por departamento. Se passar do limite, o LEVI ignora os extras.`;
 
       const greet = pickVariant(`${p.id}-${targetMonthIso}`, ["Olá", "Oi", "Opa", "E aí"]);
       const close = pickVariant(`${p.id}-bo-${targetMonthIso}`, [
@@ -188,9 +187,15 @@ serve(async (req: Request): Promise<Response> => {
         "_Equipe LEVI_",
       ]);
       const headEmoji = pickVariant(`${p.id}-emo-${targetMonthIso}`, ["📅", "🗓️", "⏰"]);
-      const igLine = `📲 Siga a ELSD no Instagram:\n${INSTAGRAM_LINK}`;
 
-      const msg =
+      // ASCII calendar of the target month, marking candidate days.
+      const ascii = buildAsciiMonthCalendar(
+        targetMonth.getFullYear(),
+        targetMonth.getMonth(),
+        candidates.map((c) => c.iso),
+      );
+
+      const mainMsg =
 `${headEmoji} *LEVI — Disponibilidade de ${targetMonthName}*
 ━━━━━━━━━━━━━━━━━━━━
 
@@ -201,43 +206,42 @@ ${greet}, *${firstName(p.name)}*! 👋
 Em *${daysLeft} dia(s)* começa *${targetMonthName}* e precisamos saber quando você pode servir.
 
 ━━━━━━━━━━━━━━━━━━━━
+🗓️ *Calendário de ${targetMonthName}*
+\`\`\`
+${ascii}
+\`\`\`
+
 📆 *Dias possíveis para você:*
 ${linesStr}${moreLine}
 ━━━━━━━━━━━━━━━━━━━━
 
-✍️ *Como responder* (escolha 1 das 4 opções):
+✍️ *Como responder* (escolha 1 das opções):
 
-🔴 *1) BLOQUEAR alguns dias*
-   Envie: _bloquear 5/${targetMonth.getMonth() + 1}, 12/${targetMonth.getMonth() + 1}_
+🔴 *1) BLOQUEAR datas específicas*
+   _bloquear 5/${targetMonth.getMonth() + 1}, 12/${targetMonth.getMonth() + 1}_
 
 📆 *2) BLOQUEAR um dia da semana inteiro*
-   Ex: _bloquear todas as quartas_ ou _bloquear domingos_
-   (bloqueia todas as datas desse dia da semana em ${targetMonthName})
+   _bloquear segundas_ / _terças_ / _quartas_ / _quintas_ / _sextas_ / _sábados_ / _domingos_
+   Turnos: _bloquear domingos de manhã_ / _bloquear domingos de noite_
 
-🟢 *3) SERVIR APENAS nestes dias*
-   (o restante fica bloqueado)
-   Envie: _servir 18/${targetMonth.getMonth() + 1}, 25/${targetMonth.getMonth() + 1}_
+🟢 *3) SERVIR APENAS em datas / dias da semana*
+   _servir 18/${targetMonth.getMonth() + 1}, 25/${targetMonth.getMonth() + 1}_
+   _servir domingos_ / _servir sextas_ …
 
 ✅ *4) LIBERAR todos os dias*
-   Envie: _nenhum_
-   (ou simplesmente não responda)
+   _nenhum_ (ou simplesmente não responda)
 ${limitLine}
 
 ⏳ Prazo: até *dia ${lastDayCurrent}*.
+_Depois desse dia, os comandos_ *bloquear* / *servir* _passam a valer para o mês seguinte._
 
-${LEVI_COMMANDS_HINT}
+_${close}_`;
 
-━━━━━━━━━━━━━━━━━━━━
-💛 *Apoie o LEVI* — o projeto é gratuito e se mantém com a sua ajuda.
-💡 Sugestão: *R$ 25,00* (qualquer valor é bem-vindo)
-👉 https://leviescalas.com.br/apoiar
-━━━━━━━━━━━━━━━━━━━━
-
-${igLine}
-
-${close}`;
-
-      recipients.push({ phone: p.whatsapp, message: msg });
+      recipients.push({
+        phone: p.whatsapp,
+        userName: firstName(p.name),
+        mainMessage: mainMsg,
+      });
       promptRows.push({ user_id: p.id, target_month: targetMonthIso });
     }
 
@@ -252,23 +256,21 @@ ${close}`;
       [recipients[i], recipients[j]] = [recipients[j], recipients[i]];
     }
 
-    const { backgrounded, promise } = scheduleBatch(supabaseUrl, serviceRoleKey, recipients, {
-      forceQueue: true,
+    const { queued } = await enqueueTriplets(supabaseUrl, serviceRoleKey, recipients, {
       origin: "blackout_collection_prompt",
-      minDelayMs: 20_000,
-      maxDelayMs: 90_000,
+      includeInstagram: false,
     });
-    const queuedResult = await promise;
 
     return new Response(
       JSON.stringify({
         success: true,
         target_month: targetMonthIso,
-        queued: "queued" in queuedResult ? queuedResult.queued : recipients.length,
-        backgrounded,
+        recipients: recipients.length,
+        queued,
       }),
       { headers: { "Content-Type": "application/json", ...corsHeaders } },
     );
+
   } catch (e) {
     console.error("send-blackout-collection-prompt error:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown" }), {

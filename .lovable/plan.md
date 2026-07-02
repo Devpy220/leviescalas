@@ -1,48 +1,148 @@
 
-# Migração para Cakto Pay + Faxina de integrações
+## Objetivo
 
-## 1. Cakto Pay (apoio único + assinatura recorrente)
+Reformular como o LEVI se comunica no WhatsApp: cada mensagem principal (aviso mensal de bloqueio, lembrete de escala, broadcast/anúncio e apoio) passa a ser enviada em **3 partes separadas** com pausas humanizadas, adicionar comandos para todos os dias da semana, calendário ASCII do próximo mês no aviso de bloqueio, remover o comando `menu`, e revisar disparos + postura de segurança.
 
-**Backend (edge functions)**
-- `_shared/cakto.ts` — cliente OAuth2 (cache de access_token), helpers `createCheckout` e `verifyWebhookSignature` usando `CAKTO_WEBHOOK_SECRET`.
-- `cakto-setup` — função admin chamada uma vez para criar/atualizar os 2 produtos na Cakto (Apoio único e Assinatura mensal) e registrar o webhook apontando para `cakto-webhook`. Guarda IDs em uma tabela `cakto_products`.
-- `cakto-create-payment` — pública, recebe `{ amount, mode: "one_time" | "subscription", payment_method: "pix" | "credit_card", donor_name?, donor_email? }`, valida com Zod, gera checkout Cakto e devolve `{ url }`. Allowlist de Origin (mesma usada no Stripe).
-- `cakto-webhook` — pública (sem JWT), valida assinatura HMAC com `CAKTO_WEBHOOK_SECRET`, atualiza `donations` (status pago/falhou/cancelado) e dispara WhatsApp de agradecimento via UAZAPI quando houver telefone.
+---
 
-**Banco de dados (1 migração)**
-- `cakto_products(kind, cakto_product_id, cakto_price_id, amount_cents)` — admin-only.
-- `donations(donor_name, donor_email, donor_whatsapp, amount_cents, mode, payment_method, status, cakto_session_id, cakto_subscription_id, paid_at)` — insert público via edge function; SELECT só admin.
-- Remover colunas `stripe_customer_id`, `stripe_subscription_id` de `departments` e funções `get_department_secure`/`get_department_full` (regerar sem essas colunas).
-- Remover tabela `payment_receipts` se realmente não usada (verifico antes; caso contrário, mantenho).
+## 1. Split em 3 mensagens (todas as mensagens principais do LEVI)
 
-**Frontend**
-- `src/pages/Apoiar.tsx` (renomeio do antigo Apoiar/SupportPix) com tabs **Doação única** / **Assinatura mensal**, valores pré-definidos (10, 25, 50, 100, livre), seleção PIX / Cartão e botão único que chama `cakto-create-payment`.
-- Atualizar todos os CTAs e mensagens WhatsApp para apontar para `/apoiar` (já apontam — só conferir).
-- Remover `Payment.tsx`, `PaymentSuccess.tsx`, `SupportPix.tsx` (se não usados após migração).
+Padrão novo para aviso mensal, lembrete de escala, broadcast admin, anúncio de departamento e apoio:
 
-## 2. Faxina de integrações mortas
+- **Msg 1 — Conteúdo principal** (aviso/escala/anúncio/apoio)
+  - Só a mensagem tipo Escala inclui o link do Instagram ELSD no final.
+  - As demais NÃO incluem Instagram.
+- **Msg 2 — Apoie o LEVI** (PIX/Cakto, sugestão R$ 25,00, link `/apoiar`).
+- **Msg 3 — Comandos que o LEVI entende** (o `LEVI_COMMANDS_HINT` atualizado).
 
-**Edge functions removidas**: nenhuma específica do Stripe existe além de `create-donation-checkout` e `update-subscription-quantity` — ambas serão deletadas. Não há funções Twilio/Telegram/Push/SMSDev/Fiqon.
+Implementação: nova função `sendLeviTriplet()` em `_shared/whatsapp-queue.ts` (ou helper novo em `_shared/messageVariants.ts`) que enfileira as 3 mensagens em sequência para o mesmo telefone, com delay natural de 8-25 s entre elas (variável, tipo "digitando…"). Já existe o efeito de typing na camada UAZAPI — só precisamos garantir intervalo entre msgs.
 
-**Secrets deletados**: `STRIPE_SECRET_KEY`, `TWILIO_*` (3), `TELEGRAM_BOT_TOKEN`, `WONDERPUSH_*` (2), `PUSHALERT_API_KEY`, `VAPID_*` (5), `SMSDEV_API_KEY`, `FIQON_WEBHOOK_URL`.
+Funções edge a atualizar para usar o novo helper:
+- `send-scheduled-reminders` (Instagram sim na msg 1).
+- `send-blackout-collection-prompt` (Instagram não).
+- `send-admin-broadcast` (Instagram não).
+- `send-announcement-notification` (Instagram não).
+- `send-support-whatsapp` (msg 1 é a própria de apoio; nesse caso vira só 2 msgs: principal + comandos, sem duplicar apoio).
+- `auto-notify-schedule` (Instagram sim).
 
-**Tabelas/colunas removidas**: `telegram_link_codes`, `telegram_links`, `push_subscriptions`, `pushalert_subscribers`. Colunas Stripe em `departments` (acima).
+Cada uma para de embutir `LEVI_COMMANDS_HINT`, `INSTAGRAM_LINK` e o bloco de apoio dentro do template — vão como envios separados.
 
-**Código frontend removido**: qualquer import/uso de Push/Telegram/Stripe restante (vou varrer com `rg` e apagar componentes mortos).
+---
 
-## 3. Ordem de execução
+## 2. Novos comandos WhatsApp (webhook `zapi-webhook-receive`)
 
-1. Migração DB (cria tabelas Cakto + remove colunas/tabelas legadas).
-2. Edge functions Cakto (setup, create-payment, webhook).
-3. Frontend `/apoiar` reescrito.
-4. Faxina: delete de funções, arquivos, secrets.
-5. Você roda **Disparar setup Cakto** (botão no Admin) → cria produtos e webhook.
-6. Teste rápido: doação única PIX + assinatura cartão.
+### Remover
+- `menu` — deletar da lista de gatilhos de "ajuda"; manter `ajuda` e `comandos`.
 
-## Detalhes técnicos
+### Adicionar — bloqueio/servir por dia da semana (só afeta o **próximo mês**)
 
-- API Cakto: OAuth2 client credentials em `https://api.cakto.com.br/oauth/token`; checkout em `POST /v1/checkouts`. Webhook envia header `X-Cakto-Signature` = HMAC-SHA256(body, secret).
-- Webhook precisa estar publicado **antes** do `cakto-setup` rodar (URL: `https://zuksvsxnchwskqytuxxq.supabase.co/functions/v1/cakto-webhook`).
-- `verify_jwt = false` no `cakto-webhook` e `cakto-create-payment` (público).
+Aceitar variantes normalizadas (sem acento, minúsculo) para os 7 dias:
 
-Confirma para eu começar pela migração?
+| Palavra-chave                       | Efeito                                                            |
+| ----------------------------------- | ----------------------------------------------------------------- |
+| `bloquear segundas`                 | Bloqueia todas as segundas do próximo mês                         |
+| `bloquear terças`                   | idem terças                                                       |
+| `bloquear quartas` / `todas as quartas` | idem                                                          |
+| `bloquear quintas`                  | idem                                                              |
+| `bloquear sextas`                   | idem                                                              |
+| `bloquear sábados`                  | idem                                                              |
+| `bloquear domingos`                 | idem (ambos turnos)                                               |
+| `bloquear domingos de manhã`        | só o turno matutino                                               |
+| `bloquear domingos de noite`        | só o turno noturno                                                |
+| `servir segundas` … `servir domingos` | mantém só esse dia da semana no próximo mês, bloqueia o resto   |
+| `servir domingos de manhã/noite`    | idem com turno                                                    |
+
+Reutiliza `FIXED_SLOTS_DEF` de `_shared/scheduleDates.ts` e o mesmo caminho que já grava em `blackout_dates`. Adiciona um parser genérico `parseWeekdayCommand(text)` que retorna `{ action: 'block'|'serve', weekday: 0-6, shift?: 'manha'|'noite' }`.
+
+**Janela de validade:** comandos `bloquear …` e `servir …` continuam ativos até o **último dia do mês corrente** (deadline atual do prompt). A resposta de confirmação do LEVI deve dizer isso explicitamente ("Vale até dia X/MM. Depois disso o mês seguinte reabre.").
+
+### Novos comandos utilitários (leves, sem novos disparos)
+- `minhas escalas` (alias de `escala`) — já existe, só reforçar.
+- `apoiar` — envia direto a msg de apoio + link.
+- `bloqueios` — lista os dias que o usuário já bloqueou no mês seguinte.
+
+---
+
+## 3. Calendário ASCII do próximo mês (em `send-blackout-collection-prompt`)
+
+Trocar a lista `• Dom 05/07 — manhã e/ou noite` por uma grade compacta:
+
+```text
+📅 JULHO 2026
+Dom Seg Ter Qua Qui Sex Sáb
+             1   2   3   4
+ 5   6   7   8   9  10  11
+12  13  14  15  16  17  18
+19  20  21  22  23  24  25
+26  27  28  29  30  31
+```
+
+Marcadores nos números:
+- `✅` (envolvendo) = dia em que você pode ser escalado (candidato).
+- `·` = dia sem culto no seu departamento.
+- Domingos com dois turnos ganham subscrito `ᴹ`/`ᴺ` quando só um turno está disponível.
+
+Legenda embaixo do calendário + a lista textual atual permanece logo abaixo (redundante mas útil em telefones que quebram o alinhamento monoespaçado). Envolver a grade em ``` ``` ``` (bloco de código WhatsApp) para preservar espaçamento.
+
+Novo helper `buildAsciiMonthCalendar(year, monthIdx, candidateISO[])` em `_shared/scheduleDates.ts`.
+
+---
+
+## 4. Cadência do aviso mensal — confirmação
+
+O cron `send-blackout-collection-prompt` já dispara **apenas no antepenúltimo dia do mês** (`isThirdToLastDayOfMonth`). Vou:
+- Reafirmar essa condição (sem `force one-shot`).
+- Adicionar teste manual (`?dry=1`) que retorna quantos seriam enviados sem gravar `blackout_collection_prompts` — útil para checar sem disparar.
+- Garantir que a linha "Prazo: até dia X" continue correta e adicionar frase "*Depois desse dia, os comandos `bloquear/servir` valem para o mês seguinte.*".
+
+---
+
+## 5. Revisão dos disparos existentes
+
+Checklist a executar antes de fechar:
+
+1. `send-scheduled-reminders` — confirmar janelas 15h/10h (manhã), 10h/6h (noite), 18h/6h (outros) e que agora enfileira triplet (escala + apoio + comandos, Instagram na msg de escala).
+2. `send-blackout-collection-prompt` — antepenúltimo dia, calendário ASCII, triplet sem Instagram.
+3. `send-admin-broadcast` — triplet sem Instagram, respeita filtro "apenas líderes".
+4. `send-announcement-notification` — triplet sem Instagram.
+5. `send-support-whatsapp` — 2 envios (apoio principal + comandos), sem Instagram.
+6. `zapi-webhook-receive` (na verdade UAZAPI) — remover `menu`, adicionar parser de dias da semana, comandos `apoiar` e `bloqueios`, mensagem de confirmação inclui validade "até dd/mm".
+7. `whatsapp_queue` — checar retry/backoff e que os 3 envios não são fundidos por dedupe.
+
+---
+
+## 6. Segurança — varredura pós-mudanças
+
+Rodar `security--run_security_scan` depois das alterações e conferir:
+- Edge functions novas/atualizadas exigem `requireCronAuth` OU sessão admin (padrão que já usamos).
+- Nenhuma nova coluna sensível exposta.
+- Rate-limit dos webhooks continua ativo.
+- Nenhum secret vazando em logs (não logar payload cru do UAZAPI, só campos necessários).
+- Confirmar que `UAZAPI_WEBHOOK_SECRET`, `CRON_SECRET`, `CAKTO_WEBHOOK_SECRET` continuam sendo lidos e validados.
+
+Findings novos que aparecerem serão corrigidos ou marcados via `manage_security_finding` com justificativa no `@security-memory`.
+
+---
+
+## Detalhes técnicos (para dev)
+
+- **Sem novo schema.** Só código nas edge functions e helpers `_shared`.
+- **`_shared/messageVariants.ts`**: remover `menu` do `LEVI_COMMANDS_HINT`; separar em 2 constantes — `LEVI_MAIN_HINT` (sem apoio) e helpers `buildSupportOnlyMessage()`, `buildCommandsOnlyMessage()`.
+- **`_shared/whatsapp-queue.ts`**: novo `enqueueTriplet(phone, { main, support, commands }, { instagram: boolean })` → 3 rows em `whatsapp_queue` com `send_after` escalonado (main = agora, support = +8-15 s, commands = +18-30 s).
+- **`_shared/scheduleDates.ts`**: `buildAsciiMonthCalendar(...)` + `parseWeekdayCommand(text)`.
+- **Idempotência**: `whatsapp_queue` já tem chave — garantir chave por parte (`origin` + `part: 'main'|'support'|'commands'`) pra não bloquear split.
+
+## Arquivos afetados
+
+- `supabase/functions/_shared/messageVariants.ts`
+- `supabase/functions/_shared/scheduleDates.ts`
+- `supabase/functions/_shared/whatsapp-queue.ts`
+- `supabase/functions/send-scheduled-reminders/index.ts`
+- `supabase/functions/send-blackout-collection-prompt/index.ts`
+- `supabase/functions/send-admin-broadcast/index.ts`
+- `supabase/functions/send-announcement-notification/index.ts`
+- `supabase/functions/send-support-whatsapp/index.ts`
+- `supabase/functions/zapi-webhook-receive/index.ts`
+- `supabase/functions/auto-notify-schedule/index.ts` (se existir; conferir)
+
+Sem migrations. Sem mudanças de UI.
