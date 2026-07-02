@@ -143,3 +143,93 @@ async function enqueueRecipients(
   console.log(`Enqueued ${rows.length} WhatsApp messages (origin=${opts.origin ?? '-'})`);
   return { queued: rows.length };
 }
+
+// ─────────────────────────────────────────────────────────────
+// Triplet helper: for each recipient, enqueue 3 sequential messages
+// (main content, support CTA, commands hint) with humanized pauses
+// between them. Instagram line is appended to the main message only
+// when includeInstagram=true (typically for schedule reminders/notifications).
+// ─────────────────────────────────────────────────────────────
+
+import {
+  buildSupportOnlyMessage,
+  buildCommandsOnlyMessage,
+  INSTAGRAM_LINK,
+} from "./messageVariants.ts";
+
+export interface TripletRecipient {
+  phone: string;
+  userName: string;
+  mainMessage: string;
+}
+
+export interface TripletOptions {
+  origin: string;
+  includeInstagram?: boolean;
+  // Pause range between the 3 messages for the SAME recipient.
+  interMinMs?: number;
+  interMaxMs?: number;
+  // Delay between different recipients (so we don't blast).
+  betweenRecipientsMinMs?: number;
+  betweenRecipientsMaxMs?: number;
+}
+
+export async function enqueueTriplets(
+  supabaseUrl: string,
+  serviceRoleKey: string,
+  recipients: TripletRecipient[],
+  opts: TripletOptions,
+): Promise<{ queued: number }> {
+  const supabase = createClient(supabaseUrl, serviceRoleKey);
+  const interMin = opts.interMinMs ?? 12_000;
+  const interMax = opts.interMaxMs ?? 35_000;
+  const bwMin = opts.betweenRecipientsMinMs ?? 20_000;
+  const bwMax = opts.betweenRecipientsMaxMs ?? 90_000;
+  const igLine = opts.includeInstagram
+    ? `\n\n📲 Siga a ELSD no Instagram:\n${INSTAGRAM_LINK}`
+    : "";
+
+  const rows: any[] = [];
+  let cursor = Date.now();
+
+  for (let i = 0; i < recipients.length; i++) {
+    const r = recipients[i];
+    if (!r.phone) continue;
+    if (i > 0) cursor += randomBetween(bwMin, bwMax);
+
+    const mainAt = cursor;
+    const supportAt = mainAt + randomBetween(interMin, interMax);
+    const commandsAt = supportAt + randomBetween(interMin, interMax);
+    cursor = commandsAt;
+
+    rows.push({
+      phone: r.phone,
+      message: r.mainMessage + igLine,
+      scheduled_for: new Date(mainAt).toISOString(),
+      origin: `${opts.origin}:main`,
+    });
+    rows.push({
+      phone: r.phone,
+      message: buildSupportOnlyMessage(r.userName),
+      scheduled_for: new Date(supportAt).toISOString(),
+      origin: `${opts.origin}:support`,
+    });
+    rows.push({
+      phone: r.phone,
+      message: buildCommandsOnlyMessage(),
+      scheduled_for: new Date(commandsAt).toISOString(),
+      origin: `${opts.origin}:commands`,
+    });
+  }
+
+  if (rows.length === 0) return { queued: 0 };
+
+  const { error } = await supabase.from("whatsapp_queue").insert(rows);
+  if (error) {
+    console.error("enqueueTriplets error:", error);
+    return { queued: 0 };
+  }
+  console.log(`Enqueued ${rows.length} triplet parts for ${recipients.length} recipients (origin=${opts.origin})`);
+  return { queued: rows.length };
+}
+
