@@ -116,7 +116,7 @@ const handler = async (req: Request): Promise<Response> => {
       const profileMap = new Map((profilesRes.data || []).map(p => [p.id, p]));
       const deptMap = new Map((deptsRes.data || []).map(d => [d.id, d]));
 
-      const waRecipients: WhatsAppRecipient[] = [];
+      const waRecipients: TripletRecipient[] = [];
 
       for (const schedule of pendingSchedules) {
         try {
@@ -171,12 +171,15 @@ const handler = async (req: Request): Promise<Response> => {
             const emoji = pickVariant(seed + "e", REMINDER_EMOJIS);
             const greeting = pickVariant(seed + "g", GREETINGS);
             const closing = pickVariant(seed + "c", CLOSINGS);
-            const igLine = `📲 Siga a ELSD no Instagram:\n${INSTAGRAM_LINK}`;
             const slotNotesBlock = await fetchSlotNotesBlock(supabaseUrl, serviceRoleKey, schedule.department_id, schedule.date, schedule.time_start, schedule.time_end);
             const extrasBlock = slotNotesBlock;
-            const whatsappMsg = `${emoji} *Lembrete — ${dept.name}*\n━━━━━━━━━━━━━━━━━━━━\n\n${greeting}, *${profile.name}*! 👋\n\n📖 _Leia com atenção:_\nVocê tem uma *escala próxima*.\n\n━━━━━━━━━━━━━━━━━━━━\n📆 *Data:* ${weekday}, ${dayNum} de ${monthFull}\n⏰ *Horário:* ${formatTime(schedule.time_start)} às ${formatTime(schedule.time_end)}${sectorSuffix}${roleSuffix}\n━━━━━━━━━━━━━━━━━━━━\n${extrasBlock}\n🙏 Conto com você!\nSe não puder ir, envie *"troca"* para combinar com um colega.\n\n${LEVI_COMMANDS_HINT}\n\n${igLine}\n\n${closing}`;
+            const mainMsg = `${emoji} *Lembrete — ${dept.name}*\n━━━━━━━━━━━━━━━━━━━━\n\n${greeting}, *${profile.name}*! 👋\n\n📖 _Leia com atenção:_\nVocê tem uma *escala próxima*.\n\n━━━━━━━━━━━━━━━━━━━━\n📆 *Data:* ${weekday}, ${dayNum} de ${monthFull}\n⏰ *Horário:* ${formatTime(schedule.time_start)} às ${formatTime(schedule.time_end)}${sectorSuffix}${roleSuffix}\n━━━━━━━━━━━━━━━━━━━━\n${extrasBlock}\n🙏 Conto com você!\nSe não puder ir, envie *"troca"* para combinar com um colega.\n\n${closing}`;
 
-            waRecipients.push({ phone: (profile as any).whatsapp, message: whatsappMsg });
+            waRecipients.push({
+              phone: (profile as any).whatsapp,
+              userName: profile.name,
+              mainMessage: mainMsg,
+            });
           } else {
             totalSent++;
           }
@@ -192,19 +195,16 @@ const handler = async (req: Request): Promise<Response> => {
           const j = Math.floor(Math.random() * (i + 1));
           [waRecipients[i], waRecipients[j]] = [waRecipients[j], waRecipients[i]];
         }
-        // ALWAYS persist to the durable queue: in-memory background sending was
-        // being killed by the edge function shutdown, silently dropping reminders.
-        const { promise } = scheduleBatch(supabaseUrl, serviceRoleKey, waRecipients, {
-          forceQueue: true,
+        // Triplet: main (with Instagram) + support + commands, per recipient.
+        const { queued } = await enqueueTriplets(supabaseUrl, serviceRoleKey, waRecipients, {
           origin: `schedule_reminder_${window.type}`,
-          minDelayMs: 20_000,
-          maxDelayMs: 90_000,
+          includeInstagram: true,
         });
-        await promise; // enqueue is fast (single insert) — safe to await
         totalSent += waRecipients.length;
-        console.log(`Enqueued ${waRecipients.length} reminders (${window.type}) to whatsapp_queue`);
+        console.log(`Enqueued reminders (${window.type}): ${waRecipients.length} recipients, ${queued} queue rows`);
       }
     }
+
 
     return new Response(
       JSON.stringify({ success: true, sent: totalSent, errors: totalErrors }),
