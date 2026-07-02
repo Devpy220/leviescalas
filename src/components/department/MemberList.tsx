@@ -141,6 +141,52 @@ export default function MemberList({
     }
   }, [isLeader, members, fetchContactInfo, contactInfo]);
 
+  // Fetch blocked status for all members in this department (leader-visible)
+  useEffect(() => {
+    if (!departmentId) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('members')
+        .select('user_id, is_blocked')
+        .eq('department_id', departmentId);
+      if (cancelled || !data) return;
+      const map: Record<string, boolean> = {};
+      for (const r of data as any[]) map[r.user_id] = !!r.is_blocked;
+      setBlockedMap(map);
+    })();
+    return () => { cancelled = true; };
+  }, [departmentId, members.length]);
+
+  const handleToggleBlocked = async (member: Member) => {
+    const currentlyBlocked = !!blockedMap[member.user_id];
+    setTogglingBlock(member.id);
+    try {
+      const { error } = await supabase.rpc('set_member_blocked' as any, {
+        dept_id: departmentId,
+        target_user_id: member.user_id,
+        blocked: !currentlyBlocked,
+      });
+      if (error) throw error;
+      setBlockedMap(prev => ({ ...prev, [member.user_id]: !currentlyBlocked }));
+      toast({
+        title: currentlyBlocked ? 'Voluntário desbloqueado' : 'Voluntário bloqueado',
+        description: currentlyBlocked
+          ? `${member.profile.name} voltou a ficar disponível para escalas.`
+          : `${member.profile.name} não poderá ser escalado até ser desbloqueado (por você ou pelo próprio via WhatsApp).`,
+      });
+    } catch (error: any) {
+      console.error('Error toggling block:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: error?.message || 'Não foi possível atualizar o bloqueio.',
+      });
+    } finally {
+      setTogglingBlock(null);
+    }
+  };
+
   const sortedMembers = [...members].sort((a, b) => {
     if (a.role === 'leader' && b.role !== 'leader') return -1;
     if (a.role !== 'leader' && b.role === 'leader') return 1;
