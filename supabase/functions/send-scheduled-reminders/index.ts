@@ -1,10 +1,11 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { scheduleBatch, type WhatsAppRecipient } from "../_shared/whatsapp-queue.ts";
-import { pickVariant, GREETINGS, CLOSINGS, REMINDER_EMOJIS, INSTAGRAM_LINK, LEVI_COMMANDS_HINT } from "../_shared/messageVariants.ts";
+import { enqueueTriplets, type TripletRecipient } from "../_shared/whatsapp-queue.ts";
+import { pickVariant, GREETINGS, CLOSINGS, REMINDER_EMOJIS } from "../_shared/messageVariants.ts";
 import { requireCronAuth } from "../_shared/cronAuth.ts";
 
 import { fetchSlotNotesBlock } from "../_shared/slotNotesMessage.ts";
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
