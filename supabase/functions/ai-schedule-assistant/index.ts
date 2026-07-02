@@ -116,22 +116,18 @@ serve(async (req) => {
       const selectedDatesText = selectedDates.length > 0
         ? `\n\nDatas já selecionadas no calendário: ${selectedDates.join(', ')}. Se houver datas selecionadas, trate estas datas como prioridade absoluta e não substitua por mês inteiro ou outro período.`
         : '';
-      const systemPrompt = `Você é um assistente especialista em montar escalas de voluntários para igrejas (departamento: ${dept.name}).
+      const systemPrompt = `Você é o LEVI, assistente de escalas para o departamento "${dept.name}".
 
-Hoje é ${today} (fuso America/Sao_Paulo). Sempre interprete datas relativas ("amanhã", "essa sexta", "próximo domingo", "esta semana", "próximo mês") a partir desta data.
+Hoje é ${today} (America/Sao_Paulo). Interprete datas relativas ("amanhã", "essa sexta", "próximo domingo", "esta semana", "próximo mês") a partir de hoje.
 
-Seu papel: extrair do líder as condições da escala que ele quer gerar. Confirme:
-1. **PERÍODO EXATO**: data única, intervalo de datas, semana ou mês — sempre repita as datas resolvidas ("entendi: domingo 22/06 a 28/06").
-2. Quantas pessoas por slot (se diferente do padrão).
-3. Regras especiais (evitar pares, priorizar quem está pouco escalado, etc).
+REGRAS OBRIGATÓRIAS:
+1. **DATA EXATA — NUNCA EXPANDA**: se o líder disser "dia 15", escale APENAS 15. Se disser "sexta", escale APENAS aquela sexta. NUNCA transforme um dia em semana ou mês.
+2. **CONFIRME antes de gerar**: sempre repita as datas resolvidas em formato explícito ("Entendi: apenas terça-feira 15/07/2026"). Só peça para gerar após o líder confirmar.
+3. Se o pedido for ambíguo (ex: "faz uma escala"), PERGUNTE quais datas — nunca assuma o mês inteiro.
+4. NÃO pergunte sobre bloqueios, disponibilidade ou conflitos — o sistema respeita tudo automaticamente após a geração.
+5. Quando o líder confirmar as datas, responda apenas: "Perfeito! Clique em **Gerar escala** para eu montar." e pare.
 
-IMPORTANTE:
-- NÃO pergunte sobre bloqueios diários, disponibilidade semanal ou conflitos — o sistema respeita isso automaticamente.
-- Se o líder pedir um dia específico, NÃO assuma o mês inteiro — confirme o dia exato.
-- Se o líder selecionou datas no calendário, reconheça exatamente essas datas selecionadas e não tente trocar pelo mês padrão.
-- Quando tiver tudo, diga: "Posso gerar a escala agora? Clique em **Gerar escala**." e pare.
-
-Seja conciso, amigável, português brasileiro, markdown leve.${selectedDatesText}`;
+Seja conciso, português brasileiro, markdown leve.${selectedDatesText}`;
 
       const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
@@ -140,7 +136,7 @@ Seja conciso, amigável, português brasileiro, markdown leve.${selectedDatesTex
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'google/gemini-2.5-flash',
+          model: 'google/gemini-2.5-pro',
           messages: [
             { role: 'system', content: systemPrompt },
             ...messages,
@@ -193,7 +189,8 @@ Seja conciso, amigável, português brasileiro, markdown leve.${selectedDatesTex
       }
     }
 
-    // Try to extract date range from conversation; fall back to provided defaults
+    // Try to extract EXACT dates from conversation. Prefer a list of specific
+    // dates over a range so "dia 15" never turns into "mês inteiro".
     // Skipped when líder picked explicit dates in the UI.
     const today = todayBR();
     try {
@@ -207,11 +204,20 @@ Seja conciso, amigável, português brasileiro, markdown leve.${selectedDatesTex
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'google/gemini-2.5-flash',
+            model: 'google/gemini-2.5-pro',
             messages: [
               {
                 role: 'system',
-                content: `Hoje é ${today} (America/Sao_Paulo). Extraia o intervalo de datas pedido pelo líder. Se ele pediu um único dia, start_date == end_date. Se pediu uma semana, retorne os 7 dias correspondentes. Se pediu o "mês" sem especificar, retorne o mês inteiro. Se NÃO há data explícita ou inferível, retorne null para ambos. Período padrão entre ${start_date || 'null'} e ${end_date || 'null'}.\nResponda APENAS JSON: {"start_date":"YYYY-MM-DD"|null,"end_date":"YYYY-MM-DD"|null}`,
+                content: `Hoje é ${today} (America/Sao_Paulo). Sua tarefa: extrair EXATAMENTE as datas que o líder pediu.
+
+REGRAS ESTRITAS:
+- Se o líder citou dias específicos ("dia 15", "próxima sexta", "domingo 22"), retorne APENAS essas datas em "dates" (lista de YYYY-MM-DD). NUNCA expanda para semana/mês.
+- Se ele pediu explicitamente "a semana inteira" ou "essa semana", retorne os 7 dias correspondentes em "dates".
+- Se ele pediu explicitamente "o mês inteiro" (com essa palavra), retorne start_date e end_date do mês.
+- Se NÃO houver referência clara de datas, retorne "dates": [] e ambos start/end como null.
+- NUNCA retorne o mês inteiro só porque não tem certeza. Prefira lista vazia.
+
+Responda APENAS JSON: {"dates": ["YYYY-MM-DD", ...], "start_date": "YYYY-MM-DD"|null, "end_date": "YYYY-MM-DD"|null}`,
               },
               { role: 'user', content: userTurns },
             ],
@@ -223,19 +229,28 @@ Seja conciso, amigável, português brasileiro, markdown leve.${selectedDatesTex
           const raw = ed.choices?.[0]?.message?.content || '{}';
           const m = raw.match(/\{[\s\S]*\}/);
           const parsed = m ? JSON.parse(m[0]) : {};
-          if (parseYmdUtc(parsed.start_date)) {
-            start_date = parsed.start_date;
+          const extractedDates: string[] = Array.isArray(parsed.dates)
+            ? parsed.dates.filter((d: any) => typeof d === 'string' && parseYmdUtc(d))
+            : [];
+          if (extractedDates.length > 0) {
+            // Prefer explicit dates over range
+            extractedDates.forEach((d) => explicitDateSet.add(d));
+            const sorted = [...explicitDateSet].sort();
+            start_date = sorted[0];
+            end_date = sorted[sorted.length - 1];
+            console.log('AI extracted explicit dates:', sorted);
+          } else {
+            if (parseYmdUtc(parsed.start_date)) start_date = parsed.start_date;
+            if (parseYmdUtc(parsed.end_date)) end_date = parsed.end_date;
+            if (start_date && !end_date) end_date = start_date;
+            if (end_date && !start_date) start_date = end_date;
           }
-          if (parseYmdUtc(parsed.end_date)) {
-            end_date = parsed.end_date;
-          }
-          if (start_date && !end_date) end_date = start_date;
-          if (end_date && !start_date) start_date = end_date;
         }
       }
     } catch (e) {
       console.warn('Date extraction failed, using defaults:', e);
     }
+
 
     if (!start_date || !end_date) {
       return new Response(JSON.stringify({ error: 'Período não identificado. Diga as datas no chat ou escolha um mês.' }), {
