@@ -450,6 +450,22 @@ export default function MemberList({
                             </DropdownMenuItem>
                           )}
                           <DropdownMenuItem
+                            disabled={togglingBlock === member.id}
+                            onClick={() => handleToggleBlocked(member)}
+                          >
+                            {blockedMap[member.user_id] ? (
+                              <>
+                                <CircleCheck className="w-4 h-4 mr-2 text-emerald-500" />
+                                Desbloquear voluntário
+                              </>
+                            ) : (
+                              <>
+                                <Ban className="w-4 h-4 mr-2 text-destructive" />
+                                Bloquear (não escalar)
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
                             className="text-destructive focus:text-destructive"
                             onClick={() => {
                               setSelectedMember(member);
