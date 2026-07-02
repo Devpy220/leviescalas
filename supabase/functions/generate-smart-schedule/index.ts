@@ -134,6 +134,27 @@ serve(async (req) => {
       });
     }
 
+    // Exclude blocked volunteers (leader-blocked; only self-unblock via WhatsApp restores)
+    const { data: blockedRows } = await supabase
+      .from('members')
+      .select('user_id')
+      .eq('department_id', department_id)
+      .eq('is_blocked', true);
+    const blockedSet = new Set((blockedRows ?? []).map((r: any) => r.user_id));
+    const filteredMembers = blockedSet.size > 0
+      ? (members as any[]).filter((m: any) => !blockedSet.has(m.id))
+      : (members as any[]);
+    if (filteredMembers.length === 0) {
+      return new Response(JSON.stringify({ error: 'Todos os voluntários estão bloqueados no momento' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    // Reassign so downstream logic uses the filtered list
+    (members as any).length = 0;
+    (members as any).push(...filteredMembers);
+
+
     // Fetch date-specific availability (opt-in extras)
     const { data: dateAvailabilities } = await supabase
       .from('member_date_availability')
