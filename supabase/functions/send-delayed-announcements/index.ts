@@ -100,7 +100,8 @@ serve(async (req: Request): Promise<Response> => {
             })
             .map((p: any) => ({
               phone: p.whatsapp,
-              message: buildAnnouncementMessage({
+              userName: p.name || "Voluntário",
+              mainMessage: buildAnnouncementMessage({
                 userId: p.id,
                 userName: p.name || "Voluntário",
                 deptName,
@@ -109,15 +110,21 @@ serve(async (req: Request): Promise<Response> => {
             }));
 
           if (recipients.length > 0) {
-            const { promise } = scheduleBatch(supabaseUrl, serviceRoleKey, recipients, {
-              forceQueue: true,
-              origin: "department_announcement_delayed",
-              minDelayMs: 20_000,
-              maxDelayMs: 90_000,
-            });
-            await promise;
+            const { queued } = await enqueueTriplets(
+              supabaseUrl,
+              serviceRoleKey,
+              recipients,
+              {
+                origin: "department_announcement_delayed",
+                includeInstagram: false,
+                interMinMs: 15_000,
+                interMaxMs: 40_000,
+                betweenRecipientsMinMs: 20_000,
+                betweenRecipientsMaxMs: 90_000,
+              },
+            );
             totalSent += recipients.length;
-            console.log(`Announcement ${announcement.id}: ${recipients.length} WhatsApp queued`);
+            console.log(`Announcement ${announcement.id}: ${recipients.length} recipients, ${queued} triplet parts queued`);
           }
         }
       } catch (err) {
