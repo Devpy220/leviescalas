@@ -192,12 +192,24 @@ export function isSwapInitiationMulti(text: string): boolean {
 }
 
 export function isScheduleListCommand(text: string): boolean {
-  const t = text.trim().toLowerCase().replace(/[!.?]+$/, "");
-  return [
-    "escala", "escalas", "minhas escalas",
-    "turno", "turnos", "mis turnos",
-    "shift", "shifts", "my shifts", "schedule", "my schedule",
-  ].includes(t);
+  const raw = (text || "").trim().toLowerCase().replace(/[!.?¿¡]+$/g, "");
+  if (!raw || raw.length > 80) return false;
+
+  // Exact-match shortcuts
+  const exact = new Set([
+    "escala", "escalas", "minhas escalas", "minha escala",
+    "turno", "turnos", "meu turno", "meus turnos", "mis turnos", "mi turno",
+    "shift", "shifts", "my shift", "my shifts", "schedule", "schedules", "my schedule",
+  ]);
+  if (exact.has(raw)) return true;
+
+  // Loose match: short sentence containing a schedule keyword — as long as it
+  // doesn't look like a blackout/serve-only instruction (which has its own flow).
+  const hasKeyword = /\b(escala|escalas|turno|turnos|shift|shifts|schedule)\b/.test(raw);
+  if (!hasKeyword) return false;
+  const looksLikeBlackout = /\b(bloque|nao\s+posso|não\s+posso|servir|posso servir|livre|disponivel|disponível|nenhum|troca|trocar|cambio|cambiar|swap)\b/.test(raw);
+  if (looksLikeBlackout) return false;
+  return true;
 }
 
 export function isCancelMulti(text: string): boolean {
