@@ -70,19 +70,26 @@ function SidebarItem({ icon: Icon, label, active, onClick, variant = 'nav', expa
   variant?: SidebarItemVariant;
   expanded?: boolean;
 }) {
-  const base = `w-full flex items-center ${expanded ? 'justify-start px-3' : 'justify-center px-2'} py-2.5 rounded-xl text-sm transition-all`;
+  const base = `relative w-full flex items-center ${expanded ? 'justify-start px-3' : 'justify-center px-2'} py-2.5 rounded-xl text-sm transition-all duration-200 ease-out active:scale-[0.97]`;
 
   const styles: Record<SidebarItemVariant, string> = {
     nav: active
       ? 'bg-sidebar-primary/12 text-sidebar-primary font-medium'
-      : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground',
-    action: 'text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground',
+      : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground hover:translate-x-0.5',
+    action: 'text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground hover:translate-x-0.5',
     danger: 'text-rose-500 dark:text-rose-400 hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-300',
   };
 
   const button = (
     <button onClick={onClick} className={`${base} ${styles[variant]}`}>
-      <Icon className="w-[18px] h-[18px] shrink-0" />
+      {variant === 'nav' && (
+        <span
+          className={`absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-full bg-sidebar-primary transition-all duration-300 ease-out ${
+            active ? 'h-5 opacity-100' : 'h-0 opacity-0'
+          }`}
+        />
+      )}
+      <Icon className={`w-[18px] h-[18px] shrink-0 transition-transform duration-200 ${active ? 'scale-105' : 'group-hover:scale-110'}`} />
       {expanded && <span className="ml-3 truncate text-sm">{label}</span>}
     </button>
   );
