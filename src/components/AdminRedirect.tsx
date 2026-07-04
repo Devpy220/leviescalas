@@ -35,7 +35,8 @@ export function AdminRedirect({ children }: AdminRedirectProps) {
       const isInPublicArea = location.pathname.startsWith('/igreja');
       const isInAuthArea = location.pathname.startsWith('/auth');
       const isInSupportArea = location.pathname.startsWith('/apoiar') || location.pathname.startsWith('/payment');
-      const isExempt = isInAdminArea || isInJoinArea || isInPublicArea || isInAuthArea || isInSupportArea;
+      const isInOAuthArea = location.pathname.startsWith('/.lovable/oauth');
+      const isExempt = isInAdminArea || isInJoinArea || isInPublicArea || isInAuthArea || isInSupportArea || isInOAuthArea;
 
       if (!isExempt) {
         navigate('/admin', { replace: true });
@@ -57,7 +58,8 @@ export function AdminRedirect({ children }: AdminRedirectProps) {
     const isInPublicArea = location.pathname.startsWith('/igreja');
     const isInAuthArea = location.pathname.startsWith('/auth');
     const isInSupportArea = location.pathname.startsWith('/apoiar') || location.pathname.startsWith('/payment');
-    const isExempt = isInAdminArea || isInJoinArea || isInPublicArea || isInAuthArea || isInSupportArea;
+    const isInOAuthArea = location.pathname.startsWith('/.lovable/oauth');
+    const isExempt = isInAdminArea || isInJoinArea || isInPublicArea || isInAuthArea || isInSupportArea || isInOAuthArea;
 
     if (!isExempt) {
       return null;
