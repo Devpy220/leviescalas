@@ -36,6 +36,7 @@ import NotFound from "./pages/NotFound";
 
 import ConfirmSchedule from "./pages/ConfirmSchedule";
 import Apoiar from "./pages/Apoiar";
+import OAuthConsent from "./pages/OAuthConsent";
 
 const queryClient = new QueryClient();
 
@@ -80,6 +81,7 @@ const App = () => (
                   <Route path="/join/:inviteCode" element={<JoinDepartment />} />
                   <Route path="/join-coordinator/:code" element={<JoinCoordinator />} />
                   <Route path="/confirm/:token" element={<ConfirmSchedule />} />
+                  <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
                   <Route path="/tutorial" element={<Tutorial />} />
                   <Route path="/complete-profile" element={
                     <ProtectedRoute>
