@@ -44,6 +44,7 @@ export default defineConfig(({ mode }) => {
   plugins: [
     react(),
     mode === "development" && componentTagger(),
+    mcpPlugin(),
     VitePWA({
       registerType: "prompt", // Changed to prompt for manual update control
       includeAssets: ["favicon.png", "levi-icon.svg", "placeholder.svg"],
