@@ -172,7 +172,8 @@ export default function RepertoireView({ departmentId, isLeader, currentUserId }
             const ytEmbed = getYouTubeEmbedUrl(item.url);
             const ytThumb = getYouTubeThumbnail(item.url);
             return (
-              <Card key={item.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+              <Card key={item.id} className="overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-1 relative">
+                <div className={cn('absolute top-0 left-0 right-0 h-1', meta.bg.replace('/10', ''))} />
                 {ytEmbed && (
                   <div className="relative w-full aspect-video bg-black">
                     <iframe
