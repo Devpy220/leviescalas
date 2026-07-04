@@ -73,7 +73,7 @@ export function LeviTypewriter({ className = '' }: LeviTypewriterProps) {
 
   return (
     <span className={`inline-flex items-baseline ${className}`}>
-      <span className="text-[8px] sm:text-xs text-muted-foreground/70 font-medium tracking-wide whitespace-nowrap">
+      <span className="text-[8px] sm:text-xs text-foreground/75 dark:text-muted-foreground font-medium tracking-wide whitespace-nowrap">
         {visibleText.split('').map((char, i) => {
           const isHighlight = highlightIndices.has(i);
           return (
