@@ -309,15 +309,15 @@
 
   /* Shadow utilities with violet glow */
   .shadow-glow {
-    box-shadow: 0 0 60px hsl(var(--primary) / 0.5);
+    box-shadow: 0 0 40px hsl(var(--primary) / 0.28);
   }
 
   .shadow-glow-lg {
-    box-shadow: 0 0 100px hsl(var(--primary) / 0.6);
+    box-shadow: 0 0 70px hsl(var(--primary) / 0.35);
   }
 
   .shadow-glow-sm {
-    box-shadow: 0 0 30px hsl(var(--primary) / 0.35);
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.2);
   }
 
   .shadow-colored {
@@ -562,8 +562,8 @@
   .glow-orb {
     position: absolute;
     border-radius: 50%;
-    filter: blur(80px);
-    opacity: 0.4;
+    filter: blur(90px);
+    opacity: 0.22;
     pointer-events: none;
   }
 
@@ -683,10 +683,10 @@
 
 @keyframes glowPulse {
   0%, 100% {
-    box-shadow: 0 0 20px hsl(var(--primary) / 0.3), 0 0 40px hsl(var(--primary) / 0.1);
+    box-shadow: 0 0 12px hsl(var(--primary) / 0.2), 0 0 24px hsl(var(--primary) / 0.08);
   }
   50% {
-    box-shadow: 0 0 30px hsl(var(--primary) / 0.5), 0 0 60px hsl(var(--primary) / 0.2);
+    box-shadow: 0 0 18px hsl(var(--primary) / 0.32), 0 0 36px hsl(var(--primary) / 0.12);
   }
 }
 
