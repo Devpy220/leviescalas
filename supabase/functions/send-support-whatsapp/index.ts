@@ -54,30 +54,21 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    // Support message + commands hint (2 msgs, no Instagram).
-    // We flatten into a single flat queue: for each recipient add both parts
-    // interleaved with other recipients via scheduleBatch's random delays.
+    // Support message only (no Instagram, no commands hint).
+    // Commands hint is intentionally sent ONLY on the antepenultimate day of the
+    // month, together with the blackout-collection prompt.
     const flat: { phone: string; message: string }[] = [];
     for (const p of profiles as any[]) {
       if (!p.whatsapp) continue;
       flat.push({ phone: p.whatsapp, message: buildSupportOnlyMessage(p.name || "Voluntário") });
-      flat.push({ phone: p.whatsapp, message: buildCommandsOnlyMessage() });
     }
 
-    // Shuffle recipient pairs together (keep support -> commands order per phone
-    // by grouping and randomizing groups).
-    const groups = new Map<string, { phone: string; message: string }[]>();
-    for (const r of flat) {
-      const g = groups.get(r.phone) ?? [];
-      g.push(r);
-      groups.set(r.phone, g);
-    }
-    const groupArr = Array.from(groups.values());
-    for (let i = groupArr.length - 1; i > 0; i--) {
+    // Shuffle recipients to avoid blasting in profile order.
+    for (let i = flat.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [groupArr[i], groupArr[j]] = [groupArr[j], groupArr[i]];
+      [flat[i], flat[j]] = [flat[j], flat[i]];
     }
-    const recipients = groupArr.flat();
+    const recipients = flat;
 
     const queued = recipients.length;
     const { promise } = scheduleBatch(supabaseUrl, serviceRoleKey, recipients, {
