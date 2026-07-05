@@ -670,7 +670,7 @@ export default function Landing() {
             </div>
 
             {/* Coluna direita: funcionalidades */}
-            <div id="funcionalidades" className="min-h-0 h-full overflow-y-auto flex flex-col justify-center">
+            <div id="funcionalidades" className="min-h-0 lg:h-full lg:overflow-y-auto flex flex-col justify-center">
               <FeatureGrid />
             </div>
           </div>
