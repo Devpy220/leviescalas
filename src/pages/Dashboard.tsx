@@ -2,26 +2,34 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import Footer from '@/components/Footer';
 import { Link, useNavigate } from 'react-router-dom';
-import { 
-  Plus, 
-  Calendar, 
-  Users, 
+import {
+  Plus,
+  Calendar,
+  Users,
   ChevronRight,
   Crown,
   User,
   Loader2,
   Sparkles,
   Heart,
-  Church
+  Church,
+  ArrowLeftRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Card } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { DashboardSidebar } from '@/components/DashboardSidebar';
 import { BibleVerseTypewriter } from '@/components/BibleVerseTypewriter';
 import { VideoBackground } from '@/components/VideoBackground';
+import { PersonalScheduleCard, type PersonalScheduleData } from '@/components/schedules/PersonalScheduleCard';
+import { SwapRequestDialog } from '@/components/schedules/SwapRequestDialog';
+import { SwapResponseDialog } from '@/components/schedules/SwapResponseDialog';
+import { useScheduleSwaps, type ScheduleSwap } from '@/hooks/useScheduleSwaps';
+import { format, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useAuth } from '@/hooks/useAuth';
@@ -31,6 +39,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSidebarExpanded } from '@/contexts/SidebarContext';
 import { useToast } from '@/hooks/use-toast';
 import { slugify } from '@/lib/slugify';
+
 
 interface Department {
   id: string;
