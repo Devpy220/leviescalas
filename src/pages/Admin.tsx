@@ -22,6 +22,7 @@ import { ptBR } from 'date-fns/locale';
 import { slugify } from '@/lib/slugify';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { LighthouseReportCard } from '@/components/admin/LighthouseReportCard';
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 interface Department {
   id: string;
   name: string;
@@ -871,48 +872,73 @@ export default function Admin() {
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-0 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70 mb-2">Pessoas & Igrejas</p>
-              <div className="flex flex-col gap-1.5 items-start">
-                <Button size="sm" variant="ghost" className="h-8 px-2 text-xs gap-1.5 justify-start w-full" onClick={() => setOpenModal('volunteers')}>
-                  <Users className="w-3.5 h-3.5 text-emerald-500" /> Todos voluntários
-                </Button>
-                <Button size="sm" variant="ghost" className="h-8 px-2 text-xs gap-1.5 justify-start w-full" onClick={() => setOpenModal('departments')}>
-                  <Building2 className="w-3.5 h-3.5 text-blue-500" /> Departamentos
-                </Button>
-                <Button size="sm" variant="ghost" className="h-8 px-2 text-xs gap-1.5 justify-start w-full" onClick={() => setOpenModal('churches')}>
-                  <Church className="w-3.5 h-3.5 text-violet-500" /> Igrejas
-                </Button>
-                <Button size="sm" variant="ghost" className="h-8 px-2 text-xs gap-1.5 justify-start w-full" onClick={() => setOpenModal('guests')}>
-                  <UserX className="w-3.5 h-3.5 text-rose-500" /> Entradas sem login
-                </Button>
+            <TooltipProvider delayDuration={100}>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70 mb-2">Pessoas & Igrejas</p>
+                <div className="flex flex-wrap gap-2">
+                  <UITooltip><TooltipTrigger asChild>
+                    <Button size="icon" variant="outline" className="h-9 w-9" onClick={() => setOpenModal('volunteers')} aria-label="Todos voluntários">
+                      <Users className="w-4 h-4 text-emerald-500" />
+                    </Button>
+                  </TooltipTrigger><TooltipContent>Todos voluntários</TooltipContent></UITooltip>
+                  <UITooltip><TooltipTrigger asChild>
+                    <Button size="icon" variant="outline" className="h-9 w-9" onClick={() => setOpenModal('departments')} aria-label="Departamentos">
+                      <Building2 className="w-4 h-4 text-blue-500" />
+                    </Button>
+                  </TooltipTrigger><TooltipContent>Departamentos</TooltipContent></UITooltip>
+                  <UITooltip><TooltipTrigger asChild>
+                    <Button size="icon" variant="outline" className="h-9 w-9" onClick={() => setOpenModal('churches')} aria-label="Igrejas">
+                      <Church className="w-4 h-4 text-violet-500" />
+                    </Button>
+                  </TooltipTrigger><TooltipContent>Igrejas</TooltipContent></UITooltip>
+                  <UITooltip><TooltipTrigger asChild>
+                    <Button size="icon" variant="outline" className="h-9 w-9" onClick={() => setOpenModal('guests')} aria-label="Entradas sem login">
+                      <UserX className="w-4 h-4 text-rose-500" />
+                    </Button>
+                  </TooltipTrigger><TooltipContent>Entradas sem login</TooltipContent></UITooltip>
+                </div>
               </div>
-            </div>
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70 mb-2">Comunicação</p>
-              <div className="flex flex-col gap-1.5 items-start">
-                <Button size="sm" variant="ghost" className="h-8 px-2 text-xs gap-1.5 justify-start w-full" onClick={() => setOpenModal('broadcast')}>
-                  <Megaphone className="w-3.5 h-3.5 text-primary" /> Comunicados LEVI
-                </Button>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70 mb-2">Comunicação</p>
+                <div className="flex flex-wrap gap-2">
+                  <UITooltip><TooltipTrigger asChild>
+                    <Button size="icon" variant="outline" className="h-9 w-9" onClick={() => setOpenModal('broadcast')} aria-label="Comunicados LEVI">
+                      <Megaphone className="w-4 h-4 text-primary" />
+                    </Button>
+                  </TooltipTrigger><TooltipContent>Comunicados LEVI</TooltipContent></UITooltip>
+                  <UITooltip><TooltipTrigger asChild>
+                    <Button asChild size="icon" variant="outline" className="h-9 w-9" aria-label="Logs do WhatsApp">
+                      <a href="/admin/whatsapp-logs"><Send className="w-4 h-4 text-violet-500" /></a>
+                    </Button>
+                  </TooltipTrigger><TooltipContent>Logs do WhatsApp</TooltipContent></UITooltip>
+                </div>
               </div>
-            </div>
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70 mb-2">Métricas & Sistema</p>
-              <div className="flex flex-col gap-1.5 items-start">
-                <Button size="sm" variant="ghost" className="h-8 px-2 text-xs gap-1.5 justify-start w-full" onClick={() => setOpenModal('daily-logins')}>
-                  <BarChart3 className="w-3.5 h-3.5 text-amber-500" /> Logins por dia
-                </Button>
-                <Button size="sm" variant="ghost" className="h-8 px-2 text-xs gap-1.5 justify-start w-full" onClick={() => setOpenModal('recent-logins')}>
-                  <Clock className="w-3.5 h-3.5 text-amber-500" /> Últimos logins
-                </Button>
-                <Button size="sm" variant="ghost" className="h-8 px-2 text-xs gap-1.5 justify-start w-full" onClick={() => setOpenModal('analytics')}>
-                  <TrendingUp className="w-3.5 h-3.5 text-amber-500" /> Acesso ao site
-                </Button>
-                <Button size="sm" variant="ghost" className="h-8 px-2 text-xs gap-1.5 justify-start w-full" onClick={() => setOpenModal('lighthouse')}>
-                  <Gauge className="w-3.5 h-3.5 text-muted-foreground" /> Lighthouse / PageSpeed
-                </Button>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70 mb-2">Métricas & Sistema</p>
+                <div className="flex flex-wrap gap-2">
+                  <UITooltip><TooltipTrigger asChild>
+                    <Button size="icon" variant="outline" className="h-9 w-9" onClick={() => setOpenModal('daily-logins')} aria-label="Logins por dia">
+                      <BarChart3 className="w-4 h-4 text-amber-500" />
+                    </Button>
+                  </TooltipTrigger><TooltipContent>Logins por dia</TooltipContent></UITooltip>
+                  <UITooltip><TooltipTrigger asChild>
+                    <Button size="icon" variant="outline" className="h-9 w-9" onClick={() => setOpenModal('recent-logins')} aria-label="Últimos logins">
+                      <Clock className="w-4 h-4 text-amber-500" />
+                    </Button>
+                  </TooltipTrigger><TooltipContent>Últimos logins</TooltipContent></UITooltip>
+                  <UITooltip><TooltipTrigger asChild>
+                    <Button size="icon" variant="outline" className="h-9 w-9" onClick={() => setOpenModal('analytics')} aria-label="Acesso ao site">
+                      <TrendingUp className="w-4 h-4 text-amber-500" />
+                    </Button>
+                  </TooltipTrigger><TooltipContent>Acesso ao site</TooltipContent></UITooltip>
+                  <UITooltip><TooltipTrigger asChild>
+                    <Button size="icon" variant="outline" className="h-9 w-9" onClick={() => setOpenModal('lighthouse')} aria-label="Lighthouse / PageSpeed">
+                      <Gauge className="w-4 h-4 text-muted-foreground" />
+                    </Button>
+                  </TooltipTrigger><TooltipContent>Lighthouse / PageSpeed</TooltipContent></UITooltip>
+                </div>
               </div>
-            </div>
+            </TooltipProvider>
           </CardContent>
         </Card>
 
@@ -1154,15 +1180,6 @@ export default function Admin() {
           </DialogContent>
         </Dialog>
 
-        {/* WhatsApp logs shortcut */}
-        <div className="mb-6 flex justify-end">
-          <Button asChild size="sm" variant="outline" className="border-violet-500/40 text-violet-600 hover:bg-violet-500/10">
-            <a href="/admin/whatsapp-logs">
-              <Send className="w-4 h-4 mr-2" />
-              Logs do WhatsApp
-            </a>
-          </Button>
-        </div>
 
 
         {/* Analytics Chart */}
