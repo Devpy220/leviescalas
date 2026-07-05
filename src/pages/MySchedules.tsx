@@ -19,7 +19,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { DashboardSidebar } from '@/components/DashboardSidebar';
+import { FloatingActionMenu } from '@/components/FloatingActionMenu';
 import { useAdmin } from '@/hooks/useAdmin';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useIsMobile } from '@/hooks/use-mobile';
