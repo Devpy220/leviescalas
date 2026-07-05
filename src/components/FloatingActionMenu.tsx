@@ -379,28 +379,27 @@ export function FloatingActionMenu(props: FloatingActionMenuProps) {
       {open && (
         <div
           ref={panelRef}
-          className="fixed bottom-24 right-6 z-[60] w-72 max-h-[70vh] overflow-y-auto rounded-2xl border border-border bg-card/95 backdrop-blur-xl shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-150"
+          className="fixed bottom-24 right-6 z-[60] w-60 max-h-[70vh] overflow-y-auto rounded-2xl border border-border bg-card/95 backdrop-blur-xl shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-150"
         >
           {/* Header */}
           <button
             onClick={() => go('/dashboard')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-t-2xl border-b border-border/60 transition-colors ${
+            className={`w-full flex items-center gap-2 px-3 py-2 rounded-t-2xl border-b border-border/60 transition-colors ${
               isActive('/dashboard') ? 'bg-primary/10 text-primary' : 'hover:bg-accent'
             }`}
           >
-            <Avatar className="w-9 h-9">
+            <Avatar className="w-8 h-8">
               {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={userName || 'Usuário'} />}
-              <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+              <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-bold">
                 {userName ? getInitials(userName) : 'U'}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 text-left min-w-0">
-              <div className="text-sm font-medium truncate">{userName || 'Meu Perfil'}</div>
-              <div className="text-[11px] text-muted-foreground">Dashboard</div>
+              <div className="text-xs font-medium truncate">{userName || 'Meu Perfil'}</div>
             </div>
           </button>
 
-          <div className="p-2 space-y-0.5">
+          <div className="p-2 grid grid-cols-3 gap-1.5">
             <MenuItem icon={Settings} label={t('sidebar.settings')} active={isActive('/security')} onClick={() => go('/security')} />
             <MenuItem icon={Heart} label={t('sidebar.supportLevi')} active={isActive('/apoiar')} onClick={() => go('/apoiar')} />
             {isAdmin && (
@@ -411,7 +410,7 @@ export function FloatingActionMenu(props: FloatingActionMenuProps) {
           {hasDepartments && (
             <>
               <SectionLabel label={t('sidebar.department')} />
-              <div className="p-2 space-y-0.5">
+              <div className="p-2 grid grid-cols-3 gap-1.5">
                 <MenuItem icon={Clock} label={t('sidebar.availability')} variant="action" onClick={() => handleContextualAction('availability')} />
                 <MenuItem icon={Megaphone} label={t('sidebar.announcements')} variant="action" onClick={() => handleContextualAction('announcements')} />
               </div>
@@ -421,7 +420,7 @@ export function FloatingActionMenu(props: FloatingActionMenuProps) {
           {isLeader && (
             <>
               <SectionLabel label={t('sidebar.management')} />
-              <div className="p-2 space-y-0.5">
+              <div className="p-2 grid grid-cols-3 gap-1.5">
                 <MenuItem icon={Eye} label={t('sidebar.teamAvailability')} variant="action" onClick={() => handleContextualAction('team-availability')} />
                 <MenuItem icon={CalendarPlus} label={t('sidebar.createSchedule')} variant="action" onClick={() => handleContextualAction('create-schedule')} />
                 <MenuItem icon={Layers} label={t('sidebar.sectors')} variant="action" onClick={() => handleContextualAction('sectors')} />
@@ -441,12 +440,12 @@ export function FloatingActionMenu(props: FloatingActionMenuProps) {
           </div>
 
           {shouldShowInstallPrompt && (
-            <div className="p-2">
+            <div className="p-2 grid grid-cols-3 gap-1.5">
               <MenuItem icon={Download} label={t('sidebar.installApp')} variant="action" onClick={() => { setOpen(false); onInstallClick(); }} />
             </div>
           )}
 
-          <div className="p-2 border-t border-border/60">
+          <div className="p-2 border-t border-border/60 grid grid-cols-3 gap-1.5">
             <MenuItem icon={LogOut} label={t('sidebar.signOut')} variant="danger" onClick={() => { setOpen(false); onSignOut(); }} />
           </div>
         </div>
@@ -457,12 +456,12 @@ export function FloatingActionMenu(props: FloatingActionMenuProps) {
         ref={fabRef}
         onClick={() => setOpen(v => !v)}
         aria-label="Menu"
-        className="fixed bottom-6 right-6 z-[60] w-14 h-14 rounded-full bg-card border border-border shadow-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+        className="fixed bottom-6 right-6 z-[60] flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
       >
         {open ? (
-          <X className="w-6 h-6 text-foreground" />
+          <X className="w-8 h-8 text-foreground" />
         ) : (
-          <LeviLogo className="w-9 h-9" />
+          <LeviLogo className="w-11 h-11" />
         )}
       </button>
 
