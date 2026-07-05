@@ -124,8 +124,10 @@ export default function Dashboard() {
           fetchDepartments(),
           checkCanCreateDepartment(),
           fetchUserName(),
+          fetchSchedules(),
         ]);
       };
+
       fetchData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
