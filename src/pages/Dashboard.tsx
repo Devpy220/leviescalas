@@ -570,9 +570,83 @@ export default function Dashboard() {
 
         </div>
 
-        <div className="mt-auto pt-8 pb-4 flex justify-center">
+        {/* Próximas Escalas — embedded */}
+        <section className="mt-4">
+          <div className="flex items-center justify-between mb-3 gap-2">
+            <h2 className="font-display text-lg font-semibold text-foreground">
+              Próximas Escalas
+            </h2>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => navigate('/my-schedules?view=team')}
+              className="gap-2"
+            >
+              <Users className="w-4 h-4" />
+              <span className="hidden sm:inline">Escala da Equipe</span>
+            </Button>
+          </div>
+
+          {pendingSwapsForMe.length > 0 && (
+            <Card className="mb-4 p-3 border-primary/50 bg-primary/5">
+              <h4 className="font-semibold text-sm text-foreground mb-2 flex items-center gap-2">
+                <ArrowLeftRight className="w-4 h-4 text-primary" />
+                Solicitações de Troca ({pendingSwapsForMe.length})
+              </h4>
+              <div className="space-y-2">
+                {pendingSwapsForMe.map((swap) => (
+                  <div
+                    key={swap.id}
+                    className="flex items-center justify-between p-2 bg-background rounded-md border"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-medium text-xs truncate">{swap.requester_name} quer trocar com você</p>
+                      {swap.requester_schedule && swap.target_schedule && (
+                        <p className="text-[11px] text-muted-foreground">
+                          {format(parseISO(swap.requester_schedule.date), 'dd/MM', { locale: ptBR })} ↔{' '}
+                          {format(parseISO(swap.target_schedule.date), 'dd/MM', { locale: ptBR })}
+                        </p>
+                      )}
+                    </div>
+                    <Button size="sm" onClick={() => handleRespondToSwap(swap)}>
+                      Ver
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {schedulesLoading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-32 rounded-xl" />
+              ))}
+            </div>
+          ) : schedules.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhuma escala futura.</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
+              {schedules.map((s) => (
+                <PersonalScheduleCard
+                  key={s.id}
+                  schedule={s}
+                  swap={getSwapForSchedule(s.id)}
+                  cancellingSwapId={cancellingSwapId}
+                  onRequestSwap={handleRequestSwap}
+                  onCancelSwap={handleCancelSwap}
+                  onRespondSwap={handleRespondToSwap}
+                  compact
+                />
+              ))}
+            </div>
+          )}
+        </section>
+
+        <div className="mt-8 pt-8 pb-4 flex justify-center">
           <BibleVerseTypewriter />
         </div>
+
 
 
 
