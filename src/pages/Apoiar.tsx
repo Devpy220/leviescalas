@@ -127,6 +127,15 @@ const Apoiar = () => {
             </CardContent>
           </Card>
 
+          <div className="flex justify-center">
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/dashboard">
+                <ArrowLeft className="w-4 h-4" />
+                Voltar para o dashboard
+              </Link>
+            </Button>
+          </div>
+
           <p className="text-xs text-center text-muted-foreground">
             🙏 Obrigado pelo seu carinho e apoio!
           </p>
