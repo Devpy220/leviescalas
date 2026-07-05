@@ -65,19 +65,21 @@
     }
     </script>
 
-    <!-- PushAlert Unified Code -->
-    <script type="text/javascript">
-      (function(d, t) {
-        var g = d.createElement(t),
-        s = d.getElementsByTagName(t)[0];
-        g.src = "https://cdn.pushalert.co/unified_0aa860d99479a4bfe30ff6aac5d80791.js";
-        s.parentNode.insertBefore(g, s);
-      }(document, "script"));
-    </script>
   </head>
 
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+
+    <!-- PushAlert Unified Code (deferred, after main app to protect LCP) -->
+    <script type="text/javascript">
+      window.addEventListener('load', function () {
+        var g = document.createElement('script');
+        g.src = "https://cdn.pushalert.co/unified_0aa860d99479a4bfe30ff6aac5d80791.js";
+        g.async = true;
+        document.head.appendChild(g);
+      });
+    </script>
+
   </body>
 </html>
