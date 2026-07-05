@@ -14,6 +14,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useUserCount } from '@/hooks/useUserCount';
+import { useChurchCount } from '@/hooks/useChurchCount';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import {
