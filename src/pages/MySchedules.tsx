@@ -27,6 +27,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { SwapRequestDialog } from '@/components/schedules/SwapRequestDialog';
 import { SwapResponseDialog } from '@/components/schedules/SwapResponseDialog';
 import { PendingSwapBadge } from '@/components/schedules/PendingSwapBadge';
+import { PersonalScheduleCard } from '@/components/schedules/PersonalScheduleCard';
+
 import MyAvailabilitySheet from '@/components/department/MyAvailabilitySheet';
 import SlotRepertoireEditor from '@/components/department/SlotRepertoireEditor';
 import { REPERTOIRE_EDIT_ROLES } from '@/lib/constants';
