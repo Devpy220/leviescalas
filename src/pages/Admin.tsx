@@ -945,7 +945,7 @@ export default function Admin() {
 
         {/* Comunicados LEVI — modal */}
         <Dialog open={openModal==='broadcast'} onOpenChange={(o)=>!o&&closeModal()}>
-          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto p-0">
+          <DialogContent className="max-w-2xl w-[96vw] max-h-[85vh] overflow-y-auto p-0">
         <Card className="border-0 shadow-none">
           <Collapsible>
             <CollapsibleTrigger className="w-full">
@@ -1175,7 +1175,7 @@ export default function Admin() {
 
         {/* Lighthouse / PageSpeed report (admin only) — modal */}
         <Dialog open={openModal==='lighthouse'} onOpenChange={(o)=>!o&&closeModal()}>
-          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-3xl w-[96vw] max-h-[88vh] overflow-y-auto">
             <LighthouseReportCard />
           </DialogContent>
         </Dialog>
@@ -1183,7 +1183,7 @@ export default function Admin() {
 
 
         {/* Analytics Chart */}
-        <Dialog open={openModal==='analytics'} onOpenChange={(o)=>!o&&closeModal()}><DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+        <Dialog open={openModal==='analytics'} onOpenChange={(o)=>!o&&closeModal()}><DialogContent className="max-w-3xl w-[96vw] max-h-[88vh] overflow-y-auto p-0 [&_table]:text-xs [&_th]:py-1.5 [&_th]:px-2 [&_td]:py-1.5 [&_td]:px-2">
         <Card className="border-0 shadow-none overflow-hidden bg-gradient-to-br from-card via-card to-primary/5" id="section-analytics">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -1302,7 +1302,7 @@ export default function Admin() {
         </DialogContent></Dialog>
 
         {/* Guest (anonymous) sessions */}
-        <Dialog open={openModal==='guests'} onOpenChange={(o)=>!o&&closeModal()}><DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+        <Dialog open={openModal==='guests'} onOpenChange={(o)=>!o&&closeModal()}><DialogContent className="max-w-3xl w-[96vw] max-h-[88vh] overflow-y-auto p-0 [&_table]:text-xs [&_th]:py-1.5 [&_th]:px-2 [&_td]:py-1.5 [&_td]:px-2">
         <Card className="border-0 shadow-none" id="section-guests">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -1375,7 +1375,7 @@ export default function Admin() {
 
 
         {/* Login Chart */}
-        <Dialog open={openModal==='daily-logins'} onOpenChange={(o)=>!o&&closeModal()}><DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+        <Dialog open={openModal==='daily-logins'} onOpenChange={(o)=>!o&&closeModal()}><DialogContent className="max-w-3xl w-[96vw] max-h-[88vh] overflow-y-auto p-0 [&_table]:text-xs [&_th]:py-1.5 [&_th]:px-2 [&_td]:py-1.5 [&_td]:px-2">
         <Card className="border-0 shadow-none" id="section-daily-logins">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -1437,7 +1437,7 @@ export default function Admin() {
         </DialogContent></Dialog>
 
         {/* Recent Logins - Collapsible */}
-        <Dialog open={openModal==='recent-logins'} onOpenChange={(o)=>!o&&closeModal()}><DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+        <Dialog open={openModal==='recent-logins'} onOpenChange={(o)=>!o&&closeModal()}><DialogContent className="max-w-3xl w-[96vw] max-h-[88vh] overflow-y-auto p-0 [&_table]:text-xs [&_th]:py-1.5 [&_th]:px-2 [&_td]:py-1.5 [&_td]:px-2">
         <Collapsible defaultOpen id="section-recent-logins">
           <Card>
             <CollapsibleTrigger asChild>
@@ -1501,7 +1501,7 @@ export default function Admin() {
         </Collapsible>
         </DialogContent></Dialog>
 
-        <Dialog open={openModal==='churches'} onOpenChange={(o)=>!o&&closeModal()}><DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+        <Dialog open={openModal==='churches'} onOpenChange={(o)=>!o&&closeModal()}><DialogContent className="max-w-3xl w-[96vw] max-h-[88vh] overflow-y-auto p-0 [&_table]:text-xs [&_th]:py-1.5 [&_th]:px-2 [&_td]:py-1.5 [&_td]:px-2">
         <Card className="border-0 shadow-none" id="section-churches">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -1747,7 +1747,7 @@ export default function Admin() {
           setShowEditChurch(open);
           if (!open) setEditingChurch(null);
         }}>
-          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-lg w-[96vw] max-h-[88vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Editar Igreja</DialogTitle>
               <DialogDescription>
@@ -1920,7 +1920,7 @@ export default function Admin() {
         </Dialog>
 
         {/* All Volunteers List */}
-        <Dialog open={openModal==='volunteers'} onOpenChange={(o)=>!o&&closeModal()}><DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+        <Dialog open={openModal==='volunteers'} onOpenChange={(o)=>!o&&closeModal()}><DialogContent className="max-w-3xl w-[96vw] max-h-[88vh] overflow-y-auto p-0 [&_table]:text-xs [&_th]:py-1.5 [&_th]:px-2 [&_td]:py-1.5 [&_td]:px-2">
         <Collapsible defaultOpen>
           <Card className="mb-6">
             <CollapsibleTrigger asChild>
@@ -2032,7 +2032,7 @@ export default function Admin() {
         </DialogContent></Dialog>
 
         {/* Departments List */}
-        <Dialog open={openModal==='departments'} onOpenChange={(o)=>!o&&closeModal()}><DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+        <Dialog open={openModal==='departments'} onOpenChange={(o)=>!o&&closeModal()}><DialogContent className="max-w-3xl w-[96vw] max-h-[88vh] overflow-y-auto p-0 [&_table]:text-xs [&_th]:py-1.5 [&_th]:px-2 [&_td]:py-1.5 [&_td]:px-2">
         <Card className="border-0 shadow-none">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
