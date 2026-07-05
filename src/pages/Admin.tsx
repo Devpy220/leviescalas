@@ -1660,98 +1660,100 @@ export default function Admin() {
                 Nenhuma igreja cadastrada.
               </p>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Código</TableHead>
-                    <TableHead>Cidade/Estado</TableHead>
-                    <TableHead>Criado em</TableHead>
-                    <TableHead className="w-[150px]">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <TooltipProvider delayDuration={100}>
+                <div className="flex flex-wrap gap-3">
                   {churches.map((church) => (
-                    <TableRow key={church.id}>
-                      <TableCell className="font-medium">{church.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="font-mono">
-                          {church.code}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {[church.city, church.state].filter(Boolean).join(', ') || '-'}
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(church.created_at), "dd/MM/yyyy", { locale: ptBR })}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleOpenEditChurch(church)}
-                            title="Editar igreja"
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => copyInviteLink(church.code)}
-                            title="Copiar link de convite"
-                          >
-                            <Copy className="w-4 h-4" />
-                          </Button>
-                          {church.slug && (
+                    <UITooltip key={church.id}>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditChurch(church)}
+                          className="group relative shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full"
+                          aria-label={church.name}
+                        >
+                          <Avatar className="h-12 w-12 border-2 border-primary/20 group-hover:border-primary/60 transition-colors">
+                            {church.logo_url ? (
+                              <AvatarImage src={church.logo_url} alt={church.name} />
+                            ) : null}
+                            <AvatarFallback className="bg-violet-500/10 text-violet-500">
+                              <Church className="w-5 h-5" />
+                            </AvatarFallback>
+                          </Avatar>
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="max-w-[240px]">
+                        <div className="space-y-1">
+                          <p className="font-semibold">{church.name}</p>
+                          <p className="text-xs font-mono text-primary">{church.code}</p>
+                          {(church.city || church.state) && (
+                            <p className="text-xs text-muted-foreground">
+                              {[church.city, church.state].filter(Boolean).join(', ')}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-1 pt-1" onClick={(e) => e.stopPropagation()}>
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => copyChurchUrl(church.slug!)}
-                              title="Copiar link da página"
+                              className="h-7 w-7"
+                              onClick={(e) => { e.stopPropagation(); copyInviteLink(church.code); }}
+                              title="Copiar convite"
                             >
-                              <LinkIcon className="w-4 h-4" />
+                              <Copy className="w-3.5 h-3.5" />
                             </Button>
-                          )}
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button 
-                                variant="ghost" 
+                            {church.slug && (
+                              <Button
+                                variant="ghost"
                                 size="icon"
-                                disabled={deletingChurch === church.id}
-                                title="Excluir igreja"
+                                className="h-7 w-7"
+                                onClick={(e) => { e.stopPropagation(); copyChurchUrl(church.slug!); }}
+                                title="Copiar link"
                               >
-                                {deletingChurch === church.id ? (
-                                  <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : (
-                                  <Trash2 className="w-4 h-4 text-destructive" />
-                                )}
+                                <LinkIcon className="w-3.5 h-3.5" />
                               </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Excluir igreja?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Esta ação excluirá permanentemente a igreja "{church.name}" e todos os seus departamentos, membros, escalas e dados relacionados. Esta ação não pode ser desfeita.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDeleteChurch(church.id)}
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            )}
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  onClick={(e) => e.stopPropagation()}
+                                  disabled={deletingChurch === church.id}
+                                  title="Excluir"
                                 >
-                                  Excluir
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                                  {deletingChurch === church.id ? (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                                  )}
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Excluir igreja?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Esta ação excluirá permanentemente a igreja "{church.name}" e todos os seus departamentos, membros, escalas e dados relacionados.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDeleteChurch(church.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Excluir
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground pt-1">Clique no avatar para editar</p>
                         </div>
-                      </TableCell>
-                    </TableRow>
+                      </TooltipContent>
+                    </UITooltip>
                   ))}
-                </TableBody>
-              </Table>
+                </div>
+              </TooltipProvider>
             )}
           </CardContent>
         </Card>
