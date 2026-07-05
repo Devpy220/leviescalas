@@ -166,7 +166,11 @@ export interface TripletRecipient {
 export interface TripletOptions {
   origin: string;
   includeInstagram?: boolean;
-  // Pause range between the 3 messages for the SAME recipient.
+  // When true, appends the "commands hint" message as a 3rd part per recipient.
+  // Defaults to false — the commands message is only sent alongside the monthly
+  // blackout-collection prompt (antepenultimate day of the month).
+  includeCommands?: boolean;
+  // Pause range between messages for the SAME recipient.
   interMinMs?: number;
   interMaxMs?: number;
   // Delay between different recipients (so we don't blast).
@@ -188,6 +192,7 @@ export async function enqueueTriplets(
   const igLine = opts.includeInstagram
     ? `\n\n📲 Siga a ELSD no Instagram:\n${INSTAGRAM_LINK}`
     : "";
+  const includeCommands = opts.includeCommands === true;
 
   const rows: any[] = [];
   let cursor = Date.now();
@@ -199,8 +204,7 @@ export async function enqueueTriplets(
 
     const mainAt = cursor;
     const supportAt = mainAt + randomBetween(interMin, interMax);
-    const commandsAt = supportAt + randomBetween(interMin, interMax);
-    cursor = commandsAt;
+    cursor = supportAt;
 
     rows.push({
       phone: r.phone,
@@ -214,12 +218,16 @@ export async function enqueueTriplets(
       scheduled_for: new Date(supportAt).toISOString(),
       origin: `${opts.origin}:support`,
     });
-    rows.push({
-      phone: r.phone,
-      message: buildCommandsOnlyMessage(),
-      scheduled_for: new Date(commandsAt).toISOString(),
-      origin: `${opts.origin}:commands`,
-    });
+    if (includeCommands) {
+      const commandsAt = supportAt + randomBetween(interMin, interMax);
+      cursor = commandsAt;
+      rows.push({
+        phone: r.phone,
+        message: buildCommandsOnlyMessage(),
+        scheduled_for: new Date(commandsAt).toISOString(),
+        origin: `${opts.origin}:commands`,
+      });
+    }
   }
 
   if (rows.length === 0) return { queued: 0 };
