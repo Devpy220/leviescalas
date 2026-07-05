@@ -371,111 +371,61 @@ export default function Dashboard() {
       <div className={`${sidebarExpanded ? 'ml-56' : 'ml-16'} transition-all duration-300 min-w-0`}>
         <main className="container mx-auto px-4 py-8 max-w-full">
 
-        {/* Profile Section */}
-        <div className="mb-10">
-          <div className="flex items-center gap-5 mb-6">
-            <Avatar className="w-20 h-20 border-4 border-primary/20">
-              {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={userName} />}
-              <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
-                {userName ? userName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <h1 className="font-display text-2xl font-bold text-foreground">{userName || t('dashboard.myProfile')}</h1>
-              <p className="text-muted-foreground text-sm">{currentUser?.email}</p>
-            </div>
-          </div>
-        </div>
-
-        <BibleVerseTypewriter className="mb-8" />
-
-        {/* Departments Section */}
-        <h2 className="font-display text-xl font-semibold text-foreground mb-6">{t('dashboard.myDepartments')}</h2>
-
-        {/* Department Cards Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-          {/* Create department CTA - Only for non-invited users */}
-          {canCreateDepartment ? (
-            <Link to="/departments/new" className="block">
-              <div className="relative group h-full">
-                <div className="absolute inset-0 gradient-fresh rounded-2xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity" />
-                <div className="relative glass rounded-2xl p-6 border-2 border-dashed border-accent/30 hover:border-accent/50 transition-all hover-lift h-full flex items-center">
-                  <div className="flex items-center gap-4 w-full">
-                    <div className="w-14 h-14 rounded-xl gradient-fresh flex items-center justify-center shadow-glow-sm group-hover:shadow-glow transition-all">
-                      <Plus className="w-7 h-7 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-display text-xl font-semibold text-foreground mb-1">
-                        {t('dashboard.createNewDepartment')}
-                      </h3>
-                      <p className="text-muted-foreground">
-                        {t('dashboard.freeSupport')}
-                      </p>
-                    </div>
-                    <ChevronRight className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors" />
-                  </div>
-                </div>
-              </div>
-            </Link>
-          ) : (
-            <div className="relative group h-full">
-              <div className="absolute inset-0 gradient-vibrant rounded-2xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity" />
-              <div className="relative glass rounded-2xl p-6 border-2 border-dashed border-primary/30 transition-all hover-lift h-full flex items-center">
-                <div className="flex items-center gap-4 w-full">
-                  <div className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center transition-transform group-hover:scale-110">
-                    <User className="w-7 h-7 text-muted-foreground" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-display text-lg font-semibold text-foreground mb-1">
-                      {t('dashboard.memberAccount')}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {t('dashboard.memberAccountDesc')}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Department cards aligned next to create card */}
-          {loading ? (
-            <>
-              {[1, 2].map((i) => (
-                <Skeleton key={i} className="h-48 rounded-2xl" />
-              ))}
-            </>
-          ) : (
-            departments.map((dept) => (
-              <DepartmentCard key={dept.id} department={dept} />
-            ))
-          )}
-        </div>
-
-        {/* Empty state */}
-        {!loading && departments.length === 0 && (
-          <div className="text-center py-16">
-            <div className="w-20 h-20 rounded-2xl gradient-vibrant flex items-center justify-center mx-auto mb-6 opacity-50">
-              <Calendar className="w-10 h-10 text-white" />
-            </div>
-            <h3 className="font-display text-xl font-semibold text-foreground mb-2">
-              {t('dashboard.noDepartments')}
-            </h3>
-            <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
-              {canCreateDepartment 
-                ? t('dashboard.noDepartmentsDescLeader')
-                : t('dashboard.noDepartmentsDescMember')}
-            </p>
+        {/* Top Header: Create button (left) | Avatar centered | Compact dept cards (right) */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mb-8">
+          {/* Left: Create Department button (leaders only) */}
+          <div className="flex lg:justify-start justify-center order-2 lg:order-1">
             {canCreateDepartment && (
               <Link to="/departments/new">
-                <Button className="gradient-vibrant text-white shadow-glow-sm hover:shadow-glow transition-all">
-                  <Plus className="w-5 h-5 mr-2" />
+                <Button className="gradient-fresh text-white shadow-glow-sm hover:shadow-glow transition-all">
+                  <Plus className="w-4 h-4 mr-2" />
                   {t('dashboard.createDepartment')}
                 </Button>
               </Link>
             )}
           </div>
-        )}
+
+          {/* Center: Avatar + Name */}
+          <div className="flex flex-col items-center text-center order-1 lg:order-2">
+            <Avatar className="w-24 h-24 border-4 border-primary/20 mb-3">
+              {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={userName} />}
+              <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
+                {userName ? userName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'U'}
+              </AvatarFallback>
+            </Avatar>
+            <h1 className="font-display text-2xl font-bold text-foreground">{userName || t('dashboard.myProfile')}</h1>
+            <p className="text-muted-foreground text-sm">{currentUser?.email}</p>
+          </div>
+
+          {/* Right: Compact department cards */}
+          <div className="order-3 lg:order-3">
+            <h2 className="font-display text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3 lg:text-right">
+              {t('dashboard.myDepartments')}
+            </h2>
+            {loading ? (
+              <div className="space-y-2">
+                {[1, 2].map((i) => (
+                  <Skeleton key={i} className="h-14 rounded-xl" />
+                ))}
+              </div>
+            ) : departments.length > 0 ? (
+              <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
+                {departments.map((dept) => (
+                  <CompactDepartmentCard key={dept.id} department={dept} />
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground lg:text-right">
+                {canCreateDepartment
+                  ? t('dashboard.noDepartmentsDescLeader')
+                  : t('dashboard.noDepartmentsDescMember')}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <BibleVerseTypewriter className="mb-8" />
+
 
         </main>
       
