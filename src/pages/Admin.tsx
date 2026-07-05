@@ -840,42 +840,42 @@ export default function Admin() {
           <CardContent className="pt-0 space-y-4">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70 mb-2">Pessoas & Igrejas</p>
-              <div className="flex flex-wrap gap-2">
-                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('volunteers')}>
+              <div className="flex flex-col gap-1.5 items-start">
+                <Button size="sm" variant="ghost" className="h-8 px-2 text-xs gap-1.5 justify-start w-full" onClick={() => setOpenModal('volunteers')}>
                   <Users className="w-3.5 h-3.5 text-emerald-500" /> Todos voluntários
                 </Button>
-                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('departments')}>
+                <Button size="sm" variant="ghost" className="h-8 px-2 text-xs gap-1.5 justify-start w-full" onClick={() => setOpenModal('departments')}>
                   <Building2 className="w-3.5 h-3.5 text-blue-500" /> Departamentos
                 </Button>
-                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('churches')}>
+                <Button size="sm" variant="ghost" className="h-8 px-2 text-xs gap-1.5 justify-start w-full" onClick={() => setOpenModal('churches')}>
                   <Church className="w-3.5 h-3.5 text-violet-500" /> Igrejas
                 </Button>
-                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('guests')}>
+                <Button size="sm" variant="ghost" className="h-8 px-2 text-xs gap-1.5 justify-start w-full" onClick={() => setOpenModal('guests')}>
                   <UserX className="w-3.5 h-3.5 text-rose-500" /> Entradas sem login
                 </Button>
               </div>
             </div>
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70 mb-2">Comunicação</p>
-              <div className="flex flex-wrap gap-2">
-                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('broadcast')}>
+              <div className="flex flex-col gap-1.5 items-start">
+                <Button size="sm" variant="ghost" className="h-8 px-2 text-xs gap-1.5 justify-start w-full" onClick={() => setOpenModal('broadcast')}>
                   <Megaphone className="w-3.5 h-3.5 text-primary" /> Comunicados LEVI
                 </Button>
               </div>
             </div>
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70 mb-2">Métricas & Sistema</p>
-              <div className="flex flex-wrap gap-2">
-                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('daily-logins')}>
+              <div className="flex flex-col gap-1.5 items-start">
+                <Button size="sm" variant="ghost" className="h-8 px-2 text-xs gap-1.5 justify-start w-full" onClick={() => setOpenModal('daily-logins')}>
                   <BarChart3 className="w-3.5 h-3.5 text-amber-500" /> Logins por dia
                 </Button>
-                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('recent-logins')}>
+                <Button size="sm" variant="ghost" className="h-8 px-2 text-xs gap-1.5 justify-start w-full" onClick={() => setOpenModal('recent-logins')}>
                   <Clock className="w-3.5 h-3.5 text-amber-500" /> Últimos logins
                 </Button>
-                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('analytics')}>
+                <Button size="sm" variant="ghost" className="h-8 px-2 text-xs gap-1.5 justify-start w-full" onClick={() => setOpenModal('analytics')}>
                   <TrendingUp className="w-3.5 h-3.5 text-amber-500" /> Acesso ao site
                 </Button>
-                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('lighthouse')}>
+                <Button size="sm" variant="ghost" className="h-8 px-2 text-xs gap-1.5 justify-start w-full" onClick={() => setOpenModal('lighthouse')}>
                   <Gauge className="w-3.5 h-3.5 text-muted-foreground" /> Lighthouse / PageSpeed
                 </Button>
               </div>
