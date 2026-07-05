@@ -487,7 +487,7 @@ export default function MySchedules() {
           </Card>
         ) : viewMode === 'mine' ? (
           /* Personal schedules - individual cards */
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 auto-rows-fr">
             {schedules.map((schedule) => {
               const swap = getSwapForSchedule(schedule.id);
               return (
@@ -506,7 +506,7 @@ export default function MySchedules() {
 
         ) : (
           /* Team schedules - grouped by slot */
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 auto-rows-fr">
             {slotGroups.map((group) => {
               const { date, slotInfo, schedules: groupSchedules } = group;
               const isCurrentDay = isToday(date);
@@ -517,7 +517,7 @@ export default function MySchedules() {
                 <Card 
                   key={`${format(date, 'yyyy-MM-dd')}-${slotInfo.timeStart}`}
                   className={cn(
-                    "overflow-hidden h-fit bg-card/60 backdrop-blur-md border-border/40 shadow-sm",
+                    "overflow-hidden flex flex-col h-full bg-card/60 backdrop-blur-md border-border/40 shadow-sm",
                     isCurrentDay && "ring-2 ring-primary"
                   )}
                 >
