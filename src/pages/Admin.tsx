@@ -1533,7 +1533,7 @@ export default function Admin() {
                       </DialogTrigger>
                     </TooltipTrigger>
                     <TooltipContent>Nova Igreja</TooltipContent>
-                  </Tooltip>
+                  </UITooltip>
                 </TooltipProvider>
                 <DialogContent>
                   <DialogHeader>
