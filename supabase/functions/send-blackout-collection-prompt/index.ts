@@ -259,6 +259,8 @@ _${close}_`;
     const { queued } = await enqueueTriplets(supabaseUrl, serviceRoleKey, recipients, {
       origin: "blackout_collection_prompt",
       includeInstagram: false,
+      // Only day of the month when the commands hint goes out with the main message.
+      includeCommands: true,
     });
 
     return new Response(
