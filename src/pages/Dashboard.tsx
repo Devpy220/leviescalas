@@ -71,6 +71,14 @@ export default function Dashboard() {
   const [canCreateDepartment, setCanCreateDepartment] = useState(true);
   const [userName, setUserName] = useState<string>('');
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
+  const [schedules, setSchedules] = useState<PersonalScheduleData[]>([]);
+  const [schedulesLoading, setSchedulesLoading] = useState(true);
+  const [scheduleDeptIds, setScheduleDeptIds] = useState<string[]>([]);
+  const [swapDialogOpen, setSwapDialogOpen] = useState(false);
+  const [responseDialogOpen, setResponseDialogOpen] = useState(false);
+  const [selectedSchedule, setSelectedSchedule] = useState<PersonalScheduleData | null>(null);
+  const [selectedSwap, setSelectedSwap] = useState<ScheduleSwap | null>(null);
+  const [cancellingSwapId, setCancellingSwapId] = useState<string | null>(null);
   const { user, session, loading: authLoading, authEvent, signOut } = useAuth();
   const { isAdmin } = useAdmin();
   const { isInstallable, install, isIOS, shouldShowInstallPrompt } = usePWAInstall();
@@ -79,9 +87,20 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { expanded: sidebarExpanded } = useSidebarExpanded();
-  
+
   // CRITICAL: Use fallback to prevent infinite loading when user state is delayed
   const currentUser = user ?? session?.user ?? null;
+
+  const primaryDepartmentId = scheduleDeptIds[0];
+  const {
+    swaps,
+    createSwapRequest,
+    respondToSwap,
+    cancelSwap,
+    getSwapForSchedule,
+    getPendingSwapsForUser,
+  } = useScheduleSwaps(primaryDepartmentId);
+
 
   // Check if this is first login
   useEffect(() => {
