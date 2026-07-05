@@ -83,7 +83,7 @@ function MenuItem({
 }) {
   const styles: Record<ItemVariant, string> = {
     nav: active
-      ? 'bg-primary/12 text-primary font-medium'
+      ? 'bg-primary/12 text-primary'
       : 'text-foreground/80 hover:bg-accent hover:text-foreground',
     action: 'text-foreground/70 hover:bg-accent hover:text-foreground',
     danger: 'text-rose-500 dark:text-rose-400 hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-300',
@@ -91,18 +91,20 @@ function MenuItem({
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150 active:scale-[0.98] ${styles[variant]}`}
+      title={label}
+      aria-label={label}
+      className={`aspect-square w-full flex flex-col items-center justify-center gap-1 rounded-xl transition-all duration-150 active:scale-[0.95] ${styles[variant]}`}
     >
       <Icon className="w-[18px] h-[18px] shrink-0" />
-      <span className="truncate text-left flex-1">{label}</span>
+      <span className="text-[9px] leading-none truncate max-w-full px-1">{label}</span>
     </button>
   );
 }
 
 function SectionLabel({ label }: { label: string }) {
   return (
-    <div className="px-3 pt-3 pb-1">
-      <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+    <div className="px-3 pt-2 pb-1">
+      <span className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/60">
         {label}
       </span>
     </div>
