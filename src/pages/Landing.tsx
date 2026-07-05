@@ -604,9 +604,10 @@ export default function Landing() {
         </div>
       </nav>
 
-      <main className="flex-1 min-h-0 pt-16 flex flex-col overflow-hidden">
-      {/* ── HERO + FEATURES (single viewport, no scroll) ── */}
-      <section className="flex-1 min-h-0 relative z-[1] py-4 sm:py-6 overflow-hidden">
+      <main className="flex-1 min-h-0 pt-16 flex flex-col lg:overflow-hidden">
+      {/* ── HERO + FEATURES (single viewport on desktop, scroll on mobile) ── */}
+      <section className="flex-1 min-h-0 relative z-[1] py-4 sm:py-6 lg:overflow-hidden">
+
         {/* Dot grid + gradient blobs */}
         <div className="absolute inset-0 dot-grid pointer-events-none" />
         <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: 'hsl(var(--primary) / 0.12)', filter: 'blur(120px)' }} />
