@@ -568,13 +568,13 @@ function MemberRow({
 
   return (
     <div
-      className="flex items-center gap-2 p-2 rounded-md border-l-4"
+      className="flex items-center gap-1.5 p-1.5 rounded-md border-l-4"
       style={{ borderLeftColor: schedule.sector?.color || color.bg }}
     >
       {/* Compact Avatar */}
-      <Avatar className="h-8 w-8">
+      <Avatar className="h-6 w-6">
         <AvatarFallback 
-          className="text-xs text-white font-medium"
+          className="text-[10px] text-white font-medium"
           style={getMemberBgStyle(schedule.user_id)}
         >
           {schedule.profile?.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'M'}
@@ -583,8 +583,9 @@ function MemberRow({
       
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5">
-          <p className="font-medium text-sm truncate">{schedule.profile?.name || 'Membro'}</p>
+        <div className="flex items-center gap-1">
+          <p className="font-medium text-xs truncate">{schedule.profile?.name || 'Membro'}</p>
+
           
           {/* Assignment role icon */}
           {schedule.assignment_role && ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES] && (
