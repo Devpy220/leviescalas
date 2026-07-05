@@ -410,17 +410,19 @@ export default function Dashboard() {
               {t('dashboard.myDepartments')}
             </h2>
             {loading ? (
-              <div className="space-y-2">
+              <div className="flex flex-wrap gap-2 lg:justify-end justify-center">
                 {[1, 2].map((i) => (
-                  <Skeleton key={i} className="h-14 rounded-xl" />
+                  <Skeleton key={i} className="h-10 w-10 rounded-full" />
                 ))}
               </div>
             ) : departments.length > 0 ? (
-              <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
-                {departments.map((dept) => (
-                  <CompactDepartmentCard key={dept.id} department={dept} />
-                ))}
-              </div>
+              <TooltipProvider>
+                <div className="flex flex-wrap gap-2 lg:justify-end justify-center">
+                  {departments.map((dept) => (
+                    <CompactDepartmentCard key={dept.id} department={dept} />
+                  ))}
+                </div>
+              </TooltipProvider>
             ) : (
               <p className="text-xs text-muted-foreground lg:text-right">
                 {canCreateDepartment
@@ -429,6 +431,7 @@ export default function Dashboard() {
               </p>
             )}
           </div>
+
         </div>
 
         <div className="mt-auto pt-8 pb-4 flex justify-center">
