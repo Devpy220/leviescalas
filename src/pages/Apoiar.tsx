@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Heart, CheckCircle2, ExternalLink, Loader2 } from "lucide-react";
+import { Heart, CheckCircle2, ExternalLink, Loader2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { LeviLogo } from "@/components/LeviLogo";
 import { SEO } from "@/components/SEO";
@@ -126,6 +126,15 @@ const Apoiar = () => {
               </p>
             </CardContent>
           </Card>
+
+          <div className="flex justify-center">
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/dashboard">
+                <ArrowLeft className="w-4 h-4" />
+                Voltar para o dashboard
+              </Link>
+            </Button>
+          </div>
 
           <p className="text-xs text-center text-muted-foreground">
             🙏 Obrigado pelo seu carinho e apoio!
