@@ -680,7 +680,7 @@ export default function Landing() {
 
 
 
-      <footer className="relative z-[1] py-6 border-t border-border">
+      <footer className="relative z-[1] py-3 border-t border-border shrink-0">
         <div className="container mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span className="font-semibold text-foreground">LEVI</span>
