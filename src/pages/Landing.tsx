@@ -14,6 +14,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useUserCount } from '@/hooks/useUserCount';
+import { useChurchCount } from '@/hooks/useChurchCount';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -419,6 +420,7 @@ export default function Landing() {
   const hasRedirectedRef = useRef(false);
 
   const { count, loading: countLoading } = useUserCount();
+  const { count: churchCount, loading: churchCountLoading } = useChurchCount();
   const { isInstallable, shouldShowInstallPrompt } = usePWAInstall();
   const { signIn, user, session, ensureSession } = useAuth();
   const { toast } = useToast();
@@ -652,19 +654,33 @@ export default function Landing() {
                 </Button>
               </div>
 
-              <div className="animate-slide-up-5 flex items-center gap-3 justify-center lg:justify-start">
-                <div className="flex -space-x-2">
-                  {['from-primary to-primary/70', 'from-secondary to-secondary/70', 'from-accent to-accent/70'].map((gradient, i) => (
-                    <div key={i} className={`w-8 h-8 rounded-full bg-gradient-to-br ${gradient} border-2 border-background flex items-center justify-center`}>
-                      <Users className="w-3.5 h-3.5 text-white" />
-                    </div>
-                  ))}
+              <div className="animate-slide-up-5 flex items-center gap-4 justify-center lg:justify-start flex-wrap">
+                <div className="flex items-center gap-3">
+                  <div className="flex -space-x-2">
+                    {['from-primary to-primary/70', 'from-secondary to-secondary/70', 'from-accent to-accent/70'].map((gradient, i) => (
+                      <div key={i} className={`w-8 h-8 rounded-full bg-gradient-to-br ${gradient} border-2 border-background flex items-center justify-center`}>
+                        <Users className="w-3.5 h-3.5 text-white" />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-left">
+                    <span className="text-xl font-bold text-foreground">
+                      {countLoading ? '...' : <AnimatedCounter target={count || 0} suffix="+" />}
+                    </span>
+                    <p className="text-xs text-muted-foreground">{t('landing.volunteersRegistered')}</p>
+                  </div>
                 </div>
-                <div className="text-left">
-                  <span className="text-xl font-bold text-foreground">
-                    {countLoading ? '...' : <AnimatedCounter target={count || 0} suffix="+" />}
-                  </span>
-                  <p className="text-xs text-muted-foreground">{t('landing.volunteersRegistered')}</p>
+                <div className="w-px h-10 bg-border/60 hidden sm:block" />
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary border-2 border-background flex items-center justify-center">
+                    <Church className="w-3.5 h-3.5 text-white" />
+                  </div>
+                  <div className="text-left">
+                    <span className="text-xl font-bold text-foreground">
+                      {churchCountLoading ? '...' : <AnimatedCounter target={churchCount || 0} suffix="+" />}
+                    </span>
+                    <p className="text-xs text-muted-foreground">{t('landing.churchesRegistered', 'Igrejas cadastradas')}</p>
+                  </div>
                 </div>
               </div>
 
