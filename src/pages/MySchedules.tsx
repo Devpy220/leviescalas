@@ -523,19 +523,39 @@ export default function MySchedules() {
                 >
                   {/* Slot Header */}
                   <CardHeader className={cn("p-2 pb-1.5 backdrop-blur-sm", slotInfo.bgColor)}>
-                    <div className="space-y-0">
-                      <p className="font-bold text-[11px] uppercase tracking-wide">
-                        {slotInfo.label}
-                      </p>
-                      <p className="text-xs font-semibold text-foreground">
-                        {format(date, "d 'de' MMMM", { locale: ptBR })}
-                      </p>
-                      <p className="text-[10px] font-medium text-foreground/70 flex items-center gap-1">
-                        <Clock className="w-2.5 h-2.5" />
-                        {slotInfo.timeStart} - {slotInfo.timeEnd}
-                      </p>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="space-y-0 min-w-0">
+                        <p className="font-bold text-[11px] uppercase tracking-wide">
+                          {slotInfo.label}
+                        </p>
+                        <p className="text-xs font-semibold text-foreground">
+                          {format(date, "d 'de' MMMM", { locale: ptBR })}
+                        </p>
+                        <p className="text-[10px] font-medium text-foreground/70 flex items-center gap-1">
+                          <Clock className="w-2.5 h-2.5" />
+                          {slotInfo.timeStart} - {slotInfo.timeEnd}
+                        </p>
+                      </div>
+                      {userScheduleInSlot && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className={cn(
+                            "h-7 w-7 rounded-full shrink-0",
+                            swap
+                              ? "text-amber-600 hover:text-amber-700 hover:bg-amber-100 dark:text-amber-400 dark:hover:bg-amber-900/40"
+                              : "hover:bg-primary/10"
+                          )}
+                          onClick={() => swap ? handleRespondToSwap(swap) : handleOpenSwapDialog(userScheduleInSlot)}
+                          aria-label={swap ? "Troca pendente" : "Pedir troca"}
+                          title={swap ? "Troca pendente" : "Pedir troca"}
+                        >
+                          <ArrowLeftRight className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
                     </div>
                   </CardHeader>
+
                   
                   {/* Members List */}
                   <CardContent className="p-2 pt-1.5">
