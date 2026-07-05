@@ -1122,104 +1122,15 @@ export default function Admin() {
         </Dialog>
 
         {/* WhatsApp logs shortcut */}
-        <Card className="mb-6 border-violet-500/30 bg-gradient-to-br from-violet-500/5 to-transparent">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              <div>
-                <CardTitle className="text-base">Logs de envio do WhatsApp</CardTitle>
-                <CardDescription className="text-xs">Veja status, erros e horário de cada mensagem enviada via UAZAPI</CardDescription>
-              </div>
-              <Button asChild size="sm" className="bg-violet-600 hover:bg-violet-700">
-                <a href="/admin/whatsapp-logs">Abrir logs</a>
-              </Button>
-            </div>
-          </CardHeader>
-        </Card>
-
-        {/* Blackout collection blast (admin trigger) */}
-        <Card className="mb-6 border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-transparent">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              <div>
-                <CardTitle className="text-base">Coletar disponibilidade — enviar a TODOS</CardTitle>
-                <CardDescription className="text-xs">
-                  Dispara agora o aviso de bloqueios/datas do próximo mês para todos os voluntários com WhatsApp.
-                  Inclui guia de comandos do LEVI e CTA de apoio (R$ 25).
-                </CardDescription>
-              </div>
-              <Button
-                size="sm"
-                className="bg-amber-600 hover:bg-amber-700"
-                onClick={async () => {
-                  if (!confirm('Enviar agora para TODOS os voluntários?')) return;
-                  try {
-                    const { data: { session } } = await supabase.auth.getSession();
-                    const res = await fetch(
-                      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-blackout-collection-prompt?force=1&all=1`,
-                      {
-                        method: 'POST',
-                        headers: {
-                          Authorization: `Bearer ${session?.access_token ?? ''}`,
-                          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-                          'Content-Type': 'application/json',
-                        },
-                      }
-                    );
-                    const body = await res.json().catch(() => ({}));
-                    if (!res.ok) throw new Error(body?.error || `HTTP ${res.status}`);
-                    toast({ title: 'Disparado', description: `Fila: ${body?.queued ?? 0}` });
-                  } catch (e: any) {
-                    toast({ title: 'Erro', description: e?.message || 'Falha', variant: 'destructive' });
-                  }
-                }}
-              >
-                Disparar agora
-              </Button>
-            </div>
-          </CardHeader>
-        </Card>
-
-
-
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Igrejas Cadastradas</CardDescription>
-              <CardTitle className="text-3xl flex items-center gap-2">
-                <Church className="w-6 h-6 text-primary" />
-                {churches.length}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Voluntários Cadastrados</CardDescription>
-              <CardTitle className="text-3xl flex items-center gap-2">
-                <Users className="w-6 h-6 text-primary" />
-                {allProfiles.length}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Total de Departamentos</CardDescription>
-              <CardTitle className="text-3xl flex items-center gap-2">
-                <Building2 className="w-6 h-6 text-primary" />
-                {departments.length}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Membros em Departamentos</CardDescription>
-              <CardTitle className="text-3xl flex items-center gap-2">
-                <Users className="w-6 h-6 text-primary" />
-                {departments.reduce((acc, d) => acc + d.member_count, 0)}
-              </CardTitle>
-            </CardHeader>
-          </Card>
+        <div className="mb-6 flex justify-end">
+          <Button asChild size="sm" variant="outline" className="border-violet-500/40 text-violet-600 hover:bg-violet-500/10">
+            <a href="/admin/whatsapp-logs">
+              <Send className="w-4 h-4 mr-2" />
+              Logs do WhatsApp
+            </a>
+          </Button>
         </div>
+
 
         {/* Analytics Chart */}
         <Dialog open={openModal==='analytics'} onOpenChange={(o)=>!o&&closeModal()}><DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
