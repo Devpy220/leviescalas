@@ -442,6 +442,36 @@ export default function Dashboard() {
   );
 }
 
+function CompactDepartmentCard({ department }: { department: DepartmentWithRole }) {
+  const departmentSlug = slugify(department.name);
+  return (
+    <Link to={`/departamento/${departmentSlug}`} className="block">
+      <div className="glass rounded-xl p-3 border border-primary/20 hover:border-primary/50 transition-all flex items-center gap-3 group">
+        <div className={`w-10 h-10 rounded-lg overflow-hidden shrink-0 ${department.avatar_url ? '' : 'gradient-vibrant'} flex items-center justify-center`}>
+          {department.avatar_url ? (
+            <img src={department.avatar_url} alt={department.name} className="w-full h-full object-cover" />
+          ) : (
+            <Calendar className="w-5 h-5 text-white" />
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5">
+            <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+              {department.name}
+            </p>
+            {department.role === 'leader' && <Crown className="w-3 h-3 text-amber-500 shrink-0" />}
+          </div>
+          {department.church_name && (
+            <p className="text-[11px] text-muted-foreground truncate">{department.church_name}</p>
+          )}
+        </div>
+        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+      </div>
+    </Link>
+  );
+}
+
+
 function DepartmentCard({ department }: { department: DepartmentWithRole }) {
   const { t } = useTranslation();
   const statusConfig = {
