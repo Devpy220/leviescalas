@@ -575,7 +575,7 @@ export default function Landing() {
   };
 
   return (
-    <div className="relative min-h-screen text-foreground overflow-x-hidden">
+    <div className="relative h-screen flex flex-col text-foreground overflow-hidden">
       <VideoBackground />
       <PWAInstallPrompt open={showInstallPrompt} onOpenChange={setShowInstallPrompt} />
 
@@ -604,94 +604,84 @@ export default function Landing() {
         </div>
       </nav>
 
-      <main>
-      {/* ── HERO ── */}
-      <section className="flex items-center relative z-[1] pt-24 pb-4 sm:pt-28 sm:pb-6">
+      <main className="flex-1 min-h-0 pt-16 flex flex-col overflow-hidden">
+      {/* ── HERO + FEATURES (single viewport, no scroll) ── */}
+      <section className="flex-1 min-h-0 relative z-[1] py-4 sm:py-6 overflow-hidden">
         {/* Dot grid + gradient blobs */}
-        <div className="absolute inset-0 dot-grid" />
+        <div className="absolute inset-0 dot-grid pointer-events-none" />
         <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full pointer-events-none" style={{ background: 'hsl(var(--primary) / 0.12)', filter: 'blur(120px)' }} />
         <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full pointer-events-none" style={{ background: 'hsl(var(--secondary) / 0.1)', filter: 'blur(120px)' }} />
 
-        <div className="container mx-auto px-4 sm:px-6 relative z-10">
-          <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 items-center">
-              {/* Coluna esquerda: tagline + título + descrição */}
-              <div className="text-center md:text-left space-y-4 sm:space-y-5">
-                <div className="animate-slide-up-1 flex md:justify-start justify-center">
-                  <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/8 text-primary text-sm font-medium border border-primary/15">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>{t('landing.tagline')}</span>
-                  </div>
+        <div className="container mx-auto px-4 sm:px-6 relative z-10 h-full">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 h-full">
+            {/* Coluna esquerda: hero */}
+            <div className="text-center lg:text-left flex flex-col justify-center space-y-3 sm:space-y-4 min-h-0">
+              <div className="animate-slide-up-1 flex lg:justify-start justify-center">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/8 text-primary text-sm font-medium border border-primary/15">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>{t('landing.tagline')}</span>
                 </div>
-
-                <h1 className="animate-slide-up-2 font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground leading-tight">
-                  {t('landing.heroTitle1')}<br />{t('landing.heroTitle2')}<br />
-                  <Typewriter words={t('landing.typewriterWords', { returnObjects: true }) as string[]} />
-                </h1>
-
-                <p className="animate-slide-up-3 text-sm sm:text-base text-muted-foreground max-w-lg mx-auto md:mx-0 leading-relaxed">
-                  {t('landing.heroDescription')}
-                </p>
               </div>
 
-              {/* Coluna direita: CTAs + contador */}
-              <div className="flex flex-col items-center md:items-start gap-5">
-                <div className="animate-slide-up-4 flex flex-col sm:flex-row flex-wrap gap-2.5 justify-center md:justify-start">
-                  <Button
-                    size="default"
-                    className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-8 text-sm font-semibold btn-glow transition-all hover:scale-[1.02]"
-                    onClick={() => openAuth('login')}
-                  >
-                    {t('landing.enter')} <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                  <Button
-                    size="default"
-                    variant="outline"
-                    className="border-primary/30 text-primary hover:bg-primary/10 rounded-full px-6 text-sm"
-                    onClick={() => navigate('/church-setup')}
-                  >
-                    <Church className="w-4 h-4 mr-2" />
-                    {t('landing.registerChurch')}
-                  </Button>
-                </div>
+              <h1 className="animate-slide-up-2 font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground leading-tight">
+                {t('landing.heroTitle1')}<br />{t('landing.heroTitle2')}<br />
+                <Typewriter words={t('landing.typewriterWords', { returnObjects: true }) as string[]} />
+              </h1>
 
-                {/* Social proof */}
-                <div className="animate-slide-up-5 flex items-center gap-3">
-                  <div className="flex -space-x-2">
-                    {['from-primary to-primary/70', 'from-secondary to-secondary/70', 'from-accent to-accent/70'].map((gradient, i) => (
-                      <div key={i} className={`w-8 h-8 rounded-full bg-gradient-to-br ${gradient} border-2 border-background flex items-center justify-center`}>
-                        <Users className="w-3.5 h-3.5 text-white" />
-                      </div>
-                    ))}
-                  </div>
-                  <div className="text-left">
-                    <span className="text-xl font-bold text-foreground">
-                      {countLoading ? '...' : <AnimatedCounter target={count || 0} suffix="+" />}
-                    </span>
-                    <p className="text-xs text-muted-foreground">{t('landing.volunteersRegistered')}</p>
-                  </div>
+              <p className="animate-slide-up-3 text-sm sm:text-base text-muted-foreground max-w-lg mx-auto lg:mx-0 leading-relaxed">
+                {t('landing.heroDescription')}
+              </p>
+
+              <div className="animate-slide-up-4 flex flex-col sm:flex-row flex-wrap gap-2.5 justify-center lg:justify-start pt-1">
+                <Button
+                  size="default"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-8 text-sm font-semibold btn-glow transition-all hover:scale-[1.02]"
+                  onClick={() => openAuth('login')}
+                >
+                  {t('landing.enter')} <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+                <Button
+                  size="default"
+                  variant="outline"
+                  className="border-primary/30 text-primary hover:bg-primary/10 rounded-full px-6 text-sm"
+                  onClick={() => navigate('/church-setup')}
+                >
+                  <Church className="w-4 h-4 mr-2" />
+                  {t('landing.registerChurch')}
+                </Button>
+              </div>
+
+              <div className="animate-slide-up-5 flex items-center gap-3 justify-center lg:justify-start">
+                <div className="flex -space-x-2">
+                  {['from-primary to-primary/70', 'from-secondary to-secondary/70', 'from-accent to-accent/70'].map((gradient, i) => (
+                    <div key={i} className={`w-8 h-8 rounded-full bg-gradient-to-br ${gradient} border-2 border-background flex items-center justify-center`}>
+                      <Users className="w-3.5 h-3.5 text-white" />
+                    </div>
+                  ))}
+                </div>
+                <div className="text-left">
+                  <span className="text-xl font-bold text-foreground">
+                    {countLoading ? '...' : <AnimatedCounter target={count || 0} suffix="+" />}
+                  </span>
+                  <p className="text-xs text-muted-foreground">{t('landing.volunteersRegistered')}</p>
+                </div>
               </div>
             </div>
 
-            <div className="mt-8 sm:mt-10 max-w-3xl mx-auto animate-slide-up-5">
-              <BibleVerseTypewriter />
+            {/* Coluna direita: funcionalidades */}
+            <div id="funcionalidades" className="min-h-0 h-full overflow-y-auto flex flex-col justify-center">
+              <FeatureGrid />
             </div>
           </div>
-          </div>
         </div>
-      </section>
 
-      {/* ── FEATURES ── */}
-      <section id="funcionalidades" className="relative z-[1] overflow-hidden pt-0 pb-8 sm:pb-12 -mt-4 sm:-mt-6" style={{ scrollMarginTop: 80 }}>
-        <div className="container mx-auto px-4 sm:px-6 max-w-6xl relative w-full">
-          <FeatureGrid />
-        </div>
       </section>
       </main>
 
 
 
-      <footer className="relative z-[1] py-6 border-t border-border">
+
+      <footer className="relative z-[1] py-3 border-t border-border shrink-0">
         <div className="container mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span className="font-semibold text-foreground">LEVI</span>
