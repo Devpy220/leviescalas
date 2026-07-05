@@ -877,7 +877,7 @@ export default function Admin() {
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70 mb-2">Pessoas & Igrejas</p>
                 <div className="flex flex-wrap gap-2">
                   <UITooltip><TooltipTrigger asChild>
-                    <Button size="icon" variant="outline" className="h-9 w-9" onClick={() => setOpenModal('volunteers')} aria-label="Todos voluntários">
+                    <Button size="icon" variant="outline" className="h-9 w-9" onClick={() => navigate('/admin/voluntarios')} aria-label="Todos voluntários">
                       <Users className="w-4 h-4 text-emerald-500" />
                     </Button>
                   </TooltipTrigger><TooltipContent>Todos voluntários</TooltipContent></UITooltip>
@@ -1920,116 +1920,7 @@ export default function Admin() {
         </Dialog>
 
         {/* All Volunteers List */}
-        <Dialog open={openModal==='volunteers'} onOpenChange={(o)=>!o&&closeModal()}><DialogContent className="max-w-3xl w-[96vw] max-h-[88vh] overflow-y-auto p-0 [&_table]:text-xs [&_th]:py-1.5 [&_th]:px-2 [&_td]:py-1.5 [&_td]:px-2">
-        <Collapsible defaultOpen>
-          <Card className="mb-6">
-            <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="w-5 h-5" />
-                  Todos os Voluntários
-                  <Badge variant="secondary" className="ml-2">{allProfiles.length}</Badge>
-                  <ChevronRight className="w-4 h-4 ml-auto transition-transform duration-200 group-data-[state=open]:rotate-90" />
-                </CardTitle>
-                <CardDescription>
-                  Clique para expandir a lista de voluntários
-                </CardDescription>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent>
-                {loadingProfiles ? (
-                  <div className="flex justify-center py-4">
-                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                  </div>
-                ) : allProfiles.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">
-                    Nenhum voluntário cadastrado.
-                  </p>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nome</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>WhatsApp</TableHead>
-                        <TableHead>Departamento</TableHead>
-                        <TableHead>Igreja</TableHead>
-                        <TableHead>Cadastrado em</TableHead>
-                        <TableHead className="w-[80px]"></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {allProfiles.map((profile) => (
-                        <TableRow key={profile.id}>
-                          <TableCell className="font-medium">{profile.name || 'Sem nome'}</TableCell>
-                          <TableCell>{profile.email}</TableCell>
-                          <TableCell>{profile.whatsapp || '-'}</TableCell>
-                          <TableCell>
-                            {profile.invited_by_department_name ? (
-                              <Badge variant="outline" className="text-xs">
-                                {profile.invited_by_department_name}
-                              </Badge>
-                            ) : (
-                              <span className="text-muted-foreground">—</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {profile.church_name ? (
-                              <Badge variant="secondary" className="text-xs">
-                                {profile.church_name}
-                              </Badge>
-                            ) : (
-                              <span className="text-muted-foreground">—</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {format(new Date(profile.created_at), "dd/MM/yyyy", { locale: ptBR })}
-                          </TableCell>
-                          <TableCell>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  disabled={deletingVolunteer === profile.id}
-                                >
-                                  {deletingVolunteer === profile.id ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                  ) : (
-                                    <Trash2 className="w-4 h-4 text-destructive" />
-                                  )}
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Excluir voluntário?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Esta ação excluirá permanentemente o voluntário "{profile.name || profile.email}" e todos os seus dados (participações em departamentos, escalas, disponibilidade, etc). Esta ação não pode ser desfeita.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => handleDeleteVolunteer(profile.id)}
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                  >
-                                    Excluir
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-        </DialogContent></Dialog>
+        {/* Volunteers moved to /admin/voluntarios */}
 
         {/* Departments List */}
         <Dialog open={openModal==='departments'} onOpenChange={(o)=>!o&&closeModal()}><DialogContent className="max-w-3xl w-[96vw] max-h-[88vh] overflow-y-auto p-0 [&_table]:text-xs [&_th]:py-1.5 [&_th]:px-2 [&_td]:py-1.5 [&_td]:px-2">

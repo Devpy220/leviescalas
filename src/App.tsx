@@ -25,6 +25,7 @@ import MySchedules from "./pages/MySchedules";
 import Security from "./pages/Security";
 import Admin from "./pages/Admin";
 import WhatsAppLogs from "./pages/WhatsAppLogs";
+import AdminVolunteers from "./pages/AdminVolunteers";
 import Churches from "./pages/Churches";
 import ChurchDetail from "./pages/ChurchDetail";
 import ChurchSetup from "./pages/ChurchSetup";
@@ -68,6 +69,7 @@ const App = () => (
                   <Route path="/admin-login" element={<Navigate to="/auth?forceLogin=true" replace />} />
                   <Route path="/admin" element={<Admin />} />
                   <Route path="/admin/whatsapp-logs" element={<WhatsAppLogs />} />
+                  <Route path="/admin/voluntarios" element={<AdminVolunteers />} />
                   
                   {/* Redirects from old login routes */}
                   <Route path="/login" element={<Navigate to="/auth?forceLogin=true" replace />} />

@@ -262,18 +262,31 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
+    // BR phone canonical: drop optional country code 55 and optional mobile "9"
+    // after the 2-digit DDD. Returns up to 10 digits (DDD + 8-digit subscriber).
+    const brCanonical = (raw: string): string => {
+      let d = (raw || "").replace(/\D/g, "");
+      if (d.startsWith("55") && d.length >= 12) d = d.slice(2);
+      if (d.length === 11 && d[2] === "9") d = d.slice(0, 2) + d.slice(3);
+      return d.slice(-10);
+    };
+    const incomingCanon = brCanonical(phoneDigits);
+
     const { data: candidates } = await supabase
       .from("profiles")
       .select("id, name, whatsapp")
       .neq("whatsapp", "");
-    const profile = (candidates ?? []).find(
-      (p: any) => normalizePhone(p.whatsapp).slice(-10) === tail,
-    );
+    const profile = (candidates ?? []).find((p: any) => {
+      const pd = normalizePhone(p.whatsapp);
+      if (pd.slice(-10) === tail) return true;
+      // BR fallback: match ignoring the optional 9
+      return brCanonical(pd) === incomingCanon && incomingCanon.length >= 10;
+    });
 
-    console.log(`[lookup] phoneDigits=${phoneDigits} tail=${tail} candidates=${candidates?.length ?? 0} profileFound=${!!profile}`);
+    console.log(`[lookup] phoneDigits=${phoneDigits} tail=${tail} brCanon=${incomingCanon} candidates=${candidates?.length ?? 0} profileFound=${!!profile}`);
 
     if (!profile) {
-      console.log(`[lookup] -> no profile match for tail=${tail}`);
+      console.log(`[lookup] -> no profile match for tail=${tail} brCanon=${incomingCanon}`);
       return new Response(JSON.stringify({ ignored: true, reason: "phone not found" }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
