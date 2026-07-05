@@ -420,6 +420,7 @@ export default function Landing() {
   const hasRedirectedRef = useRef(false);
 
   const { count, loading: countLoading } = useUserCount();
+  const { count: churchCount, loading: churchCountLoading } = useChurchCount();
   const { isInstallable, shouldShowInstallPrompt } = usePWAInstall();
   const { signIn, user, session, ensureSession } = useAuth();
   const { toast } = useToast();
