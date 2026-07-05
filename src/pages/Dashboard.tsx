@@ -424,7 +424,10 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <BibleVerseTypewriter className="mb-8" />
+        <div className="mt-auto pt-8 pb-4 flex justify-center">
+          <BibleVerseTypewriter />
+        </div>
+
 
 
         </main>
