@@ -575,7 +575,7 @@ export default function Landing() {
   };
 
   return (
-    <div className="relative h-screen flex flex-col text-foreground overflow-hidden">
+    <div className="relative min-h-screen lg:h-screen flex flex-col text-foreground lg:overflow-hidden">
       <VideoBackground />
       <PWAInstallPrompt open={showInstallPrompt} onOpenChange={setShowInstallPrompt} />
 
