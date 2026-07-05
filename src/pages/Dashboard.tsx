@@ -376,14 +376,21 @@ export default function Dashboard() {
           {/* Left: Create Department button (leaders only) */}
           <div className="flex lg:justify-start justify-center order-2 lg:order-1">
             {canCreateDepartment && (
-              <Link to="/departments/new">
-                <Button className="gradient-fresh text-white shadow-glow-sm hover:shadow-glow transition-all">
-                  <Plus className="w-4 h-4 mr-2" />
-                  {t('dashboard.createDepartment')}
-                </Button>
-              </Link>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link to="/departments/new" aria-label={t('dashboard.createDepartment')}>
+                      <Button size="icon" className="h-9 w-9 rounded-full gradient-fresh text-white shadow-glow-sm hover:shadow-glow transition-all">
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent>{t('dashboard.createDepartment')}</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
           </div>
+
 
           {/* Center: Avatar + Name */}
           <div className="flex flex-col items-center text-center order-1 lg:order-2">
@@ -403,17 +410,19 @@ export default function Dashboard() {
               {t('dashboard.myDepartments')}
             </h2>
             {loading ? (
-              <div className="space-y-2">
+              <div className="flex flex-wrap gap-2 lg:justify-end justify-center">
                 {[1, 2].map((i) => (
-                  <Skeleton key={i} className="h-14 rounded-xl" />
+                  <Skeleton key={i} className="h-10 w-10 rounded-full" />
                 ))}
               </div>
             ) : departments.length > 0 ? (
-              <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
-                {departments.map((dept) => (
-                  <CompactDepartmentCard key={dept.id} department={dept} />
-                ))}
-              </div>
+              <TooltipProvider>
+                <div className="flex flex-wrap gap-2 lg:justify-end justify-center">
+                  {departments.map((dept) => (
+                    <CompactDepartmentCard key={dept.id} department={dept} />
+                  ))}
+                </div>
+              </TooltipProvider>
             ) : (
               <p className="text-xs text-muted-foreground lg:text-right">
                 {canCreateDepartment
@@ -422,6 +431,7 @@ export default function Dashboard() {
               </p>
             )}
           </div>
+
         </div>
 
         <div className="mt-auto pt-8 pb-4 flex justify-center">
@@ -448,32 +458,35 @@ export default function Dashboard() {
 
 function CompactDepartmentCard({ department }: { department: DepartmentWithRole }) {
   const departmentSlug = slugify(department.name);
+  const initials = department.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
   return (
-    <Link to={`/departamento/${departmentSlug}`} className="block">
-      <div className="glass rounded-xl p-3 border border-primary/20 hover:border-primary/50 transition-all flex items-center gap-3 group">
-        <div className={`w-10 h-10 rounded-lg overflow-hidden shrink-0 ${department.avatar_url ? '' : 'gradient-vibrant'} flex items-center justify-center`}>
-          {department.avatar_url ? (
-            <img src={department.avatar_url} alt={department.name} className="w-full h-full object-cover" />
-          ) : (
-            <Calendar className="w-5 h-5 text-white" />
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Link to={`/departamento/${departmentSlug}`} aria-label={department.name} className="relative block group">
+          <Avatar className="w-10 h-10 border-2 border-primary/20 group-hover:border-primary/60 transition-all shadow-sm">
+            {department.avatar_url && <AvatarImage src={department.avatar_url} alt={department.name} />}
+            <AvatarFallback className="gradient-vibrant text-white text-xs font-bold">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          {department.role === 'leader' && (
+            <Crown className="w-3 h-3 text-amber-500 absolute -top-1 -right-1 drop-shadow" />
           )}
+        </Link>
+      </TooltipTrigger>
+      <TooltipContent side="bottom" className="max-w-[220px]">
+        <div className="flex items-center gap-1.5">
+          <p className="font-semibold">{department.name}</p>
+          {department.role === 'leader' && <Crown className="w-3 h-3 text-amber-500" />}
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
-            <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">
-              {department.name}
-            </p>
-            {department.role === 'leader' && <Crown className="w-3 h-3 text-amber-500 shrink-0" />}
-          </div>
-          {department.church_name && (
-            <p className="text-[11px] text-muted-foreground truncate">{department.church_name}</p>
-          )}
-        </div>
-        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
-      </div>
-    </Link>
+        {department.church_name && (
+          <p className="text-[11px] text-muted-foreground">{department.church_name}</p>
+        )}
+      </TooltipContent>
+    </Tooltip>
   );
 }
+
 
 
 function DepartmentCard({ department }: { department: DepartmentWithRole }) {
