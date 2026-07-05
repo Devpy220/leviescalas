@@ -667,7 +667,12 @@ export default function Landing() {
                   <p className="text-xs text-muted-foreground">{t('landing.volunteersRegistered')}</p>
                 </div>
               </div>
+
+              <div className="animate-slide-up-5 pt-2">
+                <BibleVerseTypewriter />
+              </div>
             </div>
+
 
             {/* Coluna direita: funcionalidades */}
             <div id="funcionalidades" className="min-h-0 lg:h-full lg:overflow-y-auto flex flex-col justify-center">
