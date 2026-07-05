@@ -19,7 +19,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { DashboardSidebar } from '@/components/DashboardSidebar';
+import { FloatingActionMenu } from '@/components/FloatingActionMenu';
 import { useAdmin } from '@/hooks/useAdmin';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -399,14 +399,14 @@ export default function MySchedules() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <DashboardSidebar
+      <FloatingActionMenu
         isAdmin={isAdmin}
         shouldShowInstallPrompt={shouldShowInstallPrompt()}
         onInstallClick={install}
         onSignOut={handleSignOut}
       />
       
-      <div className={`${sidebarExpanded ? 'ml-56' : 'ml-16'} flex-1 flex flex-col transition-all duration-300`}>
+      <div className="flex-1 flex flex-col">
         {/* View mode toggle in header */}
         {departmentIds.length > 0 && (
           <div className="container mx-auto px-4 pt-6 flex gap-2">
