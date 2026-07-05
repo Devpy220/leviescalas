@@ -86,22 +86,21 @@ export function PersonalScheduleCard({
           ) : (
             <TooltipProvider>
               <Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-7 w-7 rounded-full hover:bg-primary/10"
-                      onClick={() => onRequestSwap(schedule)}
-                      aria-label="Pedir troca"
-                    >
-                      <ArrowLeftRight className="w-3.5 h-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Pedir troca</TooltipContent>
-                </Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 rounded-full hover:bg-primary/10"
+                    onClick={() => onRequestSwap(schedule)}
+                    aria-label="Pedir troca"
+                  >
+                    <ArrowLeftRight className="w-3.5 h-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Pedir troca</TooltipContent>
               </Tooltip>
             </TooltipProvider>
+
           )}
         </div>
         <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
