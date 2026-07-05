@@ -613,9 +613,9 @@ export default function Landing() {
         <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full pointer-events-none" style={{ background: 'hsl(var(--secondary) / 0.1)', filter: 'blur(120px)' }} />
 
         <div className="container mx-auto px-4 sm:px-6 relative z-10 h-full">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 items-center h-full">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 h-full">
             {/* Coluna esquerda: hero */}
-            <div className="text-center lg:text-left space-y-3 sm:space-y-4">
+            <div className="text-center lg:text-left flex flex-col justify-center space-y-3 sm:space-y-4 min-h-0">
               <div className="animate-slide-up-1 flex lg:justify-start justify-center">
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/8 text-primary text-sm font-medium border border-primary/15">
                   <Sparkles className="w-3.5 h-3.5" />
@@ -669,11 +669,12 @@ export default function Landing() {
             </div>
 
             {/* Coluna direita: funcionalidades */}
-            <div id="funcionalidades" className="min-h-0 h-full overflow-y-auto lg:overflow-visible">
+            <div id="funcionalidades" className="min-h-0 h-full overflow-y-auto flex flex-col justify-center">
               <FeatureGrid />
             </div>
           </div>
         </div>
+
       </section>
       </main>
 
