@@ -653,29 +653,19 @@ export default function MySchedules() {
                       </div>
                     )}
 
-                    {/* Swap button - only if user is in this slot */}
-                    {userScheduleInSlot && (
+                    {/* Pending swap details (only when active) */}
+                    {userScheduleInSlot && swap && (
                       <div className="pt-3 mt-3 border-t border-border/50">
-                        {swap ? (
-                          <PendingSwapBadge 
-                            swap={swap}
-                            onCancel={handleCancelSwap}
-                            onRespond={handleRespondToSwap}
-                            cancelling={cancellingSwapId === swap.id}
-                          />
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="w-full"
-                            onClick={() => handleOpenSwapDialog(userScheduleInSlot)}
-                          >
-                            <ArrowLeftRight className="w-4 h-4 mr-2" />
-                            Pedir Troca
-                          </Button>
-                        )}
+                        <PendingSwapBadge
+                          swap={swap}
+                          onCancel={handleCancelSwap}
+                          onRespond={handleRespondToSwap}
+                          cancelling={cancellingSwapId === swap.id}
+                          compact
+                        />
                       </div>
                     )}
+
                   </CardContent>
                 </Card>
               );
