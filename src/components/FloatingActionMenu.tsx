@@ -93,10 +93,9 @@ function MenuItem({
       onClick={onClick}
       title={label}
       aria-label={label}
-      className={`aspect-square w-full flex flex-col items-center justify-center gap-1 rounded-xl transition-all duration-150 active:scale-[0.95] ${styles[variant]}`}
+      className={`aspect-square w-full flex items-center justify-center rounded-lg transition-all duration-150 active:scale-[0.95] ${styles[variant]}`}
     >
       <Icon className="w-[18px] h-[18px] shrink-0" />
-      <span className="text-[9px] leading-none truncate max-w-full px-1">{label}</span>
     </button>
   );
 }
@@ -379,7 +378,7 @@ export function FloatingActionMenu(props: FloatingActionMenuProps) {
       {open && (
         <div
           ref={panelRef}
-          className="fixed bottom-24 right-6 z-[60] w-60 max-h-[70vh] overflow-y-auto rounded-2xl border border-border bg-card/95 backdrop-blur-xl shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-150"
+          className="fixed bottom-24 right-6 z-[60] w-44 max-h-[70vh] overflow-y-auto rounded-2xl border border-border/60 bg-card/70 backdrop-blur-2xl shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-150"
         >
           {/* Header */}
           <button
