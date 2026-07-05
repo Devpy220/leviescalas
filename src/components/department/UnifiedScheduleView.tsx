@@ -515,8 +515,9 @@ function SlotCard({
 
       
       {/* Members List */}
-      <CardContent className="p-3 pt-2">
-        <div className="space-y-2">
+      <CardContent className="p-2 pt-1.5">
+        <div className="space-y-1.5">
+
           {schedules.map((schedule) => (
             <MemberRow
               key={schedule.id}
