@@ -2,26 +2,34 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import Footer from '@/components/Footer';
 import { Link, useNavigate } from 'react-router-dom';
-import { 
-  Plus, 
-  Calendar, 
-  Users, 
+import {
+  Plus,
+  Calendar,
+  Users,
   ChevronRight,
   Crown,
   User,
   Loader2,
   Sparkles,
   Heart,
-  Church
+  Church,
+  ArrowLeftRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Card } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { DashboardSidebar } from '@/components/DashboardSidebar';
 import { BibleVerseTypewriter } from '@/components/BibleVerseTypewriter';
 import { VideoBackground } from '@/components/VideoBackground';
+import { PersonalScheduleCard, type PersonalScheduleData } from '@/components/schedules/PersonalScheduleCard';
+import { SwapRequestDialog } from '@/components/schedules/SwapRequestDialog';
+import { SwapResponseDialog } from '@/components/schedules/SwapResponseDialog';
+import { useScheduleSwaps, type ScheduleSwap } from '@/hooks/useScheduleSwaps';
+import { format, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useAuth } from '@/hooks/useAuth';
@@ -31,6 +39,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSidebarExpanded } from '@/contexts/SidebarContext';
 import { useToast } from '@/hooks/use-toast';
 import { slugify } from '@/lib/slugify';
+
 
 interface Department {
   id: string;
@@ -62,6 +71,14 @@ export default function Dashboard() {
   const [canCreateDepartment, setCanCreateDepartment] = useState(true);
   const [userName, setUserName] = useState<string>('');
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
+  const [schedules, setSchedules] = useState<PersonalScheduleData[]>([]);
+  const [schedulesLoading, setSchedulesLoading] = useState(true);
+  const [scheduleDeptIds, setScheduleDeptIds] = useState<string[]>([]);
+  const [swapDialogOpen, setSwapDialogOpen] = useState(false);
+  const [responseDialogOpen, setResponseDialogOpen] = useState(false);
+  const [selectedSchedule, setSelectedSchedule] = useState<PersonalScheduleData | null>(null);
+  const [selectedSwap, setSelectedSwap] = useState<ScheduleSwap | null>(null);
+  const [cancellingSwapId, setCancellingSwapId] = useState<string | null>(null);
   const { user, session, loading: authLoading, authEvent, signOut } = useAuth();
   const { isAdmin } = useAdmin();
   const { isInstallable, install, isIOS, shouldShowInstallPrompt } = usePWAInstall();
@@ -70,9 +87,20 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { expanded: sidebarExpanded } = useSidebarExpanded();
-  
+
   // CRITICAL: Use fallback to prevent infinite loading when user state is delayed
   const currentUser = user ?? session?.user ?? null;
+
+  const primaryDepartmentId = scheduleDeptIds[0];
+  const {
+    swaps,
+    createSwapRequest,
+    respondToSwap,
+    cancelSwap,
+    getSwapForSchedule,
+    getPendingSwapsForUser,
+  } = useScheduleSwaps(primaryDepartmentId);
+
 
   // Check if this is first login
   useEffect(() => {
@@ -96,8 +124,10 @@ export default function Dashboard() {
           fetchDepartments(),
           checkCanCreateDepartment(),
           fetchUserName(),
+          fetchSchedules(),
         ]);
       };
+
       fetchData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -116,6 +146,112 @@ export default function Dashboard() {
       setUserAvatarUrl(data.avatar_url);
     }
   };
+
+  const fetchSchedules = async () => {
+    if (!currentUser) return;
+    setSchedulesLoading(true);
+    try {
+      const { data: memberData } = await supabase
+        .from('members')
+        .select('department_id')
+        .eq('user_id', currentUser.id);
+
+      if (!memberData || memberData.length === 0) {
+        setSchedules([]);
+        setScheduleDeptIds([]);
+        return;
+      }
+
+      const deptIds = memberData.map((m) => m.department_id);
+      setScheduleDeptIds(deptIds);
+
+      const { data: schedulesData } = await supabase
+        .from('schedules')
+        .select(`
+          id, date, time_start, time_end, department_id, sector_id, assignment_role,
+          sectors(name, color)
+        `)
+        .in('department_id', deptIds)
+        .eq('user_id', currentUser.id)
+        .gte('date', new Date().toISOString().split('T')[0])
+        .order('date', { ascending: true });
+
+      const { data: departments } = await supabase
+        .from('departments')
+        .select('id, name, church_id')
+        .in('id', deptIds);
+
+      const churchIds = [...new Set((departments || []).map((d) => d.church_id).filter(Boolean))] as string[];
+      const churchMap: Record<string, { name: string; logo_url: string | null }> = {};
+      if (churchIds.length > 0) {
+        const { data: churches } = await supabase
+          .from('churches')
+          .select('id, name, logo_url')
+          .in('id', churchIds);
+        churches?.forEach((c) => {
+          churchMap[c.id] = { name: c.name, logo_url: c.logo_url };
+        });
+      }
+      const deptMap = Object.fromEntries((departments || []).map((d) => [d.id, {
+        name: d.name,
+        church_name: d.church_id ? churchMap[d.church_id]?.name || null : null,
+        church_logo_url: d.church_id ? churchMap[d.church_id]?.logo_url || null : null,
+      }]));
+
+      const enriched: PersonalScheduleData[] = (schedulesData || []).map((s: any) => ({
+        id: s.id,
+        date: s.date,
+        time_start: s.time_start,
+        time_end: s.time_end,
+        department_id: s.department_id,
+        department_name: deptMap[s.department_id]?.name || 'Departamento',
+        sector_name: s.sectors?.name || null,
+        sector_color: s.sectors?.color || null,
+        church_name: deptMap[s.department_id]?.church_name || null,
+        church_logo_url: deptMap[s.department_id]?.church_logo_url || null,
+        assignment_role: s.assignment_role || null,
+      }));
+
+      setSchedules(enriched);
+    } catch (err) {
+      console.error('Error fetching schedules:', err);
+    } finally {
+      setSchedulesLoading(false);
+    }
+  };
+
+  const handleRequestSwap = (schedule: PersonalScheduleData) => {
+    setSelectedSchedule(schedule);
+    setSwapDialogOpen(true);
+  };
+
+  const handleSwapSubmit = async (targetScheduleId: string, targetUserId: string, reason?: string) => {
+    if (!selectedSchedule) return false;
+    return createSwapRequest(selectedSchedule.id, targetScheduleId, targetUserId, reason);
+  };
+
+  const handleRespondToSwap = (swap: ScheduleSwap) => {
+    setSelectedSwap(swap);
+    setResponseDialogOpen(true);
+  };
+
+  const handleAcceptSwap = async (swapId: string) => {
+    const success = await respondToSwap(swapId, true);
+    if (success) fetchSchedules();
+    return success;
+  };
+
+  const handleRejectSwap = async (swapId: string) => respondToSwap(swapId, false);
+
+  const handleCancelSwap = async (swapId: string) => {
+    setCancellingSwapId(swapId);
+    await cancelSwap(swapId);
+    setCancellingSwapId(null);
+    return true;
+  };
+
+  const pendingSwapsForMe = getPendingSwapsForUser();
+
 
   const checkCanCreateDepartment = async () => {
     if (!currentUser) return;
@@ -434,9 +570,83 @@ export default function Dashboard() {
 
         </div>
 
-        <div className="mt-auto pt-8 pb-4 flex justify-center">
+        {/* Próximas Escalas — embedded */}
+        <section className="mt-4">
+          <div className="flex items-center justify-between mb-3 gap-2">
+            <h2 className="font-display text-lg font-semibold text-foreground">
+              Próximas Escalas
+            </h2>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => navigate('/my-schedules?view=team')}
+              className="gap-2"
+            >
+              <Users className="w-4 h-4" />
+              <span className="hidden sm:inline">Escala da Equipe</span>
+            </Button>
+          </div>
+
+          {pendingSwapsForMe.length > 0 && (
+            <Card className="mb-4 p-3 border-primary/50 bg-primary/5">
+              <h4 className="font-semibold text-sm text-foreground mb-2 flex items-center gap-2">
+                <ArrowLeftRight className="w-4 h-4 text-primary" />
+                Solicitações de Troca ({pendingSwapsForMe.length})
+              </h4>
+              <div className="space-y-2">
+                {pendingSwapsForMe.map((swap) => (
+                  <div
+                    key={swap.id}
+                    className="flex items-center justify-between p-2 bg-background rounded-md border"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-medium text-xs truncate">{swap.requester_name} quer trocar com você</p>
+                      {swap.requester_schedule && swap.target_schedule && (
+                        <p className="text-[11px] text-muted-foreground">
+                          {format(parseISO(swap.requester_schedule.date), 'dd/MM', { locale: ptBR })} ↔{' '}
+                          {format(parseISO(swap.target_schedule.date), 'dd/MM', { locale: ptBR })}
+                        </p>
+                      )}
+                    </div>
+                    <Button size="sm" onClick={() => handleRespondToSwap(swap)}>
+                      Ver
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {schedulesLoading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-32 rounded-xl" />
+              ))}
+            </div>
+          ) : schedules.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhuma escala futura.</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
+              {schedules.map((s) => (
+                <PersonalScheduleCard
+                  key={s.id}
+                  schedule={s}
+                  swap={getSwapForSchedule(s.id)}
+                  cancellingSwapId={cancellingSwapId}
+                  onRequestSwap={handleRequestSwap}
+                  onCancelSwap={handleCancelSwap}
+                  onRespondSwap={handleRespondToSwap}
+                  compact
+                />
+              ))}
+            </div>
+          )}
+        </section>
+
+        <div className="mt-8 pt-8 pb-4 flex justify-center">
           <BibleVerseTypewriter />
         </div>
+
 
 
 
@@ -446,13 +656,35 @@ export default function Dashboard() {
 
       
         {/* PWA Install Prompt */}
-        <PWAInstallPrompt 
-          isFirstLogin={isFirstLogin} 
-          open={showInstallDialog} 
-          onOpenChange={setShowInstallDialog} 
+        <PWAInstallPrompt
+          isFirstLogin={isFirstLogin}
+          open={showInstallDialog}
+          onOpenChange={setShowInstallDialog}
         />
       </div>
+
+      {/* Swap dialogs */}
+      <SwapRequestDialog
+        open={swapDialogOpen}
+        onOpenChange={setSwapDialogOpen}
+        schedule={selectedSchedule ? {
+          id: selectedSchedule.id,
+          date: selectedSchedule.date,
+          time_start: selectedSchedule.time_start,
+          time_end: selectedSchedule.time_end,
+          department_id: selectedSchedule.department_id,
+        } : null}
+        onSubmit={handleSwapSubmit}
+      />
+      <SwapResponseDialog
+        open={responseDialogOpen}
+        onOpenChange={setResponseDialogOpen}
+        swap={selectedSwap}
+        onAccept={handleAcceptSwap}
+        onReject={handleRejectSwap}
+      />
     </div>
+
   );
 }
 

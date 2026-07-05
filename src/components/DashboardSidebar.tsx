@@ -448,11 +448,9 @@ export function DashboardSidebar(props: DashboardSidebarProps) {
             {/* Navigation section */}
             <ul className="space-y-0.5">
               <li>
-                <SidebarItem expanded={expanded} icon={CalendarDays} label={t('sidebar.mySchedules')} variant="nav" active={isActive('/my-schedules')} onClick={() => navigate('/my-schedules')} />
-              </li>
-              <li>
                 <SidebarItem expanded={expanded} icon={Settings} label={t('sidebar.settings')} variant="nav" active={isActive('/security')} onClick={() => navigate('/security')} />
               </li>
+
             </ul>
 
             {/* Department section — visible when user has departments */}

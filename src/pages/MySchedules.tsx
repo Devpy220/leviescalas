@@ -27,6 +27,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { SwapRequestDialog } from '@/components/schedules/SwapRequestDialog';
 import { SwapResponseDialog } from '@/components/schedules/SwapResponseDialog';
 import { PendingSwapBadge } from '@/components/schedules/PendingSwapBadge';
+import { PersonalScheduleCard } from '@/components/schedules/PersonalScheduleCard';
+
 import MyAvailabilitySheet from '@/components/department/MyAvailabilitySheet';
 import SlotRepertoireEditor from '@/components/department/SlotRepertoireEditor';
 import { REPERTOIRE_EDIT_ROLES } from '@/lib/constants';
@@ -485,127 +487,23 @@ export default function MySchedules() {
           </Card>
         ) : viewMode === 'mine' ? (
           /* Personal schedules - individual cards */
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
             {schedules.map((schedule) => {
               const swap = getSwapForSchedule(schedule.id);
-              const dateObj = parseISO(schedule.date);
-              const dayOfWeekNum = getDay(dateObj);
-              const dayOfWeek = format(dateObj, "EEE", { locale: ptBR }).toUpperCase();
-              const dayMonth = format(dateObj, "dd/MM", { locale: ptBR });
-              const slotInfo = findSlotByDayAndTime(dayOfWeekNum, schedule.time_start);
-              
               return (
-                <Card 
-                  key={schedule.id} 
-                  className="relative overflow-hidden flex flex-col bg-card/60 backdrop-blur-md border-border/40 shadow-sm"
-                >
-                  {/* Colored header */}
-                  <div className={cn("px-3 py-2 border-b border-border/40 backdrop-blur-sm", slotInfo?.bgColor || "bg-primary/10")}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-bold text-sm text-primary">{dayOfWeek}</span>
-                        <span className="text-primary font-bold text-sm">{dayMonth}</span>
-                      </div>
-                      {schedule.church_logo_url && (
-                        <div className="w-6 h-6 rounded-full bg-background border-2 border-primary/20 overflow-hidden shadow-sm">
-                          <img 
-                            src={schedule.church_logo_url} 
-                            alt={schedule.church_name || 'Igreja'} 
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1 text-[11px] text-muted-foreground mt-0.5">
-                      <Clock className="w-3 h-3" />
-                      {schedule.time_start.slice(0, 5)} - {schedule.time_end.slice(0, 5)}
-                    </div>
-                  </div>
-                  
-                  {/* Content */}
-                  <div className="p-3 flex-1 flex flex-col">
-
-                    <div className="flex-1 space-y-2">
-                      <Badge variant="secondary" className="text-xs">
-                        {schedule.department_name}
-                      </Badge>
-                      
-                      {schedule.church_name && (
-                        <div className="flex items-center gap-1 text-xs text-primary/80">
-                          <Church className="w-3 h-3" />
-                          {schedule.church_name}
-                        </div>
-                      )}
-                      
-                      {schedule.sector_name && (
-                        <div className="flex items-center gap-1.5 text-sm">
-                          {schedule.sector_color && (
-                            <div 
-                              className="w-2.5 h-2.5 rounded-full" 
-                              style={{ backgroundColor: schedule.sector_color }}
-                            />
-                          )}
-                          <span style={{ color: schedule.sector_color || undefined }} className="font-medium">
-                            {schedule.sector_name}
-                          </span>
-                        </div>
-                      )}
-                      
-                      {/* Assignment Role Badge */}
-                      {schedule.assignment_role && ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES] && (
-                        <div className="flex items-center gap-1.5 text-sm">
-                          <span>{ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES].icon}</span>
-                          <Badge 
-                            variant="outline" 
-                            className={ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES].color}
-                          >
-                            {ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES].label}
-                          </Badge>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Repertório de Hoje (setlist + anexos + observações) */}
-                    <div className="pt-3 mt-3 border-t border-border/50">
-                      <SlotRepertoireEditor
-                        departmentId={schedule.department_id}
-                        date={schedule.date}
-                        timeStart={schedule.time_start}
-                        timeEnd={schedule.time_end}
-                        canEdit={
-                          !!schedule.assignment_role
-                          && REPERTOIRE_EDIT_ROLES.includes(schedule.assignment_role as any)
-                        }
-                      />
-                    </div>
-
-                    {/* Swap section */}
-                    <div className="pt-3 mt-3 border-t border-border/50">
-
-                      {swap ? (
-                        <PendingSwapBadge 
-                          swap={swap}
-                          onCancel={handleCancelSwap}
-                          onRespond={handleRespondToSwap}
-                          cancelling={cancellingSwapId === swap.id}
-                        />
-                      ) : (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="w-full"
-                          onClick={() => handleOpenSwapDialog(schedule)}
-                        >
-                          <ArrowLeftRight className="w-4 h-4 mr-2" />
-                          Pedir Troca
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </Card>
+                <PersonalScheduleCard
+                  key={schedule.id}
+                  schedule={schedule}
+                  swap={swap}
+                  cancellingSwapId={cancellingSwapId}
+                  onRequestSwap={(s) => handleOpenSwapDialog(s as Schedule)}
+                  onCancelSwap={handleCancelSwap}
+                  onRespondSwap={handleRespondToSwap}
+                />
               );
             })}
           </div>
+
         ) : (
           /* Team schedules - grouped by slot */
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
@@ -625,19 +523,39 @@ export default function MySchedules() {
                 >
                   {/* Slot Header */}
                   <CardHeader className={cn("p-2 pb-1.5 backdrop-blur-sm", slotInfo.bgColor)}>
-                    <div className="space-y-0">
-                      <p className="font-bold text-[11px] uppercase tracking-wide">
-                        {slotInfo.label}
-                      </p>
-                      <p className="text-xs font-semibold text-foreground">
-                        {format(date, "d 'de' MMMM", { locale: ptBR })}
-                      </p>
-                      <p className="text-[10px] font-medium text-foreground/70 flex items-center gap-1">
-                        <Clock className="w-2.5 h-2.5" />
-                        {slotInfo.timeStart} - {slotInfo.timeEnd}
-                      </p>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="space-y-0 min-w-0">
+                        <p className="font-bold text-[11px] uppercase tracking-wide">
+                          {slotInfo.label}
+                        </p>
+                        <p className="text-xs font-semibold text-foreground">
+                          {format(date, "d 'de' MMMM", { locale: ptBR })}
+                        </p>
+                        <p className="text-[10px] font-medium text-foreground/70 flex items-center gap-1">
+                          <Clock className="w-2.5 h-2.5" />
+                          {slotInfo.timeStart} - {slotInfo.timeEnd}
+                        </p>
+                      </div>
+                      {userScheduleInSlot && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className={cn(
+                            "h-7 w-7 rounded-full shrink-0",
+                            swap
+                              ? "text-amber-600 hover:text-amber-700 hover:bg-amber-100 dark:text-amber-400 dark:hover:bg-amber-900/40"
+                              : "hover:bg-primary/10"
+                          )}
+                          onClick={() => swap ? handleRespondToSwap(swap) : handleOpenSwapDialog(userScheduleInSlot)}
+                          aria-label={swap ? "Troca pendente" : "Pedir troca"}
+                          title={swap ? "Troca pendente" : "Pedir troca"}
+                        >
+                          <ArrowLeftRight className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
                     </div>
                   </CardHeader>
+
                   
                   {/* Members List */}
                   <CardContent className="p-2 pt-1.5">
@@ -735,29 +653,19 @@ export default function MySchedules() {
                       </div>
                     )}
 
-                    {/* Swap button - only if user is in this slot */}
-                    {userScheduleInSlot && (
+                    {/* Pending swap details (only when active) */}
+                    {userScheduleInSlot && swap && (
                       <div className="pt-3 mt-3 border-t border-border/50">
-                        {swap ? (
-                          <PendingSwapBadge 
-                            swap={swap}
-                            onCancel={handleCancelSwap}
-                            onRespond={handleRespondToSwap}
-                            cancelling={cancellingSwapId === swap.id}
-                          />
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="w-full"
-                            onClick={() => handleOpenSwapDialog(userScheduleInSlot)}
-                          >
-                            <ArrowLeftRight className="w-4 h-4 mr-2" />
-                            Pedir Troca
-                          </Button>
-                        )}
+                        <PendingSwapBadge
+                          swap={swap}
+                          onCancel={handleCancelSwap}
+                          onRespond={handleRespondToSwap}
+                          cancelling={cancellingSwapId === swap.id}
+                          compact
+                        />
                       </div>
                     )}
+
                   </CardContent>
                 </Card>
               );
