@@ -369,7 +369,7 @@ export default function Dashboard() {
       />
 
       <div className={`${sidebarExpanded ? 'ml-56' : 'ml-16'} transition-all duration-300 min-w-0 min-h-screen flex flex-col`}>
-        <main className="container mx-auto px-4 py-8 max-w-full flex-1">
+        <main className="container mx-auto px-4 py-8 max-w-full flex-1 flex flex-col">
 
         {/* Top Header: Create button (left) | Avatar centered | Compact dept cards (right) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mb-8">
