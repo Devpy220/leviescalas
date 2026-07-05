@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Footer from '@/components/Footer';
-import { DashboardSidebar } from '@/components/DashboardSidebar';
+import { FloatingActionMenu } from '@/components/FloatingActionMenu';
 import { useSidebarExpanded } from '@/contexts/SidebarContext';
 import { useAdmin } from '@/hooks/useAdmin';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
