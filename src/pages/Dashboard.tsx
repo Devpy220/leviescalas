@@ -656,12 +656,35 @@ export default function Dashboard() {
 
       
         {/* PWA Install Prompt */}
-        <PWAInstallPrompt 
-          isFirstLogin={isFirstLogin} 
-          open={showInstallDialog} 
-          onOpenChange={setShowInstallDialog} 
+        <PWAInstallPrompt
+          isFirstLogin={isFirstLogin}
+          open={showInstallDialog}
+          onOpenChange={setShowInstallDialog}
         />
       </div>
+
+      {/* Swap dialogs */}
+      <SwapRequestDialog
+        open={swapDialogOpen}
+        onOpenChange={setSwapDialogOpen}
+        schedule={selectedSchedule ? {
+          id: selectedSchedule.id,
+          date: selectedSchedule.date,
+          time_start: selectedSchedule.time_start,
+          time_end: selectedSchedule.time_end,
+          department_id: selectedSchedule.department_id,
+        } : null}
+        onSubmit={handleSwapSubmit}
+      />
+      <SwapResponseDialog
+        open={responseDialogOpen}
+        onOpenChange={setResponseDialogOpen}
+        swap={selectedSwap}
+        onAccept={handleAcceptSwap}
+        onReject={handleRejectSwap}
+      />
+    </div>
+
     </div>
   );
 }
