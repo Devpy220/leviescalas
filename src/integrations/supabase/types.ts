@@ -1859,6 +1859,7 @@ export type Database = {
         }[]
       }
       get_church_code_by_slug: { Args: { p_slug: string }; Returns: string }
+      get_church_count: { Args: never; Returns: number }
       get_church_departments: {
         Args: { p_church_id: string }
         Returns: {
