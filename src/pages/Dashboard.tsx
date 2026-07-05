@@ -572,20 +572,22 @@ export default function Dashboard() {
 
         {/* Próximas Escalas — embedded */}
         <section className="mt-4">
-          <div className="flex items-center justify-between mb-3 gap-2">
+          <div className="flex items-center gap-2 mb-3">
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => navigate('/my-schedules?view=team')}
+              title="Escala da Equipe"
+              aria-label="Escala da Equipe"
+              className="h-8 w-8 shrink-0"
+            >
+              <Users className="w-4 h-4" />
+            </Button>
             <h2 className="font-display text-lg font-semibold text-foreground">
               Próximas Escalas
             </h2>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => navigate('/my-schedules?view=team')}
-              className="gap-2"
-            >
-              <Users className="w-4 h-4" />
-              <span className="hidden sm:inline">Escala da Equipe</span>
-            </Button>
           </div>
+
 
           {pendingSwapsForMe.length > 0 && (
             <Card className="mb-4 p-3 border-primary/50 bg-primary/5">
