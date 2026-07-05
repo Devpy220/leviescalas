@@ -22,6 +22,7 @@ import { ptBR } from 'date-fns/locale';
 import { slugify } from '@/lib/slugify';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { LighthouseReportCard } from '@/components/admin/LighthouseReportCard';
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 interface Department {
   id: string;
   name: string;
@@ -1518,12 +1519,22 @@ export default function Admin() {
                 </CardDescription>
               </div>
               <Dialog open={showCreateChurch} onOpenChange={setShowCreateChurch}>
-                <DialogTrigger asChild>
-                  <Button size="sm">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Nova Igreja
-                  </Button>
-                </DialogTrigger>
+                <TooltipProvider>
+                  <UITooltip>
+                    <TooltipTrigger asChild>
+                      <DialogTrigger asChild>
+                        <Button
+                          size="icon"
+                          className="h-9 w-9 rounded-full gradient-primary text-primary-foreground shadow-glow-sm"
+                          aria-label="Nova Igreja"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      </DialogTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>Nova Igreja</TooltipContent>
+                  </UITooltip>
+                </TooltipProvider>
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Criar Nova Igreja</DialogTitle>
