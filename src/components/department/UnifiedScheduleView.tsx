@@ -333,7 +333,7 @@ export default function UnifiedScheduleView({
 
       {/* Horizontal Grid of Slot Cards */}
       {slotGroups.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {slotGroups.map((group) => (
             <SlotCard
               group={group}
@@ -479,24 +479,24 @@ function SlotCard({
 
   return (
     <Card className={cn(
-      "overflow-hidden transition-all h-fit",
+      "overflow-hidden transition-all h-fit bg-card/60 backdrop-blur-md border-border/40 shadow-sm",
       isCurrentDay && "ring-2 ring-primary"
     )}>
       {/* Slot Header */}
       <CardHeader className={cn(
-        "p-3 pb-2",
+        "p-2 pb-1.5 backdrop-blur-sm",
         slotInfo.bgColor
       )}>
         <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <p className="font-bold text-sm uppercase tracking-wide">
+          <div className="space-y-0">
+            <p className="font-bold text-[11px] uppercase tracking-wide">
               {slotInfo.label}
             </p>
-            <p className="text-sm font-semibold text-foreground">
+            <p className="text-xs font-semibold text-foreground">
               {format(date, "d 'de' MMMM", { locale: ptBR })}
             </p>
-            <p className="text-xs font-medium text-foreground/70 flex items-center gap-1">
-              <Clock className="w-3 h-3" />
+            <p className="text-[10px] font-medium text-foreground/70 flex items-center gap-1">
+              <Clock className="w-2.5 h-2.5" />
               {slotInfo.timeStart} - {slotInfo.timeEnd}
             </p>
           </div>
@@ -504,18 +504,20 @@ function SlotCard({
             <Button
               size="icon"
               variant="ghost"
-              className="h-7 w-7"
+              className="h-6 w-6"
               onClick={() => onAddSchedule(date)}
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-3.5 h-3.5" />
             </Button>
           )}
         </div>
       </CardHeader>
+
       
       {/* Members List */}
-      <CardContent className="p-3 pt-2">
-        <div className="space-y-2">
+      <CardContent className="p-2 pt-1.5">
+        <div className="space-y-1.5">
+
           {schedules.map((schedule) => (
             <MemberRow
               key={schedule.id}
@@ -566,13 +568,13 @@ function MemberRow({
 
   return (
     <div
-      className="flex items-center gap-2 p-2 rounded-md border-l-4"
+      className="flex items-center gap-1.5 p-1.5 rounded-md border-l-4"
       style={{ borderLeftColor: schedule.sector?.color || color.bg }}
     >
       {/* Compact Avatar */}
-      <Avatar className="h-8 w-8">
+      <Avatar className="h-6 w-6">
         <AvatarFallback 
-          className="text-xs text-white font-medium"
+          className="text-[10px] text-white font-medium"
           style={getMemberBgStyle(schedule.user_id)}
         >
           {schedule.profile?.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'M'}
@@ -581,8 +583,9 @@ function MemberRow({
       
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5">
-          <p className="font-medium text-sm truncate">{schedule.profile?.name || 'Membro'}</p>
+        <div className="flex items-center gap-1">
+          <p className="font-medium text-xs truncate">{schedule.profile?.name || 'Membro'}</p>
+
           
           {/* Assignment role icon */}
           {schedule.assignment_role && ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES] && (
@@ -601,7 +604,7 @@ function MemberRow({
         </div>
         
         {/* Sector */}
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
           {schedule.sector && (
             <span className="flex items-center gap-1 truncate">
               <div 

@@ -485,7 +485,7 @@ export default function MySchedules() {
           </Card>
         ) : viewMode === 'mine' ? (
           /* Personal schedules - individual cards */
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {schedules.map((schedule) => {
               const swap = getSwapForSchedule(schedule.id);
               const dateObj = parseISO(schedule.date);
@@ -497,17 +497,17 @@ export default function MySchedules() {
               return (
                 <Card 
                   key={schedule.id} 
-                  className="relative overflow-hidden flex flex-col"
+                  className="relative overflow-hidden flex flex-col bg-card/60 backdrop-blur-md border-border/40 shadow-sm"
                 >
                   {/* Colored header */}
-                  <div className={cn("px-4 py-3 border-b border-border/50", slotInfo?.bgColor || "bg-primary/10")}>
+                  <div className={cn("px-3 py-2 border-b border-border/40 backdrop-blur-sm", slotInfo?.bgColor || "bg-primary/10")}>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-lg text-primary">{dayOfWeek}</span>
-                        <span className="text-primary font-bold text-lg">{dayMonth}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-sm text-primary">{dayOfWeek}</span>
+                        <span className="text-primary font-bold text-sm">{dayMonth}</span>
                       </div>
                       {schedule.church_logo_url && (
-                        <div className="w-7 h-7 rounded-full bg-background border-2 border-primary/20 overflow-hidden shadow-sm">
+                        <div className="w-6 h-6 rounded-full bg-background border-2 border-primary/20 overflow-hidden shadow-sm">
                           <img 
                             src={schedule.church_logo_url} 
                             alt={schedule.church_name || 'Igreja'} 
@@ -516,14 +516,15 @@ export default function MySchedules() {
                         </div>
                       )}
                     </div>
-                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
-                      <Clock className="w-3.5 h-3.5" />
+                    <div className="flex items-center gap-1 text-[11px] text-muted-foreground mt-0.5">
+                      <Clock className="w-3 h-3" />
                       {schedule.time_start.slice(0, 5)} - {schedule.time_end.slice(0, 5)}
                     </div>
                   </div>
                   
                   {/* Content */}
-                  <div className="p-4 flex-1 flex flex-col">
+                  <div className="p-3 flex-1 flex flex-col">
+
                     <div className="flex-1 space-y-2">
                       <Badge variant="secondary" className="text-xs">
                         {schedule.department_name}
@@ -607,7 +608,7 @@ export default function MySchedules() {
           </div>
         ) : (
           /* Team schedules - grouped by slot */
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {slotGroups.map((group) => {
               const { date, slotInfo, schedules: groupSchedules } = group;
               const isCurrentDay = isToday(date);
@@ -618,29 +619,30 @@ export default function MySchedules() {
                 <Card 
                   key={`${format(date, 'yyyy-MM-dd')}-${slotInfo.timeStart}`}
                   className={cn(
-                    "overflow-hidden h-fit",
+                    "overflow-hidden h-fit bg-card/60 backdrop-blur-md border-border/40 shadow-sm",
                     isCurrentDay && "ring-2 ring-primary"
                   )}
                 >
                   {/* Slot Header */}
-                  <CardHeader className={cn("p-3 pb-2", slotInfo.bgColor)}>
-                    <div className="space-y-0.5">
-                      <p className="font-bold text-sm uppercase tracking-wide">
+                  <CardHeader className={cn("p-2 pb-1.5 backdrop-blur-sm", slotInfo.bgColor)}>
+                    <div className="space-y-0">
+                      <p className="font-bold text-[11px] uppercase tracking-wide">
                         {slotInfo.label}
                       </p>
-                      <p className="text-sm font-semibold text-foreground">
+                      <p className="text-xs font-semibold text-foreground">
                         {format(date, "d 'de' MMMM", { locale: ptBR })}
                       </p>
-                      <p className="text-xs font-medium text-foreground/70 flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
+                      <p className="text-[10px] font-medium text-foreground/70 flex items-center gap-1">
+                        <Clock className="w-2.5 h-2.5" />
                         {slotInfo.timeStart} - {slotInfo.timeEnd}
                       </p>
                     </div>
                   </CardHeader>
                   
                   {/* Members List */}
-                  <CardContent className="p-3 pt-2">
-                    <div className="space-y-2">
+                  <CardContent className="p-2 pt-1.5">
+                    <div className="space-y-1.5">
+
                       {groupSchedules.map((schedule) => {
                         const isCurrentUser = schedule.user_id === user?.id;
                         const memberName = memberProfiles[schedule.user_id]?.name || 'Voluntário';
@@ -649,7 +651,7 @@ export default function MySchedules() {
                           <div
                             key={schedule.id}
                             className={cn(
-                              "flex items-center gap-2 p-2 rounded-md border-l-4",
+                              "flex items-center gap-1.5 p-1.5 rounded-md border-l-4",
                               isCurrentUser 
                                 ? "bg-green-100 dark:bg-green-900/40 border-l-green-500" 
                                 : "border-l-transparent"
@@ -657,10 +659,10 @@ export default function MySchedules() {
                             style={!isCurrentUser && schedule.sector_color ? { borderLeftColor: schedule.sector_color } : undefined}
                           >
                             {/* Avatar */}
-                            <Avatar className="h-8 w-8">
+                            <Avatar className="h-6 w-6">
                               <AvatarFallback 
                                 className={cn(
-                                  "text-xs font-medium",
+                                  "text-[10px] font-medium",
                                   isCurrentUser 
                                     ? "bg-green-500 text-white" 
                                     : "bg-primary/20 text-primary"
@@ -672,14 +674,15 @@ export default function MySchedules() {
                             
                             {/* Info */}
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1.5">
+                              <div className="flex items-center gap-1">
                                 <p className={cn(
-                                  "font-medium text-sm truncate",
+                                  "font-medium text-xs truncate",
                                   isCurrentUser && "text-green-700 dark:text-green-400"
                                 )}>
                                   {isCurrentUser ? 'Você' : memberName}
                                   {isCurrentUser && <span className="ml-1">⭐</span>}
                                 </p>
+
                                 
                                 {/* Assignment role icon */}
                                 {schedule.assignment_role && ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES] && (
@@ -690,7 +693,7 @@ export default function MySchedules() {
                               </div>
                               
                               {/* Sector and Role */}
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
                                 {schedule.sector_name && (
                                   <span className="flex items-center gap-1 truncate">
                                     <div 
