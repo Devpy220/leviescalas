@@ -651,7 +651,7 @@ export default function MySchedules() {
                           <div
                             key={schedule.id}
                             className={cn(
-                              "flex items-center gap-2 p-2 rounded-md border-l-4",
+                              "flex items-center gap-1.5 p-1.5 rounded-md border-l-4",
                               isCurrentUser 
                                 ? "bg-green-100 dark:bg-green-900/40 border-l-green-500" 
                                 : "border-l-transparent"
@@ -659,10 +659,10 @@ export default function MySchedules() {
                             style={!isCurrentUser && schedule.sector_color ? { borderLeftColor: schedule.sector_color } : undefined}
                           >
                             {/* Avatar */}
-                            <Avatar className="h-8 w-8">
+                            <Avatar className="h-6 w-6">
                               <AvatarFallback 
                                 className={cn(
-                                  "text-xs font-medium",
+                                  "text-[10px] font-medium",
                                   isCurrentUser 
                                     ? "bg-green-500 text-white" 
                                     : "bg-primary/20 text-primary"
@@ -674,14 +674,15 @@ export default function MySchedules() {
                             
                             {/* Info */}
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1.5">
+                              <div className="flex items-center gap-1">
                                 <p className={cn(
-                                  "font-medium text-sm truncate",
+                                  "font-medium text-xs truncate",
                                   isCurrentUser && "text-green-700 dark:text-green-400"
                                 )}>
                                   {isCurrentUser ? 'Você' : memberName}
                                   {isCurrentUser && <span className="ml-1">⭐</span>}
                                 </p>
+
                                 
                                 {/* Assignment role icon */}
                                 {schedule.assignment_role && ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES] && (
