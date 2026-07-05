@@ -604,7 +604,7 @@ function MemberRow({
         </div>
         
         {/* Sector */}
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
           {schedule.sector && (
             <span className="flex items-center gap-1 truncate">
               <div 
