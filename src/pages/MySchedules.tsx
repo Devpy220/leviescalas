@@ -608,7 +608,7 @@ export default function MySchedules() {
           </div>
         ) : (
           /* Team schedules - grouped by slot */
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {slotGroups.map((group) => {
               const { date, slotInfo, schedules: groupSchedules } = group;
               const isCurrentDay = isToday(date);
@@ -619,29 +619,30 @@ export default function MySchedules() {
                 <Card 
                   key={`${format(date, 'yyyy-MM-dd')}-${slotInfo.timeStart}`}
                   className={cn(
-                    "overflow-hidden h-fit",
+                    "overflow-hidden h-fit bg-card/60 backdrop-blur-md border-border/40 shadow-sm",
                     isCurrentDay && "ring-2 ring-primary"
                   )}
                 >
                   {/* Slot Header */}
-                  <CardHeader className={cn("p-3 pb-2", slotInfo.bgColor)}>
-                    <div className="space-y-0.5">
-                      <p className="font-bold text-sm uppercase tracking-wide">
+                  <CardHeader className={cn("p-2 pb-1.5 backdrop-blur-sm", slotInfo.bgColor)}>
+                    <div className="space-y-0">
+                      <p className="font-bold text-[11px] uppercase tracking-wide">
                         {slotInfo.label}
                       </p>
-                      <p className="text-sm font-semibold text-foreground">
+                      <p className="text-xs font-semibold text-foreground">
                         {format(date, "d 'de' MMMM", { locale: ptBR })}
                       </p>
-                      <p className="text-xs font-medium text-foreground/70 flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
+                      <p className="text-[10px] font-medium text-foreground/70 flex items-center gap-1">
+                        <Clock className="w-2.5 h-2.5" />
                         {slotInfo.timeStart} - {slotInfo.timeEnd}
                       </p>
                     </div>
                   </CardHeader>
                   
                   {/* Members List */}
-                  <CardContent className="p-3 pt-2">
-                    <div className="space-y-2">
+                  <CardContent className="p-2 pt-1.5">
+                    <div className="space-y-1.5">
+
                       {groupSchedules.map((schedule) => {
                         const isCurrentUser = schedule.user_id === user?.id;
                         const memberName = memberProfiles[schedule.user_id]?.name || 'Voluntário';
