@@ -511,7 +511,7 @@ export default function Department() {
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-background">
-        <DashboardSidebar
+        <FloatingActionMenu
           isAdmin={isAdmin}
           shouldShowInstallPrompt={shouldShowInstallPrompt()}
           onInstallClick={install}
@@ -526,7 +526,7 @@ export default function Department() {
           />
         )}
 
-        <div className={`${sidebarExpanded ? 'ml-56' : 'ml-16'} transition-all duration-300`}>
+        <div>
         {/* Sub-header with department info */}
         <div className="border-b border-border/50 bg-card/50">
           <div className="container mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 max-w-7xl py-3 flex items-center justify-between">
