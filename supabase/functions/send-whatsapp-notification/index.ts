@@ -76,7 +76,14 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    const fullNumber = cleanNumber.startsWith("55") ? cleanNumber : `55${cleanNumber}`;
+    // Normalize BR number: strip country code, insert mobile "9" if missing, then re-add 55.
+    // Handles inputs like: 4199458156 (10, no 9), 41999458156 (11), 554199458156 (12, no 9), 5541999458156 (13).
+    let br = cleanNumber.startsWith("55") ? cleanNumber.slice(2) : cleanNumber;
+    // BR mobile subscriber part starts with 6-9 after the 2-digit DDD.
+    if (br.length === 10 && /[6-9]/.test(br[2])) {
+      br = br.slice(0, 2) + "9" + br.slice(2);
+    }
+    const fullNumber = `55${br}`;
     const typing = typeof delayTyping === "number" ? delayTyping : undefined;
 
     const result = await sendUazapiText(fullNumber, message, typing);
