@@ -2065,6 +2065,8 @@ export default function Admin() {
               <p className="text-center text-muted-foreground py-8">
                 Nenhum departamento encontrado.
               </p>
+            ) : (
+              <>
               <TooltipProvider delayDuration={100}>
                 <div className="flex flex-wrap gap-3">
                   {departments.map((dept) => {
