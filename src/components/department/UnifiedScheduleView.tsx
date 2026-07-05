@@ -479,24 +479,24 @@ function SlotCard({
 
   return (
     <Card className={cn(
-      "overflow-hidden transition-all h-fit",
+      "overflow-hidden transition-all h-fit bg-card/60 backdrop-blur-md border-border/40 shadow-sm",
       isCurrentDay && "ring-2 ring-primary"
     )}>
       {/* Slot Header */}
       <CardHeader className={cn(
-        "p-3 pb-2",
+        "p-2 pb-1.5 backdrop-blur-sm",
         slotInfo.bgColor
       )}>
         <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <p className="font-bold text-sm uppercase tracking-wide">
+          <div className="space-y-0">
+            <p className="font-bold text-[11px] uppercase tracking-wide">
               {slotInfo.label}
             </p>
-            <p className="text-sm font-semibold text-foreground">
+            <p className="text-xs font-semibold text-foreground">
               {format(date, "d 'de' MMMM", { locale: ptBR })}
             </p>
-            <p className="text-xs font-medium text-foreground/70 flex items-center gap-1">
-              <Clock className="w-3 h-3" />
+            <p className="text-[10px] font-medium text-foreground/70 flex items-center gap-1">
+              <Clock className="w-2.5 h-2.5" />
               {slotInfo.timeStart} - {slotInfo.timeEnd}
             </p>
           </div>
@@ -504,14 +504,15 @@ function SlotCard({
             <Button
               size="icon"
               variant="ghost"
-              className="h-7 w-7"
+              className="h-6 w-6"
               onClick={() => onAddSchedule(date)}
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-3.5 h-3.5" />
             </Button>
           )}
         </div>
       </CardHeader>
+
       
       {/* Members List */}
       <CardContent className="p-3 pt-2">
