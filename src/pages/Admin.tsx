@@ -1175,7 +1175,7 @@ export default function Admin() {
 
         {/* Lighthouse / PageSpeed report (admin only) — modal */}
         <Dialog open={openModal==='lighthouse'} onOpenChange={(o)=>!o&&closeModal()}>
-          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-3xl w-[96vw] max-h-[88vh] overflow-y-auto">
             <LighthouseReportCard />
           </DialogContent>
         </Dialog>
