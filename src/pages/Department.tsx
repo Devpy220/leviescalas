@@ -614,13 +614,15 @@ export default function Department() {
                     </span>
                   )}
                 </TabsTrigger>
-                <TabsTrigger
-                  value="repertorio"
-                  className="gap-2 click-scale selection-glow data-[state=active]:gradient-vibrant data-[state=active]:text-white data-[state=active]:shadow-glow-sm transition-all"
-                >
-                  <Library className="w-4 h-4" />
-                  <span className="hidden xs:inline">Repertório</span>
-                </TabsTrigger>
+                {isLeader && (
+                  <TabsTrigger
+                    value="repertorio"
+                    className="gap-2 click-scale selection-glow data-[state=active]:gradient-vibrant data-[state=active]:text-white data-[state=active]:shadow-glow-sm transition-all"
+                  >
+                    <Library className="w-4 h-4" />
+                    <span className="hidden xs:inline">Repertório</span>
+                  </TabsTrigger>
+                )}
                 <TabsTrigger
                   value="members"
                   className="gap-2 click-scale selection-glow data-[state=active]:gradient-vibrant data-[state=active]:text-white data-[state=active]:shadow-glow-sm transition-all"
@@ -708,13 +710,15 @@ export default function Department() {
             />
           </TabsContent>
 
-          <TabsContent value="repertorio" className="mt-6 animate-fade-in">
-            <RepertoireView
-              departmentId={id!}
-              isLeader={isLeader}
-              currentUserId={user?.id || ''}
-            />
-          </TabsContent>
+          {isLeader && (
+            <TabsContent value="repertorio" className="mt-6 animate-fade-in">
+              <RepertoireView
+                departmentId={id!}
+                isLeader={isLeader}
+                currentUserId={user?.id || ''}
+              />
+            </TabsContent>
+          )}
         </Tabs>
       </main>
 
