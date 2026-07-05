@@ -837,7 +837,7 @@ export default function Admin() {
               Atalhos para as principais áreas administrativas
             </CardDescription>
           </CardHeader>
-          <CardContent className="pt-0 space-y-4">
+          <CardContent className="pt-0 grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70 mb-2">Pessoas & Igrejas</p>
               <div className="flex flex-col gap-1.5 items-start">
