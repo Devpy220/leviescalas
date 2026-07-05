@@ -1520,7 +1520,7 @@ export default function Admin() {
               </div>
               <Dialog open={showCreateChurch} onOpenChange={setShowCreateChurch}>
                 <TooltipProvider>
-                  <Tooltip>
+                  <UITooltip>
                     <TooltipTrigger asChild>
                       <DialogTrigger asChild>
                         <Button
