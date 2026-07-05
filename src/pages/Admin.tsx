@@ -1180,15 +1180,6 @@ export default function Admin() {
           </DialogContent>
         </Dialog>
 
-        {/* WhatsApp logs shortcut */}
-        <div className="mb-6 flex justify-end">
-          <Button asChild size="sm" variant="outline" className="border-violet-500/40 text-violet-600 hover:bg-violet-500/10">
-            <a href="/admin/whatsapp-logs">
-              <Send className="w-4 h-4 mr-2" />
-              Logs do WhatsApp
-            </a>
-          </Button>
-        </div>
 
 
         {/* Analytics Chart */}
