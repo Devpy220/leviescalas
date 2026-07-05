@@ -2232,6 +2232,8 @@ export default function Admin() {
                   </div>
                 );
               })()}
+              </>
+            )}
           </CardContent>
         </Card>
         </DialogContent></Dialog>
