@@ -376,14 +376,21 @@ export default function Dashboard() {
           {/* Left: Create Department button (leaders only) */}
           <div className="flex lg:justify-start justify-center order-2 lg:order-1">
             {canCreateDepartment && (
-              <Link to="/departments/new">
-                <Button className="gradient-fresh text-white shadow-glow-sm hover:shadow-glow transition-all">
-                  <Plus className="w-4 h-4 mr-2" />
-                  {t('dashboard.createDepartment')}
-                </Button>
-              </Link>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link to="/departments/new" aria-label={t('dashboard.createDepartment')}>
+                      <Button size="icon" className="h-9 w-9 rounded-full gradient-fresh text-white shadow-glow-sm hover:shadow-glow transition-all">
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent>{t('dashboard.createDepartment')}</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
           </div>
+
 
           {/* Center: Avatar + Name */}
           <div className="flex flex-col items-center text-center order-1 lg:order-2">
