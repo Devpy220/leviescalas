@@ -668,7 +668,7 @@ export default function Admin() {
 
   const handleSignOut = async () => {
     await signOut();
-    window.location.href = '/admin-login';
+    window.location.href = '/';
   };
 
   const fetchBroadcastHistory = async () => {
