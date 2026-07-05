@@ -15,7 +15,7 @@ import {
   CalendarSync,
   Library
 } from 'lucide-react';
-import { DashboardSidebar } from '@/components/DashboardSidebar';
+import { FloatingActionMenu } from '@/components/FloatingActionMenu';
 import { useAdmin } from '@/hooks/useAdmin';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { Button } from '@/components/ui/button';
