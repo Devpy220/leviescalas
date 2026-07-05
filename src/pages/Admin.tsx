@@ -779,48 +779,81 @@ export default function Admin() {
 
       <main className="container mx-auto px-4 py-8">
         {/* KPIs at a glance */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 mb-6">
           <Card className="border-border/60">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-violet-500/10 flex items-center justify-center shrink-0">
+            <CardContent className="p-2.5 flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center shrink-0">
                 <Church className="w-4 h-4 text-violet-500" />
               </div>
               <div className="min-w-0">
-                <p className="text-2xl font-bold text-foreground leading-none">{churches.length}</p>
-                <p className="text-xs text-muted-foreground mt-1">Igrejas</p>
+                <p className="text-lg font-bold text-foreground leading-none">{churches.length}</p>
+                <p className="text-[10px] text-muted-foreground mt-1 leading-tight">Igrejas</p>
               </div>
             </CardContent>
           </Card>
           <Card className="border-border/60">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+            <CardContent className="p-2.5 flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
                 <Building2 className="w-4 h-4 text-blue-500" />
               </div>
               <div className="min-w-0">
-                <p className="text-2xl font-bold text-foreground leading-none">{departments.length}</p>
-                <p className="text-xs text-muted-foreground mt-1">Departamentos</p>
+                <p className="text-lg font-bold text-foreground leading-none">{departments.length}</p>
+                <p className="text-[10px] text-muted-foreground mt-1 leading-tight">Departamentos</p>
               </div>
             </CardContent>
           </Card>
           <Card className="border-border/60">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+            <CardContent className="p-2.5 flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
                 <Users className="w-4 h-4 text-emerald-500" />
               </div>
               <div className="min-w-0">
-                <p className="text-2xl font-bold text-foreground leading-none">{allProfiles.length}</p>
-                <p className="text-xs text-muted-foreground mt-1">Voluntários</p>
+                <p className="text-lg font-bold text-foreground leading-none">{allProfiles.length}</p>
+                <p className="text-[10px] text-muted-foreground mt-1 leading-tight">Voluntários</p>
               </div>
             </CardContent>
           </Card>
           <Card className="border-border/60">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
+            <CardContent className="p-2.5 flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
                 <Activity className="w-4 h-4 text-amber-500" />
               </div>
               <div className="min-w-0">
-                <p className="text-2xl font-bold text-foreground leading-none">{loginsToday}</p>
-                <p className="text-xs text-muted-foreground mt-1">Logins hoje</p>
+                <p className="text-lg font-bold text-foreground leading-none">{loginsToday}</p>
+                <p className="text-[10px] text-muted-foreground mt-1 leading-tight">Logins hoje</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-border/60">
+            <CardContent className="p-2.5 flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center shrink-0">
+                <CalendarDays className="w-4 h-4 text-sky-500" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-lg font-bold text-foreground leading-none">{loginsWeek}</p>
+                <p className="text-[10px] text-muted-foreground mt-1 leading-tight">Logins semana</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-border/60">
+            <CardContent className="p-2.5 flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center shrink-0">
+                <CalendarRange className="w-4 h-4 text-indigo-500" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-lg font-bold text-foreground leading-none">{loginsMonth}</p>
+                <p className="text-[10px] text-muted-foreground mt-1 leading-tight">Logins mês</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-border/60">
+            <CardContent className="p-2.5 flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-teal-500/10 flex items-center justify-center shrink-0">
+                <Users className="w-4 h-4 text-teal-500" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-lg font-bold text-foreground leading-none">{departments.reduce((acc, d) => acc + d.member_count, 0)}</p>
+                <p className="text-[10px] text-muted-foreground mt-1 leading-tight">Membros</p>
               </div>
             </CardContent>
           </Card>
