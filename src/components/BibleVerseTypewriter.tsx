@@ -56,41 +56,26 @@ export function BibleVerseTypewriter({ className }: BibleVerseTypewriterProps) {
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-2xl border border-white/15 dark:border-white/10',
-        'bg-white/40 dark:bg-white/5 backdrop-blur-xl shadow-lg',
-        'px-4 py-3 sm:px-5 sm:py-4 max-w-xl w-full min-h-[120px]',
+        'w-full max-w-2xl mx-auto text-center px-4',
         className,
       )}
       role="region"
       aria-label="Versículo bíblico"
     >
-      <div
-        className="pointer-events-none absolute inset-0 opacity-60"
-        style={{
-          background:
-            'radial-gradient(circle at 0% 0%, hsl(var(--primary) / 0.10), transparent 60%), radial-gradient(circle at 100% 100%, hsl(var(--secondary) / 0.10), transparent 60%)',
-        }}
-      />
-      <div className="relative flex items-start gap-3">
-        <div className="mt-0.5 shrink-0 rounded-lg bg-primary/10 p-1.5 text-primary">
-          <BookOpen className="h-3.5 w-3.5" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-xs sm:text-sm leading-relaxed text-foreground/90 italic font-medium min-h-[2.5em]">
-            “{visible}
-            <span className="ml-0.5 inline-block w-[2px] h-[1em] align-middle bg-primary/80 animate-pulse" />
-            ”
-          </p>
-          <p
-            className={cn(
-              'mt-1 text-[10px] sm:text-xs font-semibold tracking-wide text-primary transition-opacity duration-300',
-              showRef ? 'opacity-100' : 'opacity-0',
-            )}
-          >
-            — {current.ref}
-          </p>
-        </div>
-      </div>
+      <p className="text-sm sm:text-base leading-relaxed text-foreground/90 italic font-medium min-h-[3em]">
+        “{visible}
+        <span className="ml-0.5 inline-block w-[2px] h-[1em] align-middle bg-primary/80 animate-pulse" />
+        ”
+      </p>
+      <p
+        className={cn(
+          'mt-2 text-xs sm:text-sm font-semibold tracking-wide text-primary transition-opacity duration-300',
+          showRef ? 'opacity-100' : 'opacity-0',
+        )}
+      >
+        — {current.ref}
+      </p>
     </div>
   );
 }
+
