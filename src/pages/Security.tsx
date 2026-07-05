@@ -147,13 +147,13 @@ export default function Security() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <DashboardSidebar
+      <FloatingActionMenu
         isAdmin={isAdmin}
         shouldShowInstallPrompt={shouldShowInstallPrompt()}
         onInstallClick={install}
         onSignOut={handleSignOut}
       />
-      <div className={`${sidebarExpanded ? 'ml-56' : 'ml-16'} flex-1 flex flex-col transition-all duration-300`}>
+      <div className="flex-1 flex flex-col">
       <div className="container max-w-2xl py-8 px-4 flex-1">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-foreground">Configurações</h1>
