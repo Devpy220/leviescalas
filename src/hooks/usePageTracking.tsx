@@ -34,17 +34,18 @@ export const usePageTracking = () => {
     };
 
     // Defer analytics insert past first paint so it doesn't compete with LCP.
-    const handle: number | NodeJS.Timeout = (typeof (window as any).requestIdleCallback === 'function')
+    const handle: number = (typeof (window as any).requestIdleCallback === 'function')
       ? (window as any).requestIdleCallback(trackPageView, { timeout: 3000 })
-      : setTimeout(trackPageView, 1200);
+      : (window.setTimeout(trackPageView, 1200) as unknown as number);
 
     return () => {
       if (typeof (window as any).cancelIdleCallback === 'function') {
         (window as any).cancelIdleCallback(handle);
       } else {
-        clearTimeout(handle as NodeJS.Timeout);
+        window.clearTimeout(handle);
       }
     };
+
   }, [location.pathname]);
 
 };
