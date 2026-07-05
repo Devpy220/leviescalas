@@ -21,7 +21,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
-import { DashboardSidebar } from '@/components/DashboardSidebar';
+import { FloatingActionMenu } from '@/components/FloatingActionMenu';
 import { BibleVerseTypewriter } from '@/components/BibleVerseTypewriter';
 import { VideoBackground } from '@/components/VideoBackground';
 import { PersonalScheduleCard, type PersonalScheduleData } from '@/components/schedules/PersonalScheduleCard';
