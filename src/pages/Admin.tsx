@@ -22,8 +22,6 @@ import { ptBR } from 'date-fns/locale';
 import { slugify } from '@/lib/slugify';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { LighthouseReportCard } from '@/components/admin/LighthouseReportCard';
-import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 interface Department {
   id: string;
   name: string;
@@ -670,7 +668,7 @@ export default function Admin() {
 
   const handleSignOut = async () => {
     await signOut();
-    window.location.href = '/';
+    window.location.href = '/admin-login';
   };
 
   const fetchBroadcastHistory = async () => {
@@ -758,13 +756,18 @@ export default function Admin() {
       <header className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Shield className="w-8 h-8 text-primary" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-[0_2px_10px_-2px_hsl(var(--primary)/0.5)]">
+              <Shield className="w-5 h-5 text-primary-foreground" />
+            </div>
             <div>
               <h1 className="text-xl font-bold text-foreground">Painel Administrativo</h1>
               <p className="text-sm text-muted-foreground">Gerenciamento do sistema</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')}>
+              Voltar ao Dashboard
+            </Button>
             <ThemeToggle />
             <Button variant="outline" size="sm" onClick={handleSignOut}>
               <LogOut className="w-4 h-4 mr-2" />
@@ -775,7 +778,55 @@ export default function Admin() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        {/* Quick Actions Toolbar */}
+        {/* KPIs at a glance */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          <Card className="border-border/60">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-violet-500/10 flex items-center justify-center shrink-0">
+                <Church className="w-4 h-4 text-violet-500" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-2xl font-bold text-foreground leading-none">{churches.length}</p>
+                <p className="text-xs text-muted-foreground mt-1">Igrejas</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-border/60">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                <Building2 className="w-4 h-4 text-blue-500" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-2xl font-bold text-foreground leading-none">{departments.length}</p>
+                <p className="text-xs text-muted-foreground mt-1">Departamentos</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-border/60">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+                <Users className="w-4 h-4 text-emerald-500" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-2xl font-bold text-foreground leading-none">{allProfiles.length}</p>
+                <p className="text-xs text-muted-foreground mt-1">Voluntários</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-border/60">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
+                <Activity className="w-4 h-4 text-amber-500" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-2xl font-bold text-foreground leading-none">{loginsToday}</p>
+                <p className="text-xs text-muted-foreground mt-1">Logins hoje</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Actions Toolbar — grouped by category */}
         <Card className="mb-6">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
@@ -786,35 +837,48 @@ export default function Admin() {
               Atalhos para as principais áreas administrativas
             </CardDescription>
           </CardHeader>
-          <CardContent className="pt-0">
-            <div className="flex flex-wrap gap-2">
-               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('broadcast')}>
-                 <Megaphone className="w-3.5 h-3.5" /> Comunicados LEVI
-               </Button>
-               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('guests')}>
-                 <UserX className="w-3.5 h-3.5" /> Entradas sem login
-               </Button>
-               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('daily-logins')}>
-                 <BarChart3 className="w-3.5 h-3.5" /> Logins por dia
-               </Button>
-               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('recent-logins')}>
-                 <Clock className="w-3.5 h-3.5" /> Últimos logins
-               </Button>
-               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('volunteers')}>
-                 <Users className="w-3.5 h-3.5" /> Todos voluntários
-               </Button>
-               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('departments')}>
-                 <Building2 className="w-3.5 h-3.5" /> Departamentos
-               </Button>
-               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('churches')}>
-                 <Church className="w-3.5 h-3.5" /> Igrejas
-               </Button>
-               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('analytics')}>
-                 <TrendingUp className="w-3.5 h-3.5" /> Acesso ao site
-               </Button>
-               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('lighthouse')}>
-                 <Gauge className="w-3.5 h-3.5" /> Lighthouse / PageSpeed
-               </Button>
+          <CardContent className="pt-0 space-y-4">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70 mb-2">Pessoas & Igrejas</p>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('volunteers')}>
+                  <Users className="w-3.5 h-3.5 text-emerald-500" /> Todos voluntários
+                </Button>
+                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('departments')}>
+                  <Building2 className="w-3.5 h-3.5 text-blue-500" /> Departamentos
+                </Button>
+                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('churches')}>
+                  <Church className="w-3.5 h-3.5 text-violet-500" /> Igrejas
+                </Button>
+                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('guests')}>
+                  <UserX className="w-3.5 h-3.5 text-rose-500" /> Entradas sem login
+                </Button>
+              </div>
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70 mb-2">Comunicação</p>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('broadcast')}>
+                  <Megaphone className="w-3.5 h-3.5 text-primary" /> Comunicados LEVI
+                </Button>
+              </div>
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70 mb-2">Métricas & Sistema</p>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('daily-logins')}>
+                  <BarChart3 className="w-3.5 h-3.5 text-amber-500" /> Logins por dia
+                </Button>
+                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('recent-logins')}>
+                  <Clock className="w-3.5 h-3.5 text-amber-500" /> Últimos logins
+                </Button>
+                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('analytics')}>
+                  <TrendingUp className="w-3.5 h-3.5 text-amber-500" /> Acesso ao site
+                </Button>
+                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setOpenModal('lighthouse')}>
+                  <Gauge className="w-3.5 h-3.5 text-muted-foreground" /> Lighthouse / PageSpeed
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -1520,22 +1584,12 @@ export default function Admin() {
                 </CardDescription>
               </div>
               <Dialog open={showCreateChurch} onOpenChange={setShowCreateChurch}>
-                <TooltipProvider>
-                  <UITooltip>
-                    <TooltipTrigger asChild>
-                      <DialogTrigger asChild>
-                        <Button
-                          size="icon"
-                          className="h-9 w-9 rounded-full gradient-primary text-primary-foreground shadow-glow-sm"
-                          aria-label="Nova Igreja"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                      </DialogTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent>Nova Igreja</TooltipContent>
-                  </UITooltip>
-                </TooltipProvider>
+                <DialogTrigger asChild>
+                  <Button size="sm">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Nova Igreja
+                  </Button>
+                </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Criar Nova Igreja</DialogTitle>
@@ -1660,100 +1714,98 @@ export default function Admin() {
                 Nenhuma igreja cadastrada.
               </p>
             ) : (
-              <TooltipProvider delayDuration={100}>
-                <div className="flex flex-wrap gap-3">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Código</TableHead>
+                    <TableHead>Cidade/Estado</TableHead>
+                    <TableHead>Criado em</TableHead>
+                    <TableHead className="w-[150px]">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {churches.map((church) => (
-                    <UITooltip key={church.id}>
-                      <TooltipTrigger asChild>
-                        <button
-                          type="button"
-                          onClick={() => handleOpenEditChurch(church)}
-                          className="group relative shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full"
-                          aria-label={church.name}
-                        >
-                          <Avatar className="h-12 w-12 border-2 border-primary/20 group-hover:border-primary/60 transition-colors">
-                            {church.logo_url ? (
-                              <AvatarImage src={church.logo_url} alt={church.name} />
-                            ) : null}
-                            <AvatarFallback className="bg-violet-500/10 text-violet-500">
-                              <Church className="w-5 h-5" />
-                            </AvatarFallback>
-                          </Avatar>
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom" className="max-w-[240px]">
-                        <div className="space-y-1">
-                          <p className="font-semibold">{church.name}</p>
-                          <p className="text-xs font-mono text-primary">{church.code}</p>
-                          {(church.city || church.state) && (
-                            <p className="text-xs text-muted-foreground">
-                              {[church.city, church.state].filter(Boolean).join(', ')}
-                            </p>
-                          )}
-                          <div className="flex items-center gap-1 pt-1" onClick={(e) => e.stopPropagation()}>
+                    <TableRow key={church.id}>
+                      <TableCell className="font-medium">{church.name}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="font-mono">
+                          {church.code}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {[church.city, church.state].filter(Boolean).join(', ') || '-'}
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(church.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleOpenEditChurch(church)}
+                            title="Editar igreja"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => copyInviteLink(church.code)}
+                            title="Copiar link de convite"
+                          >
+                            <Copy className="w-4 h-4" />
+                          </Button>
+                          {church.slug && (
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-7 w-7"
-                              onClick={(e) => { e.stopPropagation(); copyInviteLink(church.code); }}
-                              title="Copiar convite"
+                              onClick={() => copyChurchUrl(church.slug!)}
+                              title="Copiar link da página"
                             >
-                              <Copy className="w-3.5 h-3.5" />
+                              <LinkIcon className="w-4 h-4" />
                             </Button>
-                            {church.slug && (
-                              <Button
-                                variant="ghost"
+                          )}
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                variant="ghost" 
                                 size="icon"
-                                className="h-7 w-7"
-                                onClick={(e) => { e.stopPropagation(); copyChurchUrl(church.slug!); }}
-                                title="Copiar link"
+                                disabled={deletingChurch === church.id}
+                                title="Excluir igreja"
                               >
-                                <LinkIcon className="w-3.5 h-3.5" />
+                                {deletingChurch === church.id ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="w-4 h-4 text-destructive" />
+                                )}
                               </Button>
-                            )}
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7"
-                                  onClick={(e) => e.stopPropagation()}
-                                  disabled={deletingChurch === church.id}
-                                  title="Excluir"
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Excluir igreja?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Esta ação excluirá permanentemente a igreja "{church.name}" e todos os seus departamentos, membros, escalas e dados relacionados. Esta ação não pode ser desfeita.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteChurch(church.id)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                 >
-                                  {deletingChurch === church.id ? (
-                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                  ) : (
-                                    <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                                  )}
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Excluir igreja?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Esta ação excluirá permanentemente a igreja "{church.name}" e todos os seus departamentos, membros, escalas e dados relacionados.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => handleDeleteChurch(church.id)}
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                  >
-                                    Excluir
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                          <p className="text-[10px] text-muted-foreground pt-1">Clique no avatar para editar</p>
+                                  Excluir
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
-                      </TooltipContent>
-                    </UITooltip>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </div>
-              </TooltipProvider>
+                </TableBody>
+              </Table>
             )}
           </CardContent>
         </Card>
@@ -2066,173 +2118,151 @@ export default function Admin() {
                 Nenhum departamento encontrado.
               </p>
             ) : (
-              <>
-              <TooltipProvider delayDuration={100}>
-                <div className="flex flex-wrap gap-3">
-                  {departments.map((dept) => {
-                    const initials = dept.name.slice(0, 2).toUpperCase();
-                    const isActive = expandedDept === dept.id;
-                    return (
-                      <UITooltip key={dept.id}>
-                        <TooltipTrigger asChild>
-                          <button
-                            type="button"
-                            onClick={() => toggleDepartment(dept.id)}
-                            className="group relative shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full"
-                            aria-label={dept.name}
-                          >
-                            <Avatar className={`h-12 w-12 border-2 transition-colors ${isActive ? 'border-primary' : 'border-primary/20 group-hover:border-primary/60'}`}>
-                              {dept.church_logo_url ? (
-                                <AvatarImage src={dept.church_logo_url} alt={dept.name} />
-                              ) : null}
-                              <AvatarFallback className="bg-blue-500/10 text-blue-500 text-xs font-semibold">
-                                {initials}
-                              </AvatarFallback>
-                            </Avatar>
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom" className="max-w-[240px]">
-                          <div className="space-y-1">
-                            <p className="font-semibold">{dept.name}</p>
-                            {dept.church_name && (
-                              <p className="text-xs text-muted-foreground">{dept.church_name}</p>
-                            )}
-                            <p className="text-xs text-muted-foreground">
-                              Líder: {dept.leader_name || 'N/A'}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {dept.member_count} membro{dept.member_count !== 1 ? 's' : ''}
-                            </p>
-                            <div className="pt-1" onClick={(e) => e.stopPropagation()}>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7"
-                                    onClick={(e) => e.stopPropagation()}
-                                    disabled={deleting}
-                                    title="Excluir departamento"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Excluir departamento?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Esta ação excluirá permanentemente o departamento "{dept.name}" e todos os seus dados.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => handleDeleteDepartment(dept.id)}
-                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    >
-                                      Excluir
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </div>
-                            <p className="text-[10px] text-muted-foreground pt-1">Clique no avatar para ver membros</p>
+              <div className="space-y-4">
+                {departments.map((dept) => (
+                  <div key={dept.id} className="border border-border rounded-lg overflow-hidden">
+                    {/* Department Row */}
+                    <div 
+                      className="flex items-center justify-between p-4 bg-card hover:bg-muted/50 cursor-pointer"
+                      onClick={() => toggleDepartment(dept.id)}
+                    >
+                      <div className="flex items-center gap-3 flex-1">
+                        {dept.church_logo_url ? (
+                          <img 
+                            src={dept.church_logo_url} 
+                            alt={dept.church_name || ''} 
+                            className="w-8 h-8 rounded-lg object-cover border border-border shrink-0"
+                          />
+                        ) : dept.church_name ? (
+                          <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                            <Church className="w-4 h-4 text-muted-foreground" />
                           </div>
-                        </TooltipContent>
-                      </UITooltip>
-                    );
-                  })}
-                </div>
-              </TooltipProvider>
-
-              {expandedDept && (() => {
-                const dept = departments.find(d => d.id === expandedDept);
-                if (!dept) return null;
-                return (
-                  <div className="mt-6 border border-border rounded-lg overflow-hidden">
-                    <div className="flex items-center justify-between p-3 bg-muted/50">
+                        ) : null}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold text-foreground">{dept.name}</h3>
+                            <Badge variant="secondary">
+                              {dept.member_count} membro{dept.member_count !== 1 ? 's' : ''}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {dept.church_name ? `${dept.church_name} • ` : ''}Líder: {dept.leader_name || 'N/A'} • Criado em {format(new Date(dept.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                          </p>
+                        </div>
+                      </div>
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold">{dept.name}</h3>
-                        <Badge variant="secondary">
-                          {dept.member_count} membro{dept.member_count !== 1 ? 's' : ''}
-                        </Badge>
-                        {dept.church_name && (
-                          <span className="text-xs text-muted-foreground">• {dept.church_name}</span>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button 
+                              variant="destructive" 
+                              size="sm"
+                              onClick={(e) => e.stopPropagation()}
+                              disabled={deleting}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Excluir departamento?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Esta ação excluirá permanentemente o departamento "{dept.name}" e todos os seus dados (escalas, membros, notificações). Esta ação não pode ser desfeita.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteDepartment(dept.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Excluir
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                        {expandedDept === dept.id ? (
+                          <ChevronUp className="w-5 h-5 text-muted-foreground" />
+                        ) : (
+                          <ChevronDown className="w-5 h-5 text-muted-foreground" />
                         )}
                       </div>
-                      <Button variant="ghost" size="icon" onClick={() => setExpandedDept(null)}>
-                        <X className="w-4 h-4" />
-                      </Button>
                     </div>
-                    <div className="bg-muted/30 p-4">
-                      {loadingMembers[dept.id] ? (
-                        <div className="flex justify-center py-4">
-                          <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                        </div>
-                      ) : members[dept.id]?.length === 0 ? (
-                        <p className="text-center text-muted-foreground py-4">
-                          Nenhum membro neste departamento.
-                        </p>
-                      ) : (
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Nome</TableHead>
-                              <TableHead>Email</TableHead>
-                              <TableHead>Função</TableHead>
-                              <TableHead>Entrou em</TableHead>
-                              <TableHead className="w-[80px]"></TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {members[dept.id]?.map((member) => (
-                              <TableRow key={member.id}>
-                                <TableCell className="font-medium">{member.name}</TableCell>
-                                <TableCell>{member.email}</TableCell>
-                                <TableCell>
-                                  <Badge variant={member.role === 'leader' ? 'default' : 'secondary'}>
-                                    {member.role === 'leader' ? 'Líder' : 'Membro'}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>
-                                  {format(new Date(member.joined_at), "dd/MM/yyyy", { locale: ptBR })}
-                                </TableCell>
-                                <TableCell>
-                                  <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                      <Button variant="ghost" size="sm" disabled={deleting}>
-                                        <Trash2 className="w-4 h-4 text-destructive" />
-                                      </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle>Remover membro?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                          Deseja remover "{member.name}" do departamento "{dept.name}"?
-                                        </AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction
-                                          onClick={() => handleDeleteMember(member.id, dept.id)}
-                                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                        >
-                                          Remover
-                                        </AlertDialogAction>
-                                      </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                  </AlertDialog>
-                                </TableCell>
+
+                    {/* Members Table */}
+                    {expandedDept === dept.id && (
+                      <div className="border-t border-border bg-muted/30 p-4">
+                        {loadingMembers[dept.id] ? (
+                          <div className="flex justify-center py-4">
+                            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                          </div>
+                        ) : members[dept.id]?.length === 0 ? (
+                          <p className="text-center text-muted-foreground py-4">
+                            Nenhum membro neste departamento.
+                          </p>
+                        ) : (
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Nome</TableHead>
+                                <TableHead>Email</TableHead>
+                                <TableHead>Função</TableHead>
+                                <TableHead>Entrou em</TableHead>
+                                <TableHead className="w-[80px]"></TableHead>
                               </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      )}
-                    </div>
+                            </TableHeader>
+                            <TableBody>
+                              {members[dept.id]?.map((member) => (
+                                <TableRow key={member.id}>
+                                  <TableCell className="font-medium">{member.name}</TableCell>
+                                  <TableCell>{member.email}</TableCell>
+                                  <TableCell>
+                                    <Badge variant={member.role === 'leader' ? 'default' : 'secondary'}>
+                                      {member.role === 'leader' ? 'Líder' : 'Membro'}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    {format(new Date(member.joined_at), "dd/MM/yyyy", { locale: ptBR })}
+                                  </TableCell>
+                                  <TableCell>
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button 
+                                          variant="ghost" 
+                                          size="sm"
+                                          disabled={deleting}
+                                        >
+                                          <Trash2 className="w-4 h-4 text-destructive" />
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Remover membro?</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            Deseja remover "{member.name}" do departamento "{dept.name}"?
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                          <AlertDialogAction
+                                            onClick={() => handleDeleteMember(member.id, dept.id)}
+                                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                          >
+                                            Remover
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        )}
+                      </div>
+                    )}
                   </div>
-                );
-              })()}
-              </>
+                ))}
+              </div>
             )}
           </CardContent>
         </Card>
