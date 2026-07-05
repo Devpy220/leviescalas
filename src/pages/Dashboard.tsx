@@ -147,6 +147,112 @@ export default function Dashboard() {
     }
   };
 
+  const fetchSchedules = async () => {
+    if (!currentUser) return;
+    setSchedulesLoading(true);
+    try {
+      const { data: memberData } = await supabase
+        .from('members')
+        .select('department_id')
+        .eq('user_id', currentUser.id);
+
+      if (!memberData || memberData.length === 0) {
+        setSchedules([]);
+        setScheduleDeptIds([]);
+        return;
+      }
+
+      const deptIds = memberData.map((m) => m.department_id);
+      setScheduleDeptIds(deptIds);
+
+      const { data: schedulesData } = await supabase
+        .from('schedules')
+        .select(`
+          id, date, time_start, time_end, department_id, sector_id, assignment_role,
+          sectors(name, color)
+        `)
+        .in('department_id', deptIds)
+        .eq('user_id', currentUser.id)
+        .gte('date', new Date().toISOString().split('T')[0])
+        .order('date', { ascending: true });
+
+      const { data: departments } = await supabase
+        .from('departments')
+        .select('id, name, church_id')
+        .in('id', deptIds);
+
+      const churchIds = [...new Set((departments || []).map((d) => d.church_id).filter(Boolean))] as string[];
+      const churchMap: Record<string, { name: string; logo_url: string | null }> = {};
+      if (churchIds.length > 0) {
+        const { data: churches } = await supabase
+          .from('churches')
+          .select('id, name, logo_url')
+          .in('id', churchIds);
+        churches?.forEach((c) => {
+          churchMap[c.id] = { name: c.name, logo_url: c.logo_url };
+        });
+      }
+      const deptMap = Object.fromEntries((departments || []).map((d) => [d.id, {
+        name: d.name,
+        church_name: d.church_id ? churchMap[d.church_id]?.name || null : null,
+        church_logo_url: d.church_id ? churchMap[d.church_id]?.logo_url || null : null,
+      }]));
+
+      const enriched: PersonalScheduleData[] = (schedulesData || []).map((s: any) => ({
+        id: s.id,
+        date: s.date,
+        time_start: s.time_start,
+        time_end: s.time_end,
+        department_id: s.department_id,
+        department_name: deptMap[s.department_id]?.name || 'Departamento',
+        sector_name: s.sectors?.name || null,
+        sector_color: s.sectors?.color || null,
+        church_name: deptMap[s.department_id]?.church_name || null,
+        church_logo_url: deptMap[s.department_id]?.church_logo_url || null,
+        assignment_role: s.assignment_role || null,
+      }));
+
+      setSchedules(enriched);
+    } catch (err) {
+      console.error('Error fetching schedules:', err);
+    } finally {
+      setSchedulesLoading(false);
+    }
+  };
+
+  const handleRequestSwap = (schedule: PersonalScheduleData) => {
+    setSelectedSchedule(schedule);
+    setSwapDialogOpen(true);
+  };
+
+  const handleSwapSubmit = async (targetScheduleId: string, targetUserId: string, reason?: string) => {
+    if (!selectedSchedule) return false;
+    return createSwapRequest(selectedSchedule.id, targetScheduleId, targetUserId, reason);
+  };
+
+  const handleRespondToSwap = (swap: ScheduleSwap) => {
+    setSelectedSwap(swap);
+    setResponseDialogOpen(true);
+  };
+
+  const handleAcceptSwap = async (swapId: string) => {
+    const success = await respondToSwap(swapId, true);
+    if (success) fetchSchedules();
+    return success;
+  };
+
+  const handleRejectSwap = async (swapId: string) => respondToSwap(swapId, false);
+
+  const handleCancelSwap = async (swapId: string) => {
+    setCancellingSwapId(swapId);
+    await cancelSwap(swapId);
+    setCancellingSwapId(null);
+    return true;
+  };
+
+  const pendingSwapsForMe = getPendingSwapsForUser();
+
+
   const checkCanCreateDepartment = async () => {
     if (!currentUser) return;
     
