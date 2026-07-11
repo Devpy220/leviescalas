@@ -4,10 +4,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import {
   Music2, Save, ExternalLink, Pencil, Loader2, Plus, Trash2,
   ArrowUp, ArrowDown, Paperclip, FileText, Search, Youtube, Upload,
+  Library, Music, Video,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
