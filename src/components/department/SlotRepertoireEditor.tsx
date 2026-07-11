@@ -4,10 +4,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import {
   Music2, Save, ExternalLink, Pencil, Loader2, Plus, Trash2,
   ArrowUp, ArrowDown, Paperclip, FileText, Search, Youtube, Upload,
+  Library, Music, Video,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -78,6 +81,11 @@ export default function SlotRepertoireEditor({
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [repItems, setRepItems] = useState<any[]>([]);
+  const [repLoading, setRepLoading] = useState(false);
+  const [repSearch, setRepSearch] = useState('');
+  const [repFilter, setRepFilter] = useState<'all' | 'musica' | 'video' | 'cifra'>('all');
   const rowIdRef = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -298,138 +306,273 @@ export default function SlotRepertoireEditor({
     );
   }
 
-  // ============== EDIT MODE ==============
+  // ============== EDIT MODE (modal) ==============
+  const openPicker = async () => {
+    setPickerOpen(true);
+    if (repItems.length > 0) return;
+    setRepLoading(true);
+    const { data, error } = await supabase
+      .from('repertorio' as any)
+      .select('id, titulo, tipo, url, tom, bpm')
+      .eq('departamento_id', departmentId)
+      .eq('ativo', true)
+      .order('titulo', { ascending: true });
+    if (error) {
+      toast.error('Erro ao carregar repertório');
+    } else {
+      setRepItems((data || []) as any[]);
+    }
+    setRepLoading(false);
+  };
+
+  const addFromRep = (r: any) => {
+    setSetlist((prev) => [
+      ...prev,
+      {
+        title: r.titulo || '',
+        url: r.url || '',
+        tom: r.tom || '',
+        bpm: r.bpm ? String(r.bpm) : '',
+      },
+    ]);
+    toast.success(`"${r.titulo}" adicionada`);
+  };
+
+  const filteredRep = repItems.filter((r) => {
+    if (repFilter !== 'all' && r.tipo !== repFilter) return false;
+    if (repSearch.trim()) {
+      return r.titulo?.toLowerCase().includes(repSearch.trim().toLowerCase());
+    }
+    return true;
+  });
+
   return (
-    <div className="space-y-3 rounded-lg border border-violet-500/20 bg-violet-500/5 p-3">
-      <div className="flex items-center gap-2 text-sm font-semibold">
-        <Music2 className="w-4 h-4 text-violet-500" />
-        Repertório de Hoje
-      </div>
+    <>
+      <Dialog open={editing} onOpenChange={(o) => { if (!o) cancel(); }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
+          <DialogHeader className="px-5 pt-5 pb-3 border-b">
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Music2 className="w-4 h-4 text-violet-500" />
+              Repertório de Hoje
+            </DialogTitle>
+          </DialogHeader>
 
-      {/* Setlist */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="text-xs font-medium text-muted-foreground">Setlist (ordem das músicas)</div>
-          <Button type="button" size="sm" variant="outline" className="h-7 gap-1" onClick={addSong}>
-            <Plus className="w-3.5 h-3.5" /> Música
-          </Button>
-        </div>
-        {setlist.length === 0 && (
-          <p className="text-[11px] italic text-muted-foreground">Nenhuma música ainda.</p>
-        )}
-        {setlist.map((s, i) => (
-          <div key={i} className="rounded-md border bg-background p-2 space-y-1.5">
-            <div className="flex items-center gap-1">
-              <span className="text-xs font-bold text-muted-foreground w-5">{i + 1}.</span>
-              <Input
-                placeholder="Título da música"
-                value={s.title}
-                onChange={(e) => updateSong(i, { title: e.target.value })}
-                className="h-8 text-sm flex-1"
-              />
-              <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => moveSong(i, -1)} disabled={i === 0}>
-                <ArrowUp className="w-3.5 h-3.5" />
-              </Button>
-              <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => moveSong(i, 1)} disabled={i === setlist.length - 1}>
-                <ArrowDown className="w-3.5 h-3.5" />
-              </Button>
-              <Button type="button" size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => removeSong(i)}>
-                <Trash2 className="w-3.5 h-3.5" />
-              </Button>
-            </div>
-            <div className="grid grid-cols-[1fr_70px_70px] gap-1.5 ml-6">
-              <Input
-                placeholder="Link (YouTube, Spotify, Deezer, cifra, PDF...)"
-                value={s.url || ''}
-                onChange={(e) => updateSong(i, { url: e.target.value })}
-                className="h-7 text-xs"
-                inputMode="url"
-              />
-              <Input
-                placeholder="Tom"
-                value={s.tom || ''}
-                onChange={(e) => updateSong(i, { tom: e.target.value })}
-                className="h-7 text-xs"
-              />
-              <Input
-                placeholder="BPM"
-                value={s.bpm || ''}
-                onChange={(e) => updateSong(i, { bpm: e.target.value })}
-                className="h-7 text-xs"
-                inputMode="numeric"
-              />
-            </div>
-            {s.title && (
-              <a href={youtubeSearchUrl(s.title)} target="_blank" rel="noopener noreferrer"
-                className="ml-6 inline-flex items-center gap-1 text-[11px] text-rose-600 hover:underline">
-                <Search className="w-3 h-3" /> Buscar "{s.title}" no YouTube
-              </a>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* Attachments */}
-      <div className="space-y-1.5 pt-1 border-t border-violet-500/15">
-        <div className="flex items-center justify-between">
-          <div className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-            <Paperclip className="w-3.5 h-3.5" /> Anexos (cifras PDF, ordem do culto)
-          </div>
-          <Button type="button" size="sm" variant="outline" className="h-7 gap-1" onClick={onPickFile} disabled={uploading}>
-            {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-            Upload
-          </Button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/pdf,image/*,.doc,.docx"
-            className="hidden"
-            onChange={onFileChange}
-          />
-        </div>
-        {attachments.length === 0 ? (
-          <p className="text-[11px] italic text-muted-foreground">Nenhum anexo.</p>
-        ) : (
-          <div className="space-y-1">
-            {attachments.map((a, i) => (
-              <div key={i} className="flex items-center gap-2 rounded-md border bg-background px-2 py-1 text-xs">
-                <FileText className="w-3.5 h-3.5 text-violet-500 shrink-0" />
-                <a href={a.url} target="_blank" rel="noopener noreferrer" className="truncate flex-1 text-primary hover:underline">
-                  {a.name}
-                </a>
-                <Button type="button" size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => removeAttachment(i)}>
-                  <Trash2 className="w-3 h-3" />
-                </Button>
+          <ScrollArea className="flex-1">
+            <div className="px-5 py-4 space-y-4">
+              {/* Setlist */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="text-xs font-medium text-muted-foreground">Setlist (ordem das músicas)</div>
+                  <div className="flex gap-1.5">
+                    <Button type="button" size="sm" variant="outline" className="h-7 gap-1" onClick={openPicker}>
+                      <Library className="w-3.5 h-3.5" /> Do Repertório
+                    </Button>
+                    <Button type="button" size="sm" variant="outline" className="h-7 gap-1" onClick={addSong}>
+                      <Plus className="w-3.5 h-3.5" /> Manual
+                    </Button>
+                  </div>
+                </div>
+                {setlist.length === 0 && (
+                  <p className="text-[11px] italic text-muted-foreground">
+                    Nenhuma música ainda. Selecione do repertório do departamento ou adicione manualmente.
+                  </p>
+                )}
+                {setlist.map((s, i) => (
+                  <div key={i} className="rounded-md border bg-background p-2 space-y-1.5">
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs font-bold text-muted-foreground w-5">{i + 1}.</span>
+                      <Input
+                        placeholder="Título da música"
+                        value={s.title}
+                        onChange={(e) => updateSong(i, { title: e.target.value })}
+                        className="h-8 text-sm flex-1"
+                      />
+                      <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => moveSong(i, -1)} disabled={i === 0}>
+                        <ArrowUp className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => moveSong(i, 1)} disabled={i === setlist.length - 1}>
+                        <ArrowDown className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button type="button" size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => removeSong(i)}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-[1fr_70px_70px] gap-1.5 ml-6">
+                      <Input
+                        placeholder="Link (YouTube, Spotify, cifra...)"
+                        value={s.url || ''}
+                        onChange={(e) => updateSong(i, { url: e.target.value })}
+                        className="h-7 text-xs"
+                        inputMode="url"
+                      />
+                      <Input
+                        placeholder="Tom"
+                        value={s.tom || ''}
+                        onChange={(e) => updateSong(i, { tom: e.target.value })}
+                        className="h-7 text-xs"
+                      />
+                      <Input
+                        placeholder="BPM"
+                        value={s.bpm || ''}
+                        onChange={(e) => updateSong(i, { bpm: e.target.value })}
+                        className="h-7 text-xs"
+                        inputMode="numeric"
+                      />
+                    </div>
+                    {s.title && (
+                      <a href={youtubeSearchUrl(s.title)} target="_blank" rel="noopener noreferrer"
+                        className="ml-6 inline-flex items-center gap-1 text-[11px] text-rose-600 hover:underline">
+                        <Search className="w-3 h-3" /> Buscar "{s.title}" no YouTube
+                      </a>
+                    )}
+                  </div>
+                ))}
               </div>
-            ))}
+
+              {/* Attachments */}
+              <div className="space-y-1.5 pt-1 border-t">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                    <Paperclip className="w-3.5 h-3.5" /> Anexos (cifras PDF, ordem do culto)
+                  </div>
+                  <Button type="button" size="sm" variant="outline" className="h-7 gap-1" onClick={onPickFile} disabled={uploading}>
+                    {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                    Upload
+                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="application/pdf,image/*,.doc,.docx"
+                    className="hidden"
+                    onChange={onFileChange}
+                  />
+                </div>
+                {attachments.length === 0 ? (
+                  <p className="text-[11px] italic text-muted-foreground">Nenhum anexo.</p>
+                ) : (
+                  <div className="space-y-1">
+                    {attachments.map((a, i) => (
+                      <div key={i} className="flex items-center gap-2 rounded-md border bg-background px-2 py-1 text-xs">
+                        <FileText className="w-3.5 h-3.5 text-violet-500 shrink-0" />
+                        <a href={a.url} target="_blank" rel="noopener noreferrer" className="truncate flex-1 text-primary hover:underline">
+                          {a.name}
+                        </a>
+                        <Button type="button" size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => removeAttachment(i)}>
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Notes */}
+              <div className="space-y-1.5 pt-1 border-t">
+                <div className="text-xs font-medium text-muted-foreground">Observações / recados</div>
+                <Textarea
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder="Recados para a equipe escalada — links extras (Spotify, Deezer, Apple Music), tom alternativo, lembretes, ordem do culto..."
+                  className="min-h-[80px] text-sm"
+                />
+              </div>
+
+              <p className="text-[11px] text-muted-foreground">
+                Todos os escalados neste horário verão o repertório no app e receberão músicas, links e anexos no WhatsApp.
+              </p>
+            </div>
+          </ScrollArea>
+
+          <DialogFooter className="px-5 py-3 border-t bg-muted/30 gap-2 sm:gap-2">
+            <Button size="sm" variant="ghost" onClick={cancel} disabled={saving || uploading}>
+              Cancelar
+            </Button>
+            <Button size="sm" onClick={save} disabled={saving || uploading || !dirty} className="gap-1">
+              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Picker do Repertório */}
+      <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-hidden flex flex-col p-0 gap-0">
+          <DialogHeader className="px-5 pt-5 pb-3 border-b">
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Library className="w-4 h-4 text-violet-500" />
+              Selecionar do Repertório
+            </DialogTitle>
+          </DialogHeader>
+          <div className="px-4 py-3 border-b space-y-2">
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por título..."
+                value={repSearch}
+                onChange={(e) => setRepSearch(e.target.value)}
+                className="pl-8 h-9"
+              />
+            </div>
+            <div className="flex gap-1.5 flex-wrap">
+              {(['all', 'musica', 'video', 'cifra'] as const).map((f) => (
+                <Button
+                  key={f}
+                  size="sm"
+                  variant={repFilter === f ? 'default' : 'outline'}
+                  className="h-7 text-xs capitalize"
+                  onClick={() => setRepFilter(f)}
+                >
+                  {f === 'all' ? 'Todos' : f}
+                </Button>
+              ))}
+            </div>
           </div>
-        )}
-      </div>
-
-      {/* Notes */}
-      <div className="space-y-1.5 pt-1 border-t border-violet-500/15">
-        <div className="text-xs font-medium text-muted-foreground">Observações / recados</div>
-        <Textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="Recados para a equipe escalada — links extras (Spotify, Deezer, Apple Music), tom alternativo, lembretes, ordem do culto..."
-          className="min-h-[80px] text-sm"
-        />
-      </div>
-
-      <p className="text-[11px] text-muted-foreground">
-        Todos os escalados neste horário verão o repertório no app e receberão músicas, links e anexos no WhatsApp.
-      </p>
-
-      <div className="flex justify-end gap-2">
-        <Button size="sm" variant="ghost" onClick={cancel} disabled={saving || uploading}>
-          Cancelar
-        </Button>
-        <Button size="sm" onClick={save} disabled={saving || uploading || !dirty} className="gap-1">
-          {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-          Salvar
-        </Button>
-      </div>
-    </div>
+          <ScrollArea className="flex-1 max-h-[50vh]">
+            <div className="p-3 space-y-1.5">
+              {repLoading ? (
+                <div className="flex items-center gap-2 justify-center py-6 text-xs text-muted-foreground">
+                  <Loader2 className="w-4 h-4 animate-spin" /> Carregando...
+                </div>
+              ) : filteredRep.length === 0 ? (
+                <p className="text-xs italic text-muted-foreground text-center py-6">
+                  {repItems.length === 0
+                    ? 'Nenhum item no repertório deste departamento ainda.'
+                    : 'Nenhum resultado.'}
+                </p>
+              ) : (
+                filteredRep.map((r) => {
+                  const Icon = r.tipo === 'video' ? Video : r.tipo === 'cifra' ? Music2 : Music;
+                  return (
+                    <button
+                      key={r.id}
+                      type="button"
+                      onClick={() => addFromRep(r)}
+                      className="w-full flex items-center gap-2 rounded-md border bg-background hover:bg-muted px-2.5 py-2 text-left transition"
+                    >
+                      <Icon className="w-4 h-4 text-violet-500 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium truncate">{r.titulo}</div>
+                        <div className="flex gap-1.5 mt-0.5 text-[10px] text-muted-foreground">
+                          <span className="capitalize">{r.tipo}</span>
+                          {r.tom && <span>• Tom {r.tom}</span>}
+                          {r.bpm && <span>• {r.bpm} BPM</span>}
+                        </div>
+                      </div>
+                      <Plus className="w-4 h-4 text-muted-foreground shrink-0" />
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </ScrollArea>
+          <DialogFooter className="px-5 py-3 border-t bg-muted/30">
+            <Button size="sm" variant="outline" onClick={() => setPickerOpen(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
