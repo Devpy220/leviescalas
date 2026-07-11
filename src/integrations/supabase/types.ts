@@ -1006,6 +1006,7 @@ export type Database = {
           departamento_id: string
           id: string
           observacoes: string | null
+          pdf_url: string | null
           tags: string[] | null
           tipo: string
           titulo: string
@@ -1021,6 +1022,7 @@ export type Database = {
           departamento_id: string
           id?: string
           observacoes?: string | null
+          pdf_url?: string | null
           tags?: string[] | null
           tipo: string
           titulo: string
@@ -1036,6 +1038,7 @@ export type Database = {
           departamento_id?: string
           id?: string
           observacoes?: string | null
+          pdf_url?: string | null
           tags?: string[] | null
           tipo?: string
           titulo?: string
