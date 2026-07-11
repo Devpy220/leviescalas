@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useSidebarExpanded } from '@/contexts/SidebarContext';
+
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   Calendar, 
@@ -103,7 +103,7 @@ export default function MySchedules() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { isAdmin } = useAdmin();
-  const { expanded: sidebarExpanded } = useSidebarExpanded();
+  
   const { shouldShowInstallPrompt, install } = usePWAInstall();
   const isMobile = useIsMobile();
   
