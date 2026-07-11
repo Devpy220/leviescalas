@@ -157,6 +157,30 @@ export default function SlotRepertoireEditor({
     setOriginal({ content: payload.content, setlist, attachments });
     setEditing(false);
     toast.success('Repertório salvo');
+
+    // Notify scheduled volunteers via WhatsApp (fire-and-forget)
+    const hasContent =
+      (payload.content && payload.content.length > 0) ||
+      setlist.length > 0 ||
+      attachments.length > 0;
+    if (hasContent) {
+      supabase.functions.invoke('notify-slot-repertoire', {
+        body: {
+          department_id: departmentId,
+          date,
+          time_start: tStart,
+          time_end: tEnd,
+        },
+      }).then(({ data, error: fnErr }: any) => {
+        if (fnErr) {
+          console.warn('notify-slot-repertoire error:', fnErr);
+          return;
+        }
+        if (data?.sent && data?.recipients > 0) {
+          toast.success(`Repertório enviado no WhatsApp para ${data.recipients} escalado(s)`);
+        }
+      }).catch((e) => console.warn('notify-slot-repertoire invoke failed:', e));
+    }
   };
 
   const cancel = () => {

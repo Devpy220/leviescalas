@@ -9,6 +9,9 @@ verify_jwt = true
 [functions.send-schedule-notification]
 verify_jwt = true
 
+[functions.notify-slot-repertoire]
+verify_jwt = true
+
 [functions.send-scheduled-reminders]
 verify_jwt = false
 
