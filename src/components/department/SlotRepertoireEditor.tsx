@@ -81,6 +81,11 @@ export default function SlotRepertoireEditor({
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [repItems, setRepItems] = useState<any[]>([]);
+  const [repLoading, setRepLoading] = useState(false);
+  const [repSearch, setRepSearch] = useState('');
+  const [repFilter, setRepFilter] = useState<'all' | 'musica' | 'video' | 'cifra'>('all');
   const rowIdRef = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
