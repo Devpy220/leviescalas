@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSidebarExpanded } from '@/contexts/SidebarContext';
+
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
   ArrowLeft,
@@ -129,7 +129,7 @@ export default function Department() {
   const { isAdmin } = useAdmin();
   const { shouldShowInstallPrompt, install } = usePWAInstall();
   const { toast } = useToast();
-  const { expanded: sidebarExpanded } = useSidebarExpanded();
+  
   // Use session.user as fallback when user state hasn't updated yet
   const currentUser = user ?? session?.user;
   
