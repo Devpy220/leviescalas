@@ -23,20 +23,17 @@ serve(async (req: Request): Promise<Response> => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
-    // Check if today is one of the fixed days (1, 8, 16, 24) in Brazil timezone
+    // Send only once per week (Wednesdays) in Brazil timezone
     const now = new Date();
-    const brParts = new Intl.DateTimeFormat("en-CA", {
+    const brWeekday = new Intl.DateTimeFormat("en-US", {
       timeZone: "America/Sao_Paulo",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    }).formatToParts(now);
-    const dayOfMonth = parseInt(brParts.find((p) => p.type === "day")?.value ?? "0");
-    const SEND_DAYS = [5, 20];
+      weekday: "short",
+    }).format(now); // e.g. "Wed"
+    const SEND_WEEKDAY = "Wed";
 
-    if (!SEND_DAYS.includes(dayOfMonth)) {
+    if (brWeekday !== SEND_WEEKDAY) {
       return new Response(
-        JSON.stringify({ skipped: true, reason: `Today is day ${dayOfMonth}, not a send day` }),
+        JSON.stringify({ skipped: true, reason: `Today is ${brWeekday}, not ${SEND_WEEKDAY}` }),
         { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
