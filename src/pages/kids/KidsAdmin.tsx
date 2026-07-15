@@ -519,10 +519,31 @@ export default function KidsAdmin() {
               <div><Label>Idade máxima</Label><Input type="number" min={0} max={17} value={roomForm.age_max} onChange={e => setRoomForm({ ...roomForm, age_max: +e.target.value })} /></div>
             </div>
             <div><Label>Cor</Label><Input type="color" value={roomForm.color} onChange={e => setRoomForm({ ...roomForm, color: e.target.value })} /></div>
+            <label className="flex items-center gap-2 cursor-pointer p-2 rounded-lg bg-violet-50 border border-violet-200">
+              <Checkbox checked={roomForm.is_inclusion} onCheckedChange={v => setRoomForm({ ...roomForm, is_inclusion: !!v })} />
+              <span className="text-sm"><Sparkles className="w-3 h-3 inline mr-1 text-violet-600"/> Sala de inclusão (habilita assistente IA)</span>
+            </label>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowRoomModal(false)}>Cancelar</Button>
             <Button onClick={createRoom} disabled={busy || !roomForm.name.trim()}>{busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Criar"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Transfer modal */}
+      <Dialog open={!!transferChild} onOpenChange={o => !o && setTransferChild(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Transferir {transferChild?.full_name} de sala</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <Label>Nova sala</Label>
+            <select className="w-full border rounded-md h-10 px-3 bg-background" value={transferTargetRoom} onChange={e => setTransferTargetRoom(e.target.value)}>
+              {rooms.map(r => <option key={r.id} value={r.id}>{r.name} ({r.age_min}–{r.age_max} anos){r.is_inclusion ? " · inclusão" : ""}</option>)}
+            </select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTransferChild(null)}>Cancelar</Button>
+            <Button onClick={doTransfer} disabled={busy || !transferTargetRoom}>{busy ? <Loader2 className="w-4 h-4 animate-spin"/> : "Transferir"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
