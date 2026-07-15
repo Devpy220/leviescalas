@@ -509,8 +509,8 @@ export default function Dashboard() {
 
         {/* Top Header: Create button (left) | Avatar centered | Compact dept cards (right) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mb-8">
-          {/* Left: Create Department button (leaders only) */}
-          <div className="flex lg:justify-start justify-center order-2 lg:order-1">
+          {/* Left: Create Department + LeviKids access */}
+          <div className="flex lg:justify-start justify-center items-center gap-2 order-2 lg:order-1">
             {canCreateDepartment && (
               <TooltipProvider>
                 <Tooltip>
@@ -525,6 +525,18 @@ export default function Dashboard() {
                 </Tooltip>
               </TooltipProvider>
             )}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link to="/kids" aria-label="LeviKids">
+                    <Button size="icon" variant="outline" className="h-9 w-9 rounded-full border-2 border-amber-400 text-amber-600 hover:bg-amber-50">
+                      <span className="text-lg" aria-hidden>🧒</span>
+                    </Button>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent>LeviKids — Ministério Infantil</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
 
 
