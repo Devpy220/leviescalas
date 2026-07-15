@@ -43,6 +43,9 @@ import KidsAdmin from "./pages/kids/KidsAdmin";
 import KidsJoin from "./pages/kids/KidsJoin";
 import KidsCheckin from "./pages/kids/KidsCheckin";
 import KidsDashboard from "./pages/kids/KidsDashboard";
+import KidsInclusionAssistant from "./pages/kids/KidsInclusionAssistant";
+import KidsFamilyFeed from "./pages/kids/KidsFamilyFeed";
+import KidsReports from "./pages/kids/KidsReports";
 import ChooseApp from "./pages/ChooseApp";
 
 const queryClient = new QueryClient();
@@ -153,6 +156,9 @@ const App = () => (
                   <Route path="/kids/checkin" element={<ProtectedRoute><KidsCheckin /></ProtectedRoute>} />
                   <Route path="/kids/dashboard" element={<ProtectedRoute><KidsDashboard /></ProtectedRoute>} />
                   <Route path="/kids/admin" element={<ProtectedRoute><KidsAdmin /></ProtectedRoute>} />
+                  <Route path="/kids/inclusao" element={<ProtectedRoute><KidsInclusionAssistant /></ProtectedRoute>} />
+                  <Route path="/kids/mensagens" element={<ProtectedRoute><KidsFamilyFeed /></ProtectedRoute>} />
+                  <Route path="/kids/relatorios" element={<ProtectedRoute><KidsReports /></ProtectedRoute>} />
                   <Route path="/escolher-app" element={<ProtectedRoute><ChooseApp /></ProtectedRoute>} />
 
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
