@@ -195,7 +195,9 @@ export default function KidsCheckin() {
               ) : children.map(c => (
                 <label key={c.id} className="flex items-center gap-3 p-3 rounded-xl border cursor-pointer hover:bg-slate-50">
                   <Checkbox checked={selected.has(c.id)} onCheckedChange={v => {
-                    const s = new Set(selected); v ? s.add(c.id) : s.delete(c.id); setSelected(s);
+                    const s = new Set(selected);
+                    if (v) { s.add(c.id); } else { s.delete(c.id); }
+                    setSelected(s);
                   }} />
                   <span className="font-medium">{c.full_name}</span>
                 </label>
