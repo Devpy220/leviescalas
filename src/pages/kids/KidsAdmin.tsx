@@ -53,8 +53,48 @@ export default function KidsAdmin() {
   );
 
   useEffect(() => {
-    if (page) { loadRooms(); loadLeaders(); loadTeachers(); loadContent(); }
+    if (page) {
+      loadRooms(); loadLeaders(); loadTeachers(); loadContent(); loadKids();
+      setScheduleForm({
+        start: ((page as any).checkin_start_time || "18:30").slice(0,5),
+        end:   ((page as any).checkin_end_time   || "20:30").slice(0,5),
+        days:  (page as any).checkin_days || [0,3],
+        tz:    (page as any).checkin_timezone || "America/Sao_Paulo",
+      });
+    }
   }, [page]);
+
+  async function loadKids() {
+    if (!page) return;
+    const { data } = await supabase.from("kids_children").select("id, full_name, birth_date, current_room_id").eq("page_id", page.id).order("full_name");
+    setKids((data || []) as any);
+  }
+
+  async function saveSchedule() {
+    if (!page) return;
+    setBusy(true);
+    const { error } = await (supabase.from as any)("kids_pages").update({
+      checkin_start_time: scheduleForm.start,
+      checkin_end_time: scheduleForm.end,
+      checkin_days: scheduleForm.days,
+      checkin_timezone: scheduleForm.tz,
+    }).eq("id", page.id);
+    setBusy(false);
+    if (error) { toast({ title:"Erro", description: error.message, variant:"destructive" }); return; }
+    toast({ title: "Horário salvo" });
+    reload();
+  }
+
+  async function doTransfer() {
+    if (!transferChild || !transferTargetRoom) return;
+    setBusy(true);
+    const { error } = await (supabase.rpc as any)("kids_transfer_child", { _child_id: transferChild.id, _new_room_id: transferTargetRoom });
+    setBusy(false);
+    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Criança transferida" });
+    setTransferChild(null); setTransferTargetRoom("");
+    loadKids();
+  }
 
   async function loadRooms() {
     if (!page) return;
@@ -126,7 +166,7 @@ export default function KidsAdmin() {
     const { error } = await supabase.from("kids_rooms").insert({ page_id: page.id, ...roomForm });
     setBusy(false);
     if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    setShowRoomModal(false); setRoomForm({ name: "", color: "#F59E0B", age_min: 0, age_max: 12 });
+    setShowRoomModal(false); setRoomForm({ name: "", color: "#F59E0B", age_min: 0, age_max: 12, is_inclusion: false });
     loadRooms();
   }
 
