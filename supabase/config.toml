@@ -12,6 +12,9 @@ verify_jwt = true
 [functions.notify-slot-repertoire]
 verify_jwt = true
 
+[functions.kids-notify-whatsapp]
+verify_jwt = true
+
 [functions.send-scheduled-reminders]
 verify_jwt = false
 
