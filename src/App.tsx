@@ -145,7 +145,14 @@ const App = () => (
                     </ProtectedRoute>
                   } />
                   <Route path="/church-setup" element={<ChurchSetup />} />
-                  
+
+                  {/* LeviKids module */}
+                  <Route path="/kids" element={<KidsLanding />} />
+                  <Route path="/kids/join/:token" element={<KidsJoin />} />
+                  <Route path="/kids/checkin" element={<ProtectedRoute><KidsCheckin /></ProtectedRoute>} />
+                  <Route path="/kids/dashboard" element={<ProtectedRoute><KidsDashboard /></ProtectedRoute>} />
+                  <Route path="/kids/admin" element={<ProtectedRoute><KidsAdmin /></ProtectedRoute>} />
+
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
