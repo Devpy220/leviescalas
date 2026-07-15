@@ -38,6 +38,11 @@ import NotFound from "./pages/NotFound";
 import ConfirmSchedule from "./pages/ConfirmSchedule";
 import Apoiar from "./pages/Apoiar";
 import OAuthConsent from "./pages/OAuthConsent";
+import KidsLanding from "./pages/kids/KidsLanding";
+import KidsAdmin from "./pages/kids/KidsAdmin";
+import KidsJoin from "./pages/kids/KidsJoin";
+import KidsCheckin from "./pages/kids/KidsCheckin";
+import KidsDashboard from "./pages/kids/KidsDashboard";
 
 const queryClient = new QueryClient();
 
