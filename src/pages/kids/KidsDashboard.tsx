@@ -179,7 +179,7 @@ export default function KidsDashboard() {
                           </div>
 
                           <div className="flex gap-2 mt-3">
-                            <button onClick={() => { const s = new Set(reveal); revealed ? s.delete(it.checkin_id) : s.add(it.checkin_id); setReveal(s); }}
+                            <button onClick={() => { const s = new Set(reveal); if (revealed) { s.delete(it.checkin_id); } else { s.add(it.checkin_id); } setReveal(s); }}
                               className="flex-1 px-3 py-2 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1">
                               {revealed ? <><EyeOff className="w-3 h-3" /> {it.pickup_code}</> : <><Eye className="w-3 h-3" /> Ver código</>}
                             </button>
