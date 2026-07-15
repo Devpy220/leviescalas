@@ -2602,6 +2602,18 @@ export type Database = {
           token: string
         }[]
       }
+      kids_lookup_room_by_static_token: {
+        Args: { _token: string }
+        Returns: {
+          consent_text: string
+          consent_version: string
+          page_id: string
+          page_name: string
+          room_color: string
+          room_id: string
+          room_name: string
+        }[]
+      }
       kids_perform_checkin: {
         Args: { _child_ids: string[]; _dynamic_token: string }
         Returns: {
