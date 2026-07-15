@@ -11,14 +11,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Plus, QrCode, Download, FileDown, Trash2, Users, Copy, UserPlus, BookOpen, ShieldCheck, Search } from "lucide-react";
+import { Loader2, Plus, QrCode, Download, FileDown, Trash2, Users, Copy, UserPlus, BookOpen, ShieldCheck, Search, Clock, ArrowLeftRight, BarChart3, Sparkles } from "lucide-react";
 import { KIDS_JOIN_BASE, downloadPng, downloadPdf, qrToDataUrl } from "@/lib/kidsQr";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "react-router-dom";
 
-interface Room { id: string; name: string; color: string; age_min: number; age_max: number; static_qr_token: string; active: boolean; }
+interface Room { id: string; name: string; color: string; age_min: number; age_max: number; static_qr_token: string; active: boolean; is_inclusion?: boolean; }
 interface KidsLeader { id: string; user_id: string; created_at: string; profile?: { name: string; email: string } | null; }
 interface KidsTeacher { id: string; user_id: string; room_id: string; scope: string; profile?: { name: string; email: string } | null; room?: { name: string } | null; }
 interface KidsContent { id: string; content_date: string; title: string; body: string | null; room_id: string | null; }
+interface ChildRow { id: string; full_name: string; birth_date: string; current_room_id: string | null; }
 
 export default function KidsAdmin() {
   const { user } = useAuth();
@@ -29,9 +31,13 @@ export default function KidsAdmin() {
   const [teachers, setTeachers] = useState<KidsTeacher[]>([]);
   const [contents, setContents] = useState<KidsContent[]>([]);
   const [showRoomModal, setShowRoomModal] = useState(false);
-  const [roomForm, setRoomForm] = useState({ name: "", color: "#F59E0B", age_min: 0, age_max: 12 });
+  const [roomForm, setRoomForm] = useState({ name: "", color: "#F59E0B", age_min: 0, age_max: 12, is_inclusion: false });
   const [qrPreview, setQrPreview] = useState<{ room: Room; url: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [kids, setKids] = useState<ChildRow[]>([]);
+  const [transferChild, setTransferChild] = useState<ChildRow | null>(null);
+  const [transferTargetRoom, setTransferTargetRoom] = useState("");
+  const [scheduleForm, setScheduleForm] = useState({ start: "18:30", end: "20:30", days: [0,3] as number[], tz: "America/Sao_Paulo" });
 
   // invite / promotion modals
   const [showLeaderModal, setShowLeaderModal] = useState(false);
