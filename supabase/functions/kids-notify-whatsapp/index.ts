@@ -42,7 +42,7 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     const body = (await req.json()) as Body;
-    if (!body?.event || !body.child_id || !body.room_id) {
+    if (!body?.event || !body.child_id) {
       return new Response(JSON.stringify({ error: "invalid_body" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
