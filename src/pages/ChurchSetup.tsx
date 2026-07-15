@@ -73,6 +73,7 @@ const churchSchema = z.object({
   address: z.string().max(200).optional(),
   city: z.string().max(100).optional(),
   state: z.string().max(50).optional(),
+  product: z.enum(['levi', 'kids', 'both'], { errorMap: () => ({ message: 'Escolha qual app usar' }) }),
   acceptTerms: z.literal(true, { errorMap: () => ({ message: 'Você deve aceitar os termos' }) }),
 });
 
@@ -82,6 +83,9 @@ interface CreatedChurch {
   id: string;
   name: string;
   code: string;
+  product: 'levi' | 'kids' | 'both';
+  createDeptUrl: string | null;
+  kidsAdminUrl: string | null;
 }
 
 export default function ChurchSetup() {
@@ -99,7 +103,7 @@ export default function ChurchSetup() {
     defaultValues: { 
       registrantName: '', registrantEmail: '', registrantPhone: '',
       name: '', email: '', phone: '', cnpj: '', description: '', 
-      address: '', city: '', state: '', acceptTerms: undefined as any,
+      address: '', city: '', state: '', product: 'levi', acceptTerms: undefined as any,
     },
   });
 
@@ -119,6 +123,7 @@ export default function ChurchSetup() {
           address: data.address || null,
           city: data.city || null,
           state: data.state || null,
+          product: data.product,
         },
       });
 
@@ -129,6 +134,9 @@ export default function ChurchSetup() {
         id: result.church.id,
         name: result.church.name,
         code: result.church.code,
+        product: result.product ?? data.product,
+        createDeptUrl: result.createDeptUrl ?? null,
+        kidsAdminUrl: result.kidsAdminUrl ?? null,
       });
       setRegistrantPhone(data.registrantPhone);
       setWhatsappStatus(result.whatsappSent ? 'sent' : 'failed');
@@ -136,8 +144,8 @@ export default function ChurchSetup() {
       toast({
         title: 'Igreja cadastrada!',
         description: result.whatsappSent
-          ? 'O link de acesso foi enviado por WhatsApp.'
-          : 'O link aparece no modal. Copie e envie manualmente se necessário.',
+          ? 'Os links de acesso foram enviados por WhatsApp.'
+          : 'Os links aparecem no modal. Copie e envie manualmente se necessário.',
       });
     } catch (error: any) {
       console.error('Error creating church:', error);
@@ -319,6 +327,41 @@ export default function ChurchSetup() {
               </div>
 
               <div className="space-y-3 pt-4 border-t border-border/50">
+                <h3 className="font-semibold text-foreground">Qual app sua igreja vai usar? *</h3>
+                <p className="text-xs text-muted-foreground">Você recebe o link de acesso de cada app selecionado.</p>
+                <Controller
+                  name="product"
+                  control={churchForm.control}
+                  render={({ field }) => (
+                    <div className="grid gap-2">
+                      {[
+                        { v: 'levi', title: '📅 LEVI Escalas', desc: 'Escalas de voluntários por departamento/ministério.' },
+                        { v: 'kids', title: '👶 LeviKids', desc: 'Check-in seguro, salas, professores e responsáveis.' },
+                        { v: 'both', title: '✨ Os dois juntos', desc: 'LEVI Escalas + LeviKids na mesma igreja.' },
+                      ].map((opt) => {
+                        const selected = field.value === opt.v;
+                        return (
+                          <button
+                            type="button"
+                            key={opt.v}
+                            onClick={() => field.onChange(opt.v)}
+                            className={`text-left rounded-xl border p-3 transition-all ${selected ? 'border-primary bg-primary/5 shadow-glow-sm' : 'border-border hover:border-primary/40 bg-background'}`}
+                          >
+                            <p className="font-medium text-sm text-foreground">{opt.title}</p>
+                            <p className="text-xs text-muted-foreground">{opt.desc}</p>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                />
+                {churchForm.formState.errors.product && (
+                  <p className="text-sm text-destructive">{churchForm.formState.errors.product.message as string}</p>
+                )}
+              </div>
+
+
+              <div className="space-y-3 pt-4 border-t border-border/50">
                 <div className="bg-muted/50 rounded-lg p-3">
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     Ao cadastrar, você declara que os dados fornecidos são verdadeiros e de sua inteira responsabilidade. 
@@ -378,14 +421,17 @@ export default function ChurchSetup() {
           onOpenChange={(open) => { if (!open) handleClose(); }}
           churchName={createdChurch.name}
           churchCode={createdChurch.code}
+          product={createdChurch.product}
+          createDeptUrl={createdChurch.createDeptUrl}
+          kidsAdminUrl={createdChurch.kidsAdminUrl}
           onClose={handleClose}
           onSendWhatsApp={() => {
-            const origin = window.location.origin;
-            const code = createdChurch.code;
-            const link = `${origin}/auth?tab=register&churchCode=${code}&redirect=${encodeURIComponent(`/departments/new?churchCode=${code}`)}`;
-            const text = `Olá! Sua igreja "${createdChurch.name}" foi cadastrada no LEVI.\n\nCódigo: ${code}\n\nAcesse este link para criar sua conta e seus departamentos:\n${link}`;
+            const name = createdChurch.name;
+            const parts: string[] = [`Olá! Sua igreja "${name}" foi cadastrada no LEVI.`, `Código: ${createdChurch.code}`, ''];
+            if (createdChurch.createDeptUrl) parts.push('📅 LEVI Escalas (departamentos):', createdChurch.createDeptUrl, '');
+            if (createdChurch.kidsAdminUrl) parts.push('👶 LeviKids (área infantil):', createdChurch.kidsAdminUrl, '');
             const phone = registrantPhone.replace(/\D/g, '');
-            const waUrl = `https://wa.me/${phone.startsWith('55') ? phone : '55' + phone}?text=${encodeURIComponent(text)}`;
+            const waUrl = `https://wa.me/${phone.startsWith('55') ? phone : '55' + phone}?text=${encodeURIComponent(parts.join('\n'))}`;
             window.open(waUrl, '_blank');
           }}
         />

@@ -19,6 +19,7 @@ const schema = z.object({
   address: z.string().trim().max(200).optional().nullable(),
   city: z.string().trim().max(100).optional().nullable(),
   state: z.string().trim().max(50).optional().nullable(),
+  product: z.enum(["levi", "kids", "both"]).optional().default("levi"),
 });
 
 serve(async (req) => {
@@ -82,20 +83,49 @@ serve(async (req) => {
 
     const origin = req.headers.get("origin") || "https://leviescalas.com.br";
     const createDeptUrl = `${origin}/auth?tab=register&churchCode=${church.code}&redirect=${encodeURIComponent(`/departments/new?churchCode=${church.code}`)}`;
+    const kidsAdminUrl = `${origin}/auth?tab=register&churchCode=${church.code}&redirect=${encodeURIComponent(`/kids/admin?churchCode=${church.code}`)}`;
     const churchPageUrl = church.slug ? `${origin}/igreja/${church.slug}` : null;
+
+    const wantsLevi = d.product === "levi" || d.product === "both";
+    const wantsKids = d.product === "kids" || d.product === "both";
 
     // Send WhatsApp via UAZAPI
     let whatsappSent = false;
     let whatsappError: string | null = null;
     try {
       const { sendUazapiText } = await import("../_shared/uazapi.ts");
-      const message =
-        `🎉 *LEVI* — Igreja *${church.name}* cadastrada com sucesso!\n\n` +
-        `Próximo passo: crie uma conta e os departamentos/ministérios da sua igreja usando o link abaixo:\n\n` +
-        `👉 ${createDeptUrl}\n\n` +
-        (churchPageUrl ? `Página pública: ${churchPageUrl}\n\n` : "") +
-        `⚠️ Igrejas sem departamentos em até 5 dias são removidas automaticamente.`;
-      const r = await sendUazapiText(String(d.registrantPhone), message, 2);
+      const lines: string[] = [
+        `🎉 *LEVI* — Igreja *${church.name}* cadastrada com sucesso!`,
+        ``,
+      ];
+      if (wantsLevi && wantsKids) {
+        lines.push(
+          `Você escolheu usar *LEVI Escalas + LeviKids*. Guarde os dois links:`,
+          ``,
+          `📅 *LEVI Escalas* (criar departamentos/ministérios):`,
+          `👉 ${createDeptUrl}`,
+          ``,
+          `👶 *LeviKids* (criar a área infantil):`,
+          `👉 ${kidsAdminUrl}`,
+        );
+      } else if (wantsKids) {
+        lines.push(
+          `Você escolheu usar o *LeviKids*.`,
+          ``,
+          `👶 Acesse este link para criar a área infantil da sua igreja:`,
+          `👉 ${kidsAdminUrl}`,
+        );
+      } else {
+        lines.push(
+          `Próximo passo: crie uma conta e os departamentos/ministérios da sua igreja usando o link abaixo:`,
+          ``,
+          `👉 ${createDeptUrl}`,
+        );
+      }
+      if (churchPageUrl) lines.push(``, `Página pública: ${churchPageUrl}`);
+      lines.push(``, `⚠️ Igrejas sem departamentos ou área kids em até 5 dias são removidas automaticamente.`);
+
+      const r = await sendUazapiText(String(d.registrantPhone), lines.join("\n"), 2);
       if (r.ok) {
         whatsappSent = true;
       } else {
@@ -109,7 +139,9 @@ serve(async (req) => {
       JSON.stringify({
         ok: true,
         church: { id: church.id, name: church.name, code: church.code, slug: church.slug },
-        createDeptUrl,
+        product: d.product,
+        createDeptUrl: wantsLevi ? createDeptUrl : null,
+        kidsAdminUrl: wantsKids ? kidsAdminUrl : null,
         churchPageUrl,
         whatsappSent,
         whatsappError,

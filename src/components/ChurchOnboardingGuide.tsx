@@ -10,6 +10,9 @@ interface ChurchOnboardingGuideProps {
   onOpenChange: (open: boolean) => void;
   churchName: string;
   churchCode: string;
+  product?: 'levi' | 'kids' | 'both';
+  createDeptUrl?: string | null;
+  kidsAdminUrl?: string | null;
   onClose: () => void | Promise<void>;
   onSendWhatsApp?: () => void | Promise<void>;
 }
@@ -19,6 +22,9 @@ export function ChurchOnboardingGuide({
   onOpenChange,
   churchName,
   churchCode,
+  product = 'levi',
+  createDeptUrl,
+  kidsAdminUrl,
   onClose,
   onSendWhatsApp,
 }: ChurchOnboardingGuideProps) {
@@ -27,11 +33,14 @@ export function ChurchOnboardingGuide({
   const { toast } = useToast();
 
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://leviescalas.com.br';
-  const adminLink = `${origin}/auth?tab=register&churchCode=${churchCode}&redirect=${encodeURIComponent(`/departments/new?churchCode=${churchCode}`)}`;
+  const adminLink = createDeptUrl ?? `${origin}/auth?tab=register&churchCode=${churchCode}&redirect=${encodeURIComponent(`/departments/new?churchCode=${churchCode}`)}`;
+  const kidsLink = kidsAdminUrl ?? `${origin}/auth?tab=register&churchCode=${churchCode}&redirect=${encodeURIComponent(`/kids/admin?churchCode=${churchCode}`)}`;
+  const showLevi = product === 'levi' || product === 'both';
+  const showKids = product === 'kids' || product === 'both';
 
-  const handleCopy = async () => {
+  const handleCopy = async (value: string) => {
     try {
-      await navigator.clipboard.writeText(adminLink);
+      await navigator.clipboard.writeText(value);
       toast({ title: 'Link copiado!', description: 'Cole onde precisar.' });
     } catch {
       toast({ variant: 'destructive', title: 'Não foi possível copiar' });
@@ -61,27 +70,42 @@ export function ChurchOnboardingGuide({
               {churchCode}
             </p>
           </div>
-          <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-2">
-            <p className="text-xs text-muted-foreground">Link administrativo (criar departamentos)</p>
-            <p className="text-[11px] font-mono text-primary break-all bg-background/60 rounded-md p-2">
-              {adminLink}
-            </p>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" className="flex-1" onClick={handleCopy}>
+
+          {showLevi && (
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-2">
+              <p className="text-xs text-muted-foreground">📅 LEVI Escalas — criar departamentos/ministérios</p>
+              <p className="text-[11px] font-mono text-primary break-all bg-background/60 rounded-md p-2">
+                {adminLink}
+              </p>
+              <Button size="sm" variant="outline" className="w-full" onClick={() => handleCopy(adminLink)}>
                 <Copy className="w-4 h-4 mr-1.5" />
-                Copiar link
-              </Button>
-              <Button
-                size="sm"
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                onClick={handleSendWa}
-                disabled={sending || !onSendWhatsApp}
-              >
-                <MessageCircle className="w-4 h-4 mr-1.5" />
-                {sending ? 'Enviando...' : 'Enviar WhatsApp'}
+                Copiar link Escalas
               </Button>
             </div>
-          </div>
+          )}
+
+          {showKids && (
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 space-y-2">
+              <p className="text-xs text-muted-foreground">👶 LeviKids — criar a área infantil</p>
+              <p className="text-[11px] font-mono text-amber-700 dark:text-amber-400 break-all bg-background/60 rounded-md p-2">
+                {kidsLink}
+              </p>
+              <Button size="sm" variant="outline" className="w-full" onClick={() => handleCopy(kidsLink)}>
+                <Copy className="w-4 h-4 mr-1.5" />
+                Copiar link Kids
+              </Button>
+            </div>
+          )}
+
+          <Button
+            size="sm"
+            className="w-full bg-green-600 hover:bg-green-700 text-white"
+            onClick={handleSendWa}
+            disabled={sending || !onSendWhatsApp}
+          >
+            <MessageCircle className="w-4 h-4 mr-1.5" />
+            {sending ? 'Enviando...' : 'Enviar links por WhatsApp'}
+          </Button>
         </div>
       ),
     },
