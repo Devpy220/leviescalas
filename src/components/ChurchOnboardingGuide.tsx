@@ -10,6 +10,9 @@ interface ChurchOnboardingGuideProps {
   onOpenChange: (open: boolean) => void;
   churchName: string;
   churchCode: string;
+  product?: 'levi' | 'kids' | 'both';
+  createDeptUrl?: string | null;
+  kidsAdminUrl?: string | null;
   onClose: () => void | Promise<void>;
   onSendWhatsApp?: () => void | Promise<void>;
 }
@@ -19,6 +22,9 @@ export function ChurchOnboardingGuide({
   onOpenChange,
   churchName,
   churchCode,
+  product = 'levi',
+  createDeptUrl,
+  kidsAdminUrl,
   onClose,
   onSendWhatsApp,
 }: ChurchOnboardingGuideProps) {
@@ -27,11 +33,14 @@ export function ChurchOnboardingGuide({
   const { toast } = useToast();
 
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://leviescalas.com.br';
-  const adminLink = `${origin}/auth?tab=register&churchCode=${churchCode}&redirect=${encodeURIComponent(`/departments/new?churchCode=${churchCode}`)}`;
+  const adminLink = createDeptUrl ?? `${origin}/auth?tab=register&churchCode=${churchCode}&redirect=${encodeURIComponent(`/departments/new?churchCode=${churchCode}`)}`;
+  const kidsLink = kidsAdminUrl ?? `${origin}/auth?tab=register&churchCode=${churchCode}&redirect=${encodeURIComponent(`/kids/admin?churchCode=${churchCode}`)}`;
+  const showLevi = product === 'levi' || product === 'both';
+  const showKids = product === 'kids' || product === 'both';
 
-  const handleCopy = async () => {
+  const handleCopy = async (value: string) => {
     try {
-      await navigator.clipboard.writeText(adminLink);
+      await navigator.clipboard.writeText(value);
       toast({ title: 'Link copiado!', description: 'Cole onde precisar.' });
     } catch {
       toast({ variant: 'destructive', title: 'Não foi possível copiar' });
