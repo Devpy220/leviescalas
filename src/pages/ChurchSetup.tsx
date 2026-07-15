@@ -327,6 +327,41 @@ export default function ChurchSetup() {
               </div>
 
               <div className="space-y-3 pt-4 border-t border-border/50">
+                <h3 className="font-semibold text-foreground">Qual app sua igreja vai usar? *</h3>
+                <p className="text-xs text-muted-foreground">Você recebe o link de acesso de cada app selecionado.</p>
+                <Controller
+                  name="product"
+                  control={churchForm.control}
+                  render={({ field }) => (
+                    <div className="grid gap-2">
+                      {[
+                        { v: 'levi', title: '📅 LEVI Escalas', desc: 'Escalas de voluntários por departamento/ministério.' },
+                        { v: 'kids', title: '👶 LeviKids', desc: 'Check-in seguro, salas, professores e responsáveis.' },
+                        { v: 'both', title: '✨ Os dois juntos', desc: 'LEVI Escalas + LeviKids na mesma igreja.' },
+                      ].map((opt) => {
+                        const selected = field.value === opt.v;
+                        return (
+                          <button
+                            type="button"
+                            key={opt.v}
+                            onClick={() => field.onChange(opt.v)}
+                            className={`text-left rounded-xl border p-3 transition-all ${selected ? 'border-primary bg-primary/5 shadow-glow-sm' : 'border-border hover:border-primary/40 bg-background'}`}
+                          >
+                            <p className="font-medium text-sm text-foreground">{opt.title}</p>
+                            <p className="text-xs text-muted-foreground">{opt.desc}</p>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                />
+                {churchForm.formState.errors.product && (
+                  <p className="text-sm text-destructive">{churchForm.formState.errors.product.message as string}</p>
+                )}
+              </div>
+
+
+              <div className="space-y-3 pt-4 border-t border-border/50">
                 <div className="bg-muted/50 rounded-lg p-3">
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     Ao cadastrar, você declara que os dados fornecidos são verdadeiros e de sua inteira responsabilidade. 
