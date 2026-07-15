@@ -34,10 +34,11 @@ export default function KidsJoin() {
   useEffect(() => {
     if (!token) return;
     (async () => {
-      const { data: r } = await supabase.from("kids_rooms").select("*, kids_pages(id, name, consent_version, consent_text)").eq("static_qr_token", token).maybeSingle();
-      if (r) {
-        setRoom(r as any);
-        setPage((r as any).kids_pages);
+      const { data } = await supabase.rpc("kids_lookup_room_by_static_token", { _token: token });
+      const row = Array.isArray(data) ? data[0] : null;
+      if (row) {
+        setRoom({ id: row.room_id, name: row.room_name, color: row.room_color, page_id: row.page_id } as any);
+        setPage({ id: row.page_id, name: row.page_name, consent_version: row.consent_version, consent_text: row.consent_text } as any);
       }
       setLoading(false);
     })();
