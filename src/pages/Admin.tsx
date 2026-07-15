@@ -451,6 +451,15 @@ export default function Admin() {
     });
   };
 
+  const copyKidsSetupLink = (churchName: string) => {
+    const url = `${window.location.origin}/auth?redirect=${encodeURIComponent('/kids/admin')}`;
+    navigator.clipboard.writeText(url);
+    toast({
+      title: 'Link LeviKids copiado!',
+      description: `Envie para o responsável de ${churchName} criar a Página Kids.`,
+    });
+  };
+
   const fetchAllProfiles = async () => {
     setLoadingProfiles(true);
     try {
