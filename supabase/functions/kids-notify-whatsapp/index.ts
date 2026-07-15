@@ -13,7 +13,8 @@ type EventType = "checkin" | "checkout" | "teacher_call";
 interface Body {
   event: EventType;
   child_id: string;
-  room_id: string;
+  room_id?: string;
+  checkin_id?: string;
   pickup_code?: string;
 }
 
