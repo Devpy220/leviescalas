@@ -378,9 +378,12 @@ export default function KidsAdmin() {
                         <div className="flex items-start justify-between mb-2">
                           <div>
                             <h3 className="font-bold text-slate-900">{r.name}</h3>
-                            <Badge variant="outline" className="mt-1 text-xs">
-                              <Users className="w-3 h-3 mr-1" /> {r.age_min}–{r.age_max} anos
-                            </Badge>
+                            <div className="flex gap-1 flex-wrap mt-1">
+                              <Badge variant="outline" className="text-xs">
+                                <Users className="w-3 h-3 mr-1" /> {r.age_min}–{r.age_max} anos
+                              </Badge>
+                              {r.is_inclusion && <Badge className="text-xs bg-violet-100 text-violet-700 border-violet-200"><Sparkles className="w-3 h-3 mr-1"/>Inclusão</Badge>}
+                            </div>
                           </div>
                           <button onClick={() => deleteRoom(r.id)} className="text-slate-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
                         </div>
