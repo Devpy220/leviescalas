@@ -20,6 +20,14 @@ import { TwoFactorVerify } from '@/components/auth/TwoFactorVerify';
 
 import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable';
+import { userHasKidsAccess } from '@/lib/kidsAccess';
+
+async function maybeChooseApp(userId: string, defaultDest: string): Promise<string> {
+  // Only intercept when default lands on the Escalas hub
+  if (defaultDest !== '/dashboard') return defaultDest;
+  const hasKids = await userHasKidsAccess(userId);
+  return hasKids ? '/escolher-app' : defaultDest;
+}
 
 // Google Icon Component
 const GoogleIcon = () => (
