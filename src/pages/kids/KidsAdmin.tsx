@@ -283,19 +283,83 @@ export default function KidsAdmin() {
             <h1 className="text-3xl font-bold text-slate-900">{page.name}</h1>
             <p className="text-slate-600 text-sm">Painel do líder — LeviKids</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button asChild variant="outline" className="rounded-xl"><Link to="/dashboard">← LEVI</Link></Button>
+            <Button asChild variant="secondary" className="rounded-xl"><Link to="/kids/relatorios"><BarChart3 className="w-4 h-4 mr-1"/>Relatórios</Link></Button>
+            <Button asChild variant="secondary" className="rounded-xl"><Link to="/kids/mensagens">Mensagens</Link></Button>
           </div>
         </div>
 
         <Tabs defaultValue="rooms" className="w-full">
-          <TabsList className="w-full grid grid-cols-2 md:grid-cols-5 rounded-2xl">
+          <TabsList className="w-full grid grid-cols-3 md:grid-cols-7 rounded-2xl">
             <TabsTrigger value="rooms" className="rounded-xl"><QrCode className="w-4 h-4 mr-1" /> Salas</TabsTrigger>
+            <TabsTrigger value="schedule" className="rounded-xl"><Clock className="w-4 h-4 mr-1" /> Horário</TabsTrigger>
+            <TabsTrigger value="kids" className="rounded-xl"><ArrowLeftRight className="w-4 h-4 mr-1" /> Crianças</TabsTrigger>
             <TabsTrigger value="leaders" className="rounded-xl"><ShieldCheck className="w-4 h-4 mr-1" /> Líderes</TabsTrigger>
             <TabsTrigger value="teachers" className="rounded-xl"><Users className="w-4 h-4 mr-1" /> Professores</TabsTrigger>
-            <TabsTrigger value="content" className="rounded-xl"><BookOpen className="w-4 h-4 mr-1" /> Lição do dia</TabsTrigger>
+            <TabsTrigger value="content" className="rounded-xl"><BookOpen className="w-4 h-4 mr-1" /> Lição</TabsTrigger>
             <TabsTrigger value="consent" className="rounded-xl">Termo</TabsTrigger>
           </TabsList>
+
+          {/* HORÁRIO DE CHECK-IN */}
+          <TabsContent value="schedule">
+            <Card className="rounded-3xl border-2">
+              <CardHeader><CardTitle>Janela de check-in</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-xs text-slate-500">O QR fixo da sala só permite check-in dentro deste horário e nos dias selecionados. Fora disso, a família recebe um aviso educado.</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label>Início</Label><Input type="time" value={scheduleForm.start} onChange={e => setScheduleForm({...scheduleForm, start: e.target.value})} /></div>
+                  <div><Label>Fim</Label><Input type="time" value={scheduleForm.end} onChange={e => setScheduleForm({...scheduleForm, end: e.target.value})} /></div>
+                </div>
+                <div>
+                  <Label>Dias da semana</Label>
+                  <div className="flex gap-2 flex-wrap mt-1">
+                    {["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"].map((label, idx) => {
+                      const on = scheduleForm.days.includes(idx);
+                      return (
+                        <button key={idx} type="button"
+                          onClick={() => setScheduleForm(s => ({ ...s, days: on ? s.days.filter(d=>d!==idx) : [...s.days, idx].sort() }))}
+                          className={`px-3 py-1.5 rounded-xl text-sm font-semibold border-2 ${on ? "bg-violet-600 text-white border-violet-600" : "bg-white text-slate-600 border-slate-200"}`}>
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div><Label>Fuso horário</Label><Input value={scheduleForm.tz} onChange={e => setScheduleForm({...scheduleForm, tz: e.target.value})} /></div>
+                <Button onClick={saveSchedule} disabled={busy} className="rounded-xl">{busy ? <Loader2 className="w-4 h-4 animate-spin"/> : "Salvar horário"}</Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* CRIANÇAS + TRANSFERÊNCIA */}
+          <TabsContent value="kids">
+            <Card className="rounded-3xl border-2">
+              <CardHeader><CardTitle>Crianças cadastradas</CardTitle></CardHeader>
+              <CardContent>
+                {kids.length === 0 ? <p className="text-sm text-slate-500 text-center py-6">Nenhuma criança cadastrada ainda.</p> : (
+                  <div className="space-y-2">
+                    {kids.map(c => {
+                      const age = Math.floor((Date.now() - new Date(c.birth_date).getTime()) / (365.25*24*3600*1000));
+                      const room = rooms.find(r => r.id === c.current_room_id);
+                      return (
+                        <div key={c.id} className="flex items-center justify-between p-3 rounded-xl border bg-white">
+                          <div>
+                            <p className="font-semibold text-sm">{c.full_name}</p>
+                            <p className="text-xs text-slate-500">{age} anos · Sala: <b>{room?.name || "—"}</b></p>
+                          </div>
+                          <Button size="sm" variant="outline" onClick={() => { setTransferChild(c); setTransferTargetRoom(c.current_room_id || rooms[0]?.id || ""); }} className="rounded-xl">
+                            <ArrowLeftRight className="w-4 h-4 mr-1"/>Transferir
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
 
           {/* SALAS */}
           <TabsContent value="rooms">
