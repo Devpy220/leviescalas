@@ -34,7 +34,7 @@ export default function KidsJoin() {
   useEffect(() => {
     if (!token) return;
     (async () => {
-      const { data } = await supabase.rpc("kids_lookup_room_by_static_token", { _token: token });
+      const { data } = await (supabase.rpc as any)("kids_lookup_room_by_static_token", { _token: token });
       const row = Array.isArray(data) ? data[0] : null;
       if (row) {
         setRoom({ id: row.room_id, name: row.room_name, color: row.room_color, page_id: row.page_id } as any);
