@@ -19,6 +19,7 @@ const schema = z.object({
   address: z.string().trim().max(200).optional().nullable(),
   city: z.string().trim().max(100).optional().nullable(),
   state: z.string().trim().max(50).optional().nullable(),
+  product: z.enum(["levi", "kids", "both"]).optional().default("levi"),
 });
 
 serve(async (req) => {
