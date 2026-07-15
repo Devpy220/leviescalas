@@ -602,6 +602,481 @@ export type Database = {
         }
         Relationships: []
       }
+      kids_checkins: {
+        Row: {
+          checkin_at: string
+          checkin_by: string
+          checkout_at: string | null
+          checkout_by: string | null
+          child_id: string
+          created_at: string
+          id: string
+          pickup_code: string
+          room_id: string
+        }
+        Insert: {
+          checkin_at?: string
+          checkin_by: string
+          checkout_at?: string | null
+          checkout_by?: string | null
+          child_id: string
+          created_at?: string
+          id?: string
+          pickup_code: string
+          room_id: string
+        }
+        Update: {
+          checkin_at?: string
+          checkin_by?: string
+          checkout_at?: string | null
+          checkout_by?: string | null
+          child_id?: string
+          created_at?: string
+          id?: string
+          pickup_code?: string
+          room_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kids_checkins_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "kids_children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kids_checkins_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "kids_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kids_children: {
+        Row: {
+          allergies: string | null
+          birth_date: string
+          created_at: string
+          created_by: string
+          full_name: string
+          id: string
+          notes: string | null
+          page_id: string
+          photo_path: string | null
+          restrictions: string | null
+          suggested_room_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          allergies?: string | null
+          birth_date: string
+          created_at?: string
+          created_by: string
+          full_name: string
+          id?: string
+          notes?: string | null
+          page_id: string
+          photo_path?: string | null
+          restrictions?: string | null
+          suggested_room_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          allergies?: string | null
+          birth_date?: string
+          created_at?: string
+          created_by?: string
+          full_name?: string
+          id?: string
+          notes?: string | null
+          page_id?: string
+          photo_path?: string | null
+          restrictions?: string | null
+          suggested_room_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kids_children_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "kids_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kids_children_suggested_room_id_fkey"
+            columns: ["suggested_room_id"]
+            isOneToOne: false
+            referencedRelation: "kids_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kids_consents: {
+        Row: {
+          accepted_at: string
+          id: string
+          ip_address: string | null
+          page_id: string
+          user_agent: string | null
+          user_id: string
+          version: string
+        }
+        Insert: {
+          accepted_at?: string
+          id?: string
+          ip_address?: string | null
+          page_id: string
+          user_agent?: string | null
+          user_id: string
+          version: string
+        }
+        Update: {
+          accepted_at?: string
+          id?: string
+          ip_address?: string | null
+          page_id?: string
+          user_agent?: string | null
+          user_id?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kids_consents_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "kids_pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kids_content: {
+        Row: {
+          body: string | null
+          content_date: string
+          created_at: string
+          created_by: string
+          id: string
+          links: Json
+          page_id: string
+          room_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string | null
+          content_date?: string
+          created_at?: string
+          created_by: string
+          id?: string
+          links?: Json
+          page_id: string
+          room_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string | null
+          content_date?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          links?: Json
+          page_id?: string
+          room_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kids_content_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "kids_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kids_content_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "kids_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kids_dynamic_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          room_id: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          room_id: string
+          token: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          room_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kids_dynamic_tokens_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "kids_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kids_guardian_children: {
+        Row: {
+          child_id: string
+          created_at: string
+          guardian_id: string
+          id: string
+          relationship: string
+        }
+        Insert: {
+          child_id: string
+          created_at?: string
+          guardian_id: string
+          id?: string
+          relationship?: string
+        }
+        Update: {
+          child_id?: string
+          created_at?: string
+          guardian_id?: string
+          id?: string
+          relationship?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kids_guardian_children_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "kids_children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kids_guardian_children_guardian_id_fkey"
+            columns: ["guardian_id"]
+            isOneToOne: false
+            referencedRelation: "kids_guardians"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kids_guardians: {
+        Row: {
+          birth_date: string
+          created_at: string
+          full_name: string
+          id: string
+          phone: string
+          photo_path: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          birth_date: string
+          created_at?: string
+          full_name: string
+          id?: string
+          phone: string
+          photo_path?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          birth_date?: string
+          created_at?: string
+          full_name?: string
+          id?: string
+          phone?: string
+          photo_path?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      kids_leaders: {
+        Row: {
+          created_at: string
+          id: string
+          invited_by: string | null
+          page_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          page_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          page_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kids_leaders_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "kids_pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kids_pages: {
+        Row: {
+          church_id: string
+          consent_text: string
+          consent_version: string
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+          primary_color: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          church_id: string
+          consent_text: string
+          consent_version?: string
+          created_at?: string
+          created_by: string
+          id?: string
+          name: string
+          primary_color?: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          church_id?: string
+          consent_text?: string
+          consent_version?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+          primary_color?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kids_pages_church_id_fkey"
+            columns: ["church_id"]
+            isOneToOne: true
+            referencedRelation: "churches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kids_pages_church_id_fkey"
+            columns: ["church_id"]
+            isOneToOne: true
+            referencedRelation: "churches_member_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kids_rooms: {
+        Row: {
+          active: boolean
+          age_max: number
+          age_min: number
+          color: string
+          created_at: string
+          id: string
+          name: string
+          page_id: string
+          static_qr_token: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          age_max?: number
+          age_min?: number
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+          page_id: string
+          static_qr_token?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          age_max?: number
+          age_min?: number
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+          page_id?: string
+          static_qr_token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kids_rooms_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "kids_pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kids_teacher_rooms: {
+        Row: {
+          created_at: string
+          id: string
+          invited_by: string | null
+          room_id: string
+          scope: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          room_id: string
+          scope?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          room_id?: string
+          scope?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kids_teacher_rooms_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "kids_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       login_logs: {
         Row: {
           id: string
@@ -2055,6 +2530,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_church_leader: {
+        Args: { _church_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_department_coleader: {
         Args: { _department_id: string; _user_id: string }
         Returns: boolean
@@ -2069,6 +2548,22 @@ export type Database = {
       }
       is_department_member: {
         Args: { _department_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_guardian_of: {
+        Args: { _child_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_kids_leader: {
+        Args: { _page_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_kids_teacher_of_page: {
+        Args: { _page_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_kids_teacher_of_room: {
+        Args: { _room_id: string; _user_id: string }
         Returns: boolean
       }
       is_scheduled_in_slot: {
@@ -2098,6 +2593,26 @@ export type Database = {
           message: string
           success: boolean
         }[]
+      }
+      kids_default_consent_text: { Args: never; Returns: string }
+      kids_get_or_create_dyn_token: {
+        Args: { _room_id: string }
+        Returns: {
+          expires_at: string
+          token: string
+        }[]
+      }
+      kids_perform_checkin: {
+        Args: { _child_ids: string[]; _dynamic_token: string }
+        Returns: {
+          checkin_id: string
+          child_id: string
+          pickup_code: string
+        }[]
+      }
+      kids_perform_checkout: {
+        Args: { _checkin_id: string; _pickup_code: string }
+        Returns: boolean
       }
       log_billing_audit: {
         Args: {
