@@ -20,6 +20,14 @@ import { TwoFactorVerify } from '@/components/auth/TwoFactorVerify';
 
 import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable';
+import { userHasKidsAccess } from '@/lib/kidsAccess';
+
+async function maybeChooseApp(userId: string, defaultDest: string): Promise<string> {
+  // Only intercept when default lands on the Escalas hub
+  if (defaultDest !== '/dashboard') return defaultDest;
+  const hasKids = await userHasKidsAccess(userId);
+  return hasKids ? '/escolher-app' : defaultDest;
+}
 
 // Google Icon Component
 const GoogleIcon = () => (
@@ -296,8 +304,9 @@ export default function Auth() {
       
       // PRIORITY 4: Smart redirect based on department count
       const destination = await getSmartRedirectDestination(session.user.id);
-      console.log('[Auth] Already authenticated, smart redirecting to:', destination);
-      navigate(destination, { replace: true });
+      const finalDest = await maybeChooseApp(session.user.id, destination);
+      console.log('[Auth] Already authenticated, smart redirecting to:', finalDest);
+      navigate(finalDest, { replace: true });
     }, 150);
     
     return () => clearTimeout(stabilizationTimeout);
@@ -500,14 +509,15 @@ export default function Auth() {
 
       // Count user departments to determine redirect destination
       const redirectDestination = await getSmartRedirectDestination(currentSession.user.id);
+      const finalDest = await maybeChooseApp(currentSession.user.id, redirectDestination);
       
-      console.log('[Auth] Login complete, redirecting to:', redirectDestination);
+      console.log('[Auth] Login complete, redirecting to:', finalDest);
       
       toast({
         title: 'Bem-vindo de volta!',
         description: 'Login realizado com sucesso.',
       });
-      navigate(redirectDestination, { replace: true });
+      navigate(finalDest, { replace: true });
     } catch (err) {
       console.error('[Auth] Unexpected error during login:', err);
       hasRedirectedRef.current = false;
@@ -605,11 +615,12 @@ export default function Auth() {
     
     if (currentSession?.user) {
       const redirectDestination = await getSmartRedirectDestination(currentSession.user.id);
+      const finalDest = await maybeChooseApp(currentSession.user.id, redirectDestination);
       toast({
         title: 'Bem-vindo de volta!',
         description: 'Login realizado com sucesso.',
       });
-      navigate(redirectDestination, { replace: true });
+      navigate(finalDest, { replace: true });
       return;
     }
     
