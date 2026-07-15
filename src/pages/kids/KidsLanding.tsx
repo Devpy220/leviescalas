@@ -34,8 +34,8 @@ export default function KidsLanding() {
           <Card className="border-2 border-amber-100 rounded-3xl">
             <CardContent className="p-6 text-center">
               <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto mb-3"><QrCode className="w-7 h-7" /></div>
-              <h3 className="font-bold text-slate-900 mb-1">QR dinâmico</h3>
-              <p className="text-sm text-slate-600">Token rotativo de 60s impede check-in remoto.</p>
+              <h3 className="font-bold text-slate-900 mb-1">QR fixo por sala</h3>
+              <p className="text-sm text-slate-600">Um QR único colado na porta da sala. Válido apenas na janela de horário do culto.</p>
             </CardContent>
           </Card>
           <Card className="border-2 border-emerald-100 rounded-3xl">

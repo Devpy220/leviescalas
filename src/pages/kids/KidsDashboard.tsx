@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,11 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, AlertTriangle, PhoneCall, KeyRound, Eye, EyeOff, QrCode, RefreshCw, BookOpen } from "lucide-react";
-import { qrToDataUrl, KIDS_CHECKIN_BASE } from "@/lib/kidsQr";
+import { Loader2, AlertTriangle, PhoneCall, KeyRound, Eye, EyeOff, QrCode, Download, FileDown } from "lucide-react";
+import { qrToDataUrl, KIDS_JOIN_BASE, downloadPng, downloadPdf } from "@/lib/kidsQr";
 import { getKidsPhotoUrl } from "@/lib/kidsStorage";
+import { Link } from "react-router-dom";
 
-interface Room { id: string; name: string; color: string; page_id: string; }
+interface Room { id: string; name: string; color: string; page_id: string; static_qr_token: string; is_inclusion?: boolean; }
 interface ActiveChild {
   checkin_id: string; child_id: string; room_id: string; pickup_code: string; checkin_at: string;
   full_name: string; birth_date: string; allergies: string | null; restrictions: string | null; photo_path: string | null;
@@ -23,17 +24,17 @@ export default function KidsDashboard() {
   const [currentRoom, setCurrentRoom] = useState<Room | null>(null);
   const [items, setItems] = useState<ActiveChild[]>([]);
   const [reveal, setReveal] = useState<Set<string>>(new Set());
-  const [dynQr, setDynQr] = useState<{ url: string; expiresAt: number } | null>(null);
+  const [qrUrl, setQrUrl] = useState<string | null>(null);
   const [checkoutFor, setCheckoutFor] = useState<ActiveChild | null>(null);
   const [checkoutCode, setCheckoutCode] = useState("");
   const [photos, setPhotos] = useState<Record<string, string>>({});
-  const timerRef = useRef<number | null>(null);
+  const [pageName, setPageName] = useState<string>("");
 
   useEffect(() => { if (user) loadRooms(); }, [user]);
 
   async function loadRooms() {
     if (!user) return;
-    const { data } = await supabase.from("kids_teacher_rooms").select("kids_rooms(id, name, color, page_id)").eq("user_id", user.id);
+    const { data } = await supabase.from("kids_teacher_rooms").select("kids_rooms(id, name, color, page_id, static_qr_token, is_inclusion)").eq("user_id", user.id);
     const rs = (data || []).map((r: any) => r.kids_rooms).filter(Boolean);
     setRooms(rs);
     if (rs[0]) setCurrentRoom(rs[0]);
@@ -42,12 +43,30 @@ export default function KidsDashboard() {
   useEffect(() => {
     if (!currentRoom) return;
     loadActive();
+    loadPageName();
+    generateQr();
     const ch = supabase.channel(`kids-room-${currentRoom.id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "kids_checkins", filter: `room_id=eq.${currentRoom.id}` },
         () => loadActive())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
+    // eslint-disable-next-line
   }, [currentRoom]);
+
+  async function loadPageName() {
+    if (!currentRoom) return;
+    const { data } = await supabase.from("kids_pages").select("name").eq("id", currentRoom.page_id).maybeSingle();
+    setPageName(data?.name || "");
+  }
+
+  async function generateQr() {
+    if (!currentRoom) return;
+    const url = `${KIDS_JOIN_BASE}/${currentRoom.static_qr_token}`;
+    // usamos apenas o token no QR — o scanner extrai
+    const dataUrl = await qrToDataUrl(currentRoom.static_qr_token, 400);
+    setQrUrl(dataUrl);
+    return url;
+  }
 
   async function loadActive() {
     if (!currentRoom) return;
@@ -63,7 +82,6 @@ export default function KidsDashboard() {
       photo_path: r.kids_children?.photo_path,
     }));
     setItems(mapped);
-    // load photos
     for (const it of mapped) {
       if (it.photo_path && !photos[it.child_id]) {
         const u = await getKidsPhotoUrl(it.photo_path);
@@ -71,25 +89,6 @@ export default function KidsDashboard() {
       }
     }
   }
-
-  async function rotateQr() {
-    if (!currentRoom) return;
-    const { data, error } = await supabase.rpc("kids_get_or_create_dyn_token", { _room_id: currentRoom.id });
-    if (error || !data?.[0]) { toast({ title: "Erro no token", description: error?.message, variant: "destructive" }); return; }
-    const url = `${KIDS_CHECKIN_BASE}?t=${data[0].token}`;
-    // Use raw token so scanner reads only token
-    const qr = await qrToDataUrl(data[0].token, 400);
-    setDynQr({ url: qr, expiresAt: new Date(data[0].expires_at).getTime() });
-  }
-
-  // Auto-rotate every 55s
-  useEffect(() => {
-    if (!currentRoom || !dynQr) return;
-    if (timerRef.current) window.clearTimeout(timerRef.current);
-    const ms = Math.max(1000, dynQr.expiresAt - Date.now() - 3000);
-    timerRef.current = window.setTimeout(rotateQr, ms);
-    return () => { if (timerRef.current) window.clearTimeout(timerRef.current); };
-  }, [dynQr, currentRoom]);
 
   async function performCheckout() {
     if (!checkoutFor || !checkoutCode) return;
@@ -120,11 +119,21 @@ export default function KidsDashboard() {
       <div className="max-w-5xl mx-auto space-y-4">
         <div className="flex justify-between items-center flex-wrap gap-3">
           <h1 className="text-2xl font-bold text-slate-900">Dashboard do professor</h1>
-          {rooms.length > 1 && (
-            <select value={currentRoom?.id || ""} onChange={e => setCurrentRoom(rooms.find(r => r.id === e.target.value) || null)} className="border rounded-xl px-3 py-2">
-              {rooms.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-            </select>
-          )}
+          <div className="flex gap-2 items-center">
+            {currentRoom?.is_inclusion && (
+              <Button asChild variant="secondary" className="rounded-xl">
+                <Link to="/kids/inclusao">Sala de inclusão · IA</Link>
+              </Button>
+            )}
+            <Button asChild variant="outline" className="rounded-xl">
+              <Link to="/kids/mensagens">Mensagens</Link>
+            </Button>
+            {rooms.length > 1 && (
+              <select value={currentRoom?.id || ""} onChange={e => setCurrentRoom(rooms.find(r => r.id === e.target.value) || null)} className="border rounded-xl px-3 py-2">
+                {rooms.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+              </select>
+            )}
+          </div>
         </div>
 
         {rooms.length === 0 && <Card className="rounded-3xl"><CardContent className="p-8 text-center text-slate-600">Você ainda não foi adicionado como professor de nenhuma sala.</CardContent></Card>}
@@ -133,17 +142,24 @@ export default function KidsDashboard() {
           <>
             <Card className="rounded-3xl border-2" style={{ borderColor: currentRoom.color + "60" }}>
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-base flex items-center gap-2"><QrCode className="w-4 h-4" /> QR de check-in (rotativo 60s)</CardTitle>
-                <Button size="sm" variant="outline" onClick={rotateQr} className="rounded-xl"><RefreshCw className="w-4 h-4 mr-1" /> {dynQr ? "Rotacionar" : "Gerar"}</Button>
+                <CardTitle className="text-base flex items-center gap-2"><QrCode className="w-4 h-4" /> QR fixo da sala (imprimir e colar na porta)</CardTitle>
               </CardHeader>
               <CardContent>
-                {dynQr ? (
-                  <div className="text-center">
-                    <img src={dynQr.url} alt="QR dinâmico" className="mx-auto rounded-2xl border-4" style={{ borderColor: currentRoom.color, maxWidth: 260 }} />
-                    <p className="text-xs text-slate-500 mt-2">Expira em ~60s. Mostre este QR no tablet da entrada.</p>
+                {qrUrl ? (
+                  <div className="text-center space-y-3">
+                    <img src={qrUrl} alt="QR fixo" className="mx-auto rounded-2xl border-4" style={{ borderColor: currentRoom.color, maxWidth: 260 }} />
+                    <p className="text-xs text-slate-500">Este QR não muda. Válido dentro da janela de horário configurada pelo líder.</p>
+                    <div className="flex gap-2 justify-center flex-wrap">
+                      <Button variant="outline" size="sm" onClick={() => downloadPng(currentRoom.static_qr_token, `qr-checkin-${currentRoom.name}.png`)} className="rounded-xl">
+                        <Download className="w-4 h-4 mr-1" /> PNG
+                      </Button>
+                      <Button size="sm" onClick={() => downloadPdf(currentRoom.static_qr_token, `qr-checkin-${currentRoom.name}.pdf`, { title: pageName || "LeviKids", subtitle: `Sala: ${currentRoom.name} — Check-in`, footer: "leviescalas.com.br" })} className="rounded-xl">
+                        <FileDown className="w-4 h-4 mr-1" /> PDF para imprimir
+                      </Button>
+                    </div>
                   </div>
                 ) : (
-                  <p className="text-sm text-slate-500 text-center py-4">Clique em "Gerar" para exibir o QR de check-in.</p>
+                  <p className="text-sm text-slate-500 text-center py-4">Gerando QR…</p>
                 )}
               </CardContent>
             </Card>

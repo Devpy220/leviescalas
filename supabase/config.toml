@@ -15,6 +15,9 @@ verify_jwt = true
 [functions.kids-notify-whatsapp]
 verify_jwt = true
 
+[functions.kids-inclusion-ai]
+verify_jwt = true
+
 [functions.send-scheduled-reminders]
 verify_jwt = false
 

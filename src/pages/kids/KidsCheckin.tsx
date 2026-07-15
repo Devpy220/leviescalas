@@ -6,10 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Camera, ShieldCheck, KeyRound } from "lucide-react";
+import { Loader2, Camera, ShieldCheck, KeyRound, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-interface Child { id: string; full_name: string; birth_date: string; }
+interface Child { id: string; full_name: string; birth_date: string; photo_path: string | null; }
 interface ActiveCheckin { id: string; child_id: string; pickup_code: string; checkin_at: string; kids_children: { full_name: string } | null; kids_rooms: { name: string } | null; }
 
 export default function KidsCheckin() {
@@ -39,7 +39,7 @@ export default function KidsCheckin() {
     if (!user) return;
     const { data: g } = await supabase.from("kids_guardians").select("id").eq("user_id", user.id).maybeSingle();
     if (!g) return;
-    const { data } = await supabase.from("kids_guardian_children").select("kids_children(id, full_name, birth_date)").eq("guardian_id", g.id);
+    const { data } = await supabase.from("kids_guardian_children").select("kids_children(id, full_name, birth_date, photo_path)").eq("guardian_id", g.id);
     const list = (data || []).map((r: any) => r.kids_children).filter(Boolean);
     setChildren(list);
   }
@@ -62,7 +62,10 @@ export default function KidsCheckin() {
       if (!back || !videoRef.current) { toast({ title: "Câmera indisponível", variant: "destructive" }); setScanning(false); return; }
       await readerRef.current.decodeFromVideoDevice(back.deviceId, videoRef.current, (result) => {
         if (result) {
-          const text = result.getText();
+          let text = result.getText();
+          // se veio uma URL completa /kids/join/<token>, extrai o token final
+          const m = text.match(/\/kids\/join\/([A-Za-z0-9_-]+)/);
+          if (m) text = m[1];
           setToken(text);
           stopScan();
           toast({ title: "QR lido!" });
@@ -87,11 +90,17 @@ export default function KidsCheckin() {
 
   useEffect(() => () => stopScan(), []);
 
+  const missingPhoto = children.filter(c => selected.has(c.id) && (!c.photo_path || c.photo_path.trim() === ""));
+
   async function confirmCheckin() {
     if (!token || selected.size === 0) return;
+    if (missingPhoto.length > 0) {
+      toast({ title: "Foto obrigatória", description: `Adicione foto de: ${missingPhoto.map(m=>m.full_name).join(", ")}`, variant: "destructive" });
+      return;
+    }
     setBusy(true);
-    const { data, error } = await supabase.rpc("kids_perform_checkin", {
-      _dynamic_token: token,
+    const { data, error } = await (supabase.rpc as any)("kids_perform_checkin_static", {
+      _static_token: token,
       _child_ids: Array.from(selected),
     });
     setBusy(false);
@@ -100,7 +109,6 @@ export default function KidsCheckin() {
     const names = children.reduce((acc, c) => ({ ...acc, [c.id]: c.full_name }), {} as Record<string, string>);
     setResults(rows.map(r => ({ name: names[r.child_id] || "", code: r.pickup_code })));
 
-    // WhatsApp notify (best effort)
     for (const r of rows) {
       supabase.functions.invoke("kids-notify-whatsapp", {
         body: { event: "checkin", child_id: r.child_id, room_id: "", pickup_code: r.pickup_code }
@@ -129,7 +137,7 @@ export default function KidsCheckin() {
       <div className="max-w-xl mx-auto space-y-5">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-slate-900">Check-in LeviKids</h1>
-          <p className="text-sm text-slate-600">Aponte o celular para o QR da tela na entrada da sala.</p>
+          <p className="text-sm text-slate-600">Aponte o celular para o QR fixo colado na porta da sala.</p>
         </div>
 
         {active.length > 0 && (
@@ -192,17 +200,26 @@ export default function KidsCheckin() {
             <CardContent className="space-y-2">
               {children.length === 0 ? (
                 <p className="text-sm text-slate-500 text-center">Nenhum filho cadastrado.</p>
-              ) : children.map(c => (
-                <label key={c.id} className="flex items-center gap-3 p-3 rounded-xl border cursor-pointer hover:bg-slate-50">
-                  <Checkbox checked={selected.has(c.id)} onCheckedChange={v => {
-                    const s = new Set(selected);
-                    if (v) { s.add(c.id); } else { s.delete(c.id); }
-                    setSelected(s);
-                  }} />
-                  <span className="font-medium">{c.full_name}</span>
-                </label>
-              ))}
-              <Button onClick={confirmCheckin} disabled={busy || selected.size === 0} className="w-full rounded-xl mt-3">
+              ) : children.map(c => {
+                const noPhoto = !c.photo_path || c.photo_path.trim() === "";
+                return (
+                  <label key={c.id} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer hover:bg-slate-50 ${noPhoto ? "opacity-60" : ""}`}>
+                    <Checkbox checked={selected.has(c.id)} onCheckedChange={v => {
+                      const s = new Set(selected);
+                      if (v) { s.add(c.id); } else { s.delete(c.id); }
+                      setSelected(s);
+                    }} />
+                    <span className="font-medium flex-1">{c.full_name}</span>
+                    {noPhoto && <span className="text-[10px] text-red-600 flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> sem foto</span>}
+                  </label>
+                );
+              })}
+              {missingPhoto.length > 0 && (
+                <p className="text-xs text-red-600 flex items-start gap-1 mt-2">
+                  <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" /> Adicione a foto no cadastro do(a) filho(a) antes de fazer check-in.
+                </p>
+              )}
+              <Button onClick={confirmCheckin} disabled={busy || selected.size === 0 || missingPhoto.length > 0} className="w-full rounded-xl mt-3">
                 {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirmar check-in"}
               </Button>
               <Button variant="ghost" onClick={() => setToken(null)} className="w-full rounded-xl">Cancelar</Button>

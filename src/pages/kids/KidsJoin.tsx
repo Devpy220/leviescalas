@@ -125,26 +125,36 @@ export default function KidsJoin() {
 
   async function saveChildren() {
     if (!guardianId || !room || !page) return;
+    // Foto obrigatória
+    const missing = children.filter(c => c.full_name && c.birth_date && !c.photoFile);
+    if (missing.length > 0) {
+      toast({ title: "Foto obrigatória", description: `Adicione uma foto de: ${missing.map(m=>m.full_name).join(", ")}`, variant: "destructive" });
+      return;
+    }
     setBusy(true);
     for (const c of children) {
-      if (!c.full_name || !c.birth_date) continue;
-      // suggested room by age match
+      if (!c.full_name || !c.birth_date || !c.photoFile) continue;
       const bd = new Date(c.birth_date);
       const ageYears = Math.floor((Date.now() - bd.getTime()) / (365.25 * 24 * 3600 * 1000));
       const suggested_room_id = (ageYears >= room.age_min && ageYears <= room.age_max) ? room.id : null;
 
+      // Cria com photo_path temporário (não vazio) para passar o trigger; ajustamos depois do upload
+      const tempPath = `pending/${crypto.randomUUID()}`;
       const { data: child, error } = await supabase.from("kids_children").insert({
-        page_id: page.id, suggested_room_id, full_name: c.full_name, birth_date: c.birth_date,
+        page_id: page.id, suggested_room_id, current_room_id: suggested_room_id,
+        full_name: c.full_name, birth_date: c.birth_date,
         allergies: c.allergies || null, restrictions: c.restrictions || null, notes: c.notes || null,
-        created_by: user!.id,
-      }).select("id").single();
-      if (error || !child) continue;
+        photo_path: tempPath, created_by: user!.id,
+      } as any).select("id").single();
+      if (error || !child) { console.warn(error); continue; }
       await supabase.from("kids_guardian_children").insert({ guardian_id: guardianId, child_id: child.id });
-      if (c.photoFile) {
-        try {
-          const p = await uploadKidsPhoto(c.photoFile, page.id, "child", child.id);
-          await supabase.from("kids_children").update({ photo_path: p }).eq("id", child.id);
-        } catch { /* ignore */ }
+      try {
+        const p = await uploadKidsPhoto(c.photoFile, page.id, "child", child.id);
+        await supabase.from("kids_children").update({ photo_path: p }).eq("id", child.id);
+      } catch (e) {
+        // rollback: exclui a criança se upload falhou (trigger vai barrar futuras edições)
+        await supabase.from("kids_children").delete().eq("id", child.id);
+        toast({ title: "Falha no upload da foto", description: (e as Error).message, variant: "destructive" });
       }
     }
     setBusy(false);
@@ -208,7 +218,7 @@ export default function KidsJoin() {
                   <div><Label>Alergias</Label><Input value={c.allergies} onChange={e => { const n = [...children]; n[i].allergies = e.target.value; setChildren(n); }} placeholder="Ex.: amendoim, leite" /></div>
                   <div><Label>Restrições</Label><Input value={c.restrictions} onChange={e => { const n = [...children]; n[i].restrictions = e.target.value; setChildren(n); }} /></div>
                   <div><Label>Observações</Label><Textarea rows={2} value={c.notes} onChange={e => { const n = [...children]; n[i].notes = e.target.value; setChildren(n); }} /></div>
-                  <div><Label>Foto (opcional)</Label><Input type="file" accept="image/*" onChange={e => { const n = [...children]; n[i].photoFile = e.target.files?.[0] || null; setChildren(n); }} /></div>
+                  <div><Label className="text-red-600">Foto da criança <span aria-hidden>*</span></Label><Input type="file" accept="image/*" required onChange={e => { const n = [...children]; n[i].photoFile = e.target.files?.[0] || null; setChildren(n); }} /><p className="text-[10px] text-slate-500 mt-1">Obrigatória para identificação no check-in e para a segurança da criança.</p></div>
                 </div>
               ))}
               <Button variant="outline" onClick={() => setChildren([...children, { full_name: "", birth_date: "", allergies: "", restrictions: "", notes: "", photoFile: null }])} className="w-full rounded-xl">

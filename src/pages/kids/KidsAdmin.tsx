@@ -11,14 +11,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Plus, QrCode, Download, FileDown, Trash2, Users, Copy, UserPlus, BookOpen, ShieldCheck, Search } from "lucide-react";
+import { Loader2, Plus, QrCode, Download, FileDown, Trash2, Users, Copy, UserPlus, BookOpen, ShieldCheck, Search, Clock, ArrowLeftRight, BarChart3, Sparkles } from "lucide-react";
 import { KIDS_JOIN_BASE, downloadPng, downloadPdf, qrToDataUrl } from "@/lib/kidsQr";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "react-router-dom";
 
-interface Room { id: string; name: string; color: string; age_min: number; age_max: number; static_qr_token: string; active: boolean; }
+interface Room { id: string; name: string; color: string; age_min: number; age_max: number; static_qr_token: string; active: boolean; is_inclusion?: boolean; }
 interface KidsLeader { id: string; user_id: string; created_at: string; profile?: { name: string; email: string } | null; }
 interface KidsTeacher { id: string; user_id: string; room_id: string; scope: string; profile?: { name: string; email: string } | null; room?: { name: string } | null; }
 interface KidsContent { id: string; content_date: string; title: string; body: string | null; room_id: string | null; }
+interface ChildRow { id: string; full_name: string; birth_date: string; current_room_id: string | null; }
 
 export default function KidsAdmin() {
   const { user } = useAuth();
@@ -29,9 +31,13 @@ export default function KidsAdmin() {
   const [teachers, setTeachers] = useState<KidsTeacher[]>([]);
   const [contents, setContents] = useState<KidsContent[]>([]);
   const [showRoomModal, setShowRoomModal] = useState(false);
-  const [roomForm, setRoomForm] = useState({ name: "", color: "#F59E0B", age_min: 0, age_max: 12 });
+  const [roomForm, setRoomForm] = useState({ name: "", color: "#F59E0B", age_min: 0, age_max: 12, is_inclusion: false });
   const [qrPreview, setQrPreview] = useState<{ room: Room; url: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [kids, setKids] = useState<ChildRow[]>([]);
+  const [transferChild, setTransferChild] = useState<ChildRow | null>(null);
+  const [transferTargetRoom, setTransferTargetRoom] = useState("");
+  const [scheduleForm, setScheduleForm] = useState({ start: "18:30", end: "20:30", days: [0,3] as number[], tz: "America/Sao_Paulo" });
 
   // invite / promotion modals
   const [showLeaderModal, setShowLeaderModal] = useState(false);
@@ -47,8 +53,48 @@ export default function KidsAdmin() {
   );
 
   useEffect(() => {
-    if (page) { loadRooms(); loadLeaders(); loadTeachers(); loadContent(); }
+    if (page) {
+      loadRooms(); loadLeaders(); loadTeachers(); loadContent(); loadKids();
+      setScheduleForm({
+        start: ((page as any).checkin_start_time || "18:30").slice(0,5),
+        end:   ((page as any).checkin_end_time   || "20:30").slice(0,5),
+        days:  (page as any).checkin_days || [0,3],
+        tz:    (page as any).checkin_timezone || "America/Sao_Paulo",
+      });
+    }
   }, [page]);
+
+  async function loadKids() {
+    if (!page) return;
+    const { data } = await supabase.from("kids_children").select("id, full_name, birth_date, current_room_id").eq("page_id", page.id).order("full_name");
+    setKids((data || []) as any);
+  }
+
+  async function saveSchedule() {
+    if (!page) return;
+    setBusy(true);
+    const { error } = await (supabase.from as any)("kids_pages").update({
+      checkin_start_time: scheduleForm.start,
+      checkin_end_time: scheduleForm.end,
+      checkin_days: scheduleForm.days,
+      checkin_timezone: scheduleForm.tz,
+    }).eq("id", page.id);
+    setBusy(false);
+    if (error) { toast({ title:"Erro", description: error.message, variant:"destructive" }); return; }
+    toast({ title: "Horário salvo" });
+    reload();
+  }
+
+  async function doTransfer() {
+    if (!transferChild || !transferTargetRoom) return;
+    setBusy(true);
+    const { error } = await (supabase.rpc as any)("kids_transfer_child", { _child_id: transferChild.id, _new_room_id: transferTargetRoom });
+    setBusy(false);
+    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Criança transferida" });
+    setTransferChild(null); setTransferTargetRoom("");
+    loadKids();
+  }
 
   async function loadRooms() {
     if (!page) return;
@@ -120,7 +166,7 @@ export default function KidsAdmin() {
     const { error } = await supabase.from("kids_rooms").insert({ page_id: page.id, ...roomForm });
     setBusy(false);
     if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    setShowRoomModal(false); setRoomForm({ name: "", color: "#F59E0B", age_min: 0, age_max: 12 });
+    setShowRoomModal(false); setRoomForm({ name: "", color: "#F59E0B", age_min: 0, age_max: 12, is_inclusion: false });
     loadRooms();
   }
 
@@ -237,19 +283,83 @@ export default function KidsAdmin() {
             <h1 className="text-3xl font-bold text-slate-900">{page.name}</h1>
             <p className="text-slate-600 text-sm">Painel do líder — LeviKids</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button asChild variant="outline" className="rounded-xl"><Link to="/dashboard">← LEVI</Link></Button>
+            <Button asChild variant="secondary" className="rounded-xl"><Link to="/kids/relatorios"><BarChart3 className="w-4 h-4 mr-1"/>Relatórios</Link></Button>
+            <Button asChild variant="secondary" className="rounded-xl"><Link to="/kids/mensagens">Mensagens</Link></Button>
           </div>
         </div>
 
         <Tabs defaultValue="rooms" className="w-full">
-          <TabsList className="w-full grid grid-cols-2 md:grid-cols-5 rounded-2xl">
+          <TabsList className="w-full grid grid-cols-3 md:grid-cols-7 rounded-2xl">
             <TabsTrigger value="rooms" className="rounded-xl"><QrCode className="w-4 h-4 mr-1" /> Salas</TabsTrigger>
+            <TabsTrigger value="schedule" className="rounded-xl"><Clock className="w-4 h-4 mr-1" /> Horário</TabsTrigger>
+            <TabsTrigger value="kids" className="rounded-xl"><ArrowLeftRight className="w-4 h-4 mr-1" /> Crianças</TabsTrigger>
             <TabsTrigger value="leaders" className="rounded-xl"><ShieldCheck className="w-4 h-4 mr-1" /> Líderes</TabsTrigger>
             <TabsTrigger value="teachers" className="rounded-xl"><Users className="w-4 h-4 mr-1" /> Professores</TabsTrigger>
-            <TabsTrigger value="content" className="rounded-xl"><BookOpen className="w-4 h-4 mr-1" /> Lição do dia</TabsTrigger>
+            <TabsTrigger value="content" className="rounded-xl"><BookOpen className="w-4 h-4 mr-1" /> Lição</TabsTrigger>
             <TabsTrigger value="consent" className="rounded-xl">Termo</TabsTrigger>
           </TabsList>
+
+          {/* HORÁRIO DE CHECK-IN */}
+          <TabsContent value="schedule">
+            <Card className="rounded-3xl border-2">
+              <CardHeader><CardTitle>Janela de check-in</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-xs text-slate-500">O QR fixo da sala só permite check-in dentro deste horário e nos dias selecionados. Fora disso, a família recebe um aviso educado.</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label>Início</Label><Input type="time" value={scheduleForm.start} onChange={e => setScheduleForm({...scheduleForm, start: e.target.value})} /></div>
+                  <div><Label>Fim</Label><Input type="time" value={scheduleForm.end} onChange={e => setScheduleForm({...scheduleForm, end: e.target.value})} /></div>
+                </div>
+                <div>
+                  <Label>Dias da semana</Label>
+                  <div className="flex gap-2 flex-wrap mt-1">
+                    {["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"].map((label, idx) => {
+                      const on = scheduleForm.days.includes(idx);
+                      return (
+                        <button key={idx} type="button"
+                          onClick={() => setScheduleForm(s => ({ ...s, days: on ? s.days.filter(d=>d!==idx) : [...s.days, idx].sort() }))}
+                          className={`px-3 py-1.5 rounded-xl text-sm font-semibold border-2 ${on ? "bg-violet-600 text-white border-violet-600" : "bg-white text-slate-600 border-slate-200"}`}>
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div><Label>Fuso horário</Label><Input value={scheduleForm.tz} onChange={e => setScheduleForm({...scheduleForm, tz: e.target.value})} /></div>
+                <Button onClick={saveSchedule} disabled={busy} className="rounded-xl">{busy ? <Loader2 className="w-4 h-4 animate-spin"/> : "Salvar horário"}</Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* CRIANÇAS + TRANSFERÊNCIA */}
+          <TabsContent value="kids">
+            <Card className="rounded-3xl border-2">
+              <CardHeader><CardTitle>Crianças cadastradas</CardTitle></CardHeader>
+              <CardContent>
+                {kids.length === 0 ? <p className="text-sm text-slate-500 text-center py-6">Nenhuma criança cadastrada ainda.</p> : (
+                  <div className="space-y-2">
+                    {kids.map(c => {
+                      const age = Math.floor((Date.now() - new Date(c.birth_date).getTime()) / (365.25*24*3600*1000));
+                      const room = rooms.find(r => r.id === c.current_room_id);
+                      return (
+                        <div key={c.id} className="flex items-center justify-between p-3 rounded-xl border bg-white">
+                          <div>
+                            <p className="font-semibold text-sm">{c.full_name}</p>
+                            <p className="text-xs text-slate-500">{age} anos · Sala: <b>{room?.name || "—"}</b></p>
+                          </div>
+                          <Button size="sm" variant="outline" onClick={() => { setTransferChild(c); setTransferTargetRoom(c.current_room_id || rooms[0]?.id || ""); }} className="rounded-xl">
+                            <ArrowLeftRight className="w-4 h-4 mr-1"/>Transferir
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
 
           {/* SALAS */}
           <TabsContent value="rooms">
@@ -268,9 +378,12 @@ export default function KidsAdmin() {
                         <div className="flex items-start justify-between mb-2">
                           <div>
                             <h3 className="font-bold text-slate-900">{r.name}</h3>
-                            <Badge variant="outline" className="mt-1 text-xs">
-                              <Users className="w-3 h-3 mr-1" /> {r.age_min}–{r.age_max} anos
-                            </Badge>
+                            <div className="flex gap-1 flex-wrap mt-1">
+                              <Badge variant="outline" className="text-xs">
+                                <Users className="w-3 h-3 mr-1" /> {r.age_min}–{r.age_max} anos
+                              </Badge>
+                              {r.is_inclusion && <Badge className="text-xs bg-violet-100 text-violet-700 border-violet-200"><Sparkles className="w-3 h-3 mr-1"/>Inclusão</Badge>}
+                            </div>
                           </div>
                           <button onClick={() => deleteRoom(r.id)} className="text-slate-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
                         </div>
@@ -406,10 +519,31 @@ export default function KidsAdmin() {
               <div><Label>Idade máxima</Label><Input type="number" min={0} max={17} value={roomForm.age_max} onChange={e => setRoomForm({ ...roomForm, age_max: +e.target.value })} /></div>
             </div>
             <div><Label>Cor</Label><Input type="color" value={roomForm.color} onChange={e => setRoomForm({ ...roomForm, color: e.target.value })} /></div>
+            <label className="flex items-center gap-2 cursor-pointer p-2 rounded-lg bg-violet-50 border border-violet-200">
+              <Checkbox checked={roomForm.is_inclusion} onCheckedChange={v => setRoomForm({ ...roomForm, is_inclusion: !!v })} />
+              <span className="text-sm"><Sparkles className="w-3 h-3 inline mr-1 text-violet-600"/> Sala de inclusão (habilita assistente IA)</span>
+            </label>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowRoomModal(false)}>Cancelar</Button>
             <Button onClick={createRoom} disabled={busy || !roomForm.name.trim()}>{busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Criar"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Transfer modal */}
+      <Dialog open={!!transferChild} onOpenChange={o => !o && setTransferChild(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Transferir {transferChild?.full_name} de sala</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <Label>Nova sala</Label>
+            <select className="w-full border rounded-md h-10 px-3 bg-background" value={transferTargetRoom} onChange={e => setTransferTargetRoom(e.target.value)}>
+              {rooms.map(r => <option key={r.id} value={r.id}>{r.name} ({r.age_min}–{r.age_max} anos){r.is_inclusion ? " · inclusão" : ""}</option>)}
+            </select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTransferChild(null)}>Cancelar</Button>
+            <Button onClick={doTransfer} disabled={busy || !transferTargetRoom}>{busy ? <Loader2 className="w-4 h-4 animate-spin"/> : "Transferir"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
