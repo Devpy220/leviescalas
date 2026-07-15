@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Trash2, Users, Building2, ChevronDown, ChevronUp, Shield, LogOut, Church, Plus, Copy, Link as LinkIcon, Mail, ExternalLink, ChevronRight, Pencil, Upload, X, TrendingUp, Eye, Clock, CalendarDays, CalendarRange, Monitor, Megaphone, Send, Activity, BarChart3, UserX, LineChart as LineChartIcon, Gauge } from 'lucide-react';
+import { Loader2, Trash2, Users, Building2, ChevronDown, ChevronUp, Shield, LogOut, Church, Plus, Copy, Link as LinkIcon, Mail, ExternalLink, ChevronRight, Pencil, Upload, X, TrendingUp, Eye, Clock, CalendarDays, CalendarRange, Monitor, Megaphone, Send, Activity, BarChart3, UserX, LineChart as LineChartIcon, Gauge, Baby } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -448,6 +448,15 @@ export default function Admin() {
     toast({
       title: 'Link copiado!',
       description: 'Link da página pública da igreja.',
+    });
+  };
+
+  const copyKidsSetupLink = (churchName: string) => {
+    const url = `${window.location.origin}/auth?redirect=${encodeURIComponent('/kids/admin')}`;
+    navigator.clipboard.writeText(url);
+    toast({
+      title: 'Link LeviKids copiado!',
+      description: `Envie para o responsável de ${churchName} criar a Página Kids.`,
     });
   };
 
@@ -1698,6 +1707,14 @@ export default function Admin() {
                               <LinkIcon className="w-4 h-4" />
                             </Button>
                           )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => copyKidsSetupLink(church.name)}
+                            title="Copiar link para criar Página LeviKids"
+                          >
+                            <Baby className="w-4 h-4 text-pink-500" />
+                          </Button>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button 
