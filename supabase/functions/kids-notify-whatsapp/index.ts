@@ -58,10 +58,21 @@ serve(async (req: Request): Promise<Response> => {
       .maybeSingle();
     if (cErr || !child) throw new Error("child_not_found");
 
+    let roomId = body.room_id;
+    if (!roomId) {
+      // derive from checkin_id or most recent active for child
+      if (body.checkin_id) {
+        const { data: ci } = await admin.from("kids_checkins").select("room_id").eq("id", body.checkin_id).maybeSingle();
+        roomId = ci?.room_id;
+      } else {
+        const { data: ci } = await admin.from("kids_checkins").select("room_id").eq("child_id", body.child_id).order("checkin_at", { ascending: false }).limit(1).maybeSingle();
+        roomId = ci?.room_id;
+      }
+    }
     const { data: room } = await admin
       .from("kids_rooms")
       .select("id, name, page_id")
-      .eq("id", body.room_id)
+      .eq("id", roomId || "")
       .maybeSingle();
 
     const { data: page } = await admin
