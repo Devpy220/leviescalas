@@ -296,8 +296,9 @@ export default function Auth() {
       
       // PRIORITY 4: Smart redirect based on department count
       const destination = await getSmartRedirectDestination(session.user.id);
-      console.log('[Auth] Already authenticated, smart redirecting to:', destination);
-      navigate(destination, { replace: true });
+      const finalDest = await maybeChooseApp(session.user.id, destination);
+      console.log('[Auth] Already authenticated, smart redirecting to:', finalDest);
+      navigate(finalDest, { replace: true });
     }, 150);
     
     return () => clearTimeout(stabilizationTimeout);
@@ -605,11 +606,12 @@ export default function Auth() {
     
     if (currentSession?.user) {
       const redirectDestination = await getSmartRedirectDestination(currentSession.user.id);
+      const finalDest = await maybeChooseApp(currentSession.user.id, redirectDestination);
       toast({
         title: 'Bem-vindo de volta!',
         description: 'Login realizado com sucesso.',
       });
-      navigate(redirectDestination, { replace: true });
+      navigate(finalDest, { replace: true });
       return;
     }
     
