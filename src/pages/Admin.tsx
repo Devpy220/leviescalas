@@ -1707,6 +1707,14 @@ export default function Admin() {
                               <LinkIcon className="w-4 h-4" />
                             </Button>
                           )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => copyKidsSetupLink(church.name)}
+                            title="Copiar link para criar Página LeviKids"
+                          >
+                            <Baby className="w-4 h-4 text-pink-500" />
+                          </Button>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button 
