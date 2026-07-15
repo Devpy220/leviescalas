@@ -73,6 +73,7 @@ const churchSchema = z.object({
   address: z.string().max(200).optional(),
   city: z.string().max(100).optional(),
   state: z.string().max(50).optional(),
+  product: z.enum(['levi', 'kids', 'both'], { errorMap: () => ({ message: 'Escolha qual app usar' }) }),
   acceptTerms: z.literal(true, { errorMap: () => ({ message: 'Você deve aceitar os termos' }) }),
 });
 
