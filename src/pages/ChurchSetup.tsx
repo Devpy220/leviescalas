@@ -83,6 +83,9 @@ interface CreatedChurch {
   id: string;
   name: string;
   code: string;
+  product: 'levi' | 'kids' | 'both';
+  createDeptUrl: string | null;
+  kidsAdminUrl: string | null;
 }
 
 export default function ChurchSetup() {
@@ -100,7 +103,7 @@ export default function ChurchSetup() {
     defaultValues: { 
       registrantName: '', registrantEmail: '', registrantPhone: '',
       name: '', email: '', phone: '', cnpj: '', description: '', 
-      address: '', city: '', state: '', acceptTerms: undefined as any,
+      address: '', city: '', state: '', product: 'levi', acceptTerms: undefined as any,
     },
   });
 
@@ -120,6 +123,7 @@ export default function ChurchSetup() {
           address: data.address || null,
           city: data.city || null,
           state: data.state || null,
+          product: data.product,
         },
       });
 
@@ -130,6 +134,9 @@ export default function ChurchSetup() {
         id: result.church.id,
         name: result.church.name,
         code: result.church.code,
+        product: result.product ?? data.product,
+        createDeptUrl: result.createDeptUrl ?? null,
+        kidsAdminUrl: result.kidsAdminUrl ?? null,
       });
       setRegistrantPhone(data.registrantPhone);
       setWhatsappStatus(result.whatsappSent ? 'sent' : 'failed');
@@ -137,8 +144,8 @@ export default function ChurchSetup() {
       toast({
         title: 'Igreja cadastrada!',
         description: result.whatsappSent
-          ? 'O link de acesso foi enviado por WhatsApp.'
-          : 'O link aparece no modal. Copie e envie manualmente se necessário.',
+          ? 'Os links de acesso foram enviados por WhatsApp.'
+          : 'Os links aparecem no modal. Copie e envie manualmente se necessário.',
       });
     } catch (error: any) {
       console.error('Error creating church:', error);
@@ -379,14 +386,17 @@ export default function ChurchSetup() {
           onOpenChange={(open) => { if (!open) handleClose(); }}
           churchName={createdChurch.name}
           churchCode={createdChurch.code}
+          product={createdChurch.product}
+          createDeptUrl={createdChurch.createDeptUrl}
+          kidsAdminUrl={createdChurch.kidsAdminUrl}
           onClose={handleClose}
           onSendWhatsApp={() => {
-            const origin = window.location.origin;
-            const code = createdChurch.code;
-            const link = `${origin}/auth?tab=register&churchCode=${code}&redirect=${encodeURIComponent(`/departments/new?churchCode=${code}`)}`;
-            const text = `Olá! Sua igreja "${createdChurch.name}" foi cadastrada no LEVI.\n\nCódigo: ${code}\n\nAcesse este link para criar sua conta e seus departamentos:\n${link}`;
+            const name = createdChurch.name;
+            const parts: string[] = [`Olá! Sua igreja "${name}" foi cadastrada no LEVI.`, `Código: ${createdChurch.code}`, ''];
+            if (createdChurch.createDeptUrl) parts.push('📅 LEVI Escalas (departamentos):', createdChurch.createDeptUrl, '');
+            if (createdChurch.kidsAdminUrl) parts.push('👶 LeviKids (área infantil):', createdChurch.kidsAdminUrl, '');
             const phone = registrantPhone.replace(/\D/g, '');
-            const waUrl = `https://wa.me/${phone.startsWith('55') ? phone : '55' + phone}?text=${encodeURIComponent(text)}`;
+            const waUrl = `https://wa.me/${phone.startsWith('55') ? phone : '55' + phone}?text=${encodeURIComponent(parts.join('\n'))}`;
             window.open(waUrl, '_blank');
           }}
         />
