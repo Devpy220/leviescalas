@@ -509,14 +509,15 @@ export default function Auth() {
 
       // Count user departments to determine redirect destination
       const redirectDestination = await getSmartRedirectDestination(currentSession.user.id);
+      const finalDest = await maybeChooseApp(currentSession.user.id, redirectDestination);
       
-      console.log('[Auth] Login complete, redirecting to:', redirectDestination);
+      console.log('[Auth] Login complete, redirecting to:', finalDest);
       
       toast({
         title: 'Bem-vindo de volta!',
         description: 'Login realizado com sucesso.',
       });
-      navigate(redirectDestination, { replace: true });
+      navigate(finalDest, { replace: true });
     } catch (err) {
       console.error('[Auth] Unexpected error during login:', err);
       hasRedirectedRef.current = false;
