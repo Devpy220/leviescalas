@@ -659,6 +659,7 @@ export type Database = {
           birth_date: string
           created_at: string
           created_by: string
+          current_room_id: string | null
           full_name: string
           id: string
           notes: string | null
@@ -673,6 +674,7 @@ export type Database = {
           birth_date: string
           created_at?: string
           created_by: string
+          current_room_id?: string | null
           full_name: string
           id?: string
           notes?: string | null
@@ -687,6 +689,7 @@ export type Database = {
           birth_date?: string
           created_at?: string
           created_by?: string
+          current_room_id?: string | null
           full_name?: string
           id?: string
           notes?: string | null
@@ -697,6 +700,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "kids_children_current_room_id_fkey"
+            columns: ["current_room_id"]
+            isOneToOne: false
+            referencedRelation: "kids_rooms"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "kids_children_page_id_fkey"
             columns: ["page_id"]
@@ -909,6 +919,41 @@ export type Database = {
         }
         Relationships: []
       }
+      kids_inclusion_notes: {
+        Row: {
+          author_id: string
+          child_id: string
+          content: string
+          created_at: string
+          id: string
+          title: string
+        }
+        Insert: {
+          author_id: string
+          child_id: string
+          content: string
+          created_at?: string
+          id?: string
+          title: string
+        }
+        Update: {
+          author_id?: string
+          child_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kids_inclusion_notes_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "kids_children"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kids_leaders: {
         Row: {
           created_at: string
@@ -941,8 +986,69 @@ export type Database = {
           },
         ]
       }
+      kids_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          media_type: string | null
+          media_url: string | null
+          notify_whatsapp: boolean
+          page_id: string
+          room_id: string | null
+          sender_id: string
+          sender_role: string
+          title: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          media_type?: string | null
+          media_url?: string | null
+          notify_whatsapp?: boolean
+          page_id: string
+          room_id?: string | null
+          sender_id: string
+          sender_role: string
+          title: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          media_type?: string | null
+          media_url?: string | null
+          notify_whatsapp?: boolean
+          page_id?: string
+          room_id?: string | null
+          sender_id?: string
+          sender_role?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kids_messages_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "kids_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kids_messages_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "kids_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kids_pages: {
         Row: {
+          checkin_days: number[] | null
+          checkin_end_time: string | null
+          checkin_start_time: string | null
+          checkin_timezone: string | null
           church_id: string
           consent_text: string
           consent_version: string
@@ -955,6 +1061,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          checkin_days?: number[] | null
+          checkin_end_time?: string | null
+          checkin_start_time?: string | null
+          checkin_timezone?: string | null
           church_id: string
           consent_text: string
           consent_version?: string
@@ -967,6 +1077,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          checkin_days?: number[] | null
+          checkin_end_time?: string | null
+          checkin_start_time?: string | null
+          checkin_timezone?: string | null
           church_id?: string
           consent_text?: string
           consent_version?: string
@@ -995,6 +1109,58 @@ export type Database = {
           },
         ]
       }
+      kids_room_transfers: {
+        Row: {
+          child_id: string
+          created_at: string
+          from_room_id: string | null
+          id: string
+          reason: string | null
+          to_room_id: string
+          transferred_by: string
+        }
+        Insert: {
+          child_id: string
+          created_at?: string
+          from_room_id?: string | null
+          id?: string
+          reason?: string | null
+          to_room_id: string
+          transferred_by: string
+        }
+        Update: {
+          child_id?: string
+          created_at?: string
+          from_room_id?: string | null
+          id?: string
+          reason?: string | null
+          to_room_id?: string
+          transferred_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kids_room_transfers_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "kids_children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kids_room_transfers_from_room_id_fkey"
+            columns: ["from_room_id"]
+            isOneToOne: false
+            referencedRelation: "kids_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kids_room_transfers_to_room_id_fkey"
+            columns: ["to_room_id"]
+            isOneToOne: false
+            referencedRelation: "kids_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kids_rooms: {
         Row: {
           active: boolean
@@ -1003,6 +1169,7 @@ export type Database = {
           color: string
           created_at: string
           id: string
+          is_inclusion: boolean
           name: string
           page_id: string
           static_qr_token: string
@@ -1015,6 +1182,7 @@ export type Database = {
           color?: string
           created_at?: string
           id?: string
+          is_inclusion?: boolean
           name: string
           page_id: string
           static_qr_token?: string
@@ -1027,6 +1195,7 @@ export type Database = {
           color?: string
           created_at?: string
           id?: string
+          is_inclusion?: boolean
           name?: string
           page_id?: string
           static_qr_token?: string
@@ -2554,6 +2723,10 @@ export type Database = {
         Args: { _child_id: string; _user_id: string }
         Returns: boolean
       }
+      is_kids_guardian_of_page: {
+        Args: { _page_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_kids_leader: {
         Args: { _page_id: string; _user_id: string }
         Returns: boolean
@@ -2594,6 +2767,13 @@ export type Database = {
           success: boolean
         }[]
       }
+      kids_child_attendance: {
+        Args: { _child_id: string; _from?: string; _to?: string }
+        Returns: {
+          count: number
+          month: string
+        }[]
+      }
       kids_default_consent_text: { Args: never; Returns: string }
       kids_get_or_create_dyn_token: {
         Args: { _room_id: string }
@@ -2622,8 +2802,50 @@ export type Database = {
           pickup_code: string
         }[]
       }
+      kids_perform_checkin_static: {
+        Args: { _child_ids: string[]; _static_token: string }
+        Returns: {
+          checkin_id: string
+          child_id: string
+          pickup_code: string
+        }[]
+      }
       kids_perform_checkout: {
         Args: { _checkin_id: string; _pickup_code: string }
+        Returns: boolean
+      }
+      kids_report_dropoff: {
+        Args: { _page_id: string }
+        Returns: {
+          checkins_prev: number
+          child_id: string
+          full_name: string
+          guardian_name: string
+          guardian_phone: string
+          last_visit: string
+        }[]
+      }
+      kids_report_needs: {
+        Args: { _page_id: string }
+        Returns: {
+          allergies: string
+          child_id: string
+          current_room: string
+          full_name: string
+          restrictions: string
+        }[]
+      }
+      kids_report_visitors: {
+        Args: { _page_id: string }
+        Returns: {
+          checkins: number
+          child_id: string
+          full_name: string
+          last_visit: string
+        }[]
+      }
+      kids_transfer_child: {
+        Args: { _child_id: string; _new_room_id: string; _reason?: string }
         Returns: boolean
       }
       log_billing_audit: {
