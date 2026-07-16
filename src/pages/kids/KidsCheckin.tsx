@@ -190,6 +190,7 @@ export default function KidsCheckin() {
               {results.map((r, i) => (
                 <div key={i} className="p-3 bg-white rounded-xl text-center">
                   <p className="text-sm font-semibold">{r.name}</p>
+                  {r.room && <p className="text-[11px] text-violet-700 font-semibold mt-0.5">Sala: {r.room}</p>}
                   <p className="text-[11px] uppercase text-slate-500 mt-1">Código de retirada</p>
                   <p className="text-4xl font-bold tracking-[0.5em] text-violet-700">{r.code}</p>
                 </div>
