@@ -15,16 +15,37 @@ import { uploadKidsPhoto } from "@/lib/kidsStorage";
 interface Room { id: string; name: string; color: string; age_min: number; age_max: number; page_id: string; }
 interface Page { id: string; name: string; consent_version: string; consent_text: string; }
 
+// CPF: 11 dígitos com dígitos verificadores válidos
+function isValidCPF(raw: string): boolean {
+  const cpf = (raw || "").replace(/\D/g, "");
+  if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) return false;
+  const calc = (base: string, factor: number) => {
+    let sum = 0;
+    for (let i = 0; i < base.length; i++) sum += parseInt(base[i], 10) * (factor - i);
+    const r = (sum * 10) % 11;
+    return r === 10 ? 0 : r;
+  };
+  return calc(cpf.slice(0, 9), 10) === parseInt(cpf[9], 10)
+      && calc(cpf.slice(0, 10), 11) === parseInt(cpf[10], 10);
+}
+function maskCPF(v: string) {
+  return v.replace(/\D/g, "").slice(0, 11)
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+}
+
 export default function KidsJoin() {
   const { token } = useParams();
   const nav = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const [mode, setMode] = useState<"page" | "room" | null>(null);
   const [room, setRoom] = useState<Room | null>(null);
   const [page, setPage] = useState<Page | null>(null);
   const [loading, setLoading] = useState(true);
   const [step, setStep] = useState<"consent" | "guardian" | "children">("consent");
   const [accepted, setAccepted] = useState(false);
-  const [guardian, setGuardian] = useState({ full_name: "", phone: "", birth_date: "", photoFile: null as File | null });
+  const [guardian, setGuardian] = useState({ full_name: "", phone: "", birth_date: "", cpf: "", photoFile: null as File | null });
   const [guardianId, setGuardianId] = useState<string | null>(null);
   const [children, setChildren] = useState<Array<{ id?: string; full_name: string; birth_date: string; allergies: string; restrictions: string; notes: string; photoFile: File | null }>>([
     { full_name: "", birth_date: "", allergies: "", restrictions: "", notes: "", photoFile: null }
@@ -34,11 +55,21 @@ export default function KidsJoin() {
   useEffect(() => {
     if (!token) return;
     (async () => {
-      const { data } = await (supabase.rpc as any)("kids_lookup_room_by_static_token", { _token: token });
-      const row = Array.isArray(data) ? data[0] : null;
-      if (row) {
-        setRoom({ id: row.room_id, name: row.room_name, color: row.room_color, page_id: row.page_id } as any);
-        setPage({ id: row.page_id, name: row.page_name, consent_version: row.consent_version, consent_text: row.consent_text } as any);
+      // 1) tenta como token de sala (compat) — vai deixar de existir aos poucos
+      const { data: roomData } = await (supabase.rpc as any)("kids_lookup_room_by_static_token", { _token: token });
+      const roomRow = Array.isArray(roomData) ? roomData[0] : null;
+      if (roomRow) {
+        setMode("room");
+        setRoom({ id: roomRow.room_id, name: roomRow.room_name, color: roomRow.room_color, page_id: roomRow.page_id } as any);
+        setPage({ id: roomRow.page_id, name: roomRow.page_name, consent_version: roomRow.consent_version, consent_text: roomRow.consent_text } as any);
+        setLoading(false); return;
+      }
+      // 2) fallback: token de página (QR único da igreja)
+      const { data: pageData } = await (supabase.rpc as any)("kids_lookup_page_by_token", { _token: token });
+      const pageRow = Array.isArray(pageData) ? pageData[0] : null;
+      if (pageRow) {
+        setMode("page");
+        setPage({ id: pageRow.page_id, name: pageRow.page_name, consent_version: pageRow.consent_version, consent_text: pageRow.consent_text } as any);
       }
       setLoading(false);
     })();
@@ -47,12 +78,10 @@ export default function KidsJoin() {
   useEffect(() => {
     if (!user) return;
     (async () => {
-      // Existing guardian?
       const { data: g } = await supabase.from("kids_guardians").select("*").eq("user_id", user.id).maybeSingle();
       if (g) {
         setGuardianId(g.id);
-        setGuardian({ full_name: g.full_name, phone: g.phone, birth_date: g.birth_date, photoFile: null });
-        // Already accepted this page's current version?
+        setGuardian({ full_name: g.full_name, phone: g.phone, birth_date: g.birth_date, cpf: (g as any).cpf || "", photoFile: null });
         if (page) {
           const { data: c } = await supabase.from("kids_consents").select("id")
             .eq("user_id", user.id).eq("page_id", page.id).eq("version", page.consent_version).maybeSingle();
@@ -65,7 +94,7 @@ export default function KidsJoin() {
 
   if (loading || authLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin" /></div>;
 
-  if (!room || !page) {
+  if (!page) {
     return <div className="min-h-screen flex items-center justify-center p-6 text-center">
       <div><h1 className="text-2xl font-bold mb-2">QR inválido</h1><p className="text-slate-600">Este link de cadastro não é válido.</p></div>
     </div>;
@@ -76,9 +105,12 @@ export default function KidsJoin() {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">
         <Card className="max-w-md w-full rounded-3xl border-2">
-          <CardHeader><CardTitle>Entre para cadastrar seu(sua) filho(a)</CardTitle></CardHeader>
+          <CardHeader><CardTitle>Cadastro / Login LeviKids</CardTitle></CardHeader>
           <CardContent className="space-y-3">
-            <p className="text-sm text-slate-600">Sala: <b>{room.name}</b> — {page.name}</p>
+            <p className="text-sm text-slate-600">
+              {mode === "room" && room ? <>Sala: <b>{room.name}</b> — {page.name}</> : <>Igreja: <b>{page.name}</b></>}
+            </p>
+            <p className="text-xs text-slate-500">Se ainda não tem cadastro, crie sua conta agora. Nos próximos check-ins seu celular já vai lembrar do login.</p>
             <Button onClick={() => nav("/auth", { state: { returnUrl } })} className="w-full rounded-xl">Entrar / Cadastrar</Button>
           </CardContent>
         </Card>
@@ -99,24 +131,27 @@ export default function KidsJoin() {
   }
 
   async function saveGuardian() {
-    if (!user || !guardian.full_name || !guardian.phone || !guardian.birth_date) {
-      toast({ title: "Preencha todos os campos" }); return;
+    if (!user || !guardian.full_name || !guardian.phone || !guardian.birth_date || !guardian.cpf) {
+      toast({ title: "Preencha todos os campos (incluindo CPF)" }); return;
     }
-    // 18+
+    if (!isValidCPF(guardian.cpf)) {
+      toast({ title: "CPF inválido", variant: "destructive" }); return;
+    }
     const bd = new Date(guardian.birth_date);
     const age = (Date.now() - bd.getTime()) / (365.25 * 24 * 3600 * 1000);
     if (age < 18) { toast({ title: "É necessário ter 18 anos ou mais.", variant: "destructive" }); return; }
     setBusy(true);
-    let photo_path: string | null = null;
+    const cpfDigits = guardian.cpf.replace(/\D/g, "");
     const { data: g, error } = await supabase.from("kids_guardians").upsert({
-      user_id: user.id, full_name: guardian.full_name, phone: guardian.phone, birth_date: guardian.birth_date,
-    }, { onConflict: "user_id" }).select("id").single();
+      user_id: user.id, full_name: guardian.full_name, phone: guardian.phone,
+      birth_date: guardian.birth_date, cpf: cpfDigits,
+    } as any, { onConflict: "user_id" }).select("id").single();
     if (error || !g) { setBusy(false); toast({ title: "Erro", description: error?.message, variant: "destructive" }); return; }
     if (guardian.photoFile) {
       try {
-        photo_path = await uploadKidsPhoto(guardian.photoFile, page!.id, "guardian", g.id);
-        await supabase.from("kids_guardians").update({ photo_path }).eq("id", g.id);
-      } catch (e) { /* non-fatal */ }
+        const path = await uploadKidsPhoto(guardian.photoFile, page!.id, "guardian", g.id);
+        await supabase.from("kids_guardians").update({ photo_path: path }).eq("id", g.id);
+      } catch { /* non-fatal */ }
     }
     setGuardianId(g.id);
     setBusy(false);
@@ -124,8 +159,7 @@ export default function KidsJoin() {
   }
 
   async function saveChildren() {
-    if (!guardianId || !room || !page) return;
-    // Foto obrigatória
+    if (!guardianId || !page) return;
     const missing = children.filter(c => c.full_name && c.birth_date && !c.photoFile);
     if (missing.length > 0) {
       toast({ title: "Foto obrigatória", description: `Adicione uma foto de: ${missing.map(m=>m.full_name).join(", ")}`, variant: "destructive" });
@@ -134,14 +168,9 @@ export default function KidsJoin() {
     setBusy(true);
     for (const c of children) {
       if (!c.full_name || !c.birth_date || !c.photoFile) continue;
-      const bd = new Date(c.birth_date);
-      const ageYears = Math.floor((Date.now() - bd.getTime()) / (365.25 * 24 * 3600 * 1000));
-      const suggested_room_id = (ageYears >= room.age_min && ageYears <= room.age_max) ? room.id : null;
-
-      // Cria com photo_path temporário (não vazio) para passar o trigger; ajustamos depois do upload
       const tempPath = `pending/${crypto.randomUUID()}`;
       const { data: child, error } = await supabase.from("kids_children").insert({
-        page_id: page.id, suggested_room_id, current_room_id: suggested_room_id,
+        page_id: page.id,
         full_name: c.full_name, birth_date: c.birth_date,
         allergies: c.allergies || null, restrictions: c.restrictions || null, notes: c.notes || null,
         photo_path: tempPath, created_by: user!.id,
@@ -152,14 +181,14 @@ export default function KidsJoin() {
         const p = await uploadKidsPhoto(c.photoFile, page.id, "child", child.id);
         await supabase.from("kids_children").update({ photo_path: p }).eq("id", child.id);
       } catch (e) {
-        // rollback: exclui a criança se upload falhou (trigger vai barrar futuras edições)
         await supabase.from("kids_children").delete().eq("id", child.id);
         toast({ title: "Falha no upload da foto", description: (e as Error).message, variant: "destructive" });
       }
     }
     setBusy(false);
-    toast({ title: "Cadastro concluído!", description: "Você já pode fazer o check-in na sala." });
-    nav("/kids/checkin");
+    toast({ title: "Cadastro concluído!", description: "Agora é só fazer o check-in." });
+    // volta pro check-in já com o token (sala ou página) para completar a entrada
+    nav(`/kids/checkin?token=${encodeURIComponent(token!)}`);
   }
 
   return (
@@ -169,8 +198,17 @@ export default function KidsJoin() {
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white shadow-sm text-slate-700 text-sm font-semibold mb-3">
             <Baby className="w-4 h-4 text-violet-600" /> {page.name}
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">Sala: {room.name}</h1>
-          <p className="text-sm text-slate-600">Faixa etária: {room.age_min}–{room.age_max} anos</p>
+          {mode === "room" && room ? (
+            <>
+              <h1 className="text-2xl font-bold text-slate-900">Sala: {room.name}</h1>
+              <p className="text-sm text-slate-600">Faixa etária: {room.age_min}–{room.age_max} anos</p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-2xl font-bold text-slate-900">Cadastro LeviKids</h1>
+              <p className="text-sm text-slate-600">A sala é escolhida automaticamente pela idade da criança.</p>
+            </>
+          )}
         </div>
 
         {step === "consent" && (
@@ -193,9 +231,14 @@ export default function KidsJoin() {
           <Card className="rounded-3xl border-2">
             <CardHeader><CardTitle>Seus dados (responsável)</CardTitle></CardHeader>
             <CardContent className="space-y-3">
-              <div><Label>Nome completo</Label><Input value={guardian.full_name} onChange={e => setGuardian({ ...guardian, full_name: e.target.value })} /></div>
-              <div><Label>WhatsApp</Label><Input value={guardian.phone} onChange={e => setGuardian({ ...guardian, phone: e.target.value })} placeholder="(11) 99999-9999" /></div>
-              <div><Label>Data de nascimento (precisa ser 18+)</Label><Input type="date" value={guardian.birth_date} onChange={e => setGuardian({ ...guardian, birth_date: e.target.value })} /></div>
+              <div><Label>Nome completo *</Label><Input value={guardian.full_name} onChange={e => setGuardian({ ...guardian, full_name: e.target.value })} /></div>
+              <div><Label>WhatsApp *</Label><Input value={guardian.phone} onChange={e => setGuardian({ ...guardian, phone: e.target.value })} placeholder="(11) 99999-9999" /></div>
+              <div>
+                <Label>CPF *</Label>
+                <Input inputMode="numeric" value={guardian.cpf} onChange={e => setGuardian({ ...guardian, cpf: maskCPF(e.target.value) })} placeholder="000.000.000-00" maxLength={14} />
+                <p className="text-[10px] text-slate-500 mt-1">Necessário apenas para a área Kids (segurança na retirada da criança).</p>
+              </div>
+              <div><Label>Data de nascimento (precisa ser 18+) *</Label><Input type="date" value={guardian.birth_date} onChange={e => setGuardian({ ...guardian, birth_date: e.target.value })} /></div>
               <div><Label>Foto (opcional)</Label><Input type="file" accept="image/*" onChange={e => setGuardian({ ...guardian, photoFile: e.target.files?.[0] || null })} /></div>
               <Button onClick={saveGuardian} disabled={busy} className="w-full rounded-xl">
                 {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Continuar"}
@@ -213,19 +256,19 @@ export default function KidsJoin() {
                   {children.length > 1 && (
                     <button onClick={() => setChildren(children.filter((_, idx) => idx !== i))} className="absolute top-2 right-2 text-red-500"><Trash2 className="w-4 h-4" /></button>
                   )}
-                  <div><Label>Nome completo</Label><Input value={c.full_name} onChange={e => { const n = [...children]; n[i].full_name = e.target.value; setChildren(n); }} /></div>
-                  <div><Label>Data de nascimento</Label><Input type="date" value={c.birth_date} onChange={e => { const n = [...children]; n[i].birth_date = e.target.value; setChildren(n); }} /></div>
+                  <div><Label>Nome completo *</Label><Input value={c.full_name} onChange={e => { const n = [...children]; n[i].full_name = e.target.value; setChildren(n); }} /></div>
+                  <div><Label>Data de nascimento *</Label><Input type="date" value={c.birth_date} onChange={e => { const n = [...children]; n[i].birth_date = e.target.value; setChildren(n); }} /><p className="text-[10px] text-slate-500 mt-1">A idade define automaticamente a sala no check-in.</p></div>
                   <div><Label>Alergias</Label><Input value={c.allergies} onChange={e => { const n = [...children]; n[i].allergies = e.target.value; setChildren(n); }} placeholder="Ex.: amendoim, leite" /></div>
                   <div><Label>Restrições</Label><Input value={c.restrictions} onChange={e => { const n = [...children]; n[i].restrictions = e.target.value; setChildren(n); }} /></div>
                   <div><Label>Observações</Label><Textarea rows={2} value={c.notes} onChange={e => { const n = [...children]; n[i].notes = e.target.value; setChildren(n); }} /></div>
-                  <div><Label className="text-red-600">Foto da criança <span aria-hidden>*</span></Label><Input type="file" accept="image/*" required onChange={e => { const n = [...children]; n[i].photoFile = e.target.files?.[0] || null; setChildren(n); }} /><p className="text-[10px] text-slate-500 mt-1">Obrigatória para identificação no check-in e para a segurança da criança.</p></div>
+                  <div><Label className="text-red-600">Foto da criança *</Label><Input type="file" accept="image/*" required onChange={e => { const n = [...children]; n[i].photoFile = e.target.files?.[0] || null; setChildren(n); }} /><p className="text-[10px] text-slate-500 mt-1">Obrigatória para identificação no check-in.</p></div>
                 </div>
               ))}
               <Button variant="outline" onClick={() => setChildren([...children, { full_name: "", birth_date: "", allergies: "", restrictions: "", notes: "", photoFile: null }])} className="w-full rounded-xl">
                 <Plus className="w-4 h-4 mr-2" /> Adicionar outro filho
               </Button>
               <Button onClick={saveChildren} disabled={busy} className="w-full rounded-xl">
-                {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Finalizar cadastro"}
+                {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Finalizar e ir para o check-in"}
               </Button>
             </CardContent>
           </Card>

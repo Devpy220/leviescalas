@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, Camera, ShieldCheck, KeyRound, AlertTriangle } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 interface Child { id: string; full_name: string; birth_date: string; photo_path: string | null; }
 interface ActiveCheckin { id: string; child_id: string; pickup_code: string; checkin_at: string; kids_children: { full_name: string } | null; kids_rooms: { name: string } | null; }
@@ -15,24 +15,30 @@ interface ActiveCheckin { id: string; child_id: string; pickup_code: string; che
 export default function KidsCheckin() {
   const { user, loading: authLoading } = useAuth();
   const nav = useNavigate();
+  const [sp] = useSearchParams();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const readerRef = useRef<BrowserQRCodeReader | null>(null);
   const [scanning, setScanning] = useState(false);
   const [token, setToken] = useState<string | null>(null);
+  const [tokenMode, setTokenMode] = useState<"page" | "room" | null>(null);
   const [children, setChildren] = useState<Child[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
-  const [results, setResults] = useState<Array<{ name: string; code: string }>>([]);
+  const [results, setResults] = useState<Array<{ name: string; code: string; room?: string }>>([]);
   const [active, setActive] = useState<ActiveCheckin[]>([]);
 
   useEffect(() => {
     if (!user) return;
     loadChildren();
     loadActive();
+    // Token vindo por URL (?token=...) após completar cadastro
+    const t = sp.get("token");
+    if (t && !token) resolveToken(t);
     const ch = supabase.channel("kids-checkins-mine")
       .on("postgres_changes", { event: "*", schema: "public", table: "kids_checkins" }, () => loadActive())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   async function loadChildren() {
@@ -53,6 +59,24 @@ export default function KidsCheckin() {
     setActive((data || []) as any);
   }
 
+  // Descobre se o token é de página (QR único da igreja) ou de sala (compat)
+  async function resolveToken(raw: string) {
+    // se veio URL completa /kids/join/<t>
+    const m = raw.match(/\/kids\/join\/([A-Za-z0-9_-]+)/);
+    const t = m ? m[1] : raw.trim();
+    // tenta como página primeiro (novo modelo)
+    const { data: pageData } = await (supabase.rpc as any)("kids_lookup_page_by_token", { _token: t });
+    if (Array.isArray(pageData) && pageData[0]) {
+      setToken(t); setTokenMode("page"); return;
+    }
+    // fallback: token de sala
+    const { data: roomData } = await (supabase.rpc as any)("kids_lookup_room_by_static_token", { _token: t });
+    if (Array.isArray(roomData) && roomData[0]) {
+      setToken(t); setTokenMode("room"); return;
+    }
+    toast({ title: "QR não reconhecido", description: "Peça um QR válido da igreja.", variant: "destructive" });
+  }
+
   async function startScan() {
     setScanning(true);
     try {
@@ -62,16 +86,13 @@ export default function KidsCheckin() {
       if (!back || !videoRef.current) { toast({ title: "Câmera indisponível", variant: "destructive" }); setScanning(false); return; }
       await readerRef.current.decodeFromVideoDevice(back.deviceId, videoRef.current, (result) => {
         if (result) {
-          let text = result.getText();
-          // se veio uma URL completa /kids/join/<token>, extrai o token final
-          const m = text.match(/\/kids\/join\/([A-Za-z0-9_-]+)/);
-          if (m) text = m[1];
-          setToken(text);
+          const text = result.getText();
           stopScan();
           toast({ title: "QR lido!" });
+          resolveToken(text);
         }
       });
-    } catch (e) {
+    } catch {
       toast({ title: "Erro ao ler QR", variant: "destructive" });
       setScanning(false);
     }
@@ -93,21 +114,22 @@ export default function KidsCheckin() {
   const missingPhoto = children.filter(c => selected.has(c.id) && (!c.photo_path || c.photo_path.trim() === ""));
 
   async function confirmCheckin() {
-    if (!token || selected.size === 0) return;
+    if (!token || !tokenMode || selected.size === 0) return;
     if (missingPhoto.length > 0) {
       toast({ title: "Foto obrigatória", description: `Adicione foto de: ${missingPhoto.map(m=>m.full_name).join(", ")}`, variant: "destructive" });
       return;
     }
     setBusy(true);
-    const { data, error } = await (supabase.rpc as any)("kids_perform_checkin_static", {
-      _static_token: token,
-      _child_ids: Array.from(selected),
-    });
+    const rpcName = tokenMode === "page" ? "kids_perform_checkin_by_page" : "kids_perform_checkin_static";
+    const args = tokenMode === "page"
+      ? { _page_token: token, _child_ids: Array.from(selected) }
+      : { _static_token: token, _child_ids: Array.from(selected) };
+    const { data, error } = await (supabase.rpc as any)(rpcName, args);
     setBusy(false);
     if (error) { toast({ title: "Falha no check-in", description: error.message, variant: "destructive" }); return; }
-    const rows = (data || []) as Array<{ child_id: string; pickup_code: string; checkin_id: string }>;
+    const rows = (data || []) as Array<{ child_id: string; pickup_code: string; checkin_id: string; room_name?: string }>;
     const names = children.reduce((acc, c) => ({ ...acc, [c.id]: c.full_name }), {} as Record<string, string>);
-    setResults(rows.map(r => ({ name: names[r.child_id] || "", code: r.pickup_code })));
+    setResults(rows.map(r => ({ name: names[r.child_id] || "", code: r.pickup_code, room: r.room_name })));
 
     for (const r of rows) {
       supabase.functions.invoke("kids-notify-whatsapp", {
@@ -115,9 +137,10 @@ export default function KidsCheckin() {
       }).catch(() => {});
     }
 
-    setSelected(new Set()); setToken(null);
+    setSelected(new Set()); setToken(null); setTokenMode(null);
     loadActive();
   }
+
 
   if (authLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin" /></div>;
 
@@ -167,6 +190,7 @@ export default function KidsCheckin() {
               {results.map((r, i) => (
                 <div key={i} className="p-3 bg-white rounded-xl text-center">
                   <p className="text-sm font-semibold">{r.name}</p>
+                  {r.room && <p className="text-[11px] text-violet-700 font-semibold mt-0.5">Sala: {r.room}</p>}
                   <p className="text-[11px] uppercase text-slate-500 mt-1">Código de retirada</p>
                   <p className="text-4xl font-bold tracking-[0.5em] text-violet-700">{r.code}</p>
                 </div>
