@@ -75,31 +75,22 @@ export function ChurchOnboardingGuide({
           </p>
         </div>
 
-        {showLevi && (
-          <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-2">
-            <p className="text-xs text-muted-foreground">📅 LEVI Escalas — criar departamentos/ministérios</p>
-            <p className="text-[11px] font-mono text-primary break-all bg-background/60 rounded-md p-2">
-              {adminLink}
-            </p>
-            <Button size="sm" variant="outline" className="w-full" onClick={() => handleCopy(adminLink)}>
-              <Copy className="w-4 h-4 mr-1.5" />
-              Copiar link Escalas
-            </Button>
-          </div>
-        )}
-
-        {showKids && (
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 space-y-2">
-            <p className="text-xs text-muted-foreground">👶 LeviKids — criar a área infantil (salas, professores, check-in)</p>
-            <p className="text-[11px] font-mono text-amber-700 dark:text-amber-400 break-all bg-background/60 rounded-md p-2">
-              {kidsLink}
-            </p>
-            <Button size="sm" variant="outline" className="w-full" onClick={() => handleCopy(kidsLink)}>
-              <Copy className="w-4 h-4 mr-1.5" />
-              Copiar link Kids
-            </Button>
-          </div>
-        )}
+        <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-2">
+          <p className="text-xs text-muted-foreground">
+            🔗 <strong>Link único da sua igreja</strong> — com ele qualquer pessoa (você ou quem indicar) pode:
+          </p>
+          <ul className="text-xs text-muted-foreground list-disc pl-5">
+            <li>Criar quantos <strong>departamentos</strong> (louvor, mídia, recepção…) precisar.</li>
+            <li>Criar a <strong>página LeviKids</strong> da igreja (1 por igreja).</li>
+          </ul>
+          <p className="text-[11px] font-mono text-primary break-all bg-background/60 rounded-md p-2">
+            {hubLink}
+          </p>
+          <Button size="sm" variant="outline" className="w-full" onClick={() => handleCopy(hubLink)}>
+            <Copy className="w-4 h-4 mr-1.5" />
+            Copiar link da igreja
+          </Button>
+        </div>
 
         <Button
           size="sm"
