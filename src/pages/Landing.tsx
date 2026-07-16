@@ -635,23 +635,91 @@ export default function Landing() {
                 {t('landing.heroDescription')}
               </p>
 
-              <div className="animate-slide-up-4 flex flex-col sm:flex-row flex-wrap gap-2.5 justify-center lg:justify-start pt-1">
-                <Button
-                  size="default"
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-8 text-sm font-semibold btn-glow transition-all hover:scale-[1.02]"
-                  onClick={() => openAuth('login')}
+              {/* Inline visible login */}
+              <form
+                onSubmit={loginForm.handleSubmit(handleLogin)}
+                className="animate-slide-up-4 w-full max-w-md mx-auto lg:mx-0 rounded-2xl border border-border/70 bg-card/80 backdrop-blur-md p-3 sm:p-4 shadow-lg space-y-2.5"
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <Input
+                    type="email"
+                    placeholder="seu@email.com"
+                    autoComplete="email"
+                    {...loginForm.register('email')}
+                    className="h-11 rounded-xl"
+                  />
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Senha"
+                      autoComplete="current-password"
+                      {...loginForm.register('password')}
+                      className="h-11 pr-10 rounded-xl"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    className="flex-1 h-11 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-semibold btn-glow"
+                  >
+                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>{t('landing.enter')} <ArrowRight className="w-4 h-4 ml-2" /></>}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-11 rounded-xl border-primary/30 text-primary hover:bg-primary/10"
+                    onClick={() => navigate('/church-setup')}
+                  >
+                    <Church className="w-4 h-4 mr-2" />
+                    {t('landing.registerChurch')}
+                  </Button>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <button
+                    type="button"
+                    onClick={() => { setAuthTab('recovery'); setShowAuth(true); setRecoveryEmailSent(false); }}
+                    className="text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    {t('auth.forgotPassword')}
+                  </button>
+                  <Link to="/join" className="text-muted-foreground hover:text-primary transition-colors">
+                    Tenho um convite
+                  </Link>
+                </div>
+              </form>
+
+              {/* LeviKids colorful call-out */}
+              <div className="animate-slide-up-5 flex justify-center lg:justify-start">
+                <button
+                  type="button"
+                  onClick={() => navigate('/kids')}
+                  className="group inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card/70 backdrop-blur border border-border/70 hover:border-primary/50 hover:shadow-md transition-all"
+                  aria-label="Conheça o LeviKids"
                 >
-                  {t('landing.enter')} <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-                <Button
-                  size="default"
-                  variant="outline"
-                  className="border-primary/30 text-primary hover:bg-primary/10 rounded-full px-6 text-sm"
-                  onClick={() => navigate('/church-setup')}
-                >
-                  <Church className="w-4 h-4 mr-2" />
-                  {t('landing.registerChurch')}
-                </Button>
+                  <Sparkles className="w-4 h-4 text-amber-500 group-hover:rotate-12 transition-transform" />
+                  <span className="text-sm font-medium text-muted-foreground">Conheça o</span>
+                  <span className="font-display font-extrabold text-base tracking-tight">
+                    <span style={{ color: '#EF4444' }}>L</span>
+                    <span style={{ color: '#F59E0B' }}>e</span>
+                    <span style={{ color: '#10B981' }}>v</span>
+                    <span style={{ color: '#3B82F6' }}>i</span>
+                    <span style={{ color: '#8B5CF6' }}>K</span>
+                    <span style={{ color: '#EC4899' }}>i</span>
+                    <span style={{ color: '#06B6D4' }}>d</span>
+                    <span style={{ color: '#F97316' }}>s</span>
+                  </span>
+                  <ArrowRight className="w-4 h-4 text-primary group-hover:translate-x-1 transition-transform" />
+                </button>
               </div>
 
               <div className="animate-slide-up-5 flex items-center gap-4 justify-center lg:justify-start flex-wrap">
