@@ -262,7 +262,7 @@ export default function Dashboard() {
     // Check if user is a church leader
     const { data: churches, error: churchError } = await supabase
       .from('churches')
-      .select('id')
+      .select('id, code')
       .eq('leader_id', currentUser.id)
       .limit(1);
     
@@ -274,6 +274,7 @@ export default function Dashboard() {
     // If user is a church leader, they can create departments
     if (churches && churches.length > 0) {
       setCanCreateDepartment(true);
+      setMyChurchCode((churches[0] as any).code || null);
       return;
     }
 
