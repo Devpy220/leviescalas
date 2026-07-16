@@ -12,7 +12,9 @@ import {
   Loader2,
   Church,
   ArrowLeftRight,
+  Sparkles,
 } from 'lucide-react';
+import { userHasKidsAccess } from '@/lib/kidsAccess';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
