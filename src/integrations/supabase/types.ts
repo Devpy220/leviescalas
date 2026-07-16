@@ -1568,8 +1568,11 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          birth_date: string | null
           created_at: string
           email: string
+          guardian_authorized_at: string | null
+          guardian_authorized_by: string | null
           id: string
           invited_by_department_id: string | null
           name: string
@@ -1579,8 +1582,11 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          birth_date?: string | null
           created_at?: string
           email: string
+          guardian_authorized_at?: string | null
+          guardian_authorized_by?: string | null
           id: string
           invited_by_department_id?: string | null
           name: string
@@ -1590,8 +1596,11 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          birth_date?: string | null
           created_at?: string
           email?: string
+          guardian_authorized_at?: string | null
+          guardian_authorized_by?: string | null
           id?: string
           invited_by_department_id?: string | null
           name?: string
@@ -1600,6 +1609,13 @@ export type Database = {
           whatsapp?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "profiles_guardian_authorized_by_fkey"
+            columns: ["guardian_authorized_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "profiles_invited_by_department_id_fkey"
             columns: ["invited_by_department_id"]
@@ -2434,6 +2450,7 @@ export type Database = {
       admin_delete_department: { Args: { dept_id: string }; Returns: boolean }
       admin_delete_member: { Args: { member_id: string }; Returns: boolean }
       admin_delete_volunteer: { Args: { profile_id: string }; Returns: boolean }
+      authorize_minor: { Args: { _minor_id: string }; Returns: undefined }
       check_cross_department_conflicts: {
         Args: {
           p_date: string
@@ -2745,6 +2762,7 @@ export type Database = {
         Args: { _room_id: string; _user_id: string }
         Returns: boolean
       }
+      is_minor: { Args: { _birth: string }; Returns: boolean }
       is_scheduled_in_slot: {
         Args: {
           _date: string
@@ -2796,6 +2814,17 @@ export type Database = {
           page_id: string
           page_name: string
           primary_color: string
+        }[]
+      }
+      kids_lookup_page_rooms_by_token: {
+        Args: { _token: string }
+        Returns: {
+          age_max: number
+          age_min: number
+          page_id: string
+          page_name: string
+          room_id: string
+          room_name: string
         }[]
       }
       kids_lookup_room_by_static_token: {
@@ -2869,6 +2898,10 @@ export type Database = {
           full_name: string
           last_visit: string
         }[]
+      }
+      kids_self_register_teacher: {
+        Args: { _page_token: string; _room_id: string }
+        Returns: undefined
       }
       kids_transfer_child: {
         Args: { _child_id: string; _new_room_id: string; _reason?: string }

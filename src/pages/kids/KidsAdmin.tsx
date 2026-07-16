@@ -468,7 +468,36 @@ export default function KidsAdmin() {
                   <UserPlus className="w-4 h-4 mr-2" /> Adicionar professor
                 </Button>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
+                {(page as any)?.static_qr_token && (
+                  <div className="rounded-xl border-2 border-violet-200 bg-violet-50/50 p-3 space-y-2">
+                    <p className="text-xs font-semibold text-violet-900 flex items-center gap-1">
+                      <Copy className="w-3.5 h-3.5" /> Link único para professores (reutilizável)
+                    </p>
+                    <p className="text-[11px] text-slate-600">
+                      Envie este link para os professores da igreja. Cada um entra, escolhe a sala e fica cadastrado.
+                      <strong> Menores de 18 anos</strong> precisam da autorização de um responsável (o link avisa e bloqueia até a autorização).
+                    </p>
+                    <div className="flex gap-2 items-center">
+                      <Input
+                        readOnly
+                        value={`${window.location.origin}/kids/teacher-join/${(page as any).static_qr_token}`}
+                        className="text-xs font-mono"
+                      />
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => {
+                          const url = `${window.location.origin}/kids/teacher-join/${(page as any).static_qr_token}`;
+                          navigator.clipboard.writeText(url);
+                          toast({ title: "Link copiado!" });
+                        }}
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
                 {teachers.length === 0 ? (
                   <p className="text-sm text-slate-500 text-center py-6">Nenhum professor cadastrado.</p>
                 ) : (

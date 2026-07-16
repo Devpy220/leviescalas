@@ -46,7 +46,10 @@ import KidsDashboard from "./pages/kids/KidsDashboard";
 import KidsInclusionAssistant from "./pages/kids/KidsInclusionAssistant";
 import KidsFamilyFeed from "./pages/kids/KidsFamilyFeed";
 import KidsReports from "./pages/kids/KidsReports";
+import KidsTeacherJoin from "./pages/kids/KidsTeacherJoin";
 import ChooseApp from "./pages/ChooseApp";
+import AuthorizeMinor from "./pages/AuthorizeMinor";
+import { AgeGate } from "./components/AgeGate";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +73,7 @@ const App = () => (
             <AuthRecoveryRedirect />
             <PageTracker>
               <AdminRedirect>
+                <AgeGate>
                 <Routes>
                   {/* Public marketing page */}
                   <Route path="/" element={<Landing />} />
@@ -153,6 +157,7 @@ const App = () => (
                   {/* LeviKids module */}
                   <Route path="/kids" element={<KidsLanding />} />
                   <Route path="/kids/join/:token" element={<KidsJoin />} />
+                  <Route path="/kids/teacher-join/:token" element={<KidsTeacherJoin />} />
                   <Route path="/kids/checkin" element={<ProtectedRoute><KidsCheckin /></ProtectedRoute>} />
                   <Route path="/kids/dashboard" element={<ProtectedRoute><KidsDashboard /></ProtectedRoute>} />
                   <Route path="/kids/admin" element={<ProtectedRoute><KidsAdmin /></ProtectedRoute>} />
@@ -160,10 +165,13 @@ const App = () => (
                   <Route path="/kids/mensagens" element={<ProtectedRoute><KidsFamilyFeed /></ProtectedRoute>} />
                   <Route path="/kids/relatorios" element={<ProtectedRoute><KidsReports /></ProtectedRoute>} />
                   <Route path="/escolher-app" element={<ProtectedRoute><ChooseApp /></ProtectedRoute>} />
+                  <Route path="/authorize-minor" element={<ProtectedRoute><AuthorizeMinor /></ProtectedRoute>} />
+
 
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
+                </AgeGate>
               </AdminRedirect>
             </PageTracker>
           </BrowserRouter>
