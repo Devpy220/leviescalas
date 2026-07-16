@@ -575,9 +575,24 @@ export default function Dashboard() {
         {/* LeviKids access */}
         {hasKids && (
           <section className="mt-4 mb-2">
-            <Link
-              to="/kids"
-              className="group flex items-center justify-between gap-4 rounded-3xl border-2 border-violet-200 bg-white/90 backdrop-blur px-5 py-4 shadow-sm hover:shadow-lg hover:border-violet-400 transition-all"
+            <button
+              type="button"
+              onClick={async () => {
+                if (!currentUser?.id) return;
+                const ok = await userHasKidsAccess(currentUser.id);
+                if (!ok) {
+                  setHasKids(false);
+                  toast({
+                    variant: 'destructive',
+                    title: 'Sem acesso ao LeviKids',
+                    description:
+                      'Você precisa ser líder, professor ou responsável cadastrado para acessar. Quem apenas cadastrou a igreja recebe somente o link para compartilhar.',
+                  });
+                  return;
+                }
+                navigate('/kids');
+              }}
+              className="group w-full flex items-center justify-between gap-4 rounded-3xl border-2 border-violet-200 bg-white/90 backdrop-blur px-5 py-4 shadow-sm hover:shadow-lg hover:border-violet-400 transition-all text-left"
             >
               <div className="flex items-center gap-3">
                 <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-500 to-amber-400 flex items-center justify-center text-white shadow-md">
@@ -598,7 +613,7 @@ export default function Dashboard() {
                 </div>
               </div>
               <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-violet-600 group-hover:translate-x-0.5 transition" />
-            </Link>
+            </button>
           </section>
         )}
 
