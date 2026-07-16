@@ -2450,6 +2450,7 @@ export type Database = {
       admin_delete_department: { Args: { dept_id: string }; Returns: boolean }
       admin_delete_member: { Args: { member_id: string }; Returns: boolean }
       admin_delete_volunteer: { Args: { profile_id: string }; Returns: boolean }
+      authorize_minor: { Args: { _minor_id: string }; Returns: undefined }
       check_cross_department_conflicts: {
         Args: {
           p_date: string
@@ -2815,6 +2816,17 @@ export type Database = {
           primary_color: string
         }[]
       }
+      kids_lookup_page_rooms_by_token: {
+        Args: { _token: string }
+        Returns: {
+          age_max: number
+          age_min: number
+          page_id: string
+          page_name: string
+          room_id: string
+          room_name: string
+        }[]
+      }
       kids_lookup_room_by_static_token: {
         Args: { _token: string }
         Returns: {
@@ -2886,6 +2898,10 @@ export type Database = {
           full_name: string
           last_visit: string
         }[]
+      }
+      kids_self_register_teacher: {
+        Args: { _page_token: string; _room_id: string }
+        Returns: undefined
       }
       kids_transfer_child: {
         Args: { _child_id: string; _new_room_id: string; _reason?: string }
