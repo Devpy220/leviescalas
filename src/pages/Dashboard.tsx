@@ -10,8 +10,6 @@ import {
   Crown,
   User,
   Loader2,
-  Sparkles,
-  Heart,
   Church,
   ArrowLeftRight,
 } from 'lucide-react';
