@@ -66,6 +66,7 @@ interface DepartmentWithRole extends Department {
 export default function Dashboard() {
   const { t } = useTranslation();
   const [departments, setDepartments] = useState<DepartmentWithRole[]>([]);
+  const [hasKids, setHasKids] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isFirstLogin, setIsFirstLogin] = useState(false);
   const [canCreateDepartment, setCanCreateDepartment] = useState(true);
