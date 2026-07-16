@@ -427,9 +427,15 @@ export default function ChurchSetup() {
           onClose={handleClose}
           onSendWhatsApp={() => {
             const name = createdChurch.name;
-            const parts: string[] = [`Olá! Sua igreja "${name}" foi cadastrada no LEVI.`, `Código: ${createdChurch.code}`, ''];
-            if (createdChurch.createDeptUrl) parts.push('📅 LEVI Escalas (departamentos):', createdChurch.createDeptUrl, '');
-            if (createdChurch.kidsAdminUrl) parts.push('👶 LeviKids (área infantil):', createdChurch.kidsAdminUrl, '');
+            const hubUrl = `${window.location.origin}/igreja/join/${createdChurch.code}`;
+            const parts: string[] = [
+              `Olá! Sua igreja "${name}" foi cadastrada no LEVI. 🎉`,
+              ``,
+              `🔗 Link único da igreja (para criar departamentos ou a página LeviKids):`,
+              hubUrl,
+              ``,
+              `Código: ${createdChurch.code}`,
+            ];
             const phone = registrantPhone.replace(/\D/g, '');
             const waUrl = `https://wa.me/${phone.startsWith('55') ? phone : '55' + phone}?text=${encodeURIComponent(parts.join('\n'))}`;
             window.open(waUrl, '_blank');
