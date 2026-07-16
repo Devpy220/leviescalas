@@ -31,6 +31,7 @@ import ChurchDetail from "./pages/ChurchDetail";
 import ChurchSetup from "./pages/ChurchSetup";
 import ChurchPublic from "./pages/ChurchPublic";
 import JoinChurch from "./pages/JoinChurch";
+import ChurchJoinHub from "./pages/ChurchJoinHub";
 import Tutorial from "./pages/Tutorial";
 import CompleteProfile from "./pages/CompleteProfile";
 import NotFound from "./pages/NotFound";
