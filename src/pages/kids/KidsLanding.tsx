@@ -1,12 +1,25 @@
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { Baby, Sparkles, ShieldCheck, QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useMyKidsPage } from "@/hooks/useKidsPage";
 import { Loader2 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function KidsLanding() {
   const { page, role, loading } = useMyKidsPage();
+  const { user } = useAuth();
+  const [isChurchLeaderWithoutPage, setIsChurchLeaderWithoutPage] = useState(false);
+
+  useEffect(() => {
+    if (loading || !user || page || role) return;
+    (async () => {
+      const { data } = await supabase.from("churches").select("id").eq("leader_id", user.id).maybeSingle();
+      if (data?.id) setIsChurchLeaderWithoutPage(true);
+    })();
+  }, [loading, user, page, role]);
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin" /></div>;
