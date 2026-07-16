@@ -1568,8 +1568,11 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          birth_date: string | null
           created_at: string
           email: string
+          guardian_authorized_at: string | null
+          guardian_authorized_by: string | null
           id: string
           invited_by_department_id: string | null
           name: string
@@ -1579,8 +1582,11 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          birth_date?: string | null
           created_at?: string
           email: string
+          guardian_authorized_at?: string | null
+          guardian_authorized_by?: string | null
           id: string
           invited_by_department_id?: string | null
           name: string
@@ -1590,8 +1596,11 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          birth_date?: string | null
           created_at?: string
           email?: string
+          guardian_authorized_at?: string | null
+          guardian_authorized_by?: string | null
           id?: string
           invited_by_department_id?: string | null
           name?: string
@@ -1600,6 +1609,13 @@ export type Database = {
           whatsapp?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "profiles_guardian_authorized_by_fkey"
+            columns: ["guardian_authorized_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "profiles_invited_by_department_id_fkey"
             columns: ["invited_by_department_id"]
@@ -2745,6 +2761,7 @@ export type Database = {
         Args: { _room_id: string; _user_id: string }
         Returns: boolean
       }
+      is_minor: { Args: { _birth: string }; Returns: boolean }
       is_scheduled_in_slot: {
         Args: {
           _date: string
