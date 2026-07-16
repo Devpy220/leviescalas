@@ -57,58 +57,114 @@ export function ChurchOnboardingGuide({
     }
   };
 
-  const steps = [
+  const kidsOnly = product === 'kids';
+
+  const firstStep = {
+    icon: CheckCircle2,
+    title: `Igreja ${churchName} cadastrada! 🎉`,
+    description: kidsOnly
+      ? 'Guarde o link do LeviKids abaixo — envie pelo WhatsApp ou copie para usar quando quiser.'
+      : 'Guarde o link administrativo abaixo — envie pelo WhatsApp ou copie para usar quando quiser.',
+    content: (
+      <div className="space-y-3">
+        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4">
+          <p className="text-sm text-muted-foreground mb-1">Código da sua igreja</p>
+          <p className="font-mono font-bold text-2xl text-emerald-600 dark:text-emerald-400 tracking-wider">
+            {churchCode}
+          </p>
+        </div>
+
+        {showLevi && (
+          <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-2">
+            <p className="text-xs text-muted-foreground">📅 LEVI Escalas — criar departamentos/ministérios</p>
+            <p className="text-[11px] font-mono text-primary break-all bg-background/60 rounded-md p-2">
+              {adminLink}
+            </p>
+            <Button size="sm" variant="outline" className="w-full" onClick={() => handleCopy(adminLink)}>
+              <Copy className="w-4 h-4 mr-1.5" />
+              Copiar link Escalas
+            </Button>
+          </div>
+        )}
+
+        {showKids && (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 space-y-2">
+            <p className="text-xs text-muted-foreground">👶 LeviKids — criar a área infantil (salas, professores, check-in)</p>
+            <p className="text-[11px] font-mono text-amber-700 dark:text-amber-400 break-all bg-background/60 rounded-md p-2">
+              {kidsLink}
+            </p>
+            <Button size="sm" variant="outline" className="w-full" onClick={() => handleCopy(kidsLink)}>
+              <Copy className="w-4 h-4 mr-1.5" />
+              Copiar link Kids
+            </Button>
+          </div>
+        )}
+
+        <Button
+          size="sm"
+          className="w-full bg-green-600 hover:bg-green-700 text-white"
+          onClick={handleSendWa}
+          disabled={sending || !onSendWhatsApp}
+        >
+          <MessageCircle className="w-4 h-4 mr-1.5" />
+          {sending ? 'Enviando...' : 'Enviar links por WhatsApp'}
+        </Button>
+      </div>
+    ),
+  };
+
+  const kidsSteps = [
+    firstStep,
     {
-      icon: CheckCircle2,
-      title: `Igreja ${churchName} cadastrada! 🎉`,
-      description: 'Guarde o link administrativo abaixo — envie pelo WhatsApp ou copie para usar quando quiser.',
+      icon: Users,
+      title: 'Como funciona o LeviKids',
+      description: 'Crie salas por faixa etária, adicione professores e receba responsáveis via QR code.',
       content: (
         <div className="space-y-3">
-          <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4">
-            <p className="text-sm text-muted-foreground mb-1">Código da sua igreja</p>
-            <p className="font-mono font-bold text-2xl text-emerald-600 dark:text-emerald-400 tracking-wider">
-              {churchCode}
-            </p>
+          <div className="rounded-xl bg-muted/40 border border-border p-4 space-y-2 text-sm">
+            <div className="flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-amber-500 text-white text-xs font-bold flex items-center justify-center">1</span>
+              <p>Acesse o link do LeviKids e crie sua conta</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-amber-500 text-white text-xs font-bold flex items-center justify-center">2</span>
+              <p>Cadastre as <strong>salas por faixa etária</strong> (ex: 1-3 anos, 4-7 anos)</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-amber-500 text-white text-xs font-bold flex items-center justify-center">3</span>
+              <p>Baixe o <strong>QR code único</strong> da sua igreja para check-in</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-amber-500 text-white text-xs font-bold flex items-center justify-center">4</span>
+              <p>Responsáveis escaneiam, cadastram os filhos e fazem check-in/check-out</p>
+            </div>
           </div>
-
-          {showLevi && (
-            <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-2">
-              <p className="text-xs text-muted-foreground">📅 LEVI Escalas — criar departamentos/ministérios</p>
-              <p className="text-[11px] font-mono text-primary break-all bg-background/60 rounded-md p-2">
-                {adminLink}
-              </p>
-              <Button size="sm" variant="outline" className="w-full" onClick={() => handleCopy(adminLink)}>
-                <Copy className="w-4 h-4 mr-1.5" />
-                Copiar link Escalas
-              </Button>
-            </div>
-          )}
-
-          {showKids && (
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 space-y-2">
-              <p className="text-xs text-muted-foreground">👶 LeviKids — criar a área infantil</p>
-              <p className="text-[11px] font-mono text-amber-700 dark:text-amber-400 break-all bg-background/60 rounded-md p-2">
-                {kidsLink}
-              </p>
-              <Button size="sm" variant="outline" className="w-full" onClick={() => handleCopy(kidsLink)}>
-                <Copy className="w-4 h-4 mr-1.5" />
-                Copiar link Kids
-              </Button>
-            </div>
-          )}
-
-          <Button
-            size="sm"
-            className="w-full bg-green-600 hover:bg-green-700 text-white"
-            onClick={handleSendWa}
-            disabled={sending || !onSendWhatsApp}
-          >
-            <MessageCircle className="w-4 h-4 mr-1.5" />
-            {sending ? 'Enviando...' : 'Enviar links por WhatsApp'}
-          </Button>
+          <p className="text-xs text-amber-600 dark:text-amber-400">
+            ⚠️ Se a área infantil não for configurada em <strong>5 dias</strong>, a igreja é removida automaticamente.
+          </p>
         </div>
       ),
     },
+    {
+      icon: Sparkles,
+      title: 'Tudo pronto!',
+      description: 'Guarde bem o link do LeviKids — é por ele que você acessa o painel administrativo.',
+      content: (
+        <div className="space-y-3 text-sm text-muted-foreground">
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-xs">
+            <strong className="text-foreground">Importante:</strong> os responsáveis pelas crianças
+            entram pelo QR code na primeira vez para se cadastrar e depois é só logar para o check-in.
+          </div>
+          <p className="text-xs italic">
+            Ao fechar este aviso você sairá da conta e voltará para a tela de login.
+          </p>
+        </div>
+      ),
+    },
+  ];
+
+  const leviSteps = [
+    firstStep,
     {
       icon: Link2,
       title: 'Existem 2 tipos de link no LEVI',
@@ -198,6 +254,8 @@ export function ChurchOnboardingGuide({
       ),
     },
   ];
+
+  const steps = kidsOnly ? kidsSteps : leviSteps;
 
   const current = steps[step];
   const Icon = current.icon;
