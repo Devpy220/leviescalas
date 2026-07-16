@@ -64,7 +64,15 @@ export default function KidsLanding() {
           {role === "leader" && <Button asChild size="lg" className="rounded-2xl"><Link to="/kids/admin">Painel do líder</Link></Button>}
           {role === "teacher" && <Button asChild size="lg" className="rounded-2xl"><Link to="/kids/dashboard">Dashboard do professor</Link></Button>}
           {role === "guardian" && <Button asChild size="lg" className="rounded-2xl"><Link to="/kids/checkin">Fazer check-in</Link></Button>}
-          {!role && page === null && (
+          {!role && page === null && isChurchLeaderWithoutPage && (
+            <div className="text-center space-y-3">
+              <p className="text-slate-700 font-medium">Sua igreja ainda não tem a área LeviKids ativada.</p>
+              <Button asChild size="lg" className="rounded-2xl bg-violet-600 hover:bg-violet-700 text-white">
+                <Link to="/kids/admin">Criar página LeviKids da minha igreja</Link>
+              </Button>
+            </div>
+          )}
+          {!role && page === null && !isChurchLeaderWithoutPage && (
             <div className="text-center text-slate-600">
               <p>Peça o QR code de cadastro na sua sala da igreja.</p>
             </div>
