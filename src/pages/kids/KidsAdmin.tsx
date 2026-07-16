@@ -363,41 +363,72 @@ export default function KidsAdmin() {
 
           {/* SALAS */}
           <TabsContent value="rooms">
-            <Card className="rounded-3xl border-2">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Salas</CardTitle>
-                <Button onClick={() => setShowRoomModal(true)} className="rounded-xl"><Plus className="w-4 h-4 mr-2" /> Nova sala</Button>
-              </CardHeader>
-              <CardContent>
-                {rooms.length === 0 ? (
-                  <p className="text-sm text-slate-500 text-center py-8">Nenhuma sala ainda. Crie a primeira!</p>
-                ) : (
-                  <div className="grid md:grid-cols-2 gap-3">
-                    {rooms.map(r => (
-                      <div key={r.id} className="p-4 rounded-2xl border-2" style={{ borderColor: r.color + "40", background: r.color + "10" }}>
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <h3 className="font-bold text-slate-900">{r.name}</h3>
-                            <div className="flex gap-1 flex-wrap mt-1">
-                              <Badge variant="outline" className="text-xs">
-                                <Users className="w-3 h-3 mr-1" /> {r.age_min}–{r.age_max} anos
-                              </Badge>
-                              {r.is_inclusion && <Badge className="text-xs bg-violet-100 text-violet-700 border-violet-200"><Sparkles className="w-3 h-3 mr-1"/>Inclusão</Badge>}
-                            </div>
-                          </div>
-                          <button onClick={() => deleteRoom(r.id)} className="text-slate-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
-                        </div>
-                        <div className="flex gap-2 mt-3">
-                          <Button size="sm" variant="secondary" onClick={() => showQr(r)} className="rounded-lg flex-1">
-                            <QrCode className="w-4 h-4 mr-1" /> QR de cadastro
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
+            <div className="space-y-4">
+              {/* QR ÚNICO DA IGREJA */}
+              <Card className="rounded-3xl border-2 border-violet-300 bg-gradient-to-br from-violet-50 to-white">
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2"><QrCode className="w-5 h-5 text-violet-600" /> QR único da igreja (todas as salas)</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-xs text-slate-600">
+                    Imprima e coloque na entrada do Kids. Os pais escaneiam <b>uma única vez</b> — no primeiro acesso fazem cadastro (com CPF) e nos próximos check-ins o sistema escolhe a sala automaticamente pela idade da criança.
+                  </p>
+                  <div className="flex gap-2 flex-wrap">
+                    <Button variant="outline" onClick={() => { const url = `${KIDS_JOIN_BASE}/${(page as any).static_qr_token}`; navigator.clipboard.writeText(url); toast({ title: "Link copiado" }); }} className="rounded-xl">
+                      <Copy className="w-4 h-4 mr-1" /> Copiar link
+                    </Button>
+                    <Button variant="outline" onClick={() => downloadPng(`${KIDS_JOIN_BASE}/${(page as any).static_qr_token}`, `qr-${page.name}.png`)} className="rounded-xl">
+                      <Download className="w-4 h-4 mr-1" /> PNG
+                    </Button>
+                    <Button onClick={() => downloadPdf(`${KIDS_JOIN_BASE}/${(page as any).static_qr_token}`, `qr-${page.name}.pdf`, { title: page.name, subtitle: "Cadastro e Check-in LeviKids", footer: "leviescalas.com.br" })} className="rounded-xl">
+                      <FileDown className="w-4 h-4 mr-1" /> PDF para imprimir
+                    </Button>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-3xl border-2">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle>Salas por faixa etária</CardTitle>
+                    <p className="text-xs text-slate-500 mt-1">Defina a idade mínima e máxima. O check-in usa isso para escolher a sala automaticamente.</p>
+                  </div>
+                  <Button onClick={() => setShowRoomModal(true)} className="rounded-xl"><Plus className="w-4 h-4 mr-2" /> Nova sala</Button>
+                </CardHeader>
+                <CardContent>
+                  {rooms.length === 0 ? (
+                    <p className="text-sm text-slate-500 text-center py-8">Nenhuma sala ainda. Crie a primeira!</p>
+                  ) : (
+                    <div className="grid md:grid-cols-2 gap-3">
+                      {rooms.map(r => (
+                        <div key={r.id} className="p-4 rounded-2xl border-2" style={{ borderColor: r.color + "40", background: r.color + "10" }}>
+                          <div className="flex items-start justify-between mb-2">
+                            <div>
+                              <h3 className="font-bold text-slate-900">{r.name}</h3>
+                              <div className="flex gap-1 flex-wrap mt-1">
+                                <Badge variant="outline" className="text-xs">
+                                  <Users className="w-3 h-3 mr-1" /> {r.age_min}–{r.age_max} anos
+                                </Badge>
+                                {r.is_inclusion && <Badge className="text-xs bg-violet-100 text-violet-700 border-violet-200"><Sparkles className="w-3 h-3 mr-1"/>Inclusão</Badge>}
+                              </div>
+                            </div>
+                            <button onClick={() => deleteRoom(r.id)} title="Excluir sala" className="text-slate-400 hover:text-red-600 p-1"><Trash2 className="w-4 h-4" /></button>
+                          </div>
+                          <div className="flex gap-2 mt-3">
+                            <Button size="sm" variant="secondary" onClick={() => showQr(r)} className="rounded-lg flex-1">
+                              <QrCode className="w-4 h-4 mr-1" /> QR da sala (opcional)
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => deleteRoom(r.id)} className="rounded-lg text-red-600 hover:bg-red-50">
+                              <Trash2 className="w-4 h-4 mr-1" /> Excluir
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* LÍDERES KIDS */}
