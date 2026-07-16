@@ -1,0 +1,1 @@
+CREATE OR REPLACE FUNCTION public.is_minor(_birth date) RETURNS boolean LANGUAGE sql IMMUTABLE SET search_path = public AS $function$ SELECT _birth IS NOT NULL AND (age(current_date, _birth) < interval '18 years'); $function$;
