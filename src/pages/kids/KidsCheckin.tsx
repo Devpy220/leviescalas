@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, Camera, ShieldCheck, KeyRound, AlertTriangle } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 interface Child { id: string; full_name: string; birth_date: string; photo_path: string | null; }
 interface ActiveCheckin { id: string; child_id: string; pickup_code: string; checkin_at: string; kids_children: { full_name: string } | null; kids_rooms: { name: string } | null; }
