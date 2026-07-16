@@ -2481,6 +2481,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      church_hub_info: {
+        Args: { _code: string }
+        Returns: {
+          church_id: string
+          church_name: string
+          has_kids_page: boolean
+        }[]
+      }
       claim_church_leadership: { Args: { _code: string }; Returns: string }
       ensure_admin_role: { Args: never; Returns: boolean }
       execute_schedule_swap: { Args: { swap_id: string }; Returns: undefined }
@@ -2798,6 +2806,10 @@ export type Database = {
           count: number
           month: string
         }[]
+      }
+      kids_create_page_by_church_code: {
+        Args: { _code: string; _name: string }
+        Returns: string
       }
       kids_default_consent_text: { Args: never; Returns: string }
       kids_get_or_create_dyn_token: {

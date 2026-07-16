@@ -70,6 +70,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [isFirstLogin, setIsFirstLogin] = useState(false);
   const [canCreateDepartment, setCanCreateDepartment] = useState(true);
+  const [myChurchCode, setMyChurchCode] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>('');
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
   const [schedules, setSchedules] = useState<PersonalScheduleData[]>([]);
@@ -261,7 +262,7 @@ export default function Dashboard() {
     // Check if user is a church leader
     const { data: churches, error: churchError } = await supabase
       .from('churches')
-      .select('id')
+      .select('id, code')
       .eq('leader_id', currentUser.id)
       .limit(1);
     
@@ -273,6 +274,7 @@ export default function Dashboard() {
     // If user is a church leader, they can create departments
     if (churches && churches.length > 0) {
       setCanCreateDepartment(true);
+      setMyChurchCode((churches[0] as any).code || null);
       return;
     }
 
@@ -571,6 +573,37 @@ export default function Dashboard() {
           </div>
 
         </div>
+
+        {/* Universal church join link (church leader only) */}
+        {myChurchCode && (
+          <section className="mt-4 mb-2">
+            <div className="rounded-3xl border-2 border-primary/20 bg-primary/5 p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <Church className="w-4 h-4 text-primary" />
+                <p className="text-sm font-semibold">Link único da sua igreja</p>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Compartilhe este link com quem for criar departamentos ou a página LeviKids desta igreja.
+              </p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 text-xs bg-background rounded-lg px-3 py-2 truncate">
+                  {`${window.location.origin}/igreja/join/${myChurchCode}`}
+                </code>
+                <button
+                  type="button"
+                  className="text-xs px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90"
+                  onClick={() => {
+                    const link = `${window.location.origin}/igreja/join/${myChurchCode}`;
+                    navigator.clipboard.writeText(link);
+                    toast({ title: 'Link copiado!' });
+                  }}
+                >
+                  Copiar
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* LeviKids access */}
         {hasKids && (

@@ -31,6 +31,7 @@ import ChurchDetail from "./pages/ChurchDetail";
 import ChurchSetup from "./pages/ChurchSetup";
 import ChurchPublic from "./pages/ChurchPublic";
 import JoinChurch from "./pages/JoinChurch";
+import ChurchJoinHub from "./pages/ChurchJoinHub";
 import Tutorial from "./pages/Tutorial";
 import CompleteProfile from "./pages/CompleteProfile";
 import NotFound from "./pages/NotFound";
@@ -92,7 +93,7 @@ const App = () => (
                   <Route path="/acessar" element={<Navigate to="/auth" replace />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/join" element={<JoinChurch />} />
-                  <Route path="/join/:inviteCode" element={<JoinDepartment />} />
+                  <Route path="/igreja/join/:code" element={<ChurchJoinHub />} />
                   <Route path="/join/:inviteCode" element={<JoinDepartment />} />
                   <Route path="/join-coordinator/:code" element={<JoinCoordinator />} />
                   <Route path="/confirm/:token" element={<ConfirmSchedule />} />
