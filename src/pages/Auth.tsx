@@ -796,17 +796,27 @@ export default function Auth() {
     // 3. Church slug -> church public page
     // 4. Otherwise -> dashboard
     let redirectTo = '/dashboard';
-    
+
+    // If the user came from a church code link (LEVI Escalas OR LeviKids),
+    // try to claim leadership of that church (first person to register with the code becomes leader).
+    if (churchCodeParam && currentSession?.user) {
+      try {
+        await supabase.rpc('claim_church_leadership' as any, { _code: churchCodeParam });
+      } catch (err) {
+        console.warn('[Auth] claim_church_leadership failed', err);
+      }
+    }
+
     if (isDepartmentInvite && redirectParam) {
       // Department invite - go back to join page to complete joining
       redirectTo = redirectParam;
     } else if (isChurchSetupRedirect) {
       redirectTo = '/church-setup';
-    } else if (redirectParam && redirectParam.startsWith('/departments/new')) {
-      // Explicit redirect to create department (e.g. from church public page)
+    } else if (redirectParam && (redirectParam.startsWith('/departments/new') || redirectParam.startsWith('/kids/'))) {
+      // Explicit redirect: create department OR LeviKids area
       redirectTo = redirectParam;
     } else if (churchCodeParam) {
-      // Volunteer coming from church code link - go to create department
+      // Volunteer coming from church code link (no explicit redirect) - go to create department
       redirectTo = `/departments/new?churchCode=${churchCodeParam.toUpperCase()}`;
     } else if (churchValidated.slug) {
       redirectTo = `/igreja/${churchValidated.slug}`;

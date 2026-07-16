@@ -2481,6 +2481,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      claim_church_leadership: { Args: { _code: string }; Returns: string }
       ensure_admin_role: { Args: never; Returns: boolean }
       execute_schedule_swap: { Args: { swap_id: string }; Returns: undefined }
       generate_church_code: { Args: never; Returns: string }
