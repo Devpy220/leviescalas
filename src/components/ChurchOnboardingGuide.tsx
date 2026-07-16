@@ -33,8 +33,9 @@ export function ChurchOnboardingGuide({
   const { toast } = useToast();
 
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://leviescalas.com.br';
-  const adminLink = createDeptUrl ?? `${origin}/auth?tab=register&churchCode=${churchCode}&redirect=${encodeURIComponent(`/departments/new?churchCode=${churchCode}`)}`;
-  const kidsLink = kidsAdminUrl ?? `${origin}/auth?tab=register&churchCode=${churchCode}&redirect=${encodeURIComponent(`/kids/admin?churchCode=${churchCode}`)}`;
+  const hubLink = `${origin}/igreja/join/${churchCode}`;
+  const adminLink = hubLink;
+  const kidsLink = hubLink;
   const showLevi = product === 'levi' || product === 'both';
   const showKids = product === 'kids' || product === 'both';
 
