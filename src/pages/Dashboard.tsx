@@ -126,6 +126,7 @@ export default function Dashboard() {
           checkCanCreateDepartment(),
           fetchUserName(),
           fetchSchedules(),
+          userHasKidsAccess(currentUser.id).then(setHasKids),
         ]);
       };
 
