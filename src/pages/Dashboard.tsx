@@ -12,7 +12,9 @@ import {
   Loader2,
   Church,
   ArrowLeftRight,
+  Sparkles,
 } from 'lucide-react';
+import { userHasKidsAccess } from '@/lib/kidsAccess';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -64,6 +66,7 @@ interface DepartmentWithRole extends Department {
 export default function Dashboard() {
   const { t } = useTranslation();
   const [departments, setDepartments] = useState<DepartmentWithRole[]>([]);
+  const [hasKids, setHasKids] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isFirstLogin, setIsFirstLogin] = useState(false);
   const [canCreateDepartment, setCanCreateDepartment] = useState(true);
@@ -123,6 +126,7 @@ export default function Dashboard() {
           checkCanCreateDepartment(),
           fetchUserName(),
           fetchSchedules(),
+          userHasKidsAccess(currentUser.id).then(setHasKids),
         ]);
       };
 
@@ -567,6 +571,36 @@ export default function Dashboard() {
           </div>
 
         </div>
+
+        {/* LeviKids access */}
+        {hasKids && (
+          <section className="mt-4 mb-2">
+            <Link
+              to="/kids"
+              className="group flex items-center justify-between gap-4 rounded-3xl border-2 border-violet-200 bg-white/90 backdrop-blur px-5 py-4 shadow-sm hover:shadow-lg hover:border-violet-400 transition-all"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-500 to-amber-400 flex items-center justify-center text-white shadow-md">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-slate-500 font-semibold">Acessar</p>
+                  <p className="font-display text-xl font-bold leading-tight">
+                    <span style={{ color: '#EF4444' }}>L</span>
+                    <span style={{ color: '#F59E0B' }}>e</span>
+                    <span style={{ color: '#10B981' }}>v</span>
+                    <span style={{ color: '#3B82F6' }}>i</span>
+                    <span style={{ color: '#8B5CF6' }}>K</span>
+                    <span style={{ color: '#EC4899' }}>i</span>
+                    <span style={{ color: '#06B6D4' }}>d</span>
+                    <span style={{ color: '#F97316' }}>s</span>
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-violet-600 group-hover:translate-x-0.5 transition" />
+            </Link>
+          </section>
+        )}
 
         {/* Próximas Escalas — embedded */}
         <section className="mt-4">
