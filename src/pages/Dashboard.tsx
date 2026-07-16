@@ -70,6 +70,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [isFirstLogin, setIsFirstLogin] = useState(false);
   const [canCreateDepartment, setCanCreateDepartment] = useState(true);
+  const [myChurchCode, setMyChurchCode] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>('');
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
   const [schedules, setSchedules] = useState<PersonalScheduleData[]>([]);
