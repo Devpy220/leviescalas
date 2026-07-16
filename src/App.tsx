@@ -93,7 +93,7 @@ const App = () => (
                   <Route path="/acessar" element={<Navigate to="/auth" replace />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/join" element={<JoinChurch />} />
-                  <Route path="/join/:inviteCode" element={<JoinDepartment />} />
+                  <Route path="/igreja/join/:code" element={<ChurchJoinHub />} />
                   <Route path="/join/:inviteCode" element={<JoinDepartment />} />
                   <Route path="/join-coordinator/:code" element={<JoinCoordinator />} />
                   <Route path="/confirm/:token" element={<ConfirmSchedule />} />
