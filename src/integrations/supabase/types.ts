@@ -889,6 +889,7 @@ export type Database = {
       kids_guardians: {
         Row: {
           birth_date: string
+          cpf: string | null
           created_at: string
           full_name: string
           id: string
@@ -899,6 +900,7 @@ export type Database = {
         }
         Insert: {
           birth_date: string
+          cpf?: string | null
           created_at?: string
           full_name: string
           id?: string
@@ -909,6 +911,7 @@ export type Database = {
         }
         Update: {
           birth_date?: string
+          cpf?: string | null
           created_at?: string
           full_name?: string
           id?: string
@@ -1058,6 +1061,7 @@ export type Database = {
           name: string
           primary_color: string
           slug: string
+          static_qr_token: string
           updated_at: string
         }
         Insert: {
@@ -1074,6 +1078,7 @@ export type Database = {
           name: string
           primary_color?: string
           slug: string
+          static_qr_token?: string
           updated_at?: string
         }
         Update: {
@@ -1090,6 +1095,7 @@ export type Database = {
           name?: string
           primary_color?: string
           slug?: string
+          static_qr_token?: string
           updated_at?: string
         }
         Relationships: [
@@ -2782,6 +2788,16 @@ export type Database = {
           token: string
         }[]
       }
+      kids_lookup_page_by_token: {
+        Args: { _token: string }
+        Returns: {
+          consent_text: string
+          consent_version: string
+          page_id: string
+          page_name: string
+          primary_color: string
+        }[]
+      }
       kids_lookup_room_by_static_token: {
         Args: { _token: string }
         Returns: {
@@ -2800,6 +2816,16 @@ export type Database = {
           checkin_id: string
           child_id: string
           pickup_code: string
+        }[]
+      }
+      kids_perform_checkin_by_page: {
+        Args: { _child_ids: string[]; _page_token: string }
+        Returns: {
+          checkin_id: string
+          child_id: string
+          pickup_code: string
+          room_id: string
+          room_name: string
         }[]
       }
       kids_perform_checkin_static: {
