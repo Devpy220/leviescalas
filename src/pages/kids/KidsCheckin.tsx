@@ -15,14 +15,16 @@ interface ActiveCheckin { id: string; child_id: string; pickup_code: string; che
 export default function KidsCheckin() {
   const { user, loading: authLoading } = useAuth();
   const nav = useNavigate();
+  const [sp] = useSearchParams();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const readerRef = useRef<BrowserQRCodeReader | null>(null);
   const [scanning, setScanning] = useState(false);
   const [token, setToken] = useState<string | null>(null);
+  const [tokenMode, setTokenMode] = useState<"page" | "room" | null>(null);
   const [children, setChildren] = useState<Child[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
-  const [results, setResults] = useState<Array<{ name: string; code: string }>>([]);
+  const [results, setResults] = useState<Array<{ name: string; code: string; room?: string }>>([]);
   const [active, setActive] = useState<ActiveCheckin[]>([]);
 
   useEffect(() => {
