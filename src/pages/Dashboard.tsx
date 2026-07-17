@@ -279,6 +279,14 @@ export default function Dashboard() {
     if (churches && churches.length > 0) {
       setCanCreateDepartment(true);
       setMyChurchCode((churches[0] as any).code || null);
+      // Fetch LeviKids page join token for this church (parent registration link)
+      const churchId = (churches[0] as any).id;
+      const { data: kidsPage } = await supabase
+        .from('kids_pages')
+        .select('static_qr_token')
+        .eq('church_id', churchId)
+        .maybeSingle();
+      if (kidsPage) setMyKidsJoinToken((kidsPage as any).static_qr_token || null);
       return;
     }
 
