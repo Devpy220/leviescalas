@@ -67,15 +67,113 @@ export default function KidsAdmin() {
 
   useEffect(() => {
     if (page) {
-      loadRooms(); loadLeaders(); loadTeachers(); loadContent(); loadKids();
-      setScheduleForm({
-        start: ((page as any).checkin_start_time || "18:30").slice(0,5),
-        end:   ((page as any).checkin_end_time   || "20:30").slice(0,5),
-        days:  (page as any).checkin_days || [0,3],
-        tz:    (page as any).checkin_timezone || "America/Sao_Paulo",
-      });
+      loadRooms(); loadLeaders(); loadTeachers(); loadContent(); loadKids(); loadServiceDays();
     }
   }, [page]);
+
+  useEffect(() => {
+    if (page && rooms.length) { loadRoomSchedules(); loadTeacherPool(); }
+    // eslint-disable-next-line
+  }, [rooms, scheduleDate]);
+
+  async function loadServiceDays() {
+    if (!page) return;
+    const { data } = await (supabase as any).from("kids_service_days").select("*").eq("page_id", page.id).eq("active", true).order("weekday", { ascending: true }).order("specific_date", { ascending: true });
+    setServiceDays((data || []) as ServiceDay[]);
+  }
+
+  async function addRecurringDay() {
+    if (!page) return;
+    if (newRecurring.time_end <= newRecurring.time_start) { toast({ title: "Horário inválido", variant: "destructive" }); return; }
+    const { error } = await (supabase as any).from("kids_service_days").insert({
+      page_id: page.id, weekday: newRecurring.weekday, specific_date: null,
+      time_start: newRecurring.time_start, time_end: newRecurring.time_end, active: true, created_by: user?.id,
+    });
+    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Dia recorrente adicionado" });
+    loadServiceDays();
+  }
+
+  async function addOneOffDay() {
+    if (!page) return;
+    if (newOneOff.time_end <= newOneOff.time_start) { toast({ title: "Horário inválido", variant: "destructive" }); return; }
+    const { error } = await (supabase as any).from("kids_service_days").insert({
+      page_id: page.id, weekday: null, specific_date: newOneOff.specific_date,
+      time_start: newOneOff.time_start, time_end: newOneOff.time_end, active: true, created_by: user?.id,
+    });
+    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Data avulsa adicionada" });
+    loadServiceDays();
+  }
+
+  async function updateServiceDay(id: string, patch: Partial<ServiceDay>) {
+    const { error } = await (supabase as any).from("kids_service_days").update(patch).eq("id", id);
+    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+    loadServiceDays();
+  }
+
+  async function deleteServiceDay(id: string) {
+    if (!confirm("Remover este dia de aula?")) return;
+    await (supabase as any).from("kids_service_days").delete().eq("id", id);
+    loadServiceDays();
+  }
+
+  async function loadTeacherPool() {
+    if (!rooms.length) return;
+    const roomIds = rooms.map(r => r.id);
+    const { data } = await supabase.from("kids_teacher_rooms").select("room_id, user_id").in("room_id", roomIds);
+    const rows = (data || []) as { room_id: string; user_id: string }[];
+    const uniqUsers = Array.from(new Set(rows.map(r => r.user_id)));
+    const { data: profs } = uniqUsers.length ? await supabase.from("profiles").select("id, name, email").in("id", uniqUsers) : { data: [] as any[] };
+    const pmap = new Map((profs || []).map((p: any) => [p.id, p]));
+    const byRoom: Record<string, { user_id: string; name: string; email: string }[]> = {};
+    rooms.forEach(r => { byRoom[r.id] = []; });
+    rows.forEach(r => {
+      const p: any = pmap.get(r.user_id);
+      byRoom[r.room_id].push({ user_id: r.user_id, name: p?.name || "Usuário", email: p?.email || "" });
+    });
+    setTeacherPoolByRoom(byRoom);
+  }
+
+  async function loadRoomSchedules() {
+    if (!rooms.length || !scheduleDate) return;
+    const roomIds = rooms.map(r => r.id);
+    const { data } = await (supabase as any).from("kids_room_schedules")
+      .select("id, room_id, user_id, service_date")
+      .in("room_id", roomIds).eq("service_date", scheduleDate);
+    const rows = (data || []) as RoomSchedule[];
+    const byRoom: Record<string, RoomSchedule[]> = {};
+    rooms.forEach(r => { byRoom[r.id] = []; });
+    rows.forEach(r => { byRoom[r.room_id].push(r); });
+    setRoomSchedulesByRoom(byRoom);
+  }
+
+  async function toggleTeacherSchedule(room_id: string, user_id: string, on: boolean) {
+    if (on) {
+      const { error } = await (supabase as any).from("kids_room_schedules").insert({ room_id, user_id, service_date: scheduleDate, created_by: user?.id });
+      if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+    } else {
+      await (supabase as any).from("kids_room_schedules").delete().eq("room_id", room_id).eq("user_id", user_id).eq("service_date", scheduleDate);
+    }
+    loadRoomSchedules();
+  }
+
+  async function copyPreviousWeek() {
+    if (!rooms.length) return;
+    const prev = new Date(scheduleDate);
+    prev.setDate(prev.getDate() - 7);
+    const prevStr = prev.toISOString().slice(0,10);
+    const roomIds = rooms.map(r => r.id);
+    const { data } = await (supabase as any).from("kids_room_schedules")
+      .select("room_id, user_id").in("room_id", roomIds).eq("service_date", prevStr);
+    const rows = (data || []) as { room_id: string; user_id: string }[];
+    if (!rows.length) { toast({ title: "Sem escala na semana anterior" }); return; }
+    const payload = rows.map(r => ({ ...r, service_date: scheduleDate, created_by: user?.id }));
+    const { error } = await (supabase as any).from("kids_room_schedules").upsert(payload, { onConflict: "room_id,user_id,service_date", ignoreDuplicates: true });
+    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Escala copiada da semana anterior" });
+    loadRoomSchedules();
+  }
 
   async function loadKids() {
     if (!page) return;
