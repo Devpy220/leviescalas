@@ -101,21 +101,7 @@ export default function KidsJoin() {
   }
 
   if (!user) {
-    const returnUrl = `/kids/join/${token}`;
-    return (
-      <div className="min-h-screen flex items-center justify-center p-6">
-        <Card className="max-w-md w-full rounded-3xl border-2">
-          <CardHeader><CardTitle>Cadastro / Login LeviKids</CardTitle></CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-sm text-slate-600">
-              {mode === "room" && room ? <>Sala: <b>{room.name}</b> — {page.name}</> : <>Igreja: <b>{page.name}</b></>}
-            </p>
-            <p className="text-xs text-slate-500">Se ainda não tem cadastro, crie sua conta agora. Nos próximos check-ins seu celular já vai lembrar do login.</p>
-            <Button onClick={() => nav("/auth", { state: { returnUrl } })} className="w-full rounded-xl">Entrar / Cadastrar</Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <InlineAuth pageName={page.name} roomLabel={mode === "room" && room ? room.name : null} />;
   }
 
   async function acceptConsent() {
