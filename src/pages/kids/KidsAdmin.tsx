@@ -69,8 +69,13 @@ export default function KidsAdmin() {
     if (!page) return;
     const { data } = await supabase.from("kids_children").select("id, full_name, birth_date, current_room_id").eq("page_id", page.id).order("full_name");
     setKids((data || []) as any);
-    const { data: ac } = await supabase.from("kids_checkins").select("child_id").eq("page_id", page.id).is("checkout_at", null);
-    setActiveCheckins(new Set((ac || []).map((r: any) => r.child_id)));
+    const kidIds = (data || []).map((k: any) => k.id);
+    if (kidIds.length) {
+      const { data: ac } = await supabase.from("kids_checkins").select("child_id").in("child_id", kidIds).is("checkout_at", null);
+      setActiveCheckins(new Set((ac || []).map((r: any) => r.child_id)));
+    } else {
+      setActiveCheckins(new Set());
+    }
   }
 
   async function saveSchedule() {
