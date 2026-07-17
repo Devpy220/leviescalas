@@ -433,6 +433,23 @@ export default function KidsAdmin() {
           </div>
         </div>
 
+        {linkedDeptId && (
+          <Card className="rounded-2xl border-2 border-violet-200 bg-gradient-to-r from-violet-50 to-amber-50">
+            <CardContent className="p-4 flex items-center gap-3 flex-wrap">
+              <div className="w-10 h-10 rounded-xl bg-violet-600 flex items-center justify-center text-white">
+                <Users className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-[200px]">
+                <p className="text-sm font-semibold text-slate-900">Departamento vinculado: Professores Kids</p>
+                <p className="text-xs text-slate-600">Acesse mural de avisos, disponibilidade dos professores, datas de bloqueio e geração automática de escala.</p>
+              </div>
+              <Button asChild size="sm" className="rounded-xl bg-violet-600 hover:bg-violet-700">
+                <Link to={`/departments/${linkedDeptId}`}>Abrir dept →</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         <Tabs defaultValue="rooms" className="w-full">
           <TabsList className="w-full grid grid-cols-3 md:grid-cols-8 rounded-2xl">
             <TabsTrigger value="rooms" className="rounded-xl"><QrCode className="w-4 h-4 mr-1" /> Salas</TabsTrigger>
