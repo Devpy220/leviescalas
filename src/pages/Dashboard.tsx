@@ -617,6 +617,48 @@ export default function Dashboard() {
           </section>
         )}
 
+        {/* LeviKids parent registration link (church leader only) */}
+        {myKidsJoinToken && (
+          <section className="mt-4 mb-2">
+            <div className="rounded-3xl border-2 border-violet-200 bg-violet-50/60 p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <Baby className="w-4 h-4 text-violet-600" />
+                <p className="text-sm font-semibold">Link de cadastro dos responsáveis — LeviKids</p>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Compartilhe com os pais para cadastrarem seus filhos (foto e data de nascimento).
+              </p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 text-xs bg-background rounded-lg px-3 py-2 truncate">
+                  {`${window.location.origin}/kids/join/${myKidsJoinToken}`}
+                </code>
+                <button
+                  type="button"
+                  title="Copiar link"
+                  aria-label="Copiar link"
+                  className="p-2 rounded-lg bg-violet-600 text-white hover:opacity-90"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/kids/join/${myKidsJoinToken}`);
+                    toast({ title: 'Link copiado!' });
+                  }}
+                >
+                  <Copy className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  title="Abrir LeviKids"
+                  aria-label="Abrir LeviKids"
+                  className="p-2 rounded-lg border-2 border-violet-300 text-violet-700 hover:bg-violet-100"
+                  onClick={() => navigate('/kids')}
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
+
+
         {/* LeviKids access */}
         {hasKids && (
           <section className="mt-4 mb-2">
