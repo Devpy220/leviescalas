@@ -173,11 +173,11 @@ export default function KidsCheckin() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-amber-50 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-amber-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-4">
       <div className="max-w-xl mx-auto space-y-5">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-slate-900">Check-in <LeviKidsWordmark /></h1>
-          <p className="text-sm text-slate-600">Aponte o celular para o QR fixo colado na porta da sala.</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Check-in <LeviKidsWordmark /></h1>
+          <p className="text-sm text-slate-600 dark:text-slate-300">Aponte o celular para o QR fixo colado na porta da sala.</p>
         </div>
 
         {active.length > 0 && (
@@ -185,10 +185,10 @@ export default function KidsCheckin() {
             <CardHeader><CardTitle className="text-base flex items-center gap-2"><KeyRound className="w-4 h-4" /> Check-ins ativos</CardTitle></CardHeader>
             <CardContent className="space-y-2">
               {active.map(a => (
-                <div key={a.id} className="p-3 bg-white rounded-xl flex justify-between items-center">
+                <div key={a.id} className="p-3 bg-white dark:bg-slate-900 rounded-xl flex justify-between items-center">
                   <div>
                     <p className="font-semibold text-sm">{a.kids_children?.full_name}</p>
-                    <p className="text-xs text-slate-500">{a.kids_rooms?.name}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{a.kids_rooms?.name}</p>
                   </div>
                   <ShieldCheck className="w-5 h-5 text-emerald-600" />
                 </div>
@@ -202,12 +202,12 @@ export default function KidsCheckin() {
             <CardHeader><CardTitle className="text-base flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-emerald-600" /> Check-in confirmado</CardTitle></CardHeader>
             <CardContent className="space-y-2">
               {results.map((r, i) => (
-                <div key={i} className="p-3 bg-white rounded-xl text-center">
-                  <p className="text-base font-semibold text-slate-900">{r.name}</p>
+                <div key={i} className="p-3 bg-white dark:bg-slate-900 rounded-xl text-center">
+                  <p className="text-base font-semibold text-slate-900 dark:text-slate-100">{r.name}</p>
                   {r.room && <p className="text-sm text-violet-700 font-semibold mt-1">Sala: {r.room}</p>}
                 </div>
               ))}
-              <p className="text-xs text-center text-slate-600 mt-2">Você será avisado por WhatsApp quando a retirada for feita.</p>
+              <p className="text-xs text-center text-slate-600 dark:text-slate-300 mt-2">Você será avisado por WhatsApp quando a retirada for feita.</p>
               <Button variant="outline" onClick={() => setResults([])} className="w-full rounded-xl">OK</Button>
             </CardContent>
           </Card>
@@ -235,11 +235,11 @@ export default function KidsCheckin() {
             <CardHeader><CardTitle className="text-base">Selecione quem está entrando</CardTitle></CardHeader>
             <CardContent className="space-y-2">
               {children.length === 0 ? (
-                <p className="text-sm text-slate-500 text-center">Nenhum filho cadastrado.</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 text-center">Nenhum filho cadastrado.</p>
               ) : children.map(c => {
                 const noPhoto = !c.photo_path || c.photo_path.trim() === "";
                 return (
-                  <label key={c.id} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer hover:bg-slate-50 ${noPhoto ? "opacity-60" : ""}`}>
+                  <label key={c.id} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 dark:bg-slate-800 ${noPhoto ? "opacity-60" : ""}`}>
                     <Checkbox checked={selected.has(c.id)} onCheckedChange={v => {
                       const s = new Set(selected);
                       if (v) { s.add(c.id); } else { s.delete(c.id); }

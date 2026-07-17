@@ -400,12 +400,12 @@ export default function KidsAdmin() {
 
   if (!page) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-violet-50 to-amber-50 p-6">
+      <div className="min-h-screen bg-gradient-to-br from-violet-50 to-amber-50 dark:from-slate-950 dark:to-slate-900 p-6">
         <div className="max-w-xl mx-auto">
           <Card className="rounded-3xl border-2">
             <CardHeader><CardTitle>Criar Página Kids da sua igreja</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-sm text-slate-600">Escolha um nome amigável para o ministério infantil da sua igreja (ex.: "Connect Kids", "Geração Kids").</p>
+              <p className="text-sm text-slate-600 dark:text-slate-300">Escolha um nome amigável para o ministério infantil da sua igreja (ex.: "Connect Kids", "Geração Kids").</p>
               <div>
                 <Label>Nome</Label>
                 <Input value={newPageName} onChange={e => setNewPageName(e.target.value)} placeholder="Ex.: Connect Kids" />
@@ -421,12 +421,12 @@ export default function KidsAdmin() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-amber-50 p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-amber-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-4 md:p-8">
       <div className="max-w-5xl mx-auto space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">{page.name}</h1>
-            <p className="text-slate-600 text-sm">Painel do líder — <LeviKidsWordmark /></p>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">{page.name}</h1>
+            <p className="text-slate-600 dark:text-slate-300 text-sm">Painel do líder — <LeviKidsWordmark /></p>
           </div>
           <div className="flex gap-2 flex-wrap">
             <Button asChild variant="outline" className="rounded-xl"><Link to="/dashboard">← LEVI</Link></Button>
@@ -436,14 +436,14 @@ export default function KidsAdmin() {
         </div>
 
         {linkedDeptId && (
-          <Card className="rounded-2xl border-2 border-violet-200 bg-gradient-to-r from-violet-50 to-amber-50">
+          <Card className="rounded-2xl border-2 border-violet-200 bg-gradient-to-r from-violet-50 to-amber-50 dark:from-violet-950/40 dark:to-amber-950/30">
             <CardContent className="p-4 flex items-center gap-3 flex-wrap">
               <div className="w-10 h-10 rounded-xl bg-violet-600 flex items-center justify-center text-white">
                 <Users className="w-5 h-5" />
               </div>
               <div className="flex-1 min-w-[200px]">
-                <p className="text-sm font-semibold text-slate-900">Departamento vinculado: Professores Kids</p>
-                <p className="text-xs text-slate-600">Acesse mural de avisos, disponibilidade dos professores, datas de bloqueio e geração automática de escala.</p>
+                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Departamento vinculado: Professores Kids</p>
+                <p className="text-xs text-slate-600 dark:text-slate-300">Acesse mural de avisos, disponibilidade dos professores, datas de bloqueio e geração automática de escala.</p>
               </div>
               <Button asChild size="icon" className="rounded-xl bg-violet-600 hover:bg-violet-700" title="Abrir Professores Kids" aria-label="Abrir Professores Kids">
                 <Link to={`/departments/${linkedDeptId}`}><ExternalLink className="w-4 h-4" /></Link>
@@ -470,7 +470,7 @@ export default function KidsAdmin() {
               <Card className="rounded-3xl border-2">
                 <CardHeader><CardTitle className="text-base flex items-center gap-2"><CalendarDays className="w-4 h-4"/> Dias de aula recorrentes</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
-                  <p className="text-xs text-slate-500">Configure os dias que se repetem toda semana (ex.: Domingo 09:00–11:00, Quarta 19:30–21:00). Fora destes horários o check-in fica fechado.</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Configure os dias que se repetem toda semana (ex.: Domingo 09:00–11:00, Quarta 19:30–21:00). Fora destes horários o check-in fica fechado.</p>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-2 items-end">
                     <div>
                       <Label>Dia da semana</Label>
@@ -484,15 +484,15 @@ export default function KidsAdmin() {
                   </div>
                   <div className="space-y-2 pt-2">
                     {serviceDays.filter(s => s.weekday !== null).length === 0 && (
-                      <p className="text-sm text-slate-500 text-center py-3">Nenhum dia recorrente configurado.</p>
+                      <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-3">Nenhum dia recorrente configurado.</p>
                     )}
                     {serviceDays.filter(s => s.weekday !== null).map(s => (
-                      <div key={s.id} className="flex items-center gap-2 p-3 rounded-xl border bg-white flex-wrap">
+                      <div key={s.id} className="flex items-center gap-2 p-3 rounded-xl border bg-white dark:bg-slate-900 flex-wrap">
                         <select className="border rounded-md h-9 px-2 bg-background text-sm" value={s.weekday!} onChange={e => updateServiceDay(s.id, { weekday: +e.target.value })}>
                           {["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"].map((l,i) => <option key={i} value={i}>{l}</option>)}
                         </select>
                         <Input type="time" className="w-28" value={s.time_start.slice(0,5)} onChange={e => updateServiceDay(s.id, { time_start: e.target.value })} />
-                        <span className="text-slate-500">até</span>
+                        <span className="text-slate-500 dark:text-slate-400">até</span>
                         <Input type="time" className="w-28" value={s.time_end.slice(0,5)} onChange={e => updateServiceDay(s.id, { time_end: e.target.value })} />
                         <Button size="sm" variant="ghost" onClick={() => deleteServiceDay(s.id)} className="ml-auto text-red-600"><Trash2 className="w-4 h-4"/></Button>
                       </div>
@@ -504,7 +504,7 @@ export default function KidsAdmin() {
               <Card className="rounded-3xl border-2">
                 <CardHeader><CardTitle className="text-base flex items-center gap-2"><Clock className="w-4 h-4"/> Datas avulsas</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
-                  <p className="text-xs text-slate-500">Aulas em datas pontuais (retiros, eventos especiais).</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Aulas em datas pontuais (retiros, eventos especiais).</p>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-2 items-end">
                     <div><Label>Data</Label><Input type="date" value={newOneOff.specific_date} onChange={e => setNewOneOff({ ...newOneOff, specific_date: e.target.value })} /></div>
                     <div><Label>Início</Label><Input type="time" value={newOneOff.time_start} onChange={e => setNewOneOff({ ...newOneOff, time_start: e.target.value })} /></div>
@@ -513,13 +513,13 @@ export default function KidsAdmin() {
                   </div>
                   <div className="space-y-2 pt-2">
                     {serviceDays.filter(s => s.specific_date !== null).length === 0 && (
-                      <p className="text-sm text-slate-500 text-center py-3">Nenhuma data avulsa configurada.</p>
+                      <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-3">Nenhuma data avulsa configurada.</p>
                     )}
                     {serviceDays.filter(s => s.specific_date !== null).map(s => (
-                      <div key={s.id} className="flex items-center gap-2 p-3 rounded-xl border bg-white flex-wrap">
+                      <div key={s.id} className="flex items-center gap-2 p-3 rounded-xl border bg-white dark:bg-slate-900 flex-wrap">
                         <Input type="date" className="w-40" value={s.specific_date!} onChange={e => updateServiceDay(s.id, { specific_date: e.target.value })} />
                         <Input type="time" className="w-28" value={s.time_start.slice(0,5)} onChange={e => updateServiceDay(s.id, { time_start: e.target.value })} />
-                        <span className="text-slate-500">até</span>
+                        <span className="text-slate-500 dark:text-slate-400">até</span>
                         <Input type="time" className="w-28" value={s.time_end.slice(0,5)} onChange={e => updateServiceDay(s.id, { time_end: e.target.value })} />
                         <Button size="sm" variant="ghost" onClick={() => deleteServiceDay(s.id)} className="ml-auto text-red-600"><Trash2 className="w-4 h-4"/></Button>
                       </div>
@@ -537,7 +537,7 @@ export default function KidsAdmin() {
                 <CardTitle className="text-base flex items-center gap-2"><CalendarCheck className="w-4 h-4"/> Escala de professores por data</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-xs text-slate-500">Marque quem serve em cada sala em cada data. O professor só verá a sala no dashboard e poderá liberar crianças se estiver escalado <b>naquele dia</b>. O pool de professores por sala é gerenciado na aba "Professores".</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Marque quem serve em cada sala em cada data. O professor só verá a sala no dashboard e poderá liberar crianças se estiver escalado <b>naquele dia</b>. O pool de professores por sala é gerenciado na aba "Professores".</p>
                 <div className="flex items-end gap-2 flex-wrap">
                   <div><Label>Data</Label><Input type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)} className="w-48" /></div>
                   <Button variant="outline" onClick={copyPreviousWeek} className="rounded-xl">Copiar da semana anterior</Button>
@@ -547,7 +547,7 @@ export default function KidsAdmin() {
                   </Button>
                 </div>
                 {rooms.length === 0 ? (
-                  <p className="text-sm text-slate-500 text-center py-4">Crie salas primeiro.</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-4">Crie salas primeiro.</p>
                 ) : (
                   <div className="space-y-3">
                     {rooms.map(r => {
@@ -556,11 +556,11 @@ export default function KidsAdmin() {
                       return (
                         <div key={r.id} className="p-3 rounded-2xl border-2" style={{ borderColor: r.color + "40", background: r.color + "08" }}>
                           <div className="flex items-center justify-between mb-2">
-                            <p className="font-semibold text-sm text-slate-900">{r.name}</p>
+                            <p className="font-semibold text-sm text-slate-900 dark:text-slate-100">{r.name}</p>
                             <Badge variant="outline" className="text-xs">{scheduled.size} escalado(s)</Badge>
                           </div>
                           {pool.length === 0 ? (
-                            <p className="text-xs text-slate-500 py-2">Nenhum professor no pool desta sala. Adicione na aba "Professores".</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 py-2">Nenhum professor no pool desta sala. Adicione na aba "Professores".</p>
                           ) : (
                             <div className="flex flex-wrap gap-2">
                               {pool.map(t => {
@@ -570,7 +570,7 @@ export default function KidsAdmin() {
                                     key={t.user_id}
                                     type="button"
                                     onClick={() => toggleTeacherSchedule(r.id, t.user_id, !on)}
-                                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold border-2 transition ${on ? "bg-violet-600 text-white border-violet-600" : "bg-white text-slate-700 border-slate-200 hover:border-violet-300"}`}
+                                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold border-2 transition ${on ? "bg-violet-600 text-white border-violet-600" : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-200 hover:border-violet-300"}`}
                                     title={t.email}
                                   >
                                     {on ? "✓ " : ""}{t.name}
@@ -593,7 +593,7 @@ export default function KidsAdmin() {
             <Card className="rounded-3xl border-2">
               <CardHeader><CardTitle>Crianças cadastradas</CardTitle></CardHeader>
               <CardContent>
-                {kids.length === 0 ? <p className="text-sm text-slate-500 text-center py-6">Nenhuma criança cadastrada ainda.</p> : (
+                {kids.length === 0 ? <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-6">Nenhuma criança cadastrada ainda.</p> : (
                   <div className="space-y-2">
                     {kids.map(c => {
                       const age = Math.floor((Date.now() - new Date(c.birth_date).getTime()) / (365.25*24*3600*1000));
@@ -601,15 +601,15 @@ export default function KidsAdmin() {
                         || rooms.find(r => age >= r.age_min && age <= r.age_max);
                       const isActive = activeCheckins.has(c.id);
                       return (
-                        <div key={c.id} className="flex items-center justify-between p-3 rounded-xl border bg-white">
+                        <div key={c.id} className="flex items-center justify-between p-3 rounded-xl border bg-white dark:bg-slate-900">
                           <div>
                             <p className="font-semibold text-sm">{c.full_name}</p>
-                            <p className="text-xs text-slate-500">{age} anos · Sala: <b>{room?.name || "—"}</b></p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">{age} anos · Sala: <b>{room?.name || "—"}</b></p>
                             <div className="mt-1">
                               {isActive ? (
                                 <Badge className="text-[10px] bg-emerald-100 text-emerald-800 border-emerald-200">Check-in ativo</Badge>
                               ) : (
-                                <Badge variant="outline" className="text-[10px] text-slate-600">Aguardando check-in</Badge>
+                                <Badge variant="outline" className="text-[10px] text-slate-600 dark:text-slate-300">Aguardando check-in</Badge>
                               )}
                             </div>
                           </div>
@@ -635,7 +635,7 @@ export default function KidsAdmin() {
                   <CardTitle className="text-base flex items-center gap-2"><QrCode className="w-5 h-5 text-violet-600" /> QR único da igreja (todas as salas)</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <p className="text-xs text-slate-600">
+                  <p className="text-xs text-slate-600 dark:text-slate-300">
                     Imprima e coloque na entrada do Kids. Os pais escaneiam <b>uma única vez</b> — no primeiro acesso fazem cadastro (com CPF) e nos próximos check-ins o sistema escolhe a sala automaticamente pela idade da criança.
                   </p>
                   <div className="flex gap-2 flex-wrap">
@@ -656,20 +656,20 @@ export default function KidsAdmin() {
                 <CardHeader className="flex flex-row items-center justify-between">
                   <div>
                     <CardTitle>Salas por faixa etária</CardTitle>
-                    <p className="text-xs text-slate-500 mt-1">Defina a idade mínima e máxima. O check-in usa isso para escolher a sala automaticamente.</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Defina a idade mínima e máxima. O check-in usa isso para escolher a sala automaticamente.</p>
                   </div>
                   <Button onClick={() => setShowRoomModal(true)} className="rounded-xl"><Plus className="w-4 h-4 mr-2" /> Nova sala</Button>
                 </CardHeader>
                 <CardContent>
                   {rooms.length === 0 ? (
-                    <p className="text-sm text-slate-500 text-center py-8">Nenhuma sala ainda. Crie a primeira!</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-8">Nenhuma sala ainda. Crie a primeira!</p>
                   ) : (
                     <div className="grid md:grid-cols-2 gap-3">
                       {rooms.map(r => (
                         <div key={r.id} className="p-4 rounded-2xl border-2" style={{ borderColor: r.color + "40", background: r.color + "10" }}>
                           <div className="flex items-start justify-between mb-2">
                             <div>
-                              <h3 className="font-bold text-slate-900">{r.name}</h3>
+                              <h3 className="font-bold text-slate-900 dark:text-slate-100">{r.name}</h3>
                               <div className="flex gap-1 flex-wrap mt-1">
                                 <Badge variant="outline" className="text-xs">
                                   <Users className="w-3 h-3 mr-1" /> {r.age_min}–{r.age_max} anos
@@ -701,16 +701,16 @@ export default function KidsAdmin() {
                 <Button onClick={() => { setEmailQuery(""); setShowLeaderModal(true); }} className="rounded-xl"><UserPlus className="w-4 h-4 mr-2" /> Promover membro</Button>
               </CardHeader>
               <CardContent>
-                <p className="text-xs text-slate-500 mb-3">O líder da igreja no LEVI é sempre líder da Página Kids. Aqui você promove outros membros a co-líderes.</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">O líder da igreja no LEVI é sempre líder da Página Kids. Aqui você promove outros membros a co-líderes.</p>
                 {leaders.length === 0 ? (
-                  <p className="text-sm text-slate-500 text-center py-6">Nenhum co-líder promovido ainda.</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-6">Nenhum co-líder promovido ainda.</p>
                 ) : (
                   <div className="space-y-2">
                     {leaders.map(l => (
-                      <div key={l.id} className="flex items-center justify-between p-3 rounded-xl border bg-white">
+                      <div key={l.id} className="flex items-center justify-between p-3 rounded-xl border bg-white dark:bg-slate-900">
                         <div>
                           <p className="font-medium text-sm">{l.profile?.name || "Usuário"}</p>
-                          <p className="text-xs text-slate-500">{l.profile?.email}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">{l.profile?.email}</p>
                         </div>
                         <Button size="sm" variant="ghost" onClick={() => removeLeader(l.id)}><Trash2 className="w-4 h-4 text-red-500" /></Button>
                       </div>
@@ -736,7 +736,7 @@ export default function KidsAdmin() {
                     <p className="text-xs font-semibold text-violet-900 flex items-center gap-1">
                       <Copy className="w-3.5 h-3.5" /> Link único para professores (reutilizável)
                     </p>
-                    <p className="text-[11px] text-slate-600">
+                    <p className="text-[11px] text-slate-600 dark:text-slate-300">
                       Envie este link para os professores da igreja. Cada um entra, escolhe a sala e fica cadastrado.
                       <strong> Menores de 18 anos</strong> precisam da autorização de um responsável (o link avisa e bloqueia até a autorização).
                     </p>
@@ -761,14 +761,14 @@ export default function KidsAdmin() {
                   </div>
                 )}
                 {teachers.length === 0 ? (
-                  <p className="text-sm text-slate-500 text-center py-6">Nenhum professor cadastrado.</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-6">Nenhum professor cadastrado.</p>
                 ) : (
                   <div className="space-y-2">
                     {teachers.map(t => (
-                      <div key={t.id} className="flex items-center justify-between p-3 rounded-xl border bg-white">
+                      <div key={t.id} className="flex items-center justify-between p-3 rounded-xl border bg-white dark:bg-slate-900">
                         <div>
                           <p className="font-medium text-sm">{t.profile?.name || "Usuário"}</p>
-                          <p className="text-xs text-slate-500">{t.profile?.email} · Sala: <b>{t.room?.name}</b> · <span className="uppercase">{t.scope === "kids_and_schedules" ? "Kids + Escalas" : "Só Kids"}</span></p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">{t.profile?.email} · Sala: <b>{t.room?.name}</b> · <span className="uppercase">{t.scope === "kids_and_schedules" ? "Kids + Escalas" : "Só Kids"}</span></p>
                         </div>
                         <Button size="sm" variant="ghost" onClick={() => removeTeacher(t.id)}><Trash2 className="w-4 h-4 text-red-500" /></Button>
                       </div>
@@ -790,11 +790,11 @@ export default function KidsAdmin() {
               </CardHeader>
               <CardContent>
                 {contents.length === 0 ? (
-                  <p className="text-sm text-slate-500 text-center py-6">Nenhuma lição publicada ainda.</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-6">Nenhuma lição publicada ainda.</p>
                 ) : (
                   <div className="space-y-2">
                     {contents.map(c => (
-                      <div key={c.id} className="p-3 rounded-xl border bg-white">
+                      <div key={c.id} className="p-3 rounded-xl border bg-white dark:bg-slate-900">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
@@ -802,7 +802,7 @@ export default function KidsAdmin() {
                               {c.room_id && <Badge variant="secondary" className="text-xs">{rooms.find(r => r.id === c.room_id)?.name || "sala"}</Badge>}
                             </div>
                             <p className="font-semibold text-sm mt-1">{c.title}</p>
-                            {c.body && <p className="text-xs text-slate-600 mt-1 line-clamp-2">{c.body}</p>}
+                            {c.body && <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 line-clamp-2">{c.body}</p>}
                           </div>
                           <div className="flex gap-1 shrink-0">
                             <Button size="sm" variant="ghost" onClick={() => { setContentForm({ id: c.id, content_date: c.content_date, title: c.title, body: c.body || "", room_id: c.room_id || "" }); setShowContentModal(true); }}>Editar</Button>
@@ -875,7 +875,7 @@ export default function KidsAdmin() {
         <DialogContent>
           <DialogHeader><DialogTitle>Promover a Líder Kids</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <p className="text-xs text-slate-500">A pessoa precisa já ter conta no LEVI. Informe o e-mail cadastrado.</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">A pessoa precisa já ter conta no LEVI. Informe o e-mail cadastrado.</p>
             <div><Label>E-mail</Label><Input type="email" value={emailQuery} onChange={e => setEmailQuery(e.target.value)} placeholder="nome@igreja.com" /></div>
           </div>
           <DialogFooter>
@@ -890,7 +890,7 @@ export default function KidsAdmin() {
         <DialogContent>
           <DialogHeader><DialogTitle>Adicionar professor(a)</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <p className="text-xs text-slate-500">A pessoa precisa já ter conta no LEVI.</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">A pessoa precisa já ter conta no LEVI.</p>
             <div><Label>E-mail</Label><Input type="email" value={emailQuery} onChange={e => setEmailQuery(e.target.value)} placeholder="professora@igreja.com" /></div>
             <div>
               <Label>Sala</Label>
@@ -945,7 +945,7 @@ export default function KidsAdmin() {
           {qrPreview && (
             <div className="space-y-4">
               <img src={qrPreview.url} alt="QR" className="mx-auto rounded-xl border" />
-              <p className="text-xs text-center text-slate-600 break-all">
+              <p className="text-xs text-center text-slate-600 dark:text-slate-300 break-all">
                 {KIDS_JOIN_BASE}/{qrPreview.room.static_qr_token}
               </p>
               <div className="flex gap-2 justify-center flex-wrap">
