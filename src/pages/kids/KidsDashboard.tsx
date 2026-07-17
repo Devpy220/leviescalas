@@ -142,8 +142,8 @@ export default function KidsDashboard() {
           <Card className="rounded-2xl border-2 border-violet-200 bg-gradient-to-r from-violet-50 to-amber-50">
             <CardContent className="p-3 flex items-center gap-2 flex-wrap">
               <p className="text-xs text-slate-700 flex-1 min-w-[200px]">📌 <b>Área do professor:</b> marque sua disponibilidade, datas de bloqueio e veja os avisos do líder no departamento vinculado.</p>
-              <Button asChild size="sm" variant="outline" className="rounded-xl border-violet-300">
-                <Link to={`/departments/${linkedDeptId}`}>Abrir Professores Kids →</Link>
+              <Button asChild size="icon" variant="outline" className="rounded-xl border-violet-300" title="Abrir Professores Kids" aria-label="Abrir Professores Kids">
+                <Link to={`/departments/${linkedDeptId}`}><ExternalLink className="w-4 h-4" /></Link>
               </Button>
             </CardContent>
           </Card>
