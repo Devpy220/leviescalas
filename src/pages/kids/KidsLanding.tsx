@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
-import { Baby, Sparkles, ShieldCheck, QrCode } from "lucide-react";
+import { Baby, Sparkles, ShieldCheck, QrCode, Copy, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useMyKidsPage } from "@/hooks/useKidsPage";
 import { Loader2 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 export default function KidsLanding() {
   const { page, role, loading } = useMyKidsPage();
