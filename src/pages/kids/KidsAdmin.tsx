@@ -39,6 +39,8 @@ export default function KidsAdmin() {
   const [transferChild, setTransferChild] = useState<ChildRow | null>(null);
   const [transferTargetRoom, setTransferTargetRoom] = useState("");
   const [scheduleForm, setScheduleForm] = useState({ start: "18:30", end: "20:30", days: [0,3] as number[], tz: "America/Sao_Paulo" });
+  const [linkedDeptId, setLinkedDeptId] = useState<string | null>(null);
+  const [generatingSchedule, setGeneratingSchedule] = useState(false);
 
   // Dias de aula (novos)
   interface ServiceDay { id: string; page_id: string; weekday: number | null; specific_date: string | null; time_start: string; time_end: string; active: boolean; }
@@ -67,9 +69,32 @@ export default function KidsAdmin() {
 
   useEffect(() => {
     if (page) {
-      loadRooms(); loadLeaders(); loadTeachers(); loadContent(); loadKids(); loadServiceDays();
+      loadRooms(); loadLeaders(); loadTeachers(); loadContent(); loadKids(); loadServiceDays(); loadLinkedDept();
     }
   }, [page]);
+
+  async function loadLinkedDept() {
+    if (!page) return;
+    const { data } = await (supabase.rpc as any)("kids_get_linked_department", { _page_id: page.id });
+    setLinkedDeptId((data as string) || null);
+  }
+
+  async function generateSmartSchedule() {
+    if (!page) return;
+    setGeneratingSchedule(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("kids-generate-smart-schedule", {
+        body: { page_id: page.id, service_date: scheduleDate },
+      });
+      if (error) throw error;
+      toast({ title: "Escala gerada!", description: `${(data as any)?.assigned || 0} atribuições criadas para ${scheduleDate}.` });
+      await loadRoomSchedules();
+    } catch (e: any) {
+      toast({ title: "Erro ao gerar escala", description: e.message, variant: "destructive" });
+    } finally {
+      setGeneratingSchedule(false);
+    }
+  }
 
   useEffect(() => {
     if (page && rooms.length) { loadRoomSchedules(); loadTeacherPool(); }
@@ -408,6 +433,23 @@ export default function KidsAdmin() {
           </div>
         </div>
 
+        {linkedDeptId && (
+          <Card className="rounded-2xl border-2 border-violet-200 bg-gradient-to-r from-violet-50 to-amber-50">
+            <CardContent className="p-4 flex items-center gap-3 flex-wrap">
+              <div className="w-10 h-10 rounded-xl bg-violet-600 flex items-center justify-center text-white">
+                <Users className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-[200px]">
+                <p className="text-sm font-semibold text-slate-900">Departamento vinculado: Professores Kids</p>
+                <p className="text-xs text-slate-600">Acesse mural de avisos, disponibilidade dos professores, datas de bloqueio e geração automática de escala.</p>
+              </div>
+              <Button asChild size="sm" className="rounded-xl bg-violet-600 hover:bg-violet-700">
+                <Link to={`/departments/${linkedDeptId}`}>Abrir dept →</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         <Tabs defaultValue="rooms" className="w-full">
           <TabsList className="w-full grid grid-cols-3 md:grid-cols-8 rounded-2xl">
             <TabsTrigger value="rooms" className="rounded-xl"><QrCode className="w-4 h-4 mr-1" /> Salas</TabsTrigger>
@@ -497,6 +539,10 @@ export default function KidsAdmin() {
                 <div className="flex items-end gap-2 flex-wrap">
                   <div><Label>Data</Label><Input type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)} className="w-48" /></div>
                   <Button variant="outline" onClick={copyPreviousWeek} className="rounded-xl">Copiar da semana anterior</Button>
+                  <Button onClick={generateSmartSchedule} disabled={generatingSchedule} className="rounded-xl bg-gradient-to-r from-violet-600 to-amber-500 text-white">
+                    {generatingSchedule ? <Loader2 className="w-4 h-4 mr-1 animate-spin"/> : <Sparkles className="w-4 h-4 mr-1"/>}
+                    Gerar escala automática (IA)
+                  </Button>
                 </div>
                 {rooms.length === 0 ? (
                   <p className="text-sm text-slate-500 text-center py-4">Crie salas primeiro.</p>

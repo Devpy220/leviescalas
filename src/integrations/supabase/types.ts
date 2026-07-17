@@ -458,6 +458,8 @@ export type Database = {
           description: string | null
           id: string
           invite_code: string
+          kids_linked: boolean
+          kids_page_id: string | null
           leader_id: string
           max_blackout_dates: number
           name: string
@@ -474,6 +476,8 @@ export type Database = {
           description?: string | null
           id?: string
           invite_code?: string
+          kids_linked?: boolean
+          kids_page_id?: string | null
           leader_id: string
           max_blackout_dates?: number
           name: string
@@ -490,6 +494,8 @@ export type Database = {
           description?: string | null
           id?: string
           invite_code?: string
+          kids_linked?: boolean
+          kids_page_id?: string | null
           leader_id?: string
           max_blackout_dates?: number
           name?: string
@@ -510,6 +516,13 @@ export type Database = {
             columns: ["church_id"]
             isOneToOne: false
             referencedRelation: "churches_member_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "departments_kids_page_id_fkey"
+            columns: ["kids_page_id"]
+            isOneToOne: false
+            referencedRelation: "kids_pages"
             referencedColumns: ["id"]
           },
           {
@@ -2573,6 +2586,7 @@ export type Database = {
       }
       claim_church_leadership: { Args: { _code: string }; Returns: string }
       ensure_admin_role: { Args: never; Returns: boolean }
+      ensure_kids_department: { Args: { _page_id: string }; Returns: string }
       execute_schedule_swap: { Args: { swap_id: string }; Returns: undefined }
       generate_church_code: { Args: never; Returns: string }
       get_all_departments_admin: {
@@ -2898,6 +2912,10 @@ export type Database = {
         Returns: string
       }
       kids_default_consent_text: { Args: never; Returns: string }
+      kids_get_linked_department: {
+        Args: { _page_id: string }
+        Returns: string
+      }
       kids_get_or_create_dyn_token: {
         Args: { _room_id: string }
         Returns: {
