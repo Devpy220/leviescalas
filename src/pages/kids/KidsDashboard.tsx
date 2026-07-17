@@ -31,10 +31,11 @@ export default function KidsDashboard() {
 
   async function loadRooms() {
     if (!user) return;
-    const { data } = await supabase.from("kids_teacher_rooms").select("kids_rooms(id, name, color, page_id, static_qr_token, is_inclusion)").eq("user_id", user.id);
-    const rs = (data || []).map((r: any) => r.kids_rooms).filter(Boolean);
+    const { data, error } = await (supabase.rpc as any)("kids_teacher_rooms_today");
+    if (error) { console.error(error); setRooms([]); return; }
+    const rs = (data || []) as Room[];
     setRooms(rs);
-    if (rs[0]) setCurrentRoom(rs[0]);
+    if (rs[0]) setCurrentRoom(rs[0]); else setCurrentRoom(null);
   }
 
   useEffect(() => {
