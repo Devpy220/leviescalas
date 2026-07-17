@@ -1,84 +1,81 @@
 ## Objetivo
 
-1. Configurar **múltiplos dias de aula** (recorrentes semanais + datas avulsas) para a página LeviKids inteira, editáveis.
-2. Criar **escala interna do LeviKids**: líder marca semanalmente quem serve em qual sala em qual data. O QR/link de check-in só funciona (e o dashboard só mostra a sala) para professores escalados **naquele dia**.
+Três frentes:
+1. **Vínculo LeviEscalas ↔ LeviKids** via departamento automático "Professores Kids".
+2. **Paridade de líder**: trazer mural, disponibilidade, bloqueios e escala automática (IA) para o líder do LeviKids.
+3. **Sessão por aba**: cada aba do navegador com login independente.
 
 ---
 
-## 1. Dias de aula (página inteira)
+## 1. Departamento "Professores Kids" automático
 
-**Nova tabela `kids_service_days**` — vinculada a `kids_pages`, cobre os dois formatos:
+Quando o líder ativa o LeviKids na igreja:
 
-- Recorrente: `weekday` (0-6) + `time_start` + `time_end` + `active`.
-- Avulso: `specific_date` + `time_start` + `time_end` + `active`.
-- Cada linha editável/removível independentemente.
+- Criar (ou reaproveitar) um departamento `Professores Kids` no LeviEscalas dessa igreja, marcado com uma flag nova `kids_linked = true` em `departments`.
+- Sincronização de mão dupla no pool de professores:
+  - Adicionar membro no dept "Professores Kids" (LeviEscalas) → cria linha em `kids_teacher_rooms` (pool, sem sala ainda) via trigger.
+  - Adicionar professor pelo link `/kids/teacher-join` → cria linha em `members` do dept "Professores Kids" via trigger.
+  - Remoção segue a mesma regra em ambos os lados.
+- A **escala por sala/dia** (`kids_room_schedules`) continua exclusiva do LeviKids — LeviEscalas fica só como cadastro/pool.
+- Proteções:
+  - Só membros do dept "Professores Kids" (ou o líder Kids) enxergam a área do professor.
+  - Dept "Professores Kids" não aceita autoinscrição por invite normal — só entra via link Kids ou o líder adiciona.
 
-**Substitui** a janela única atual em `kids_pages` (`checkin_window_start/end`). A validação de "está dentro do horário de check-in?" passa a considerar qualquer linha ativa para o dia atual (recorrente do weekday **ou** avulsa da data).
-
-**UI** — nova aba "Dias de aula" no `KidsAdmin`:
-
-- Lista recorrentes (com dia da semana + horário) com editar/remover.
-- Lista datas avulsas com editar/remover.
-- Botão "Adicionar dia recorrente" e "Adicionar data avulsa".
-
----
-
-## 2. Escala interna de professores por sala/data
-
-**Nova tabela `kids_room_schedules**`:
-
-- `room_id`, `user_id` (professor), `service_date` (data específica).
-- Um professor pode estar escalado em várias salas em datas diferentes.
-- Só líder do LeviKids pode inserir/editar/remover.
-
-**Regra de acesso**:
-
-- `kids_teacher_rooms` continua registrando as salas em que o professor **pode servir** (pool geral, via link `/kids/teacher-join`).
-- Mas o **acesso efetivo à sala no dashboard** e a validação de check-out passam a exigir uma linha em `kids_room_schedules` para `hoje` + `user_id` + `room_id`.
-- Se professor não escalado hoje → não aparece a sala no `KidsDashboard`, o botão de retirada é bloqueado no RPC.
-
-**UI — nova aba "Escala de professores" no `KidsAdmin**` (visível ao líder):
-
-- Seleciona uma data (default: próximo dia de aula).
-- Para cada sala, líder escolhe entre os professores do pool (`kids_teacher_rooms`) quem serve naquele dia.
-- Salvar cria/atualiza linhas em `kids_room_schedules`.
-- Botão "copiar da semana anterior" para agilizar.
-
-**Dashboard do professor (`KidsDashboard`)**:
-
-- `loadRooms` filtra: só mostra salas onde há linha em `kids_room_schedules` para `user_id = eu` e `service_date = hoje`.
-- Se não estiver escalado hoje: mensagem "Você não está escalado em nenhuma sala hoje."
+**UI**: aviso na aba "Escala" do KidsAdmin — "Este pool está sincronizado com o departamento Professores Kids no LeviEscalas" + link para o dept.
 
 ---
 
-## 3. Integração com LeviEscalas (departamento único "Professores Kids")
+## 2. Paridade líder LeviKids ↔ LeviEscalas
 
- cria vínculo automático agora. A escala do LeviKids é independente do departamento de escalas do LeviEscalas (por sua escolha). Se quiser sincronizar no futuro, mantemos aberto para uma etapa 2, mas tem cuidado para que outro integranates do levi não autorizados entr no levi kids
+Adicionar no `KidsAdmin` (visível ao líder Kids):
 
- Sugestão: adicionar um botão "Importar voluntários de um departamento" na aba de escala de professores, que lista membros de um departamento LeviEscalas escolhido e permite importar em lote como professores (`kids_teacher_rooms`). Isto é opcional — confirme se quer incluir agora.
+- **Mural de avisos** — nova aba "Avisos", reusa `department_announcements` filtrando pelo dept "Professores Kids". Push/popup segue o mesmo fluxo já existente do LeviEscalas.
+- **Disponibilidade semanal do professor** — professor no `KidsDashboard` marca dias/turnos que pode servir; reusa `member_availability` do dept "Professores Kids". Aba nova "Minha disponibilidade" no KidsDashboard.
+- **Datas de bloqueio** — mesmo padrão, reusa `member_date_availability`. UI no KidsDashboard.
+- **Escala automática (IA)** — botão "Gerar escala do mês" na aba "Escala" do KidsAdmin. Nova edge function `kids-generate-smart-schedule` que:
+  - Lê dias de aula (`kids_service_days`), salas ativas, pool de professores, disponibilidade semanal e bloqueios.
+  - Distribui professores equilibradamente por sala/data em `kids_room_schedules`.
+  - Respeita restrições (professor não escalado em dia bloqueado, prefere quem está livre naquele turno).
+
+O líder Kids passa a ter o mesmo poder que um líder de dept comum, mas contido no escopo Kids.
+
+---
+
+## 3. Sessão isolada por aba
+
+Trocar o storage do Supabase de `localStorage` para um wrapper que usa `sessionStorage`, com fallback compatível:
+
+- Editar `src/integrations/supabase/client.ts` (única exceção — necessária) para passar um custom `storage` que:
+  - Lê/escreve prioritariamente em `sessionStorage`.
+  - Se `sessionStorage` estiver vazio no boot da aba, tenta hidratar **uma vez** de `localStorage` para preservar UX de sessões existentes; depois desliga a sincronização.
+  - Escritas novas vão só para `sessionStorage`.
+- Efeito: cada aba tem sua própria sessão; login em uma aba não muda a outra.
+- Trade-offs comunicados ao usuário: fechar a aba desloga; "lembrar de mim" agora vale por aba. Biometria/WebAuthn continua funcionando pois é re-login rápido.
 
 ---
 
 ## 4. Alterações técnicas
 
 **Backend (migration):**
+- `ALTER TABLE departments ADD COLUMN kids_linked boolean DEFAULT false`.
+- Função `ensure_kids_department(church_id)` — cria/retorna o dept "Professores Kids" com `kids_linked = true`, líder = líder Kids.
+- Chamar `ensure_kids_department` dentro do fluxo de criação do `kids_pages`.
+- Trigger `sync_kids_teacher_from_members` em `members` (INSERT/DELETE) restrito a `kids_linked` depts.
+- Trigger `sync_kids_teacher_to_members` em `kids_teacher_rooms` (INSERT/DELETE do primeiro/último vínculo do user).
+- Bloquear invite/join normal em depts `kids_linked` (policy + verificação em `JoinDepartment`).
 
-- `CREATE TABLE kids_service_days (id, page_id, weekday nullable, specific_date nullable, time_start, time_end, active, ...)` + GRANTs + RLS (líder gerencia; qualquer autenticado lê para validar check-in).
-- Migrar janela atual de `kids_pages` para uma linha recorrente equivalente.
-- `CREATE TABLE kids_room_schedules (id, room_id, user_id, service_date, ...)` + GRANTs + RLS (líder gerencia; professor lê a própria escala).
-- Atualizar `kids_perform_checkin_static` / `kids_perform_checkin_by_page`: validar horário contra `kids_service_days` do dia.
-- Atualizar `kids_perform_checkout` e `is_kids_teacher_of_room` (ou criar `is_kids_teacher_of_room_today`): exigir escala do dia.
-- Nova RPC `kids_list_teacher_rooms_today()` para o dashboard.
+**Edge function nova:**
+- `supabase/functions/kids-generate-smart-schedule/index.ts` — IA (Lovable AI Gateway) monta escala do mês.
 
 **Frontend:**
-
-- `KidsAdmin.tsx`: 2 novas abas ("Dias de aula", "Escala de professores").
-- `KidsDashboard.tsx`: usa nova RPC para listar apenas salas do dia.
-- `KidsJoin.tsx` / check-in dos pais: a mensagem de "fora do horário" agora considera a nova tabela.
+- `src/integrations/supabase/client.ts` — custom storage sessionStorage.
+- `src/pages/kids/KidsAdmin.tsx` — abas "Avisos" e botão IA na Escala; banner de vínculo.
+- `src/pages/kids/KidsDashboard.tsx` — aba "Minha disponibilidade" e "Meus bloqueios".
+- Reusar componentes existentes: `AnnouncementBoard`, `MyAvailabilitySheet`, `LeaderBlackoutDatesView`, `SmartScheduleDialog` (passando o dept "Professores Kids").
 
 ---
 
-## Perguntas rápidas antes de implementar
+## Perguntas rápidas antes de executar
 
-1. Incluir o botão "importar voluntários do departamento LeviEscalas" na escala de professores agora, ou deixar para depois?
-2. Na escala de professores, permitir **múltiplos** professores por sala na mesma data (ex.: 2 professores no Berçário)?
+1. O departamento "Professores Kids" deve **aparecer** na lista de departamentos do LeviEscalas do líder, ou fica **oculto** (só visível via LeviKids)?
+2. Para escala automática Kids: **1 professor por sala/dia** ou **permitir 2+** (ex.: Berçário sempre com dupla)?
