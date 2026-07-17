@@ -201,10 +201,10 @@ export default function KidsJoin() {
           <Card className="rounded-3xl border-2">
             <CardHeader><CardTitle className="flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-emerald-600" /> Termo de consentimento</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <pre className="p-4 bg-white border-2 border-slate-200 rounded-xl text-sm leading-relaxed text-slate-900 whitespace-pre-wrap max-h-72 overflow-auto font-sans">{page.consent_text}</pre>
+              <pre className="p-4 bg-card border-2 border-border rounded-xl text-sm leading-relaxed text-foreground dark:text-white whitespace-pre-wrap max-h-72 overflow-auto font-sans">{page.consent_text}</pre>
               <label className="flex items-start gap-3 cursor-pointer">
                 <Checkbox checked={accepted} onCheckedChange={v => setAccepted(!!v)} />
-                <span className="text-sm text-slate-700">Li e concordo com o Termo de Consentimento e Responsabilidade (versão {page.consent_version}).</span>
+                <span className="text-sm text-foreground">Li e concordo com o Termo de Consentimento e Responsabilidade (versão {page.consent_version}).</span>
               </label>
               <Button onClick={acceptConsent} disabled={!accepted || busy} className="w-full rounded-xl">
                 {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Aceitar e continuar"}
