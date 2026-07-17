@@ -101,21 +101,7 @@ export default function KidsJoin() {
   }
 
   if (!user) {
-    const returnUrl = `/kids/join/${token}`;
-    return (
-      <div className="min-h-screen flex items-center justify-center p-6">
-        <Card className="max-w-md w-full rounded-3xl border-2">
-          <CardHeader><CardTitle>Cadastro / Login LeviKids</CardTitle></CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-sm text-slate-600">
-              {mode === "room" && room ? <>Sala: <b>{room.name}</b> — {page.name}</> : <>Igreja: <b>{page.name}</b></>}
-            </p>
-            <p className="text-xs text-slate-500">Se ainda não tem cadastro, crie sua conta agora. Nos próximos check-ins seu celular já vai lembrar do login.</p>
-            <Button onClick={() => nav("/auth", { state: { returnUrl } })} className="w-full rounded-xl">Entrar / Cadastrar</Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <InlineAuth pageName={page.name} roomLabel={mode === "room" && room ? room.name : null} />;
   }
 
   async function acceptConsent() {
@@ -274,6 +260,88 @@ export default function KidsJoin() {
           </Card>
         )}
       </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// Cadastro / Login inline (sem exigir código de convite de igreja)
+// ─────────────────────────────────────────────
+function InlineAuth({ pageName, roomLabel }: { pageName: string; roomLabel: string | null }) {
+  const [tab, setTab] = useState<"signup" | "login">("signup");
+  const [name, setName] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function doSignup() {
+    if (!name.trim() || !email.trim() || password.length < 6 || whatsapp.replace(/\D/g, "").length < 10) {
+      toast({ title: "Preencha todos os campos", description: "Senha com 6+ caracteres e WhatsApp válido.", variant: "destructive" });
+      return;
+    }
+    setBusy(true);
+    const { error } = await supabase.auth.signUp({
+      email: email.trim(),
+      password,
+      options: {
+        emailRedirectTo: window.location.href,
+        data: { name: name.trim(), whatsapp: whatsapp.replace(/\D/g, "") },
+      },
+    });
+    setBusy(false);
+    if (error) { toast({ title: "Erro ao criar conta", description: error.message, variant: "destructive" }); return; }
+    // tenta login automático (email confirm off / ou sessão imediata)
+    const { error: le } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    if (le) {
+      toast({ title: "Confirme seu email", description: "Enviamos um link de confirmação. Depois faça login aqui." });
+      setTab("login");
+    }
+  }
+
+  async function doLogin() {
+    if (!email.trim() || !password) return;
+    setBusy(true);
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    setBusy(false);
+    if (error) { toast({ title: "Falha no login", description: error.message, variant: "destructive" }); return; }
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-violet-50 via-white to-amber-50">
+      <Card className="max-w-md w-full rounded-3xl border-2">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Baby className="w-5 h-5 text-violet-600"/> LeviKids — {pageName}</CardTitle>
+          {roomLabel && <p className="text-xs text-slate-500">Sala: <b>{roomLabel}</b></p>}
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex gap-2 p-1 bg-slate-100 rounded-xl">
+            <button onClick={() => setTab("signup")} className={`flex-1 py-2 rounded-lg text-sm font-semibold ${tab==="signup" ? "bg-white shadow" : "text-slate-600"}`}>Criar conta</button>
+            <button onClick={() => setTab("login")} className={`flex-1 py-2 rounded-lg text-sm font-semibold ${tab==="login" ? "bg-white shadow" : "text-slate-600"}`}>Já tenho conta</button>
+          </div>
+
+          {tab === "signup" ? (
+            <>
+              <p className="text-xs text-slate-500">Cadastro do responsável pelas crianças. Nos próximos check-ins seu celular já vai lembrar do login.</p>
+              <div><Label>Nome completo</Label><Input value={name} onChange={e => setName(e.target.value)} /></div>
+              <div><Label>WhatsApp</Label><Input value={whatsapp} onChange={e => setWhatsapp(e.target.value)} placeholder="(11) 99999-9999" /></div>
+              <div><Label>Email</Label><Input type="email" value={email} onChange={e => setEmail(e.target.value)} /></div>
+              <div><Label>Senha</Label><Input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="mínimo 6 caracteres" /></div>
+              <Button onClick={doSignup} disabled={busy} className="w-full rounded-xl">
+                {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Criar conta e continuar"}
+              </Button>
+            </>
+          ) : (
+            <>
+              <div><Label>Email</Label><Input type="email" value={email} onChange={e => setEmail(e.target.value)} /></div>
+              <div><Label>Senha</Label><Input type="password" value={password} onChange={e => setPassword(e.target.value)} /></div>
+              <Button onClick={doLogin} disabled={busy} className="w-full rounded-xl">
+                {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Entrar"}
+              </Button>
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
