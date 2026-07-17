@@ -409,9 +409,10 @@ export default function KidsAdmin() {
         </div>
 
         <Tabs defaultValue="rooms" className="w-full">
-          <TabsList className="w-full grid grid-cols-3 md:grid-cols-7 rounded-2xl">
+          <TabsList className="w-full grid grid-cols-3 md:grid-cols-8 rounded-2xl">
             <TabsTrigger value="rooms" className="rounded-xl"><QrCode className="w-4 h-4 mr-1" /> Salas</TabsTrigger>
-            <TabsTrigger value="schedule" className="rounded-xl"><Clock className="w-4 h-4 mr-1" /> Horário</TabsTrigger>
+            <TabsTrigger value="schedule" className="rounded-xl"><CalendarDays className="w-4 h-4 mr-1" /> Dias</TabsTrigger>
+            <TabsTrigger value="rota" className="rounded-xl"><CalendarCheck className="w-4 h-4 mr-1" /> Escala</TabsTrigger>
             <TabsTrigger value="kids" className="rounded-xl"><ArrowLeftRight className="w-4 h-4 mr-1" /> Crianças</TabsTrigger>
             <TabsTrigger value="leaders" className="rounded-xl"><ShieldCheck className="w-4 h-4 mr-1" /> Líderes</TabsTrigger>
             <TabsTrigger value="teachers" className="rounded-xl"><Users className="w-4 h-4 mr-1" /> Professores</TabsTrigger>
