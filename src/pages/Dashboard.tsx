@@ -13,6 +13,9 @@ import {
   Church,
   ArrowLeftRight,
   Sparkles,
+  Copy,
+  ExternalLink,
+  Baby,
 } from 'lucide-react';
 import { userHasKidsAccess } from '@/lib/kidsAccess';
 import { Button } from '@/components/ui/button';
@@ -71,6 +74,7 @@ export default function Dashboard() {
   const [isFirstLogin, setIsFirstLogin] = useState(false);
   const [canCreateDepartment, setCanCreateDepartment] = useState(true);
   const [myChurchCode, setMyChurchCode] = useState<string | null>(null);
+  const [myKidsJoinToken, setMyKidsJoinToken] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>('');
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
   const [schedules, setSchedules] = useState<PersonalScheduleData[]>([]);
@@ -275,6 +279,14 @@ export default function Dashboard() {
     if (churches && churches.length > 0) {
       setCanCreateDepartment(true);
       setMyChurchCode((churches[0] as any).code || null);
+      // Fetch LeviKids page join token for this church (parent registration link)
+      const churchId = (churches[0] as any).id;
+      const { data: kidsPage } = await supabase
+        .from('kids_pages')
+        .select('static_qr_token')
+        .eq('church_id', churchId)
+        .maybeSingle();
+      if (kidsPage) setMyKidsJoinToken((kidsPage as any).static_qr_token || null);
       return;
     }
 
@@ -604,6 +616,48 @@ export default function Dashboard() {
             </div>
           </section>
         )}
+
+        {/* LeviKids parent registration link (church leader only) */}
+        {myKidsJoinToken && (
+          <section className="mt-4 mb-2">
+            <div className="rounded-3xl border-2 border-violet-200 bg-violet-50/60 p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <Baby className="w-4 h-4 text-violet-600" />
+                <p className="text-sm font-semibold">Link de cadastro dos responsáveis — LeviKids</p>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Compartilhe com os pais para cadastrarem seus filhos (foto e data de nascimento).
+              </p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 text-xs bg-background rounded-lg px-3 py-2 truncate">
+                  {`${window.location.origin}/kids/join/${myKidsJoinToken}`}
+                </code>
+                <button
+                  type="button"
+                  title="Copiar link"
+                  aria-label="Copiar link"
+                  className="p-2 rounded-lg bg-violet-600 text-white hover:opacity-90"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/kids/join/${myKidsJoinToken}`);
+                    toast({ title: 'Link copiado!' });
+                  }}
+                >
+                  <Copy className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  title="Abrir LeviKids"
+                  aria-label="Abrir LeviKids"
+                  className="p-2 rounded-lg border-2 border-violet-300 text-violet-700 hover:bg-violet-100"
+                  onClick={() => navigate('/kids')}
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
+
 
         {/* LeviKids access */}
         {hasKids && (

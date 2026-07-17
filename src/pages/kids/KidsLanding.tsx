@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
-import { Baby, Sparkles, ShieldCheck, QrCode } from "lucide-react";
+import { Baby, Sparkles, ShieldCheck, QrCode, Copy, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useMyKidsPage } from "@/hooks/useKidsPage";
 import { Loader2 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 export default function KidsLanding() {
   const { page, role, loading } = useMyKidsPage();
@@ -46,6 +47,41 @@ export default function KidsLanding() {
             </CardContent>
           </Card>
         </div>
+
+        {role === "leader" && page?.static_qr_token && (
+          <div className="mb-6 rounded-3xl border-2 border-violet-200 bg-white/80 backdrop-blur p-4 space-y-2">
+            <div className="flex items-center gap-2">
+              <Baby className="w-4 h-4 text-violet-600" />
+              <p className="text-sm font-semibold text-slate-900">Link de cadastro dos responsáveis</p>
+            </div>
+            <p className="text-xs text-slate-600">Compartilhe com os pais para cadastrarem seus filhos (foto e data de nascimento).</p>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 text-xs bg-slate-50 rounded-lg px-3 py-2 truncate">
+                {`${window.location.origin}/kids/join/${page.static_qr_token}`}
+              </code>
+              <button
+                type="button"
+                title="Copiar link"
+                aria-label="Copiar link"
+                className="p-2 rounded-lg bg-violet-600 text-white hover:opacity-90"
+                onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/kids/join/${page.static_qr_token}`);
+                  toast({ title: "Link copiado!" });
+                }}
+              >
+                <Copy className="w-4 h-4" />
+              </button>
+              <Link
+                to="/kids/admin"
+                title="Abrir painel LeviKids"
+                aria-label="Abrir painel LeviKids"
+                className="p-2 rounded-lg border-2 border-violet-300 text-violet-700 hover:bg-violet-100"
+              >
+                <ExternalLink className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-wrap gap-3 justify-center">
           {role === "leader" && <Button asChild size="lg" className="rounded-2xl"><Link to="/kids/admin">Painel do líder</Link></Button>}
