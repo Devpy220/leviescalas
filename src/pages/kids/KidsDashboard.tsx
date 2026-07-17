@@ -26,6 +26,7 @@ export default function KidsDashboard() {
   const [checkoutFor, setCheckoutFor] = useState<ActiveChild | null>(null);
   const [photos, setPhotos] = useState<Record<string, string>>({});
   const [pageName, setPageName] = useState<string>("");
+  const [linkedDeptId, setLinkedDeptId] = useState<string | null>(null);
 
   useEffect(() => { if (user) loadRooms(); }, [user]);
 
@@ -35,7 +36,11 @@ export default function KidsDashboard() {
     if (error) { console.error(error); setRooms([]); return; }
     const rs = (data || []) as Room[];
     setRooms(rs);
-    if (rs[0]) setCurrentRoom(rs[0]); else setCurrentRoom(null);
+    if (rs[0]) {
+      setCurrentRoom(rs[0]);
+      const { data: dept } = await (supabase.rpc as any)("kids_get_linked_department", { _page_id: rs[0].page_id });
+      setLinkedDeptId((dept as string) || null);
+    } else setCurrentRoom(null);
   }
 
   useEffect(() => {
