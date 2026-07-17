@@ -66,15 +66,38 @@ export default function KidsCheckin() {
     const t = m ? m[1] : raw.trim();
     // tenta como página primeiro (novo modelo)
     const { data: pageData } = await (supabase.rpc as any)("kids_lookup_page_by_token", { _token: t });
-    if (Array.isArray(pageData) && pageData[0]) {
-      setToken(t); setTokenMode("page"); return;
-    }
+    const isPage = Array.isArray(pageData) && pageData[0];
     // fallback: token de sala
-    const { data: roomData } = await (supabase.rpc as any)("kids_lookup_room_by_static_token", { _token: t });
-    if (Array.isArray(roomData) && roomData[0]) {
-      setToken(t); setTokenMode("room"); return;
+    const { data: roomData } = !isPage
+      ? await (supabase.rpc as any)("kids_lookup_room_by_static_token", { _token: t })
+      : { data: null } as any;
+    const isRoom = Array.isArray(roomData) && roomData[0];
+    if (!isPage && !isRoom) {
+      toast({ title: "QR não reconhecido", description: "Peça um QR válido da igreja.", variant: "destructive" });
+      return;
     }
-    toast({ title: "QR não reconhecido", description: "Peça um QR válido da igreja.", variant: "destructive" });
+
+    // Se o responsável ainda não tem cadastro (guardian) ou não tem filhos vinculados,
+    // manda pro fluxo de cadastro do LeviKids com o mesmo token.
+    if (user) {
+      const { data: g } = await supabase.from("kids_guardians").select("id").eq("user_id", user.id).maybeSingle();
+      let hasChildren = false;
+      if (g) {
+        const { count } = await supabase
+          .from("kids_guardian_children")
+          .select("child_id", { head: true, count: "exact" })
+          .eq("guardian_id", g.id);
+        hasChildren = (count ?? 0) > 0;
+      }
+      if (!g || !hasChildren) {
+        toast({ title: "Complete o cadastro", description: "Cadastre o(a) responsável e a(s) criança(s) para fazer check-in." });
+        nav(`/kids/join/${t}`);
+        return;
+      }
+    }
+
+    setToken(t);
+    setTokenMode(isPage ? "page" : "room");
   }
 
   async function startScan() {
