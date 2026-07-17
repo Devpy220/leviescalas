@@ -245,10 +245,15 @@ export default function Department() {
       // Fetch extra fields not in RPC
       const { data: deptExtra } = await (supabase as any)
         .from('departments_safe')
-        .select('max_blackout_dates, allow_sunday_double, kids_linked')
+        .select('max_blackout_dates, allow_sunday_double')
         .eq('id', id)
         .maybeSingle();
-      setKidsLinked(!!deptExtra?.kids_linked);
+      const { data: deptKids } = await (supabase as any)
+        .from('departments')
+        .select('kids_linked')
+        .eq('id', id)
+        .maybeSingle();
+      setKidsLinked(!!deptKids?.kids_linked);
 
       setDepartment({
         id: data.id,
