@@ -13,6 +13,9 @@ import {
   Church,
   ArrowLeftRight,
   Sparkles,
+  Copy,
+  ExternalLink,
+  Baby,
 } from 'lucide-react';
 import { userHasKidsAccess } from '@/lib/kidsAccess';
 import { Button } from '@/components/ui/button';
