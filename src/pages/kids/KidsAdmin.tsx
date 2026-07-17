@@ -69,6 +69,8 @@ export default function KidsAdmin() {
     if (!page) return;
     const { data } = await supabase.from("kids_children").select("id, full_name, birth_date, current_room_id").eq("page_id", page.id).order("full_name");
     setKids((data || []) as any);
+    const { data: ac } = await supabase.from("kids_checkins").select("child_id").eq("page_id", page.id).is("checkout_at", null);
+    setActiveCheckins(new Set((ac || []).map((r: any) => r.child_id)));
   }
 
   async function saveSchedule() {
