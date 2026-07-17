@@ -4,17 +4,16 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, AlertTriangle, PhoneCall, KeyRound, Eye, EyeOff, QrCode, Download, FileDown } from "lucide-react";
+import { Loader2, AlertTriangle, PhoneCall, LogOut, QrCode, Download, FileDown } from "lucide-react";
 import { qrToDataUrl, KIDS_JOIN_BASE, downloadPng, downloadPdf } from "@/lib/kidsQr";
 import { getKidsPhotoUrl } from "@/lib/kidsStorage";
 import { Link } from "react-router-dom";
 
 interface Room { id: string; name: string; color: string; page_id: string; static_qr_token: string; is_inclusion?: boolean; }
 interface ActiveChild {
-  checkin_id: string; child_id: string; room_id: string; pickup_code: string; checkin_at: string;
+  checkin_id: string; child_id: string; room_id: string; checkin_at: string;
   full_name: string; birth_date: string; allergies: string | null; restrictions: string | null; photo_path: string | null;
 }
 
@@ -23,10 +22,8 @@ export default function KidsDashboard() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [currentRoom, setCurrentRoom] = useState<Room | null>(null);
   const [items, setItems] = useState<ActiveChild[]>([]);
-  const [reveal, setReveal] = useState<Set<string>>(new Set());
   const [qrUrl, setQrUrl] = useState<string | null>(null);
   const [checkoutFor, setCheckoutFor] = useState<ActiveChild | null>(null);
-  const [checkoutCode, setCheckoutCode] = useState("");
   const [photos, setPhotos] = useState<Record<string, string>>({});
   const [pageName, setPageName] = useState<string>("");
 
@@ -62,7 +59,6 @@ export default function KidsDashboard() {
   async function generateQr() {
     if (!currentRoom) return;
     const url = `${KIDS_JOIN_BASE}/${currentRoom.static_qr_token}`;
-    // usamos apenas o token no QR — o scanner extrai
     const dataUrl = await qrToDataUrl(currentRoom.static_qr_token, 400);
     setQrUrl(dataUrl);
     return url;
@@ -71,12 +67,12 @@ export default function KidsDashboard() {
   async function loadActive() {
     if (!currentRoom) return;
     const { data } = await supabase.from("kids_checkins")
-      .select("id, child_id, room_id, pickup_code, checkin_at, kids_children(full_name, birth_date, allergies, restrictions, photo_path)")
+      .select("id, child_id, room_id, checkin_at, kids_children(full_name, birth_date, allergies, restrictions, photo_path)")
       .eq("room_id", currentRoom.id)
       .is("checkout_at", null)
       .order("checkin_at");
     const mapped = (data || []).map((r: any) => ({
-      checkin_id: r.id, child_id: r.child_id, room_id: r.room_id, pickup_code: r.pickup_code, checkin_at: r.checkin_at,
+      checkin_id: r.id, child_id: r.child_id, room_id: r.room_id, checkin_at: r.checkin_at,
       full_name: r.kids_children?.full_name, birth_date: r.kids_children?.birth_date,
       allergies: r.kids_children?.allergies, restrictions: r.kids_children?.restrictions,
       photo_path: r.kids_children?.photo_path,
@@ -91,16 +87,16 @@ export default function KidsDashboard() {
   }
 
   async function performCheckout() {
-    if (!checkoutFor || !checkoutCode) return;
-    const { error } = await supabase.rpc("kids_perform_checkout", {
-      _checkin_id: checkoutFor.checkin_id, _pickup_code: checkoutCode
+    if (!checkoutFor) return;
+    const { error } = await (supabase.rpc as any)("kids_perform_checkout", {
+      _checkin_id: checkoutFor.checkin_id
     });
-    if (error) { toast({ title: "Código inválido", description: error.message, variant: "destructive" }); return; }
+    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
     supabase.functions.invoke("kids-notify-whatsapp", {
       body: { event: "checkout", child_id: checkoutFor.child_id, room_id: checkoutFor.room_id }
     }).catch(() => {});
     toast({ title: "Retirada confirmada" });
-    setCheckoutFor(null); setCheckoutCode("");
+    setCheckoutFor(null);
     loadActive();
   }
 
@@ -173,7 +169,6 @@ export default function KidsDashboard() {
                   <div className="grid md:grid-cols-2 gap-3">
                     {items.map(it => {
                       const age = Math.floor((Date.now() - new Date(it.birth_date).getTime()) / (365.25 * 24 * 3600 * 1000));
-                      const revealed = reveal.has(it.checkin_id);
                       return (
                         <div key={it.checkin_id} className="p-4 rounded-2xl border-2 bg-white">
                           <div className="flex gap-3">
@@ -195,12 +190,12 @@ export default function KidsDashboard() {
                           </div>
 
                           <div className="flex gap-2 mt-3">
-                            <button onClick={() => { const s = new Set(reveal); if (revealed) { s.delete(it.checkin_id); } else { s.add(it.checkin_id); } setReveal(s); }}
-                              className="flex-1 px-3 py-2 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1">
-                              {revealed ? <><EyeOff className="w-3 h-3" /> {it.pickup_code}</> : <><Eye className="w-3 h-3" /> Ver código</>}
-                            </button>
-                            <Button size="sm" variant="secondary" onClick={() => callGuardian(it)} className="rounded-xl"><PhoneCall className="w-4 h-4" /></Button>
-                            <Button size="sm" onClick={() => setCheckoutFor(it)} className="rounded-xl"><KeyRound className="w-4 h-4 mr-1" /> Sair</Button>
+                            <Button size="sm" variant="secondary" onClick={() => callGuardian(it)} className="rounded-xl flex-1">
+                              <PhoneCall className="w-4 h-4 mr-1" /> Chamar responsável
+                            </Button>
+                            <Button size="sm" onClick={() => setCheckoutFor(it)} className="rounded-xl flex-1">
+                              <LogOut className="w-4 h-4 mr-1" /> Retirar
+                            </Button>
                           </div>
                         </div>
                       );
@@ -213,17 +208,20 @@ export default function KidsDashboard() {
         )}
       </div>
 
-      <Dialog open={!!checkoutFor} onOpenChange={o => !o && setCheckoutFor(null)}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Check-out de {checkoutFor?.full_name}</DialogTitle></DialogHeader>
-          <p className="text-sm text-slate-600">Peça ao responsável o código de 4 dígitos.</p>
-          <Input value={checkoutCode} onChange={e => setCheckoutCode(e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="0000" className="text-center text-2xl tracking-[0.5em] font-bold" maxLength={4} />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCheckoutFor(null)}>Cancelar</Button>
-            <Button onClick={performCheckout} disabled={checkoutCode.length !== 4}>Confirmar retirada</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AlertDialog open={!!checkoutFor} onOpenChange={o => !o && setCheckoutFor(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar retirada</AlertDialogTitle>
+            <AlertDialogDescription>
+              Confirma que <b>{checkoutFor?.full_name}</b> está sendo retirado(a) por um responsável autorizado?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={performCheckout}>Confirmar retirada</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
