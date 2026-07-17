@@ -117,10 +117,10 @@ export default function KidsDashboard() {
   if (!user) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin" /></div>;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-amber-50 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-amber-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-4">
       <div className="max-w-5xl mx-auto space-y-4">
         <div className="flex justify-between items-center flex-wrap gap-3">
-          <h1 className="text-2xl font-bold text-slate-900">Dashboard do professor</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Dashboard do professor</h1>
           <div className="flex gap-2 items-center">
             {currentRoom?.is_inclusion && (
               <Button asChild variant="secondary" className="rounded-xl">
@@ -139,9 +139,9 @@ export default function KidsDashboard() {
         </div>
 
         {linkedDeptId && (
-          <Card className="rounded-2xl border-2 border-violet-200 bg-gradient-to-r from-violet-50 to-amber-50">
+          <Card className="rounded-2xl border-2 border-violet-200 bg-gradient-to-r from-violet-50 to-amber-50 dark:from-violet-950/40 dark:to-amber-950/30">
             <CardContent className="p-3 flex items-center gap-2 flex-wrap">
-              <p className="text-xs text-slate-700 flex-1 min-w-[200px]">📌 <b>Área do professor:</b> marque sua disponibilidade, datas de bloqueio e veja os avisos do líder no departamento vinculado.</p>
+              <p className="text-xs text-slate-700 dark:text-slate-200 flex-1 min-w-[200px]">📌 <b>Área do professor:</b> marque sua disponibilidade, datas de bloqueio e veja os avisos do líder no departamento vinculado.</p>
               <Button asChild size="icon" variant="outline" className="rounded-xl border-violet-300" title="Abrir Professores Kids" aria-label="Abrir Professores Kids">
                 <Link to={`/departments/${linkedDeptId}`}><ExternalLink className="w-4 h-4" /></Link>
               </Button>
@@ -149,7 +149,7 @@ export default function KidsDashboard() {
           </Card>
         )}
 
-        {rooms.length === 0 && <Card className="rounded-3xl"><CardContent className="p-8 text-center text-slate-600">Você não está escalado(a) em nenhuma sala hoje. Fale com o líder do LeviKids se precisar acessar.</CardContent></Card>}
+        {rooms.length === 0 && <Card className="rounded-3xl"><CardContent className="p-8 text-center text-slate-600 dark:text-slate-300">Você não está escalado(a) em nenhuma sala hoje. Fale com o líder do LeviKids se precisar acessar.</CardContent></Card>}
 
         {currentRoom && (
           <>
@@ -161,7 +161,7 @@ export default function KidsDashboard() {
                 {qrUrl ? (
                   <div className="text-center space-y-3">
                     <img src={qrUrl} alt="QR fixo" className="mx-auto rounded-2xl border-4" style={{ borderColor: currentRoom.color, maxWidth: 260 }} />
-                    <p className="text-xs text-slate-500">Este QR não muda. Válido dentro da janela de horário configurada pelo líder.</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Este QR não muda. Válido dentro da janela de horário configurada pelo líder.</p>
                     <div className="flex gap-2 justify-center flex-wrap">
                       <Button variant="outline" size="sm" onClick={() => downloadPng(currentRoom.static_qr_token, `qr-checkin-${currentRoom.name}.png`)} className="rounded-xl">
                         <Download className="w-4 h-4 mr-1" /> PNG
@@ -172,7 +172,7 @@ export default function KidsDashboard() {
                     </div>
                   </div>
                 ) : (
-                  <p className="text-sm text-slate-500 text-center py-4">Gerando QR…</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-4">Gerando QR…</p>
                 )}
               </CardContent>
             </Card>
@@ -181,13 +181,13 @@ export default function KidsDashboard() {
               <CardHeader><CardTitle>Crianças presentes ({items.length})</CardTitle></CardHeader>
               <CardContent>
                 {items.length === 0 ? (
-                  <p className="text-sm text-slate-500 text-center py-6">Nenhuma criança em check-in.</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-6">Nenhuma criança em check-in.</p>
                 ) : (
                   <div className="grid md:grid-cols-2 gap-3">
                     {items.map(it => {
                       const age = Math.floor((Date.now() - new Date(it.birth_date).getTime()) / (365.25 * 24 * 3600 * 1000));
                       return (
-                        <div key={it.checkin_id} className="p-4 rounded-2xl border-2 bg-white">
+                        <div key={it.checkin_id} className="p-4 rounded-2xl border-2 bg-white dark:bg-slate-900">
                           <div className="flex gap-3">
                             {photos[it.child_id] ? (
                               <img src={photos[it.child_id]} alt="" className="w-16 h-16 rounded-2xl object-cover border-2 border-violet-200" />
@@ -195,8 +195,8 @@ export default function KidsDashboard() {
                               <div className="w-16 h-16 rounded-2xl bg-violet-100 text-violet-700 font-bold flex items-center justify-center text-xl">{it.full_name?.[0]}</div>
                             )}
                             <div className="flex-1 min-w-0">
-                              <p className="font-bold text-slate-900 truncate">{it.full_name}</p>
-                              <p className="text-xs text-slate-500">{age} anos</p>
+                              <p className="font-bold text-slate-900 dark:text-slate-100 truncate">{it.full_name}</p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">{age} anos</p>
                               {it.allergies && (
                                 <Badge className="mt-1 bg-red-100 text-red-700 hover:bg-red-100 border-red-200">
                                   <AlertTriangle className="w-3 h-3 mr-1" /> Alergia: {it.allergies}

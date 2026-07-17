@@ -38,14 +38,14 @@ export default function KidsReports() {
   }
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin"/></div>;
-  if (role !== "leader") return <div className="min-h-screen flex items-center justify-center text-slate-600 p-6 text-center">Somente líderes têm acesso aos relatórios.</div>;
+  if (role !== "leader") return <div className="min-h-screen flex items-center justify-center text-slate-600 dark:text-slate-300 p-6 text-center">Somente líderes têm acesso aos relatórios.</div>;
   if (!page) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-amber-50 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-amber-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-4">
       <div className="max-w-4xl mx-auto space-y-4">
         <div className="flex justify-between items-center flex-wrap gap-3">
-          <h1 className="text-2xl font-bold text-slate-900">Relatórios · {page.name}</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Relatórios · {page.name}</h1>
           <Button asChild variant="outline" className="rounded-xl"><Link to="/kids/admin">← Painel</Link></Button>
         </div>
 
@@ -63,14 +63,14 @@ export default function KidsReports() {
                 <Button size="sm" variant="outline" onClick={()=>csv(dropoff, "kids-desistencias.csv")}>Exportar CSV</Button>
               </CardHeader>
               <CardContent>
-                <p className="text-xs text-slate-500 mb-3">Crianças com pelo menos 3 check-ins entre 30 e 90 dias atrás, mas 0 check-ins nos últimos 30 dias.</p>
-                {busy ? <Loader2 className="w-5 h-5 animate-spin mx-auto"/> : dropoff.length === 0 ? <p className="text-sm text-center text-slate-500 py-6">🎉 Nenhuma família desistindo.</p> : (
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Crianças com pelo menos 3 check-ins entre 30 e 90 dias atrás, mas 0 check-ins nos últimos 30 dias.</p>
+                {busy ? <Loader2 className="w-5 h-5 animate-spin mx-auto"/> : dropoff.length === 0 ? <p className="text-sm text-center text-slate-500 dark:text-slate-400 py-6">🎉 Nenhuma família desistindo.</p> : (
                   <div className="space-y-2">
                     {dropoff.map((r:any) => (
-                      <div key={r.child_id} className="p-3 rounded-xl border bg-white flex justify-between items-center gap-2">
+                      <div key={r.child_id} className="p-3 rounded-xl border bg-white dark:bg-slate-900 flex justify-between items-center gap-2">
                         <div className="min-w-0">
                           <p className="font-semibold text-sm">{r.full_name}</p>
-                          <p className="text-xs text-slate-500 truncate">Resp.: {r.guardian_name || "—"} · {r.checkins_prev} presenças anteriores</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate">Resp.: {r.guardian_name || "—"} · {r.checkins_prev} presenças anteriores</p>
                           <p className="text-[11px] text-slate-400">Última visita: {r.last_visit ? new Date(r.last_visit).toLocaleDateString("pt-BR") : "—"}</p>
                         </div>
                         {r.guardian_phone && (
@@ -91,11 +91,11 @@ export default function KidsReports() {
                 <Button size="sm" variant="outline" onClick={()=>csv(visitors, "kids-visitantes.csv")}>Exportar CSV</Button>
               </CardHeader>
               <CardContent>
-                <p className="text-xs text-slate-500 mb-3">Crianças com 1 ou 2 check-ins nos últimos 90 dias.</p>
-                {busy ? <Loader2 className="w-5 h-5 animate-spin mx-auto"/> : visitors.length === 0 ? <p className="text-sm text-center text-slate-500 py-6">Sem visitantes recentes.</p> : (
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Crianças com 1 ou 2 check-ins nos últimos 90 dias.</p>
+                {busy ? <Loader2 className="w-5 h-5 animate-spin mx-auto"/> : visitors.length === 0 ? <p className="text-sm text-center text-slate-500 dark:text-slate-400 py-6">Sem visitantes recentes.</p> : (
                   <div className="space-y-2">
                     {visitors.map((r:any) => (
-                      <div key={r.child_id} className="p-3 rounded-xl border bg-white flex justify-between items-center">
+                      <div key={r.child_id} className="p-3 rounded-xl border bg-white dark:bg-slate-900 flex justify-between items-center">
                         <p className="font-semibold text-sm">{r.full_name}</p>
                         <Badge variant="outline">{r.checkins} visita(s)</Badge>
                       </div>
@@ -113,11 +113,11 @@ export default function KidsReports() {
                 <Button size="sm" variant="outline" onClick={()=>csv(needs, "kids-necessidades.csv")}>Exportar CSV</Button>
               </CardHeader>
               <CardContent>
-                {busy ? <Loader2 className="w-5 h-5 animate-spin mx-auto"/> : needs.length === 0 ? <p className="text-sm text-center text-slate-500 py-6">Nenhuma alergia ou restrição cadastrada.</p> : (
+                {busy ? <Loader2 className="w-5 h-5 animate-spin mx-auto"/> : needs.length === 0 ? <p className="text-sm text-center text-slate-500 dark:text-slate-400 py-6">Nenhuma alergia ou restrição cadastrada.</p> : (
                   <div className="space-y-2">
                     {needs.map((r:any) => (
-                      <div key={r.child_id} className="p-3 rounded-xl border bg-white">
-                        <p className="font-semibold text-sm">{r.full_name} <span className="text-xs text-slate-500 font-normal">· {r.current_room || "sem sala"}</span></p>
+                      <div key={r.child_id} className="p-3 rounded-xl border bg-white dark:bg-slate-900">
+                        <p className="font-semibold text-sm">{r.full_name} <span className="text-xs text-slate-500 dark:text-slate-400 font-normal">· {r.current_room || "sem sala"}</span></p>
                         {r.allergies && <p className="text-xs text-red-700 mt-1">🚨 Alergia: {r.allergies}</p>}
                         {r.restrictions && <p className="text-xs text-amber-700 mt-1">⚠ Restrição: {r.restrictions}</p>}
                       </div>

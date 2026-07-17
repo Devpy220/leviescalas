@@ -91,12 +91,12 @@ export default function KidsFamilyFeed() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-amber-50 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-amber-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-4">
       <div className="max-w-2xl mx-auto space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2"><MessageCircle className="w-6 h-6 text-violet-600"/> Mensagens <LeviKidsWordmark /></h1>
-            <p className="text-sm text-slate-600">Comunicação da equipe kids com as famílias.</p>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2"><MessageCircle className="w-6 h-6 text-violet-600"/> Mensagens <LeviKidsWordmark /></h1>
+            <p className="text-sm text-slate-600 dark:text-slate-300">Comunicação da equipe kids com as famílias.</p>
           </div>
           <div className="flex gap-2">
             <Button asChild variant="outline" className="rounded-xl"><Link to="/kids">← Kids</Link></Button>
@@ -106,7 +106,7 @@ export default function KidsFamilyFeed() {
 
         {loading ? <div className="text-center py-8"><Loader2 className="w-6 h-6 animate-spin mx-auto"/></div> :
          msgs.length === 0 ? (
-          <Card className="rounded-3xl"><CardContent className="p-8 text-center text-slate-600">Nenhuma mensagem ainda.</CardContent></Card>
+          <Card className="rounded-3xl"><CardContent className="p-8 text-center text-slate-600 dark:text-slate-300">Nenhuma mensagem ainda.</CardContent></Card>
         ) : msgs.map(m => (
           <Card key={m.id} className="rounded-2xl border-2">
             <CardHeader className="pb-2">
@@ -116,7 +116,7 @@ export default function KidsFamilyFeed() {
                   <div className="flex gap-2 mt-1 flex-wrap">
                     <Badge variant="outline" className="text-[10px]">{m.sender_role === "leader" ? "Líder" : "Professor"}</Badge>
                     {m.room_id ? <Badge variant="secondary" className="text-[10px]">Sala</Badge> : <Badge className="text-[10px] bg-violet-100 text-violet-700 border-violet-200">Página inteira</Badge>}
-                    <span className="text-[10px] text-slate-500">{new Date(m.created_at).toLocaleString("pt-BR")}</span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400">{new Date(m.created_at).toLocaleString("pt-BR")}</span>
                   </div>
                 </div>
                 {canPost && m.sender_id === user?.id && (
@@ -125,7 +125,7 @@ export default function KidsFamilyFeed() {
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-slate-700 whitespace-pre-wrap">{m.body}</p>
+              <p className="text-sm text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{m.body}</p>
               {m.media_url && <a href={m.media_url} target="_blank" rel="noreferrer" className="text-xs text-violet-600 underline block mt-2 break-all">📎 {m.media_url}</a>}
             </CardContent>
           </Card>

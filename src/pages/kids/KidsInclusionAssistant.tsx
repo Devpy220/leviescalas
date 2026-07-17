@@ -86,18 +86,18 @@ export default function KidsInclusionAssistant() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-amber-50 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-amber-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-4">
       <div className="max-w-3xl mx-auto space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2"><Sparkles className="w-6 h-6 text-violet-600" /> Sala de Inclusão · Assistente IA</h1>
-            <p className="text-sm text-slate-600">Sugestões práticas para acolher cada criança durante o culto.</p>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2"><Sparkles className="w-6 h-6 text-violet-600" /> Sala de Inclusão · Assistente IA</h1>
+            <p className="text-sm text-slate-600 dark:text-slate-300">Sugestões práticas para acolher cada criança durante o culto.</p>
           </div>
           <Button asChild variant="outline" className="rounded-xl"><Link to="/kids/dashboard">← Voltar</Link></Button>
         </div>
 
         {inclusionRooms.length === 0 && (
-          <Card className="rounded-3xl border-2"><CardContent className="p-8 text-center text-slate-600">Nenhuma sala de inclusão configurada. Peça ao líder para marcar uma sala como "Sala de inclusão".</CardContent></Card>
+          <Card className="rounded-3xl border-2"><CardContent className="p-8 text-center text-slate-600 dark:text-slate-300">Nenhuma sala de inclusão configurada. Peça ao líder para marcar uma sala como "Sala de inclusão".</CardContent></Card>
         )}
 
         {children.length > 0 && (
@@ -110,7 +110,7 @@ export default function KidsInclusionAssistant() {
                     className={`text-left p-3 rounded-xl border-2 hover:bg-violet-50 ${selected?.id===c.id?"border-violet-400 bg-violet-50":"border-slate-200"}`}>
                     <p className="font-semibold flex items-center gap-2"><Baby className="w-4 h-4 text-violet-500"/>{c.full_name}</p>
                     {c.restrictions && <p className="text-xs text-amber-700 mt-1">⚠ {c.restrictions}</p>}
-                    {c.notes && <p className="text-xs text-slate-500 mt-1 line-clamp-2">{c.notes}</p>}
+                    {c.notes && <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">{c.notes}</p>}
                   </button>
                 ))}
               </div>
@@ -139,7 +139,7 @@ export default function KidsInclusionAssistant() {
                       {saving ? <Loader2 className="w-4 h-4 animate-spin"/> : <><Save className="w-4 h-4 mr-1"/>Salvar no perfil</>}
                     </Button>
                   </div>
-                  <p className="text-[11px] text-slate-500">Sugestões geradas por IA. Nunca substituem orientação médica ou pedagógica profissional.</p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">Sugestões geradas por IA. Nunca substituem orientação médica ou pedagógica profissional.</p>
                 </div>
               )}
             </CardContent>

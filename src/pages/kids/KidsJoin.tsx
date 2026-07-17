@@ -97,7 +97,7 @@ export default function KidsJoin() {
 
   if (!page) {
     return <div className="min-h-screen flex items-center justify-center p-6 text-center">
-      <div><h1 className="text-2xl font-bold mb-2">QR inválido</h1><p className="text-slate-600">Este link de cadastro não é válido.</p></div>
+      <div><h1 className="text-2xl font-bold mb-2">QR inválido</h1><p className="text-slate-600 dark:text-slate-300">Este link de cadastro não é válido.</p></div>
     </div>;
   }
 
@@ -179,21 +179,21 @@ export default function KidsJoin() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-amber-50 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-amber-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-4">
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-6">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white shadow-sm text-slate-700 text-sm font-semibold mb-3">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white dark:bg-slate-900 shadow-sm text-slate-700 dark:text-slate-200 text-sm font-semibold mb-3">
             <Baby className="w-4 h-4 text-violet-600" /> {page.name}
           </div>
           {mode === "room" && room ? (
             <>
-              <h1 className="text-2xl font-bold text-slate-900">Sala: {room.name}</h1>
-              <p className="text-sm text-slate-600">Faixa etária: {room.age_min}–{room.age_max} anos</p>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Sala: {room.name}</h1>
+              <p className="text-sm text-slate-600 dark:text-slate-300">Faixa etária: {room.age_min}–{room.age_max} anos</p>
             </>
           ) : (
             <>
-              <h1 className="text-2xl font-bold text-slate-900">Cadastro <LeviKidsWordmark /></h1>
-              <p className="text-sm text-slate-600">A sala é escolhida automaticamente pela idade da criança.</p>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Cadastro <LeviKidsWordmark /></h1>
+              <p className="text-sm text-slate-600 dark:text-slate-300">A sala é escolhida automaticamente pela idade da criança.</p>
             </>
           )}
         </div>
@@ -223,7 +223,7 @@ export default function KidsJoin() {
               <div>
                 <Label>CPF *</Label>
                 <Input inputMode="numeric" value={guardian.cpf} onChange={e => setGuardian({ ...guardian, cpf: maskCPF(e.target.value) })} placeholder="000.000.000-00" maxLength={14} />
-                <p className="text-[10px] text-slate-500 mt-1">Necessário apenas para a área Kids (segurança na retirada da criança).</p>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Necessário apenas para a área Kids (segurança na retirada da criança).</p>
               </div>
               <div><Label>Data de nascimento (precisa ser 18+) *</Label><Input type="date" value={guardian.birth_date} onChange={e => setGuardian({ ...guardian, birth_date: e.target.value })} /></div>
               <div><Label>Foto (opcional)</Label><Input type="file" accept="image/*" onChange={e => setGuardian({ ...guardian, photoFile: e.target.files?.[0] || null })} /></div>
@@ -244,11 +244,11 @@ export default function KidsJoin() {
                     <button onClick={() => setChildren(children.filter((_, idx) => idx !== i))} className="absolute top-2 right-2 text-red-500"><Trash2 className="w-4 h-4" /></button>
                   )}
                   <div><Label>Nome completo *</Label><Input value={c.full_name} onChange={e => { const n = [...children]; n[i].full_name = e.target.value; setChildren(n); }} /></div>
-                  <div><Label>Data de nascimento *</Label><Input type="date" value={c.birth_date} onChange={e => { const n = [...children]; n[i].birth_date = e.target.value; setChildren(n); }} /><p className="text-[10px] text-slate-500 mt-1">A idade define automaticamente a sala no check-in.</p></div>
+                  <div><Label>Data de nascimento *</Label><Input type="date" value={c.birth_date} onChange={e => { const n = [...children]; n[i].birth_date = e.target.value; setChildren(n); }} /><p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">A idade define automaticamente a sala no check-in.</p></div>
                   <div><Label>Alergias</Label><Input value={c.allergies} onChange={e => { const n = [...children]; n[i].allergies = e.target.value; setChildren(n); }} placeholder="Ex.: amendoim, leite" /></div>
                   <div><Label>Restrições</Label><Input value={c.restrictions} onChange={e => { const n = [...children]; n[i].restrictions = e.target.value; setChildren(n); }} /></div>
                   <div><Label>Observações</Label><Textarea rows={2} value={c.notes} onChange={e => { const n = [...children]; n[i].notes = e.target.value; setChildren(n); }} /></div>
-                  <div><Label className="text-red-600">Foto da criança *</Label><Input type="file" accept="image/*" required onChange={e => { const n = [...children]; n[i].photoFile = e.target.files?.[0] || null; setChildren(n); }} /><p className="text-[10px] text-slate-500 mt-1">Obrigatória para identificação no check-in.</p></div>
+                  <div><Label className="text-red-600">Foto da criança *</Label><Input type="file" accept="image/*" required onChange={e => { const n = [...children]; n[i].photoFile = e.target.files?.[0] || null; setChildren(n); }} /><p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Obrigatória para identificação no check-in.</p></div>
                 </div>
               ))}
               <Button variant="outline" onClick={() => setChildren([...children, { full_name: "", birth_date: "", allergies: "", restrictions: "", notes: "", photoFile: null }])} className="w-full rounded-xl">
@@ -309,21 +309,21 @@ function InlineAuth({ pageName, roomLabel }: { pageName: string; roomLabel: stri
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-violet-50 via-white to-amber-50">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-violet-50 via-white to-amber-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
       <Card className="max-w-md w-full rounded-3xl border-2">
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Baby className="w-5 h-5 text-violet-600"/> <LeviKidsWordmark /> — {pageName}</CardTitle>
-          {roomLabel && <p className="text-xs text-slate-500">Sala: <b>{roomLabel}</b></p>}
+          {roomLabel && <p className="text-xs text-slate-500 dark:text-slate-400">Sala: <b>{roomLabel}</b></p>}
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex gap-2 p-1 bg-slate-100 rounded-xl">
-            <button onClick={() => setTab("signup")} className={`flex-1 py-2 rounded-lg text-sm font-semibold ${tab==="signup" ? "bg-white shadow" : "text-slate-600"}`}>Criar conta</button>
-            <button onClick={() => setTab("login")} className={`flex-1 py-2 rounded-lg text-sm font-semibold ${tab==="login" ? "bg-white shadow" : "text-slate-600"}`}>Já tenho conta</button>
+            <button onClick={() => setTab("signup")} className={`flex-1 py-2 rounded-lg text-sm font-semibold ${tab==="signup" ? "bg-white dark:bg-slate-900 shadow" : "text-slate-600 dark:text-slate-300"}`}>Criar conta</button>
+            <button onClick={() => setTab("login")} className={`flex-1 py-2 rounded-lg text-sm font-semibold ${tab==="login" ? "bg-white dark:bg-slate-900 shadow" : "text-slate-600 dark:text-slate-300"}`}>Já tenho conta</button>
           </div>
 
           {tab === "signup" ? (
             <>
-              <p className="text-xs text-slate-500">Cadastro do responsável pelas crianças. Nos próximos check-ins seu celular já vai lembrar do login.</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Cadastro do responsável pelas crianças. Nos próximos check-ins seu celular já vai lembrar do login.</p>
               <div><Label>Nome completo</Label><Input value={name} onChange={e => setName(e.target.value)} /></div>
               <div><Label>WhatsApp</Label><Input value={whatsapp} onChange={e => setWhatsapp(e.target.value)} placeholder="(11) 99999-9999" /></div>
               <div><Label>Email</Label><Input type="email" value={email} onChange={e => setEmail(e.target.value)} /></div>

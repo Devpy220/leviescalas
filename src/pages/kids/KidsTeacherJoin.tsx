@@ -47,7 +47,7 @@ export default function KidsTeacherJoin() {
 
   if (!rows.length) {
     return <div className="min-h-screen flex items-center justify-center p-6 text-center">
-      <div><h1 className="text-2xl font-bold mb-2">Link inválido</h1><p className="text-slate-600">Este link para professores não é válido.</p></div>
+      <div><h1 className="text-2xl font-bold mb-2">Link inválido</h1><p className="text-slate-600 dark:text-slate-300">Este link para professores não é válido.</p></div>
     </div>;
   }
 
@@ -60,7 +60,7 @@ export default function KidsTeacherJoin() {
           <SEO title={`Ser professor(a) — ${page.name}`} description="Cadastre-se como professor(a) no LeviKids." path={`/kids/teacher-join/${token}`} />
           <CardHeader><CardTitle>Ser professor(a) no {page.name}</CardTitle></CardHeader>
           <CardContent className="space-y-3">
-            <p className="text-sm text-slate-600">Entre ou crie sua conta para continuar. Menores de 18 anos precisam de autorização do responsável.</p>
+            <p className="text-sm text-slate-600 dark:text-slate-300">Entre ou crie sua conta para continuar. Menores de 18 anos precisam de autorização do responsável.</p>
             <Button className="w-full" onClick={() => nav("/auth", { state: { returnUrl: `/kids/teacher-join/${token}` } })}>Entrar / Cadastrar</Button>
           </CardContent>
         </Card>
@@ -69,15 +69,15 @@ export default function KidsTeacherJoin() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-amber-50 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-amber-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-4">
       <SEO title={`Ser professor(a) — ${page.name}`} description="Escolha sua sala no LeviKids." path={`/kids/teacher-join/${token}`} />
       <div className="max-w-2xl mx-auto space-y-4">
         <div className="text-center py-4">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white shadow-sm text-slate-700 text-sm font-semibold">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white dark:bg-slate-900 shadow-sm text-slate-700 dark:text-slate-200 text-sm font-semibold">
             <GraduationCap className="w-4 h-4 text-violet-600" /> {page.name}
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 mt-2">Escolha a sala que você vai servir</h1>
-          <p className="text-sm text-slate-600">Você pode ser adicionado(a) a mais de uma sala repetindo o processo.</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-2">Escolha a sala que você vai servir</h1>
+          <p className="text-sm text-slate-600 dark:text-slate-300">Você pode ser adicionado(a) a mais de uma sala repetindo o processo.</p>
         </div>
 
         {done && <Alert><AlertDescription>Redirecionando…</AlertDescription></Alert>}
@@ -88,7 +88,7 @@ export default function KidsTeacherJoin() {
               <CardContent className="p-4 flex items-center justify-between gap-3">
                 <div>
                   <p className="font-semibold">{r.room_name}</p>
-                  <p className="text-xs text-slate-500">Faixa etária: {r.age_min}–{r.age_max} anos</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Faixa etária: {r.age_min}–{r.age_max} anos</p>
                 </div>
                 <Button onClick={() => pickRoom(r.room_id)} disabled={!!busy}>
                   {busy === r.room_id ? <Loader2 className="w-4 h-4 animate-spin" /> : "Servir aqui"}
@@ -98,7 +98,7 @@ export default function KidsTeacherJoin() {
           ))}
         </div>
 
-        <p className="text-xs text-center text-slate-500">
+        <p className="text-xs text-center text-slate-500 dark:text-slate-400">
           Menor de 18? Peça ao seu responsável para acessar <Link to="/authorize-minor" className="underline">/authorize-minor</Link> e autorizar.
         </p>
       </div>
