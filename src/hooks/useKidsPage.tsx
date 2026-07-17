@@ -10,6 +10,7 @@ export interface KidsPage {
   consent_version: string;
   consent_text: string;
   primary_color: string;
+  static_qr_token?: string | null;
 }
 
 export function useMyKidsPage() {
