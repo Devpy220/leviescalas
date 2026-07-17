@@ -10,7 +10,7 @@ import { Loader2, Camera, ShieldCheck, KeyRound, AlertTriangle } from "lucide-re
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 interface Child { id: string; full_name: string; birth_date: string; photo_path: string | null; }
-interface ActiveCheckin { id: string; child_id: string; pickup_code: string; checkin_at: string; kids_children: { full_name: string } | null; kids_rooms: { name: string } | null; }
+interface ActiveCheckin { id: string; child_id: string; checkin_at: string; kids_children: { full_name: string } | null; kids_rooms: { name: string } | null; }
 
 export default function KidsCheckin() {
   const { user, loading: authLoading } = useAuth();
@@ -24,14 +24,13 @@ export default function KidsCheckin() {
   const [children, setChildren] = useState<Child[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
-  const [results, setResults] = useState<Array<{ name: string; code: string; room?: string }>>([]);
+  const [results, setResults] = useState<Array<{ name: string; room?: string }>>([]);
   const [active, setActive] = useState<ActiveCheckin[]>([]);
 
   useEffect(() => {
     if (!user) return;
     loadChildren();
     loadActive();
-    // Token vindo por URL (?token=...) após completar cadastro
     const t = sp.get("token");
     if (t && !token) resolveToken(t);
     const ch = supabase.channel("kids-checkins-mine")
@@ -53,21 +52,17 @@ export default function KidsCheckin() {
   async function loadActive() {
     if (!user) return;
     const { data } = await supabase.from("kids_checkins")
-      .select("id, child_id, pickup_code, checkin_at, kids_children(full_name), kids_rooms(name)")
+      .select("id, child_id, checkin_at, kids_children(full_name), kids_rooms(name)")
       .is("checkout_at", null)
       .order("checkin_at", { ascending: false });
     setActive((data || []) as any);
   }
 
-  // Descobre se o token é de página (QR único da igreja) ou de sala (compat)
   async function resolveToken(raw: string) {
-    // se veio URL completa /kids/join/<t>
     const m = raw.match(/\/kids\/join\/([A-Za-z0-9_-]+)/);
     const t = m ? m[1] : raw.trim();
-    // tenta como página primeiro (novo modelo)
     const { data: pageData } = await (supabase.rpc as any)("kids_lookup_page_by_token", { _token: t });
     const isPage = Array.isArray(pageData) && pageData[0];
-    // fallback: token de sala
     const { data: roomData } = !isPage
       ? await (supabase.rpc as any)("kids_lookup_room_by_static_token", { _token: t })
       : { data: null } as any;
@@ -77,8 +72,6 @@ export default function KidsCheckin() {
       return;
     }
 
-    // Se o responsável ainda não tem cadastro (guardian) ou não tem filhos vinculados,
-    // manda pro fluxo de cadastro do LeviKids com o mesmo token.
     if (user) {
       const { data: g } = await supabase.from("kids_guardians").select("id").eq("user_id", user.id).maybeSingle();
       let hasChildren = false;
@@ -150,13 +143,13 @@ export default function KidsCheckin() {
     const { data, error } = await (supabase.rpc as any)(rpcName, args);
     setBusy(false);
     if (error) { toast({ title: "Falha no check-in", description: error.message, variant: "destructive" }); return; }
-    const rows = (data || []) as Array<{ child_id: string; pickup_code: string; checkin_id: string; room_name?: string }>;
+    const rows = (data || []) as Array<{ child_id: string; checkin_id: string; room_name?: string }>;
     const names = children.reduce((acc, c) => ({ ...acc, [c.id]: c.full_name }), {} as Record<string, string>);
-    setResults(rows.map(r => ({ name: names[r.child_id] || "", code: r.pickup_code, room: r.room_name })));
+    setResults(rows.map(r => ({ name: names[r.child_id] || "", room: r.room_name })));
 
     for (const r of rows) {
       supabase.functions.invoke("kids-notify-whatsapp", {
-        body: { event: "checkin", child_id: r.child_id, room_id: "", pickup_code: r.pickup_code }
+        body: { event: "checkin", child_id: r.child_id, room_id: "" }
       }).catch(() => {});
     }
 
@@ -188,7 +181,7 @@ export default function KidsCheckin() {
 
         {active.length > 0 && (
           <Card className="rounded-3xl border-2 border-emerald-200 bg-emerald-50/50">
-            <CardHeader><CardTitle className="text-base flex items-center gap-2"><KeyRound className="w-4 h-4" /> Sessões ativas</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base flex items-center gap-2"><KeyRound className="w-4 h-4" /> Check-ins ativos</CardTitle></CardHeader>
             <CardContent className="space-y-2">
               {active.map(a => (
                 <div key={a.id} className="p-3 bg-white rounded-xl flex justify-between items-center">
@@ -196,10 +189,7 @@ export default function KidsCheckin() {
                     <p className="font-semibold text-sm">{a.kids_children?.full_name}</p>
                     <p className="text-xs text-slate-500">{a.kids_rooms?.name}</p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-[10px] uppercase text-slate-500">código</p>
-                    <p className="font-bold text-xl tracking-widest text-emerald-700">{a.pickup_code}</p>
-                  </div>
+                  <ShieldCheck className="w-5 h-5 text-emerald-600" />
                 </div>
               ))}
             </CardContent>
@@ -212,13 +202,11 @@ export default function KidsCheckin() {
             <CardContent className="space-y-2">
               {results.map((r, i) => (
                 <div key={i} className="p-3 bg-white rounded-xl text-center">
-                  <p className="text-sm font-semibold">{r.name}</p>
-                  {r.room && <p className="text-[11px] text-violet-700 font-semibold mt-0.5">Sala: {r.room}</p>}
-                  <p className="text-[11px] uppercase text-slate-500 mt-1">Código de retirada</p>
-                  <p className="text-4xl font-bold tracking-[0.5em] text-violet-700">{r.code}</p>
+                  <p className="text-base font-semibold text-slate-900">{r.name}</p>
+                  {r.room && <p className="text-sm text-violet-700 font-semibold mt-1">Sala: {r.room}</p>}
                 </div>
               ))}
-              <p className="text-xs text-center text-slate-600 mt-2">Guarde bem — este código é necessário na retirada.</p>
+              <p className="text-xs text-center text-slate-600 mt-2">Você será avisado por WhatsApp quando a retirada for feita.</p>
               <Button variant="outline" onClick={() => setResults([])} className="w-full rounded-xl">OK</Button>
             </CardContent>
           </Card>
