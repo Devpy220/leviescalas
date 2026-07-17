@@ -11,7 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Plus, QrCode, Download, FileDown, Trash2, Users, Copy, UserPlus, BookOpen, ShieldCheck, Search, Clock, ArrowLeftRight, BarChart3, Sparkles, CalendarDays, CalendarCheck } from "lucide-react";
+import { Loader2, Plus, QrCode, Download, FileDown, Trash2, Users, Copy, UserPlus, BookOpen, ShieldCheck, Search, Clock, ArrowLeftRight, BarChart3, Sparkles, CalendarDays, CalendarCheck, ExternalLink } from "lucide-react";
+
 import { KIDS_JOIN_BASE, downloadPng, downloadPdf, qrToDataUrl } from "@/lib/kidsQr";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "react-router-dom";
@@ -443,8 +444,8 @@ export default function KidsAdmin() {
                 <p className="text-sm font-semibold text-slate-900">Departamento vinculado: Professores Kids</p>
                 <p className="text-xs text-slate-600">Acesse mural de avisos, disponibilidade dos professores, datas de bloqueio e geração automática de escala.</p>
               </div>
-              <Button asChild size="sm" className="rounded-xl bg-violet-600 hover:bg-violet-700">
-                <Link to={`/departments/${linkedDeptId}`}>Abrir dept →</Link>
+              <Button asChild size="icon" className="rounded-xl bg-violet-600 hover:bg-violet-700" title="Abrir Professores Kids" aria-label="Abrir Professores Kids">
+                <Link to={`/departments/${linkedDeptId}`}><ExternalLink className="w-4 h-4" /></Link>
               </Button>
             </CardContent>
           </Card>

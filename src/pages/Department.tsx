@@ -574,17 +574,16 @@ export default function Department() {
                     <Button
                       asChild
                       variant="outline"
-                      size="sm"
-                      className="rounded-xl border-violet-300 text-violet-700 hover:bg-violet-50 dark:text-violet-300 dark:border-violet-700 dark:hover:bg-violet-950 gap-1"
+                      size="icon"
+                      className="rounded-xl border-violet-300 text-violet-700 hover:bg-violet-50 dark:text-violet-300 dark:border-violet-700 dark:hover:bg-violet-950"
+                      aria-label="Voltar ao LeviKids"
                     >
                       <Link to={isLeader ? '/kids/admin' : '/kids/dashboard'}>
-                        <ArrowLeft className="w-4 h-4" />
-                        <span className="hidden sm:inline">Voltar ao LeviKids</span>
-                        <span className="sm:hidden">LeviKids</span>
+                        <ArrowLeft className="w-5 h-5" />
                       </Link>
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Voltar para o LeviKids</TooltipContent>
+                  <TooltipContent>Voltar ao LeviKids</TooltipContent>
                 </Tooltip>
               )}
               {isLeader && (
