@@ -349,12 +349,21 @@ export default function KidsAdmin() {
                   <div className="space-y-2">
                     {kids.map(c => {
                       const age = Math.floor((Date.now() - new Date(c.birth_date).getTime()) / (365.25*24*3600*1000));
-                      const room = rooms.find(r => r.id === c.current_room_id);
+                      const room = rooms.find(r => r.id === c.current_room_id)
+                        || rooms.find(r => age >= r.age_min && age <= r.age_max);
+                      const isActive = activeCheckins.has(c.id);
                       return (
                         <div key={c.id} className="flex items-center justify-between p-3 rounded-xl border bg-white">
                           <div>
                             <p className="font-semibold text-sm">{c.full_name}</p>
                             <p className="text-xs text-slate-500">{age} anos · Sala: <b>{room?.name || "—"}</b></p>
+                            <div className="mt-1">
+                              {isActive ? (
+                                <Badge className="text-[10px] bg-emerald-100 text-emerald-800 border-emerald-200">Check-in ativo</Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-[10px] text-slate-600">Aguardando check-in</Badge>
+                              )}
+                            </div>
                           </div>
                           <Button size="sm" variant="outline" onClick={() => { setTransferChild(c); setTransferTargetRoom(c.current_room_id || rooms[0]?.id || ""); }} className="rounded-xl">
                             <ArrowLeftRight className="w-4 h-4 mr-1"/>Transferir
