@@ -415,10 +415,7 @@ export default function KidsAdmin() {
                             <button onClick={() => deleteRoom(r.id)} title="Excluir sala" className="text-slate-400 hover:text-red-600 p-1"><Trash2 className="w-4 h-4" /></button>
                           </div>
                           <div className="flex gap-2 mt-3">
-                            <Button size="sm" variant="secondary" onClick={() => showQr(r)} className="rounded-lg flex-1">
-                              <QrCode className="w-4 h-4 mr-1" /> QR da sala (opcional)
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={() => deleteRoom(r.id)} className="rounded-lg text-red-600 hover:bg-red-50">
+                            <Button size="sm" variant="ghost" onClick={() => deleteRoom(r.id)} className="rounded-lg text-red-600 hover:bg-red-50 ml-auto">
                               <Trash2 className="w-4 h-4 mr-1" /> Excluir
                             </Button>
                           </div>
