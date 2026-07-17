@@ -8,9 +8,37 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
+// Tab-scoped auth storage: cada aba tem sua própria sessão.
+// Na primeira carga da aba, hidrata da localStorage (se houver sessão salva),
+// depois passa a operar somente em sessionStorage para isolar contas por aba.
+const tabScopedStorage: Storage = (() => {
+  if (typeof window === 'undefined') return undefined as any;
+  const hydratedKey = '__lovable_session_hydrated__';
+  try {
+    if (!sessionStorage.getItem(hydratedKey)) {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && (k.startsWith('sb-') || k.includes('supabase.auth'))) {
+          const v = localStorage.getItem(k);
+          if (v && !sessionStorage.getItem(k)) sessionStorage.setItem(k, v);
+        }
+      }
+      sessionStorage.setItem(hydratedKey, '1');
+    }
+  } catch { /* ignore */ }
+  return {
+    getItem: (k: string) => { try { return sessionStorage.getItem(k); } catch { return null; } },
+    setItem: (k: string, v: string) => { try { sessionStorage.setItem(k, v); } catch { /* ignore */ } },
+    removeItem: (k: string) => { try { sessionStorage.removeItem(k); } catch { /* ignore */ } },
+    clear: () => { try { sessionStorage.clear(); } catch { /* ignore */ } },
+    key: (i: number) => { try { return sessionStorage.key(i); } catch { return null; } },
+    get length() { try { return sessionStorage.length; } catch { return 0; } },
+  } as Storage;
+})();
+
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
-    storage: localStorage,
+    storage: tabScopedStorage,
     persistSession: true,
     autoRefreshToken: true,
   }
