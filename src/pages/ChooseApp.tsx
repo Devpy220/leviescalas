@@ -1,3 +1,4 @@
+import { LeviKidsWordmark } from "@/components/LeviKidsWordmark";
 import { Link, useNavigate } from "react-router-dom";
 import { Calendar, Baby, ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
