@@ -420,33 +420,122 @@ export default function KidsAdmin() {
             <TabsTrigger value="consent" className="rounded-xl">Termo</TabsTrigger>
           </TabsList>
 
-          {/* HORÁRIO DE CHECK-IN */}
+          {/* DIAS DE AULA */}
           <TabsContent value="schedule">
+            <div className="space-y-4">
+              <Card className="rounded-3xl border-2">
+                <CardHeader><CardTitle className="text-base flex items-center gap-2"><CalendarDays className="w-4 h-4"/> Dias de aula recorrentes</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-xs text-slate-500">Configure os dias que se repetem toda semana (ex.: Domingo 09:00–11:00, Quarta 19:30–21:00). Fora destes horários o check-in fica fechado.</p>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-2 items-end">
+                    <div>
+                      <Label>Dia da semana</Label>
+                      <select className="w-full border rounded-md h-10 px-3 bg-background" value={newRecurring.weekday} onChange={e => setNewRecurring({ ...newRecurring, weekday: +e.target.value })}>
+                        {["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"].map((l,i) => <option key={i} value={i}>{l}</option>)}
+                      </select>
+                    </div>
+                    <div><Label>Início</Label><Input type="time" value={newRecurring.time_start} onChange={e => setNewRecurring({ ...newRecurring, time_start: e.target.value })} /></div>
+                    <div><Label>Fim</Label><Input type="time" value={newRecurring.time_end} onChange={e => setNewRecurring({ ...newRecurring, time_end: e.target.value })} /></div>
+                    <Button onClick={addRecurringDay} className="rounded-xl"><Plus className="w-4 h-4 mr-1"/> Adicionar</Button>
+                  </div>
+                  <div className="space-y-2 pt-2">
+                    {serviceDays.filter(s => s.weekday !== null).length === 0 && (
+                      <p className="text-sm text-slate-500 text-center py-3">Nenhum dia recorrente configurado.</p>
+                    )}
+                    {serviceDays.filter(s => s.weekday !== null).map(s => (
+                      <div key={s.id} className="flex items-center gap-2 p-3 rounded-xl border bg-white flex-wrap">
+                        <select className="border rounded-md h-9 px-2 bg-background text-sm" value={s.weekday!} onChange={e => updateServiceDay(s.id, { weekday: +e.target.value })}>
+                          {["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"].map((l,i) => <option key={i} value={i}>{l}</option>)}
+                        </select>
+                        <Input type="time" className="w-28" value={s.time_start.slice(0,5)} onChange={e => updateServiceDay(s.id, { time_start: e.target.value })} />
+                        <span className="text-slate-500">até</span>
+                        <Input type="time" className="w-28" value={s.time_end.slice(0,5)} onChange={e => updateServiceDay(s.id, { time_end: e.target.value })} />
+                        <Button size="sm" variant="ghost" onClick={() => deleteServiceDay(s.id)} className="ml-auto text-red-600"><Trash2 className="w-4 h-4"/></Button>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-3xl border-2">
+                <CardHeader><CardTitle className="text-base flex items-center gap-2"><Clock className="w-4 h-4"/> Datas avulsas</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-xs text-slate-500">Aulas em datas pontuais (retiros, eventos especiais).</p>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-2 items-end">
+                    <div><Label>Data</Label><Input type="date" value={newOneOff.specific_date} onChange={e => setNewOneOff({ ...newOneOff, specific_date: e.target.value })} /></div>
+                    <div><Label>Início</Label><Input type="time" value={newOneOff.time_start} onChange={e => setNewOneOff({ ...newOneOff, time_start: e.target.value })} /></div>
+                    <div><Label>Fim</Label><Input type="time" value={newOneOff.time_end} onChange={e => setNewOneOff({ ...newOneOff, time_end: e.target.value })} /></div>
+                    <Button onClick={addOneOffDay} className="rounded-xl"><Plus className="w-4 h-4 mr-1"/> Adicionar</Button>
+                  </div>
+                  <div className="space-y-2 pt-2">
+                    {serviceDays.filter(s => s.specific_date !== null).length === 0 && (
+                      <p className="text-sm text-slate-500 text-center py-3">Nenhuma data avulsa configurada.</p>
+                    )}
+                    {serviceDays.filter(s => s.specific_date !== null).map(s => (
+                      <div key={s.id} className="flex items-center gap-2 p-3 rounded-xl border bg-white flex-wrap">
+                        <Input type="date" className="w-40" value={s.specific_date!} onChange={e => updateServiceDay(s.id, { specific_date: e.target.value })} />
+                        <Input type="time" className="w-28" value={s.time_start.slice(0,5)} onChange={e => updateServiceDay(s.id, { time_start: e.target.value })} />
+                        <span className="text-slate-500">até</span>
+                        <Input type="time" className="w-28" value={s.time_end.slice(0,5)} onChange={e => updateServiceDay(s.id, { time_end: e.target.value })} />
+                        <Button size="sm" variant="ghost" onClick={() => deleteServiceDay(s.id)} className="ml-auto text-red-600"><Trash2 className="w-4 h-4"/></Button>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* ESCALA INTERNA DE PROFESSORES POR DATA */}
+          <TabsContent value="rota">
             <Card className="rounded-3xl border-2">
-              <CardHeader><CardTitle>Janela de check-in</CardTitle></CardHeader>
-              <CardContent className="space-y-3">
-                <p className="text-xs text-slate-500">O QR fixo da sala só permite check-in dentro deste horário e nos dias selecionados. Fora disso, a família recebe um aviso educado.</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Início</Label><Input type="time" value={scheduleForm.start} onChange={e => setScheduleForm({...scheduleForm, start: e.target.value})} /></div>
-                  <div><Label>Fim</Label><Input type="time" value={scheduleForm.end} onChange={e => setScheduleForm({...scheduleForm, end: e.target.value})} /></div>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2"><CalendarCheck className="w-4 h-4"/> Escala de professores por data</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-xs text-slate-500">Marque quem serve em cada sala em cada data. O professor só verá a sala no dashboard e poderá liberar crianças se estiver escalado <b>naquele dia</b>. O pool de professores por sala é gerenciado na aba "Professores".</p>
+                <div className="flex items-end gap-2 flex-wrap">
+                  <div><Label>Data</Label><Input type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)} className="w-48" /></div>
+                  <Button variant="outline" onClick={copyPreviousWeek} className="rounded-xl">Copiar da semana anterior</Button>
                 </div>
-                <div>
-                  <Label>Dias da semana</Label>
-                  <div className="flex gap-2 flex-wrap mt-1">
-                    {["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"].map((label, idx) => {
-                      const on = scheduleForm.days.includes(idx);
+                {rooms.length === 0 ? (
+                  <p className="text-sm text-slate-500 text-center py-4">Crie salas primeiro.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {rooms.map(r => {
+                      const pool = teacherPoolByRoom[r.id] || [];
+                      const scheduled = new Set((roomSchedulesByRoom[r.id] || []).map(s => s.user_id));
                       return (
-                        <button key={idx} type="button"
-                          onClick={() => setScheduleForm(s => ({ ...s, days: on ? s.days.filter(d=>d!==idx) : [...s.days, idx].sort() }))}
-                          className={`px-3 py-1.5 rounded-xl text-sm font-semibold border-2 ${on ? "bg-violet-600 text-white border-violet-600" : "bg-white text-slate-600 border-slate-200"}`}>
-                          {label}
-                        </button>
+                        <div key={r.id} className="p-3 rounded-2xl border-2" style={{ borderColor: r.color + "40", background: r.color + "08" }}>
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="font-semibold text-sm text-slate-900">{r.name}</p>
+                            <Badge variant="outline" className="text-xs">{scheduled.size} escalado(s)</Badge>
+                          </div>
+                          {pool.length === 0 ? (
+                            <p className="text-xs text-slate-500 py-2">Nenhum professor no pool desta sala. Adicione na aba "Professores".</p>
+                          ) : (
+                            <div className="flex flex-wrap gap-2">
+                              {pool.map(t => {
+                                const on = scheduled.has(t.user_id);
+                                return (
+                                  <button
+                                    key={t.user_id}
+                                    type="button"
+                                    onClick={() => toggleTeacherSchedule(r.id, t.user_id, !on)}
+                                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold border-2 transition ${on ? "bg-violet-600 text-white border-violet-600" : "bg-white text-slate-700 border-slate-200 hover:border-violet-300"}`}
+                                    title={t.email}
+                                  >
+                                    {on ? "✓ " : ""}{t.name}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
                       );
                     })}
                   </div>
-                </div>
-                <div><Label>Fuso horário</Label><Input value={scheduleForm.tz} onChange={e => setScheduleForm({...scheduleForm, tz: e.target.value})} /></div>
-                <Button onClick={saveSchedule} disabled={busy} className="rounded-xl">{busy ? <Loader2 className="w-4 h-4 animate-spin"/> : "Salvar horário"}</Button>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
