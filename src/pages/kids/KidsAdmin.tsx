@@ -539,6 +539,10 @@ export default function KidsAdmin() {
                 <div className="flex items-end gap-2 flex-wrap">
                   <div><Label>Data</Label><Input type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)} className="w-48" /></div>
                   <Button variant="outline" onClick={copyPreviousWeek} className="rounded-xl">Copiar da semana anterior</Button>
+                  <Button onClick={generateSmartSchedule} disabled={generatingSchedule} className="rounded-xl bg-gradient-to-r from-violet-600 to-amber-500 text-white">
+                    {generatingSchedule ? <Loader2 className="w-4 h-4 mr-1 animate-spin"/> : <Sparkles className="w-4 h-4 mr-1"/>}
+                    Gerar escala automática (IA)
+                  </Button>
                 </div>
                 {rooms.length === 0 ? (
                   <p className="text-sm text-slate-500 text-center py-4">Crie salas primeiro.</p>
