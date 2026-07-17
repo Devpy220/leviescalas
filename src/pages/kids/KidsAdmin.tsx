@@ -444,14 +444,9 @@ export default function KidsAdmin() {
                 <p className="text-sm font-semibold text-slate-900">Departamento vinculado: Professores Kids</p>
                 <p className="text-xs text-slate-600">Acesse mural de avisos, disponibilidade dos professores, datas de bloqueio e geração automática de escala.</p>
               </div>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button asChild size="icon" className="rounded-xl bg-violet-600 hover:bg-violet-700" aria-label="Abrir departamento Professores Kids">
-                    <Link to={`/departments/${linkedDeptId}`}><ExternalLink className="w-4 h-4" /></Link>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Abrir Professores Kids</TooltipContent>
-              </Tooltip>
+              <Button asChild size="icon" className="rounded-xl bg-violet-600 hover:bg-violet-700" title="Abrir Professores Kids" aria-label="Abrir Professores Kids">
+                <Link to={`/departments/${linkedDeptId}`}><ExternalLink className="w-4 h-4" /></Link>
+              </Button>
             </CardContent>
           </Card>
         )}
