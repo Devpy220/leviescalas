@@ -92,7 +92,7 @@ serve(async (req: Request): Promise<Response> => {
 
     let template = "";
     if (body.event === "checkin") {
-      template = `👶 *${pageName} — ${churchName}*\n\nCheck-in confirmado para *${child.full_name}* na sala *${roomName}*.\n\n🔐 Código de retirada: *${body.pickup_code || "----"}*\n\nGuarde este código — ele é necessário para retirar a criança.`;
+      template = `👶 *${pageName} — ${churchName}*\n\nCheck-in confirmado para *${child.full_name}* na sala *${roomName}*.\n\nVocê será avisado quando a retirada for feita.`;
     } else if (body.event === "checkout") {
       template = `✅ *${pageName} — ${churchName}*\n\n*${child.full_name}* foi retirado(a) da sala *${roomName}* com sucesso.\n\nObrigado por confiar em nós!`;
     } else if (body.event === "teacher_call") {

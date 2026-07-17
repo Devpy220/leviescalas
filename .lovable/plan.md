@@ -1,61 +1,29 @@
-## O que vamos entregar
+## Objetivo
+Remover completamente o código de retirada de 4 dígitos (pickup_code). O check-out passa a ser feito pelo professor com 1 clique, sem verificação numérica.
 
-### 1. Link único da igreja (`/igreja/join/CODIGO`)
+## O que muda para o usuário
 
-Quem cadastra a igreja passa a receber **um único link universal** (baseado no `code` da igreja). Esse link substitui a comunicação atual de "código separado".
+- **Responsável (KidsCheckin)**: recebe apenas a confirmação "Check-in feito" com nome e sala. Sem "código de retirada".
+- **WhatsApp**: mensagem de confirmação passa a ser só "Check-in confirmado para {criança} na sala {sala}." — sem linha do código.
+- **Professor/Líder (KidsDashboard)**: some o botão "Ver código". Cada criança tem só o botão **"Check-out"**, que abre uma confirmação simples ("Confirmar retirada de {nome}?") e libera.
 
-Ao abrir o link:
+## Arquivos e mudanças
 
-- Se não estiver logado → manda pra `/auth` e volta pra esse link após login/cadastro.
-- Se estiver logado → mostra uma tela com **2 cards de escolha**:
-  - **Criar Departamento** (louvor, mídia, recepção, etc.) — leva para `/departments/new?churchCode=XXXX` (fluxo atual, já funciona).
-  - **Criar Página LeviKids** — cria a página LeviKids da igreja e leva direto para `/kids/admin`.
-  - Colocar um aviso ao escolher a pagina do levikids que é uma pagina por igreja.
-    - Só aparece se a igreja **ainda não tiver** uma página LeviKids (1 por igreja).
-    - Se já existir, o card fica desabilitado com aviso "Esta igreja já tem uma página LeviKids".
+### Frontend
+- `src/pages/kids/KidsCheckin.tsx`: remover exibição do `pickup_code` (bloco verde com os 4 dígitos) e da coluna `code` no `setResults`.
+- `src/pages/kids/KidsDashboard.tsx`: remover botão "Ver código"/"EyeOff", estado `reveal`, campo `pickup_code` do tipo `ActiveChild`. Trocar o diálogo de check-out por um `AlertDialog` simples de confirmação.
+- `supabase/functions/kids-notify-whatsapp/index.ts`: remover a linha do código no template de check-in.
 
-O usuário que criar a página LeviKids vira automaticamente **líder daquela página** (registro em `kids_leaders`), independente de ser ou não o líder da igreja.
+### Backend (migração SQL)
+- Alterar `public.kids_perform_checkout(_checkin_id uuid)` — remove o parâmetro `_pickup_code` e a verificação `IF v_stored <> _pickup_code`. Continua validando permissão do professor/líder e marca `checkout_at = now()`.
+- Alterar `public.kids_perform_checkin_static` e `public.kids_perform_checkin_by_page` — parar de gerar/retornar `pickup_code` (insere string vazia ou removemos da coluna).
+- Tornar `kids_checkins.pickup_code` opcional: `ALTER COLUMN pickup_code DROP NOT NULL` e default `''`. Preserva o histórico já existente sem quebrar consultas antigas.
+- Regenerar `src/integrations/supabase/types.ts` (automático após a migração).
 
-### 2. Onde o link aparece
-
-- **ChurchSetup** (tela pós-cadastro da igreja): mostrar o link universal `https://leviescalas.com.br/igreja/join/CODIGO` com botão "Copiar" e "Compartilhar no WhatsApp", substituindo a apresentação atual do código solto.
-- **Dashboard**: card da igreja passa a exibir esse link pro líder poder recompartilhar quando quiser.
-
-### 3. Corrigir acesso ao LeviKids
-
-Hoje a validação que adicionamos bloqueia o líder da igreja de abrir `/kids` mesmo quando a página LeviKids existe. Ajuste:
-
-- `userHasKidsAccess` volta a considerar acesso quando existe uma `kids_pages` da igreja onde o usuário é líder OU está em `kids_leaders`.
-- Continua **não** liberando acesso a quem só cadastrou a igreja e não tem página LeviKids criada — isso mantém a regra que você pediu antes ("cadastrar igreja não dá acesso ao LeviKids").
-- quero que apenas o lider da igreja, o lider  que criou a pagina, e os professores que ele add podem ter acessoa pagina no levikids de cada igreja
-- então automatico o responsavel pela igreja ao cadastrar uma igreja, vira uma conta, tem que colocar senha e email para ele logar depois 
-
-Com isso, quando Amelia (ou quem for) criar a página LeviKids pelo link universal, o botão LeviKids do dashboard abre normalmente e mostra a `KidsAdmin` com salas, QR e convites de professor (a página `KidsAdmin` já tem tudo isso — só não estava sendo alcançada por causa do bloqueio).
-
-### 4. LeviKids: garantir salas por idade, QR e convite de professores
-
-A `KidsAdmin` já tem:
-
-- Criação de sala com `age_min` / `age_max` e `is_inclusion`.
-- Geração e download de QR/PDF para cada sala e para a página.
-- Convite de líder Kids e professor por e-mail, e link público de auto-cadastro de professor via `/kids/teacher/join?...`.
-
-Vamos revisar a tela para deixar essas 3 ações **visíveis logo no topo** (hoje algumas estão em abas), com botões grandes: "Nova Sala", "Baixar QR da Sala", "Convidar Professor".
+## Não muda
+- Fluxo de cadastro dos pais, atribuição automática por idade, QR único, janela de check-in, transferência entre salas, badges "Check-in ativo/Aguardando" no admin.
+- Coluna `pickup_code` continua existindo na tabela para não perder registros históricos; só deixa de ser exigida.
 
 ## Detalhes técnicos
-
-- Nova rota: `/igreja/join/:code` → componente `ChurchJoinHub.tsx`.
-  - Usa `validate_church_code_secure` pra achar a igreja.
-  - Consulta `kids_pages` por `church_id` pra decidir se libera o card LeviKids.
-- Nova função de criação de página: pode usar insert direto em `kids_pages` (RLS já permite via `created_by`/church leader) OU nova RPC `kids_create_page_for_church(_church_id, _name)` que também insere o `kids_leaders` do criador. Preferimos a RPC pra garantir atomicidade.
-- `src/lib/kidsAccess.ts`: adicionar de volta a checagem "é líder de igreja que tem `kids_pages`", mantendo o restante.
-- `ChurchSetup.tsx` e `Dashboard.tsx`: exibir o novo link universal.
-- `KidsAdmin.tsx`: reorganizar cabeçalho com CTAs de sala/QR/professor.
-
-## Migração SQL necessária
-
-- `kids_create_page_for_church(_church_id uuid, _name text)` — SECURITY DEFINER, valida que quem chama é líder da igreja ou tem o código, cria `kids_pages` + `kids_leaders` do criador em uma transação. Bloqueia se já existir página pra essa igreja.
-- (Opcional) `get_church_kids_page_id(_church_id uuid)` pra o hub decidir habilitar/desabilitar o card sem expor dados.
-  &nbsp;
-
-Se aprovar, começo pela migração e depois faço o front.
+- Assinatura antiga do RPC (`_checkin_id`, `_pickup_code`) é substituída — o único chamador no frontend é `KidsDashboard.performCheckout`, que será ajustado para passar apenas `_checkin_id`.
+- A migração usa `CREATE OR REPLACE FUNCTION` para as três funções afetadas, mantendo `SECURITY DEFINER` e `search_path = public` já existentes.

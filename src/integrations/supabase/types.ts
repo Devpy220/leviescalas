@@ -611,7 +611,7 @@ export type Database = {
           child_id: string
           created_at: string
           id: string
-          pickup_code: string
+          pickup_code: string | null
           room_id: string
         }
         Insert: {
@@ -622,7 +622,7 @@ export type Database = {
           child_id: string
           created_at?: string
           id?: string
-          pickup_code: string
+          pickup_code?: string | null
           room_id: string
         }
         Update: {
@@ -633,7 +633,7 @@ export type Database = {
           child_id?: string
           created_at?: string
           id?: string
-          pickup_code?: string
+          pickup_code?: string | null
           room_id?: string
         }
         Relationships: [
@@ -2878,10 +2878,7 @@ export type Database = {
           pickup_code: string
         }[]
       }
-      kids_perform_checkout: {
-        Args: { _checkin_id: string; _pickup_code: string }
-        Returns: boolean
-      }
+      kids_perform_checkout: { Args: { _checkin_id: string }; Returns: boolean }
       kids_report_dropoff: {
         Args: { _page_id: string }
         Returns: {
