@@ -35,6 +35,7 @@ export default function KidsAdmin() {
   const [qrPreview, setQrPreview] = useState<{ room: Room; url: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [kids, setKids] = useState<ChildRow[]>([]);
+  const [activeCheckins, setActiveCheckins] = useState<Set<string>>(new Set());
   const [transferChild, setTransferChild] = useState<ChildRow | null>(null);
   const [transferTargetRoom, setTransferTargetRoom] = useState("");
   const [scheduleForm, setScheduleForm] = useState({ start: "18:30", end: "20:30", days: [0,3] as number[], tz: "America/Sao_Paulo" });
@@ -68,6 +69,13 @@ export default function KidsAdmin() {
     if (!page) return;
     const { data } = await supabase.from("kids_children").select("id, full_name, birth_date, current_room_id").eq("page_id", page.id).order("full_name");
     setKids((data || []) as any);
+    const kidIds = (data || []).map((k: any) => k.id);
+    if (kidIds.length) {
+      const { data: ac } = await supabase.from("kids_checkins").select("child_id").in("child_id", kidIds).is("checkout_at", null);
+      setActiveCheckins(new Set((ac || []).map((r: any) => r.child_id)));
+    } else {
+      setActiveCheckins(new Set());
+    }
   }
 
   async function saveSchedule() {
@@ -341,12 +349,21 @@ export default function KidsAdmin() {
                   <div className="space-y-2">
                     {kids.map(c => {
                       const age = Math.floor((Date.now() - new Date(c.birth_date).getTime()) / (365.25*24*3600*1000));
-                      const room = rooms.find(r => r.id === c.current_room_id);
+                      const room = rooms.find(r => r.id === c.current_room_id)
+                        || rooms.find(r => age >= r.age_min && age <= r.age_max);
+                      const isActive = activeCheckins.has(c.id);
                       return (
                         <div key={c.id} className="flex items-center justify-between p-3 rounded-xl border bg-white">
                           <div>
                             <p className="font-semibold text-sm">{c.full_name}</p>
                             <p className="text-xs text-slate-500">{age} anos · Sala: <b>{room?.name || "—"}</b></p>
+                            <div className="mt-1">
+                              {isActive ? (
+                                <Badge className="text-[10px] bg-emerald-100 text-emerald-800 border-emerald-200">Check-in ativo</Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-[10px] text-slate-600">Aguardando check-in</Badge>
+                              )}
+                            </div>
                           </div>
                           <Button size="sm" variant="outline" onClick={() => { setTransferChild(c); setTransferTargetRoom(c.current_room_id || rooms[0]?.id || ""); }} className="rounded-xl">
                             <ArrowLeftRight className="w-4 h-4 mr-1"/>Transferir
@@ -557,8 +574,8 @@ export default function KidsAdmin() {
             <Card className="rounded-3xl border-2">
               <CardHeader><CardTitle className="text-base">Termo de consentimento</CardTitle></CardHeader>
               <CardContent>
-                <p className="text-xs text-slate-500 mb-2">Versão atual: <b>{page.consent_version}</b></p>
-                <pre className="p-3 bg-slate-50 rounded-xl text-xs whitespace-pre-wrap max-h-96 overflow-auto">{page.consent_text}</pre>
+                <p className="text-sm text-slate-700 mb-2">Versão atual: <b>{page.consent_version}</b></p>
+                <pre className="p-4 bg-white border-2 border-slate-200 rounded-xl text-sm leading-relaxed text-slate-900 whitespace-pre-wrap max-h-96 overflow-auto font-sans">{page.consent_text}</pre>
               </CardContent>
             </Card>
           </TabsContent>
