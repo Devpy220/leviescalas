@@ -1115,6 +1115,41 @@ export type Database = {
           },
         ]
       }
+      kids_room_schedules: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          room_id: string
+          service_date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          room_id: string
+          service_date: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          room_id?: string
+          service_date?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kids_room_schedules_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "kids_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kids_room_transfers: {
         Row: {
           child_id: string
@@ -1210,6 +1245,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "kids_rooms_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "kids_pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kids_service_days: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          id: string
+          page_id: string
+          specific_date: string | null
+          time_end: string
+          time_start: string
+          updated_at: string
+          weekday: number | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          page_id: string
+          specific_date?: string | null
+          time_end: string
+          time_start: string
+          updated_at?: string
+          weekday?: number | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          page_id?: string
+          specific_date?: string | null
+          time_end?: string
+          time_start?: string
+          updated_at?: string
+          weekday?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kids_service_days_page_id_fkey"
             columns: ["page_id"]
             isOneToOne: false
             referencedRelation: "kids_pages"
@@ -2771,6 +2853,10 @@ export type Database = {
         Args: { _room_id: string; _user_id: string }
         Returns: boolean
       }
+      is_kids_teacher_scheduled_today: {
+        Args: { _room_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_minor: { Args: { _birth: string }; Returns: boolean }
       is_scheduled_in_slot: {
         Args: {
@@ -2818,6 +2904,10 @@ export type Database = {
           expires_at: string
           token: string
         }[]
+      }
+      kids_is_within_service_window: {
+        Args: { _page_id: string }
+        Returns: boolean
       }
       kids_lookup_page_by_token: {
         Args: { _token: string }
@@ -2912,6 +3002,17 @@ export type Database = {
       kids_self_register_teacher: {
         Args: { _page_token: string; _room_id: string }
         Returns: undefined
+      }
+      kids_teacher_rooms_today: {
+        Args: never
+        Returns: {
+          color: string
+          id: string
+          is_inclusion: boolean
+          name: string
+          page_id: string
+          static_qr_token: string
+        }[]
       }
       kids_transfer_child: {
         Args: { _child_id: string; _new_room_id: string; _reason?: string }

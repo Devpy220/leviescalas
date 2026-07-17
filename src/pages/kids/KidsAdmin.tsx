@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Plus, QrCode, Download, FileDown, Trash2, Users, Copy, UserPlus, BookOpen, ShieldCheck, Search, Clock, ArrowLeftRight, BarChart3, Sparkles } from "lucide-react";
+import { Loader2, Plus, QrCode, Download, FileDown, Trash2, Users, Copy, UserPlus, BookOpen, ShieldCheck, Search, Clock, ArrowLeftRight, BarChart3, Sparkles, CalendarDays, CalendarCheck } from "lucide-react";
 import { KIDS_JOIN_BASE, downloadPng, downloadPdf, qrToDataUrl } from "@/lib/kidsQr";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "react-router-dom";
@@ -40,6 +40,18 @@ export default function KidsAdmin() {
   const [transferTargetRoom, setTransferTargetRoom] = useState("");
   const [scheduleForm, setScheduleForm] = useState({ start: "18:30", end: "20:30", days: [0,3] as number[], tz: "America/Sao_Paulo" });
 
+  // Dias de aula (novos)
+  interface ServiceDay { id: string; page_id: string; weekday: number | null; specific_date: string | null; time_start: string; time_end: string; active: boolean; }
+  const [serviceDays, setServiceDays] = useState<ServiceDay[]>([]);
+  const [newRecurring, setNewRecurring] = useState({ weekday: 0, time_start: "09:00", time_end: "11:00" });
+  const [newOneOff, setNewOneOff] = useState({ specific_date: new Date().toISOString().slice(0,10), time_start: "09:00", time_end: "11:00" });
+
+  // Escala interna de professores
+  interface RoomSchedule { id: string; room_id: string; user_id: string; service_date: string; }
+  const [scheduleDate, setScheduleDate] = useState(new Date().toISOString().slice(0,10));
+  const [roomSchedulesByRoom, setRoomSchedulesByRoom] = useState<Record<string, RoomSchedule[]>>({});
+  const [teacherPoolByRoom, setTeacherPoolByRoom] = useState<Record<string, { user_id: string; name: string; email: string }[]>>({});
+
   // invite / promotion modals
   const [showLeaderModal, setShowLeaderModal] = useState(false);
   const [showTeacherModal, setShowTeacherModal] = useState(false);
@@ -55,15 +67,113 @@ export default function KidsAdmin() {
 
   useEffect(() => {
     if (page) {
-      loadRooms(); loadLeaders(); loadTeachers(); loadContent(); loadKids();
-      setScheduleForm({
-        start: ((page as any).checkin_start_time || "18:30").slice(0,5),
-        end:   ((page as any).checkin_end_time   || "20:30").slice(0,5),
-        days:  (page as any).checkin_days || [0,3],
-        tz:    (page as any).checkin_timezone || "America/Sao_Paulo",
-      });
+      loadRooms(); loadLeaders(); loadTeachers(); loadContent(); loadKids(); loadServiceDays();
     }
   }, [page]);
+
+  useEffect(() => {
+    if (page && rooms.length) { loadRoomSchedules(); loadTeacherPool(); }
+    // eslint-disable-next-line
+  }, [rooms, scheduleDate]);
+
+  async function loadServiceDays() {
+    if (!page) return;
+    const { data } = await (supabase as any).from("kids_service_days").select("*").eq("page_id", page.id).eq("active", true).order("weekday", { ascending: true }).order("specific_date", { ascending: true });
+    setServiceDays((data || []) as ServiceDay[]);
+  }
+
+  async function addRecurringDay() {
+    if (!page) return;
+    if (newRecurring.time_end <= newRecurring.time_start) { toast({ title: "Horário inválido", variant: "destructive" }); return; }
+    const { error } = await (supabase as any).from("kids_service_days").insert({
+      page_id: page.id, weekday: newRecurring.weekday, specific_date: null,
+      time_start: newRecurring.time_start, time_end: newRecurring.time_end, active: true, created_by: user?.id,
+    });
+    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Dia recorrente adicionado" });
+    loadServiceDays();
+  }
+
+  async function addOneOffDay() {
+    if (!page) return;
+    if (newOneOff.time_end <= newOneOff.time_start) { toast({ title: "Horário inválido", variant: "destructive" }); return; }
+    const { error } = await (supabase as any).from("kids_service_days").insert({
+      page_id: page.id, weekday: null, specific_date: newOneOff.specific_date,
+      time_start: newOneOff.time_start, time_end: newOneOff.time_end, active: true, created_by: user?.id,
+    });
+    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Data avulsa adicionada" });
+    loadServiceDays();
+  }
+
+  async function updateServiceDay(id: string, patch: Partial<ServiceDay>) {
+    const { error } = await (supabase as any).from("kids_service_days").update(patch).eq("id", id);
+    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+    loadServiceDays();
+  }
+
+  async function deleteServiceDay(id: string) {
+    if (!confirm("Remover este dia de aula?")) return;
+    await (supabase as any).from("kids_service_days").delete().eq("id", id);
+    loadServiceDays();
+  }
+
+  async function loadTeacherPool() {
+    if (!rooms.length) return;
+    const roomIds = rooms.map(r => r.id);
+    const { data } = await supabase.from("kids_teacher_rooms").select("room_id, user_id").in("room_id", roomIds);
+    const rows = (data || []) as { room_id: string; user_id: string }[];
+    const uniqUsers = Array.from(new Set(rows.map(r => r.user_id)));
+    const { data: profs } = uniqUsers.length ? await supabase.from("profiles").select("id, name, email").in("id", uniqUsers) : { data: [] as any[] };
+    const pmap = new Map((profs || []).map((p: any) => [p.id, p]));
+    const byRoom: Record<string, { user_id: string; name: string; email: string }[]> = {};
+    rooms.forEach(r => { byRoom[r.id] = []; });
+    rows.forEach(r => {
+      const p: any = pmap.get(r.user_id);
+      byRoom[r.room_id].push({ user_id: r.user_id, name: p?.name || "Usuário", email: p?.email || "" });
+    });
+    setTeacherPoolByRoom(byRoom);
+  }
+
+  async function loadRoomSchedules() {
+    if (!rooms.length || !scheduleDate) return;
+    const roomIds = rooms.map(r => r.id);
+    const { data } = await (supabase as any).from("kids_room_schedules")
+      .select("id, room_id, user_id, service_date")
+      .in("room_id", roomIds).eq("service_date", scheduleDate);
+    const rows = (data || []) as RoomSchedule[];
+    const byRoom: Record<string, RoomSchedule[]> = {};
+    rooms.forEach(r => { byRoom[r.id] = []; });
+    rows.forEach(r => { byRoom[r.room_id].push(r); });
+    setRoomSchedulesByRoom(byRoom);
+  }
+
+  async function toggleTeacherSchedule(room_id: string, user_id: string, on: boolean) {
+    if (on) {
+      const { error } = await (supabase as any).from("kids_room_schedules").insert({ room_id, user_id, service_date: scheduleDate, created_by: user?.id });
+      if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+    } else {
+      await (supabase as any).from("kids_room_schedules").delete().eq("room_id", room_id).eq("user_id", user_id).eq("service_date", scheduleDate);
+    }
+    loadRoomSchedules();
+  }
+
+  async function copyPreviousWeek() {
+    if (!rooms.length) return;
+    const prev = new Date(scheduleDate);
+    prev.setDate(prev.getDate() - 7);
+    const prevStr = prev.toISOString().slice(0,10);
+    const roomIds = rooms.map(r => r.id);
+    const { data } = await (supabase as any).from("kids_room_schedules")
+      .select("room_id, user_id").in("room_id", roomIds).eq("service_date", prevStr);
+    const rows = (data || []) as { room_id: string; user_id: string }[];
+    if (!rows.length) { toast({ title: "Sem escala na semana anterior" }); return; }
+    const payload = rows.map(r => ({ ...r, service_date: scheduleDate, created_by: user?.id }));
+    const { error } = await (supabase as any).from("kids_room_schedules").upsert(payload, { onConflict: "room_id,user_id,service_date", ignoreDuplicates: true });
+    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Escala copiada da semana anterior" });
+    loadRoomSchedules();
+  }
 
   async function loadKids() {
     if (!page) return;
@@ -299,9 +409,10 @@ export default function KidsAdmin() {
         </div>
 
         <Tabs defaultValue="rooms" className="w-full">
-          <TabsList className="w-full grid grid-cols-3 md:grid-cols-7 rounded-2xl">
+          <TabsList className="w-full grid grid-cols-3 md:grid-cols-8 rounded-2xl">
             <TabsTrigger value="rooms" className="rounded-xl"><QrCode className="w-4 h-4 mr-1" /> Salas</TabsTrigger>
-            <TabsTrigger value="schedule" className="rounded-xl"><Clock className="w-4 h-4 mr-1" /> Horário</TabsTrigger>
+            <TabsTrigger value="schedule" className="rounded-xl"><CalendarDays className="w-4 h-4 mr-1" /> Dias</TabsTrigger>
+            <TabsTrigger value="rota" className="rounded-xl"><CalendarCheck className="w-4 h-4 mr-1" /> Escala</TabsTrigger>
             <TabsTrigger value="kids" className="rounded-xl"><ArrowLeftRight className="w-4 h-4 mr-1" /> Crianças</TabsTrigger>
             <TabsTrigger value="leaders" className="rounded-xl"><ShieldCheck className="w-4 h-4 mr-1" /> Líderes</TabsTrigger>
             <TabsTrigger value="teachers" className="rounded-xl"><Users className="w-4 h-4 mr-1" /> Professores</TabsTrigger>
@@ -309,33 +420,122 @@ export default function KidsAdmin() {
             <TabsTrigger value="consent" className="rounded-xl">Termo</TabsTrigger>
           </TabsList>
 
-          {/* HORÁRIO DE CHECK-IN */}
+          {/* DIAS DE AULA */}
           <TabsContent value="schedule">
+            <div className="space-y-4">
+              <Card className="rounded-3xl border-2">
+                <CardHeader><CardTitle className="text-base flex items-center gap-2"><CalendarDays className="w-4 h-4"/> Dias de aula recorrentes</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-xs text-slate-500">Configure os dias que se repetem toda semana (ex.: Domingo 09:00–11:00, Quarta 19:30–21:00). Fora destes horários o check-in fica fechado.</p>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-2 items-end">
+                    <div>
+                      <Label>Dia da semana</Label>
+                      <select className="w-full border rounded-md h-10 px-3 bg-background" value={newRecurring.weekday} onChange={e => setNewRecurring({ ...newRecurring, weekday: +e.target.value })}>
+                        {["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"].map((l,i) => <option key={i} value={i}>{l}</option>)}
+                      </select>
+                    </div>
+                    <div><Label>Início</Label><Input type="time" value={newRecurring.time_start} onChange={e => setNewRecurring({ ...newRecurring, time_start: e.target.value })} /></div>
+                    <div><Label>Fim</Label><Input type="time" value={newRecurring.time_end} onChange={e => setNewRecurring({ ...newRecurring, time_end: e.target.value })} /></div>
+                    <Button onClick={addRecurringDay} className="rounded-xl"><Plus className="w-4 h-4 mr-1"/> Adicionar</Button>
+                  </div>
+                  <div className="space-y-2 pt-2">
+                    {serviceDays.filter(s => s.weekday !== null).length === 0 && (
+                      <p className="text-sm text-slate-500 text-center py-3">Nenhum dia recorrente configurado.</p>
+                    )}
+                    {serviceDays.filter(s => s.weekday !== null).map(s => (
+                      <div key={s.id} className="flex items-center gap-2 p-3 rounded-xl border bg-white flex-wrap">
+                        <select className="border rounded-md h-9 px-2 bg-background text-sm" value={s.weekday!} onChange={e => updateServiceDay(s.id, { weekday: +e.target.value })}>
+                          {["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"].map((l,i) => <option key={i} value={i}>{l}</option>)}
+                        </select>
+                        <Input type="time" className="w-28" value={s.time_start.slice(0,5)} onChange={e => updateServiceDay(s.id, { time_start: e.target.value })} />
+                        <span className="text-slate-500">até</span>
+                        <Input type="time" className="w-28" value={s.time_end.slice(0,5)} onChange={e => updateServiceDay(s.id, { time_end: e.target.value })} />
+                        <Button size="sm" variant="ghost" onClick={() => deleteServiceDay(s.id)} className="ml-auto text-red-600"><Trash2 className="w-4 h-4"/></Button>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-3xl border-2">
+                <CardHeader><CardTitle className="text-base flex items-center gap-2"><Clock className="w-4 h-4"/> Datas avulsas</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-xs text-slate-500">Aulas em datas pontuais (retiros, eventos especiais).</p>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-2 items-end">
+                    <div><Label>Data</Label><Input type="date" value={newOneOff.specific_date} onChange={e => setNewOneOff({ ...newOneOff, specific_date: e.target.value })} /></div>
+                    <div><Label>Início</Label><Input type="time" value={newOneOff.time_start} onChange={e => setNewOneOff({ ...newOneOff, time_start: e.target.value })} /></div>
+                    <div><Label>Fim</Label><Input type="time" value={newOneOff.time_end} onChange={e => setNewOneOff({ ...newOneOff, time_end: e.target.value })} /></div>
+                    <Button onClick={addOneOffDay} className="rounded-xl"><Plus className="w-4 h-4 mr-1"/> Adicionar</Button>
+                  </div>
+                  <div className="space-y-2 pt-2">
+                    {serviceDays.filter(s => s.specific_date !== null).length === 0 && (
+                      <p className="text-sm text-slate-500 text-center py-3">Nenhuma data avulsa configurada.</p>
+                    )}
+                    {serviceDays.filter(s => s.specific_date !== null).map(s => (
+                      <div key={s.id} className="flex items-center gap-2 p-3 rounded-xl border bg-white flex-wrap">
+                        <Input type="date" className="w-40" value={s.specific_date!} onChange={e => updateServiceDay(s.id, { specific_date: e.target.value })} />
+                        <Input type="time" className="w-28" value={s.time_start.slice(0,5)} onChange={e => updateServiceDay(s.id, { time_start: e.target.value })} />
+                        <span className="text-slate-500">até</span>
+                        <Input type="time" className="w-28" value={s.time_end.slice(0,5)} onChange={e => updateServiceDay(s.id, { time_end: e.target.value })} />
+                        <Button size="sm" variant="ghost" onClick={() => deleteServiceDay(s.id)} className="ml-auto text-red-600"><Trash2 className="w-4 h-4"/></Button>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* ESCALA INTERNA DE PROFESSORES POR DATA */}
+          <TabsContent value="rota">
             <Card className="rounded-3xl border-2">
-              <CardHeader><CardTitle>Janela de check-in</CardTitle></CardHeader>
-              <CardContent className="space-y-3">
-                <p className="text-xs text-slate-500">O QR fixo da sala só permite check-in dentro deste horário e nos dias selecionados. Fora disso, a família recebe um aviso educado.</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Início</Label><Input type="time" value={scheduleForm.start} onChange={e => setScheduleForm({...scheduleForm, start: e.target.value})} /></div>
-                  <div><Label>Fim</Label><Input type="time" value={scheduleForm.end} onChange={e => setScheduleForm({...scheduleForm, end: e.target.value})} /></div>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2"><CalendarCheck className="w-4 h-4"/> Escala de professores por data</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-xs text-slate-500">Marque quem serve em cada sala em cada data. O professor só verá a sala no dashboard e poderá liberar crianças se estiver escalado <b>naquele dia</b>. O pool de professores por sala é gerenciado na aba "Professores".</p>
+                <div className="flex items-end gap-2 flex-wrap">
+                  <div><Label>Data</Label><Input type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)} className="w-48" /></div>
+                  <Button variant="outline" onClick={copyPreviousWeek} className="rounded-xl">Copiar da semana anterior</Button>
                 </div>
-                <div>
-                  <Label>Dias da semana</Label>
-                  <div className="flex gap-2 flex-wrap mt-1">
-                    {["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"].map((label, idx) => {
-                      const on = scheduleForm.days.includes(idx);
+                {rooms.length === 0 ? (
+                  <p className="text-sm text-slate-500 text-center py-4">Crie salas primeiro.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {rooms.map(r => {
+                      const pool = teacherPoolByRoom[r.id] || [];
+                      const scheduled = new Set((roomSchedulesByRoom[r.id] || []).map(s => s.user_id));
                       return (
-                        <button key={idx} type="button"
-                          onClick={() => setScheduleForm(s => ({ ...s, days: on ? s.days.filter(d=>d!==idx) : [...s.days, idx].sort() }))}
-                          className={`px-3 py-1.5 rounded-xl text-sm font-semibold border-2 ${on ? "bg-violet-600 text-white border-violet-600" : "bg-white text-slate-600 border-slate-200"}`}>
-                          {label}
-                        </button>
+                        <div key={r.id} className="p-3 rounded-2xl border-2" style={{ borderColor: r.color + "40", background: r.color + "08" }}>
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="font-semibold text-sm text-slate-900">{r.name}</p>
+                            <Badge variant="outline" className="text-xs">{scheduled.size} escalado(s)</Badge>
+                          </div>
+                          {pool.length === 0 ? (
+                            <p className="text-xs text-slate-500 py-2">Nenhum professor no pool desta sala. Adicione na aba "Professores".</p>
+                          ) : (
+                            <div className="flex flex-wrap gap-2">
+                              {pool.map(t => {
+                                const on = scheduled.has(t.user_id);
+                                return (
+                                  <button
+                                    key={t.user_id}
+                                    type="button"
+                                    onClick={() => toggleTeacherSchedule(r.id, t.user_id, !on)}
+                                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold border-2 transition ${on ? "bg-violet-600 text-white border-violet-600" : "bg-white text-slate-700 border-slate-200 hover:border-violet-300"}`}
+                                    title={t.email}
+                                  >
+                                    {on ? "✓ " : ""}{t.name}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
                       );
                     })}
                   </div>
-                </div>
-                <div><Label>Fuso horário</Label><Input value={scheduleForm.tz} onChange={e => setScheduleForm({...scheduleForm, tz: e.target.value})} /></div>
-                <Button onClick={saveSchedule} disabled={busy} className="rounded-xl">{busy ? <Loader2 className="w-4 h-4 animate-spin"/> : "Salvar horário"}</Button>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
