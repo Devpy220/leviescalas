@@ -1,3 +1,4 @@
+import { LeviKidsWordmark } from "@/components/LeviKidsWordmark";
 import { Link, useNavigate } from "react-router-dom";
 import { Calendar, Baby, ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -37,7 +38,7 @@ export default function ChooseApp() {
                 <div className="w-14 h-14 rounded-2xl bg-amber-500 text-white flex items-center justify-center mb-4">
                   <Baby className="w-7 h-7" />
                 </div>
-                <h2 className="text-xl font-bold text-slate-900 mb-1">LeviKids</h2>
+                <h2 className="text-xl font-bold mb-1"><LeviKidsWordmark /></h2>
                 <p className="text-sm text-slate-600 mb-4">Ministério infantil: check-in por QR e retirada segura.</p>
                 <span className="inline-flex items-center gap-1 text-amber-700 font-semibold text-sm">
                   Entrar <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />

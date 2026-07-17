@@ -1,3 +1,4 @@
+import { LeviKidsWordmark } from "@/components/LeviKidsWordmark";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -425,7 +426,7 @@ export default function KidsAdmin() {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-3xl font-bold text-slate-900">{page.name}</h1>
-            <p className="text-slate-600 text-sm">Painel do líder — LeviKids</p>
+            <p className="text-slate-600 text-sm">Painel do líder — <LeviKidsWordmark /></p>
           </div>
           <div className="flex gap-2 flex-wrap">
             <Button asChild variant="outline" className="rounded-xl"><Link to="/dashboard">← LEVI</Link></Button>

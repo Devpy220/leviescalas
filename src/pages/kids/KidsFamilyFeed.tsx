@@ -1,3 +1,4 @@
+import { LeviKidsWordmark } from "@/components/LeviKidsWordmark";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -94,7 +95,7 @@ export default function KidsFamilyFeed() {
       <div className="max-w-2xl mx-auto space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2"><MessageCircle className="w-6 h-6 text-violet-600"/> Mensagens LeviKids</h1>
+            <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2"><MessageCircle className="w-6 h-6 text-violet-600"/> Mensagens <LeviKidsWordmark /></h1>
             <p className="text-sm text-slate-600">Comunicação da equipe kids com as famílias.</p>
           </div>
           <div className="flex gap-2">

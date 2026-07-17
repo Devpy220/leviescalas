@@ -1,3 +1,4 @@
+import { LeviKidsWordmark } from "@/components/LeviKidsWordmark";
 import { useEffect, useRef, useState } from "react";
 import { BrowserQRCodeReader } from "@zxing/browser";
 import { supabase } from "@/integrations/supabase/client";
@@ -175,7 +176,7 @@ export default function KidsCheckin() {
     <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-amber-50 p-4">
       <div className="max-w-xl mx-auto space-y-5">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-slate-900">Check-in LeviKids</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Check-in <LeviKidsWordmark /></h1>
           <p className="text-sm text-slate-600">Aponte o celular para o QR fixo colado na porta da sala.</p>
         </div>
 

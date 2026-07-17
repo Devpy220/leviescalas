@@ -1,3 +1,4 @@
+import { LeviKidsWordmark } from "@/components/LeviKidsWordmark";
 import { Link } from "react-router-dom";
 import { Baby, Sparkles, ShieldCheck, QrCode, Copy, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,7 @@ export default function KidsLanding() {
       <div className="max-w-4xl mx-auto px-4 py-12">
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-100 text-violet-700 text-sm font-semibold mb-4">
-            <Sparkles className="w-4 h-4" /> LeviKids
+            <Sparkles className="w-4 h-4" /> <LeviKidsWordmark />
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-3">Ministério infantil seguro e divertido</h1>
           <p className="text-slate-600 text-lg">Cadastro, check-in por QR code e retirada com código pessoal.</p>

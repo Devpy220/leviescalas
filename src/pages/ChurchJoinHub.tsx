@@ -1,3 +1,4 @@
+import { LeviKidsWordmark } from "@/components/LeviKidsWordmark";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -149,7 +150,7 @@ export default function ChurchJoinHub() {
               <div className="w-12 h-12 rounded-xl bg-amber-500 flex items-center justify-center mb-2">
                 <Baby className="w-6 h-6 text-white" />
               </div>
-              <CardTitle>Criar Página LeviKids</CardTitle>
+              <CardTitle>Criar Página <LeviKidsWordmark /></CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-sm text-muted-foreground">
@@ -157,13 +158,13 @@ export default function ChurchJoinHub() {
               </p>
               <Alert className="border-amber-500/30 bg-amber-500/5 py-2">
                 <AlertDescription className="text-xs">
-                  ⚠️ <strong>Uma página LeviKids por igreja.</strong> Quem criar vira o líder Kids automaticamente.
+                  ⚠️ <strong>Uma página <LeviKidsWordmark /> por igreja.</strong> Quem criar vira o líder Kids automaticamente.
                 </AlertDescription>
               </Alert>
 
               {info.has_kids_page ? (
                 <Button variant="outline" className="w-full" disabled>
-                  Já existe uma página LeviKids
+                  Já existe uma página <LeviKidsWordmark />
                 </Button>
               ) : !user ? (
                 <Button variant="outline" className="w-full" onClick={goAuth}>
@@ -175,7 +176,7 @@ export default function ChurchJoinHub() {
                   className="w-full bg-amber-500 hover:bg-amber-600 text-white"
                   onClick={() => setShowKidsForm(true)}
                 >
-                  Criar Página LeviKids
+                  Criar Página <LeviKidsWordmark />
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               ) : (

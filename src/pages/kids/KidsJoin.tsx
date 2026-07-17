@@ -1,3 +1,4 @@
+import { LeviKidsWordmark } from "@/components/LeviKidsWordmark";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -191,7 +192,7 @@ export default function KidsJoin() {
             </>
           ) : (
             <>
-              <h1 className="text-2xl font-bold text-slate-900">Cadastro LeviKids</h1>
+              <h1 className="text-2xl font-bold text-slate-900">Cadastro <LeviKidsWordmark /></h1>
               <p className="text-sm text-slate-600">A sala é escolhida automaticamente pela idade da criança.</p>
             </>
           )}
@@ -311,7 +312,7 @@ function InlineAuth({ pageName, roomLabel }: { pageName: string; roomLabel: stri
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-violet-50 via-white to-amber-50">
       <Card className="max-w-md w-full rounded-3xl border-2">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Baby className="w-5 h-5 text-violet-600"/> LeviKids — {pageName}</CardTitle>
+          <CardTitle className="flex items-center gap-2"><Baby className="w-5 h-5 text-violet-600"/> <LeviKidsWordmark /> — {pageName}</CardTitle>
           {roomLabel && <p className="text-xs text-slate-500">Sala: <b>{roomLabel}</b></p>}
         </CardHeader>
         <CardContent className="space-y-4">
