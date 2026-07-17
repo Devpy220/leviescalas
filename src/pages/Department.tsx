@@ -150,6 +150,7 @@ export default function Department() {
   // Removed sidebar state - now using popover
   const [activeTab, setActiveTab] = useState('schedules');
   const [unreadAnnouncements, setUnreadAnnouncements] = useState(0);
+  const [kidsLinked, setKidsLinked] = useState(false);
   const isMobile = useIsMobile();
 
   useEffect(() => {
