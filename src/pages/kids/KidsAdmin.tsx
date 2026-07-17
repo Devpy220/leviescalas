@@ -40,6 +40,18 @@ export default function KidsAdmin() {
   const [transferTargetRoom, setTransferTargetRoom] = useState("");
   const [scheduleForm, setScheduleForm] = useState({ start: "18:30", end: "20:30", days: [0,3] as number[], tz: "America/Sao_Paulo" });
 
+  // Dias de aula (novos)
+  interface ServiceDay { id: string; page_id: string; weekday: number | null; specific_date: string | null; time_start: string; time_end: string; active: boolean; }
+  const [serviceDays, setServiceDays] = useState<ServiceDay[]>([]);
+  const [newRecurring, setNewRecurring] = useState({ weekday: 0, time_start: "09:00", time_end: "11:00" });
+  const [newOneOff, setNewOneOff] = useState({ specific_date: new Date().toISOString().slice(0,10), time_start: "09:00", time_end: "11:00" });
+
+  // Escala interna de professores
+  interface RoomSchedule { id: string; room_id: string; user_id: string; service_date: string; }
+  const [scheduleDate, setScheduleDate] = useState(new Date().toISOString().slice(0,10));
+  const [roomSchedulesByRoom, setRoomSchedulesByRoom] = useState<Record<string, RoomSchedule[]>>({});
+  const [teacherPoolByRoom, setTeacherPoolByRoom] = useState<Record<string, { user_id: string; name: string; email: string }[]>>({});
+
   // invite / promotion modals
   const [showLeaderModal, setShowLeaderModal] = useState(false);
   const [showTeacherModal, setShowTeacherModal] = useState(false);
