@@ -623,7 +623,7 @@ export default function Dashboard() {
             <div className="rounded-3xl border-2 border-violet-200 bg-violet-50/60 p-4 space-y-2">
               <div className="flex items-center gap-2">
                 <Baby className="w-4 h-4 text-violet-600" />
-                <p className="text-sm font-semibold">Link de cadastro dos responsáveis — LeviKids</p>
+                <p className="text-sm font-semibold">Link de cadastro dos responsáveis — <LeviKidsWordmark /></p>
               </div>
               <p className="text-xs text-muted-foreground">
                 Compartilhe com os pais para cadastrarem seus filhos (foto e data de nascimento).
