@@ -150,6 +150,7 @@ export default function Department() {
   // Removed sidebar state - now using popover
   const [activeTab, setActiveTab] = useState('schedules');
   const [unreadAnnouncements, setUnreadAnnouncements] = useState(0);
+  const [kidsLinked, setKidsLinked] = useState(false);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -247,6 +248,12 @@ export default function Department() {
         .select('max_blackout_dates, allow_sunday_double')
         .eq('id', id)
         .maybeSingle();
+      const { data: deptKids } = await (supabase as any)
+        .from('departments')
+        .select('kids_linked')
+        .eq('id', id)
+        .maybeSingle();
+      setKidsLinked(!!deptKids?.kids_linked);
 
       setDepartment({
         id: data.id,
@@ -561,6 +568,25 @@ export default function Department() {
             </div>
 
             <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+              {kidsLinked && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      asChild
+                      variant="outline"
+                      size="sm"
+                      className="rounded-xl border-violet-300 text-violet-700 hover:bg-violet-50 dark:text-violet-300 dark:border-violet-700 dark:hover:bg-violet-950 gap-1"
+                    >
+                      <Link to={isLeader ? '/kids/admin' : '/kids/dashboard'}>
+                        <ArrowLeft className="w-4 h-4" />
+                        <span className="hidden sm:inline">Voltar ao LeviKids</span>
+                        <span className="sm:hidden">LeviKids</span>
+                      </Link>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Voltar para o LeviKids</TooltipContent>
+                </Tooltip>
+              )}
               {isLeader && (
                 <Tooltip>
                   <TooltipTrigger asChild>
