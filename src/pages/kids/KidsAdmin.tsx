@@ -774,8 +774,8 @@ export default function KidsAdmin() {
             <Card className="rounded-3xl border-2">
               <CardHeader><CardTitle className="text-base">Termo de consentimento</CardTitle></CardHeader>
               <CardContent>
-                <p className="text-sm text-slate-700 mb-2">Versão atual: <b>{page.consent_version}</b></p>
-                <pre className="p-4 bg-white border-2 border-slate-200 rounded-xl text-sm leading-relaxed text-slate-900 whitespace-pre-wrap max-h-96 overflow-auto font-sans">{page.consent_text}</pre>
+                <p className="text-sm text-muted-foreground mb-2">Versão atual: <b>{page.consent_version}</b></p>
+                <pre className="p-4 bg-card border-2 border-border rounded-xl text-sm leading-relaxed text-foreground dark:text-white whitespace-pre-wrap max-h-96 overflow-auto font-sans">{page.consent_text}</pre>
               </CardContent>
             </Card>
           </TabsContent>
