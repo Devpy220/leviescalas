@@ -39,6 +39,8 @@ export default function KidsAdmin() {
   const [transferChild, setTransferChild] = useState<ChildRow | null>(null);
   const [transferTargetRoom, setTransferTargetRoom] = useState("");
   const [scheduleForm, setScheduleForm] = useState({ start: "18:30", end: "20:30", days: [0,3] as number[], tz: "America/Sao_Paulo" });
+  const [linkedDeptId, setLinkedDeptId] = useState<string | null>(null);
+  const [generatingSchedule, setGeneratingSchedule] = useState(false);
 
   // Dias de aula (novos)
   interface ServiceDay { id: string; page_id: string; weekday: number | null; specific_date: string | null; time_start: string; time_end: string; active: boolean; }
@@ -67,9 +69,32 @@ export default function KidsAdmin() {
 
   useEffect(() => {
     if (page) {
-      loadRooms(); loadLeaders(); loadTeachers(); loadContent(); loadKids(); loadServiceDays();
+      loadRooms(); loadLeaders(); loadTeachers(); loadContent(); loadKids(); loadServiceDays(); loadLinkedDept();
     }
   }, [page]);
+
+  async function loadLinkedDept() {
+    if (!page) return;
+    const { data } = await (supabase.rpc as any)("kids_get_linked_department", { _page_id: page.id });
+    setLinkedDeptId((data as string) || null);
+  }
+
+  async function generateSmartSchedule() {
+    if (!page) return;
+    setGeneratingSchedule(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("kids-generate-smart-schedule", {
+        body: { page_id: page.id, service_date: scheduleDate },
+      });
+      if (error) throw error;
+      toast({ title: "Escala gerada!", description: `${(data as any)?.assigned || 0} atribuições criadas para ${scheduleDate}.` });
+      await loadRoomSchedules();
+    } catch (e: any) {
+      toast({ title: "Erro ao gerar escala", description: e.message, variant: "destructive" });
+    } finally {
+      setGeneratingSchedule(false);
+    }
+  }
 
   useEffect(() => {
     if (page && rooms.length) { loadRoomSchedules(); loadTeacherPool(); }
