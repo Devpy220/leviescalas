@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, AlertTriangle, PhoneCall, LogOut, QrCode, Download, FileDown } from "lucide-react";
+import { Loader2, AlertTriangle, PhoneCall, LogOut, QrCode, Download, FileDown, ExternalLink } from "lucide-react";
 import { qrToDataUrl, KIDS_JOIN_BASE, downloadPng, downloadPdf } from "@/lib/kidsQr";
 import { getKidsPhotoUrl } from "@/lib/kidsStorage";
 import { Link } from "react-router-dom";
