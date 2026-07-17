@@ -35,6 +35,7 @@ export default function KidsAdmin() {
   const [qrPreview, setQrPreview] = useState<{ room: Room; url: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [kids, setKids] = useState<ChildRow[]>([]);
+  const [activeCheckins, setActiveCheckins] = useState<Set<string>>(new Set());
   const [transferChild, setTransferChild] = useState<ChildRow | null>(null);
   const [transferTargetRoom, setTransferTargetRoom] = useState("");
   const [scheduleForm, setScheduleForm] = useState({ start: "18:30", end: "20:30", days: [0,3] as number[], tz: "America/Sao_Paulo" });
