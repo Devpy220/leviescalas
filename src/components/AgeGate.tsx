@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, ShieldAlert, CalendarDays } from "lucide-react";
+import { Loader2, ShieldAlert, CalendarDays, AlertTriangle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 // Public / bypass paths: age gate should not block these
