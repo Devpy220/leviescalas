@@ -58,14 +58,14 @@ export default function ParentPrayer() {
           </select>
         )}
         <textarea
-          value={request}
-          onChange={(e) => setRequest(e.target.value)}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
           rows={4}
           maxLength={500}
           placeholder="Compartilhe seu pedido..."
           className="w-full rounded-2xl border-2 border-white/60 bg-white/70 dark:bg-slate-800/70 px-4 py-3 text-sm resize-none"
         />
-        <button onClick={send} disabled={busy || !request.trim()} className="pk-btn pk-btn-primary w-full disabled:opacity-50">
+        <button onClick={send} disabled={busy || !text.trim()} className="pk-btn pk-btn-primary w-full disabled:opacity-50">
           {busy ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Enviar pedido 💜"}
         </button>
       </PillCard>
