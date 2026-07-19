@@ -8,7 +8,7 @@ interface Event {
   id: string;
   title: string;
   description: string | null;
-  event_at: string;
+  starts_at: string;
   location: string | null;
 }
 
@@ -21,10 +21,10 @@ export default function ParentAgenda() {
   useEffect(() => {
     if (!pageId) { setLoading(false); return; }
     supabase.from("kids_events")
-      .select("id, title, description, event_at, location")
+      .select("id, title, description, starts_at, location")
       .eq("page_id", pageId)
-      .gte("event_at", new Date().toISOString())
-      .order("event_at")
+      .gte("starts_at", new Date().toISOString())
+      .order("starts_at")
       .then(({ data }) => { setEvents((data || []) as Event[]); setLoading(false); });
   }, [pageId]);
 
