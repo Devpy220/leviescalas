@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import mascot from "@/assets/portal-kids/mascot-child.png";
 import medal from "@/assets/portal-kids/icon-medal.png";
 import { LogOut, Star } from "lucide-react";
-import { KIDS_PHOTOS_BUCKET } from "@/lib/kidsStorage";
+
 
 export default function KidsChildHome() {
   const { session } = useKidChildSession();
