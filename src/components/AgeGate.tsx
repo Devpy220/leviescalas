@@ -55,6 +55,7 @@ export function AgeGate({ children }: { children: React.ReactNode }) {
       setProfile((data as any) || { birth_date: null, guardian_authorized_by: null });
       setChecked(true);
     }
+    setDismissed(false);
     load();
     return () => { cancelled = true; };
   }, [user, loading, location.pathname]);
