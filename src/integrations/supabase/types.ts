@@ -615,6 +615,53 @@ export type Database = {
         }
         Relationships: []
       }
+      kids_authorized_pickups: {
+        Row: {
+          child_id: string
+          created_at: string
+          created_by: string
+          document: string | null
+          id: string
+          name: string
+          phone: string | null
+          photo_url: string | null
+          relationship: string | null
+          updated_at: string
+        }
+        Insert: {
+          child_id: string
+          created_at?: string
+          created_by: string
+          document?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          photo_url?: string | null
+          relationship?: string | null
+          updated_at?: string
+        }
+        Update: {
+          child_id?: string
+          created_at?: string
+          created_by?: string
+          document?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          photo_url?: string | null
+          relationship?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kids_authorized_pickups_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "kids_children"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kids_checkins: {
         Row: {
           checkin_at: string
@@ -678,6 +725,8 @@ export type Database = {
           notes: string | null
           page_id: string
           photo_path: string | null
+          pin_hash: string | null
+          pin_set_at: string | null
           restrictions: string | null
           suggested_room_id: string | null
           updated_at: string
@@ -693,6 +742,8 @@ export type Database = {
           notes?: string | null
           page_id: string
           photo_path?: string | null
+          pin_hash?: string | null
+          pin_set_at?: string | null
           restrictions?: string | null
           suggested_room_id?: string | null
           updated_at?: string
@@ -708,6 +759,8 @@ export type Database = {
           notes?: string | null
           page_id?: string
           photo_path?: string | null
+          pin_hash?: string | null
+          pin_set_at?: string | null
           restrictions?: string | null
           suggested_room_id?: string | null
           updated_at?: string
@@ -856,6 +909,98 @@ export type Database = {
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "kids_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kids_event_signups: {
+        Row: {
+          child_id: string
+          created_at: string
+          event_id: string
+          guardian_user_id: string
+          id: string
+        }
+        Insert: {
+          child_id: string
+          created_at?: string
+          event_id: string
+          guardian_user_id: string
+          id?: string
+        }
+        Update: {
+          child_id?: string
+          created_at?: string
+          event_id?: string
+          guardian_user_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kids_event_signups_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "kids_children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kids_event_signups_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "kids_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kids_events: {
+        Row: {
+          allow_signup: boolean
+          cover_url: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          ends_at: string | null
+          id: string
+          location: string | null
+          page_id: string
+          starts_at: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          allow_signup?: boolean
+          cover_url?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          ends_at?: string | null
+          id?: string
+          location?: string | null
+          page_id: string
+          starts_at: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          allow_signup?: boolean
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          ends_at?: string | null
+          id?: string
+          location?: string | null
+          page_id?: string
+          starts_at?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kids_events_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "kids_pages"
             referencedColumns: ["id"]
           },
         ]
@@ -1128,6 +1273,91 @@ export type Database = {
           },
         ]
       }
+      kids_prayer_requests: {
+        Row: {
+          child_id: string
+          created_at: string
+          guardian_user_id: string
+          id: string
+          responded_at: string | null
+          responded_by: string | null
+          status: string
+          text: string
+          updated_at: string
+        }
+        Insert: {
+          child_id: string
+          created_at?: string
+          guardian_user_id: string
+          id?: string
+          responded_at?: string | null
+          responded_by?: string | null
+          status?: string
+          text: string
+          updated_at?: string
+        }
+        Update: {
+          child_id?: string
+          created_at?: string
+          guardian_user_id?: string
+          id?: string
+          responded_at?: string | null
+          responded_by?: string | null
+          status?: string
+          text?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kids_prayer_requests_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "kids_children"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kids_precheckin_codes: {
+        Row: {
+          child_id: string
+          code: string
+          created_at: string
+          created_by: string
+          expires_at: string
+          id: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          child_id: string
+          code: string
+          created_at?: string
+          created_by: string
+          expires_at?: string
+          id?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          child_id?: string
+          code?: string
+          created_at?: string
+          created_by?: string
+          expires_at?: string
+          id?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kids_precheckin_codes_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "kids_children"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kids_room_schedules: {
         Row: {
           created_at: string
@@ -1343,6 +1573,104 @@ export type Database = {
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "kids_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kids_verse_memorized: {
+        Row: {
+          child_id: string
+          id: string
+          marked_by: string | null
+          memorized_at: string
+          verse_id: string
+        }
+        Insert: {
+          child_id: string
+          id?: string
+          marked_by?: string | null
+          memorized_at?: string
+          verse_id: string
+        }
+        Update: {
+          child_id?: string
+          id?: string
+          marked_by?: string | null
+          memorized_at?: string
+          verse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kids_verse_memorized_child_id_fkey"
+            columns: ["child_id"]
+            isOneToOne: false
+            referencedRelation: "kids_children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kids_verse_memorized_verse_id_fkey"
+            columns: ["verse_id"]
+            isOneToOne: false
+            referencedRelation: "kids_verses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kids_verses: {
+        Row: {
+          age_track: Database["public"]["Enums"]["kids_age_track"]
+          audio_url: string | null
+          created_at: string
+          created_by: string | null
+          family_devotional_text: string | null
+          id: string
+          illustration_url: string | null
+          is_global: boolean
+          is_published: boolean
+          order_index: number
+          page_id: string | null
+          reference: string
+          text_simple: string
+          updated_at: string
+        }
+        Insert: {
+          age_track?: Database["public"]["Enums"]["kids_age_track"]
+          audio_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          family_devotional_text?: string | null
+          id?: string
+          illustration_url?: string | null
+          is_global?: boolean
+          is_published?: boolean
+          order_index?: number
+          page_id?: string | null
+          reference: string
+          text_simple: string
+          updated_at?: string
+        }
+        Update: {
+          age_track?: Database["public"]["Enums"]["kids_age_track"]
+          audio_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          family_devotional_text?: string | null
+          id?: string
+          illustration_url?: string | null
+          is_global?: boolean
+          is_published?: boolean
+          order_index?: number
+          page_id?: string | null
+          reference?: string
+          text_simple?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kids_verses_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "kids_pages"
             referencedColumns: ["id"]
           },
         ]
@@ -2907,11 +3235,28 @@ export type Database = {
           month: string
         }[]
       }
+      kids_consume_precheckin: {
+        Args: { _code: string }
+        Returns: {
+          checkin_id: string
+          child_id: string
+          full_name: string
+          room_id: string
+          room_name: string
+        }[]
+      }
       kids_create_page_by_church_code: {
         Args: { _code: string; _name: string }
         Returns: string
       }
       kids_default_consent_text: { Args: never; Returns: string }
+      kids_generate_precheckin: {
+        Args: { _child_id: string }
+        Returns: {
+          code: string
+          expires_at: string
+        }[]
+      }
       kids_get_linked_department: {
         Args: { _page_id: string }
         Returns: string
@@ -3021,6 +3366,10 @@ export type Database = {
         Args: { _page_token: string; _room_id: string }
         Returns: undefined
       }
+      kids_set_child_pin: {
+        Args: { _child_id: string; _pin: string }
+        Returns: undefined
+      }
       kids_teacher_rooms_today: {
         Args: never
         Returns: {
@@ -3035,6 +3384,16 @@ export type Database = {
       kids_transfer_child: {
         Args: { _child_id: string; _new_room_id: string; _reason?: string }
         Returns: boolean
+      }
+      kids_verify_child_pin: {
+        Args: { _child_id: string; _pin: string }
+        Returns: {
+          birth_date: string
+          child_id: string
+          full_name: string
+          page_id: string
+          photo_path: string
+        }[]
       }
       log_billing_audit: {
         Args: {
@@ -3103,6 +3462,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "user"
       confirmation_status: "pending" | "confirmed" | "declined"
+      kids_age_track: "bercario" | "maternal" | "juniores" | "pre_ado"
       member_role: "leader" | "member" | "coleader"
       notification_status: "pending" | "sent" | "failed"
       subscription_status:
@@ -3241,6 +3601,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "user"],
       confirmation_status: ["pending", "confirmed", "declined"],
+      kids_age_track: ["bercario", "maternal", "juniores", "pre_ado"],
       member_role: ["leader", "member", "coleader"],
       notification_status: ["pending", "sent", "failed"],
       subscription_status: [
