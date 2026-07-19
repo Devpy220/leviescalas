@@ -166,10 +166,15 @@ export interface TripletRecipient {
 export interface TripletOptions {
   origin: string;
   includeInstagram?: boolean;
-  // When true, appends the "commands hint" message as a 3rd part per recipient.
+  // When true, appends the "commands hint" message as an extra part per recipient.
   // Defaults to false — the commands message is only sent alongside the monthly
   // blackout-collection prompt (antepenultimate day of the month).
   includeCommands?: boolean;
+  // When true, appends the "support LEVI" message as an extra part per recipient.
+  // Defaults to false — the support message is sent EXCLUSIVELY by the weekly
+  // send-support-whatsapp cron (Wednesdays). Never piggy-back on schedule,
+  // reminder, announcement or broadcast flows.
+  includeSupport?: boolean;
   // Pause range between messages for the SAME recipient.
   interMinMs?: number;
   interMaxMs?: number;
@@ -193,6 +198,7 @@ export async function enqueueTriplets(
     ? `\n\n📲 Siga a ELSD no Instagram:\n${INSTAGRAM_LINK}`
     : "";
   const includeCommands = opts.includeCommands === true;
+  const includeSupport = opts.includeSupport === true;
 
   const rows: any[] = [];
   let cursor = Date.now();
@@ -203,8 +209,7 @@ export async function enqueueTriplets(
     if (i > 0) cursor += randomBetween(bwMin, bwMax);
 
     const mainAt = cursor;
-    const supportAt = mainAt + randomBetween(interMin, interMax);
-    cursor = supportAt;
+    cursor = mainAt;
 
     rows.push({
       phone: r.phone,
@@ -212,14 +217,18 @@ export async function enqueueTriplets(
       scheduled_for: new Date(mainAt).toISOString(),
       origin: `${opts.origin}:main`,
     });
-    rows.push({
-      phone: r.phone,
-      message: buildSupportOnlyMessage(r.userName),
-      scheduled_for: new Date(supportAt).toISOString(),
-      origin: `${opts.origin}:support`,
-    });
+    if (includeSupport) {
+      const supportAt = cursor + randomBetween(interMin, interMax);
+      cursor = supportAt;
+      rows.push({
+        phone: r.phone,
+        message: buildSupportOnlyMessage(r.userName),
+        scheduled_for: new Date(supportAt).toISOString(),
+        origin: `${opts.origin}:support`,
+      });
+    }
     if (includeCommands) {
-      const commandsAt = supportAt + randomBetween(interMin, interMax);
+      const commandsAt = cursor + randomBetween(interMin, interMax);
       cursor = commandsAt;
       rows.push({
         phone: r.phone,
@@ -229,6 +238,7 @@ export async function enqueueTriplets(
       });
     }
   }
+
 
   if (rows.length === 0) return { queued: 0 };
 
