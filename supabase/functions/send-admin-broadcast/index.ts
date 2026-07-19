@@ -74,7 +74,7 @@ const handler = async (req: Request): Promise<Response> => {
       .from("notifications")
       .insert(notifications as any);
 
-    // WhatsApp — triplet (main + apoio + comandos), sem Instagram
+    // WhatsApp — apenas mensagem principal (apoio é enviado só nas quartas)
     const whatsappRecipients = recipients
       .filter((p) => p.whatsapp)
       .map((p) => ({

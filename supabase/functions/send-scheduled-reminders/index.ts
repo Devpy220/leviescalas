@@ -195,7 +195,7 @@ const handler = async (req: Request): Promise<Response> => {
           const j = Math.floor(Math.random() * (i + 1));
           [waRecipients[i], waRecipients[j]] = [waRecipients[j], waRecipients[i]];
         }
-        // Triplet: main (with Instagram) + support + commands, per recipient.
+        // Apenas a mensagem principal (com Instagram). Apoio é enviado só nas quartas.
         const { queued } = await enqueueTriplets(supabaseUrl, serviceRoleKey, waRecipients, {
           origin: `schedule_reminder_${window.type}`,
           includeInstagram: true,
