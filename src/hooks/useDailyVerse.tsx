@@ -31,7 +31,7 @@ export function useDailyVerse(pageId?: string | null, ageTrack?: string) {
         .eq("is_published", true);
       if (pageId) q = q.or(`page_id.eq.${pageId},is_global.eq.true`);
       else q = q.eq("is_global", true);
-      if (ageTrack) q = q.eq("age_track", ageTrack);
+      if (ageTrack) q = q.eq("age_track", ageTrack as any);
       const { data } = await q;
       if (cancelled) return;
       setVerse(pickForToday((data || []) as DailyVerse[]));
