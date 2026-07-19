@@ -59,7 +59,7 @@ export default function KidsFamilyFeed() {
     if (!form.title.trim() || !form.body.trim() || !user) return;
     setBusy(true);
     let page_id: string | null = null;
-    let room_id: string | null = form.room_id || null;
+    const room_id: string | null = form.room_id || null;
     if (room_id) {
       const r = rooms.find(x => x.id === room_id);
       page_id = r?.page_id || null;

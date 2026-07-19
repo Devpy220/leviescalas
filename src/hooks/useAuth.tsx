@@ -467,7 +467,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               user_id: currentSession.user.id,
               user_agent: navigator.userAgent,
             }).then(() => {});
-          } catch {}
+          } catch { /* login_logs é best-effort */ }
 
           // Debounced bootstrap - only run ONCE per user, not on every auth event
           // Clear any pending bootstrap

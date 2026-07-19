@@ -1358,7 +1358,7 @@ export default function Admin() {
                       let referrerHost = '—';
                       try {
                         if (s.referrer) referrerHost = new URL(s.referrer).hostname;
-                      } catch {}
+                      } catch { /* referrer inválido */ }
                       return (
                         <tr key={s.session_id} className="border-b last:border-0">
                           <td className="py-2 pr-3 font-mono text-xs">{s.session_id.slice(0, 8)}</td>
