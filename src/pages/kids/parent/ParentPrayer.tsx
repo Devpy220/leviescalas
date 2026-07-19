@@ -9,8 +9,8 @@ import { toast } from "@/hooks/use-toast";
 export default function ParentPrayer() {
   const { user } = useAuth();
   const { kids } = useMyKids();
-  const [childId, setChildId] = useState<string | "">("");
-  const [request, setRequest] = useState("");
+  const [childId, setChildId] = useState<string>("");
+  const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [items, setItems] = useState<any[]>([]);
 
@@ -18,7 +18,7 @@ export default function ParentPrayer() {
     if (!user) return;
     const { data } = await supabase
       .from("kids_prayer_requests")
-      .select("id, request, status, created_at, child_id")
+      .select("id, text, status, created_at, child_id")
       .eq("guardian_user_id", user.id)
       .order("created_at", { ascending: false });
     setItems(data || []);
@@ -26,19 +26,18 @@ export default function ParentPrayer() {
   useEffect(() => { load(); }, [user?.id]);
 
   const send = async () => {
-    if (!request.trim() || !user) return;
-    const pageId = kids.find((k) => k.id === childId)?.page_id || kids[0]?.page_id;
-    if (!pageId) return toast({ title: "Precisa cadastrar filho antes", variant: "destructive" });
+    if (!text.trim() || !user) return;
+    const target = childId || kids[0]?.id;
+    if (!target) return toast({ title: "Cadastre um filho primeiro", variant: "destructive" });
     setBusy(true);
     const { error } = await supabase.from("kids_prayer_requests").insert({
-      page_id: pageId,
       guardian_user_id: user.id,
-      child_id: childId || null,
-      request: request.trim(),
+      child_id: target,
+      text: text.trim(),
     });
     setBusy(false);
     if (error) return toast({ title: "Ops", description: error.message, variant: "destructive" });
-    setRequest(""); setChildId("");
+    setText(""); setChildId("");
     toast({ title: "🙏 Recebido! Estamos orando com você." });
     load();
   };
