@@ -164,8 +164,11 @@ const App = () => (
                   } />
                   <Route path="/church-setup" element={<ChurchSetup />} />
 
-                  {/* LeviKids module */}
-                  <Route path="/kids" element={<KidsLanding />} />
+                  {/* LeviKids module — Portal Kids */}
+                  <Route path="/kids" element={<ProfileSelector />} />
+                  <Route path="/kids/hub" element={<KidsLanding />} />
+                  <Route path="/kids/child/login" element={<KidsChildLogin />} />
+                  <Route path="/kids/child" element={<KidsChildHome />} />
                   <Route path="/kids/join/:token" element={<KidsJoin />} />
                   <Route path="/kids/teacher-join/:token" element={<KidsTeacherJoin />} />
                   <Route path="/kids/checkin" element={<ProtectedRoute><KidsCheckin /></ProtectedRoute>} />
@@ -174,6 +177,13 @@ const App = () => (
                   <Route path="/kids/inclusao" element={<ProtectedRoute><KidsInclusionAssistant /></ProtectedRoute>} />
                   <Route path="/kids/mensagens" element={<ProtectedRoute><KidsFamilyFeed /></ProtectedRoute>} />
                   <Route path="/kids/relatorios" element={<ProtectedRoute><KidsReports /></ProtectedRoute>} />
+                  <Route path="/kids/parent" element={<ParentLayout />}>
+                    <Route index element={<ParentHome />} />
+                    <Route path="filhos" element={<ParentChildren />} />
+                    <Route path="agenda" element={<ParentAgenda />} />
+                    <Route path="oracao" element={<ParentPrayer />} />
+                    <Route path="perfil" element={<ParentProfile />} />
+                  </Route>
                   <Route path="/escolher-app" element={<ProtectedRoute><ChooseApp /></ProtectedRoute>} />
                   <Route path="/authorize-minor" element={<ProtectedRoute><AuthorizeMinor /></ProtectedRoute>} />
 
