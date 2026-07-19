@@ -1,0 +1,99 @@
+/* Portal Kids — Design System
+   Gradiente orgânico rosa/roxo/verde, cards pílula com glassmorphism,
+   tipografia bold arredondada, ilustrações 3D. */
+
+.pk-root {
+  --pk-pink: 340 82% 72%;
+  --pk-purple: 268 74% 66%;
+  --pk-green: 152 62% 60%;
+  --pk-cream: 40 100% 96%;
+  --pk-ink: 262 45% 18%;
+
+  background:
+    radial-gradient(1000px 700px at 8% -10%, hsl(var(--pk-pink) / 0.55), transparent 60%),
+    radial-gradient(900px 700px at 100% 10%, hsl(var(--pk-purple) / 0.55), transparent 60%),
+    radial-gradient(1100px 900px at 50% 110%, hsl(var(--pk-green) / 0.45), transparent 60%),
+    hsl(var(--pk-cream));
+  color: hsl(var(--pk-ink));
+  min-height: 100vh;
+}
+
+.dark .pk-root {
+  --pk-cream: 260 30% 8%;
+  --pk-ink: 40 100% 96%;
+}
+
+.pk-pill {
+  border-radius: 2rem;
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow:
+    0 10px 30px -12px hsl(var(--pk-purple) / 0.35),
+    0 2px 10px -4px hsl(var(--pk-pink) / 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.dark .pk-pill {
+  background: rgba(40, 24, 60, 0.55);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 12px 32px -14px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.pk-glow-pink { box-shadow: 0 20px 50px -20px hsl(var(--pk-pink) / 0.8); }
+.pk-glow-purple { box-shadow: 0 20px 50px -20px hsl(var(--pk-purple) / 0.8); }
+.pk-glow-green { box-shadow: 0 20px 50px -20px hsl(var(--pk-green) / 0.8); }
+
+.pk-title {
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  font-family: 'Nunito', 'Baloo 2', ui-rounded, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+.pk-heading-gradient {
+  background: linear-gradient(90deg, hsl(var(--pk-pink)), hsl(var(--pk-purple)) 55%, hsl(var(--pk-green)));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.pk-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, hsl(var(--pk-pink) / 0.2), hsl(var(--pk-purple) / 0.2));
+  color: hsl(var(--pk-ink));
+  font-weight: 700;
+  font-size: 0.75rem;
+}
+
+@keyframes pk-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.pk-float { animation: pk-float 4s ease-in-out infinite; }
+
+.pk-btn {
+  border-radius: 999px;
+  padding: 0.9rem 1.4rem;
+  font-weight: 800;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+.pk-btn:hover { transform: translateY(-2px); }
+
+.pk-btn-primary {
+  background: linear-gradient(90deg, hsl(var(--pk-pink)), hsl(var(--pk-purple)));
+  color: white;
+  box-shadow: 0 12px 24px -10px hsl(var(--pk-purple) / 0.7);
+}
+.pk-btn-green {
+  background: linear-gradient(90deg, hsl(var(--pk-green)), hsl(152 62% 45%));
+  color: white;
+  box-shadow: 0 12px 24px -10px hsl(var(--pk-green) / 0.7);
+}
