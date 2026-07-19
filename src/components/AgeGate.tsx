@@ -36,6 +36,7 @@ export function AgeGate({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<{ birth_date: string | null; guardian_authorized_by: string | null } | null>(null);
   const [saving, setSaving] = useState(false);
   const [birth, setBirth] = useState("");
+  const [dismissed, setDismissed] = useState(false);
 
   const bypass = isBypass(location.pathname);
 
