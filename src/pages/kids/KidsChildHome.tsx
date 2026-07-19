@@ -37,7 +37,7 @@ export default function KidsChildHome() {
         setAlreadyMemorized(!!data);
       }
       if (session.photo_path) {
-        const { data } = await supabase.storage.from(KIDS_PHOTOS_BUCKET).createSignedUrl(session.photo_path, 3600);
+        const { data } = await supabase.storage.from("kids-photos").createSignedUrl(session.photo_path, 3600);
         setPhotoUrl(data?.signedUrl ?? null);
       }
     })();
