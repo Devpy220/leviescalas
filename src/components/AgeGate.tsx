@@ -70,7 +70,7 @@ export function AgeGate({ children }: { children: React.ReactNode }) {
   }
 
   // Always render children; overlay dialogs on top when needed.
-  const showBirthPrompt = !bypass && user && checked && profile && !profile.birth_date;
+  const showBirthPrompt = !bypass && user && checked && profile && !profile.birth_date && !dismissed;
   const isMinor = !!profile?.birth_date && calcAge(profile.birth_date) < 18;
   const showMinorBlock = !bypass && user && checked && isMinor && !profile?.guardian_authorized_by;
 
@@ -78,9 +78,9 @@ export function AgeGate({ children }: { children: React.ReactNode }) {
     <>
       {children}
 
-      {/* Ask birth date */}
-      <Dialog open={!!showBirthPrompt}>
-        <DialogContent className="max-w-md" onInteractOutside={(e) => e.preventDefault()}>
+      {/* Ask birth date — dismissible, mas volta a aparecer no próximo login */}
+      <Dialog open={!!showBirthPrompt} onOpenChange={(o) => { if (!o) setDismissed(true); }}>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CalendarDays className="w-5 h-5 text-primary" /> Complete seu perfil
@@ -88,16 +88,29 @@ export function AgeGate({ children }: { children: React.ReactNode }) {
           </DialogHeader>
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              Para continuar usando o LEVI/LeviKids precisamos da sua data de nascimento.
+              Para continuar usando o LEVI/LeviKids precisamos da sua <strong>data de nascimento</strong>.
               Menores de 18 anos precisam de autorização de um responsável.
             </p>
+            <Alert variant="destructive">
+              <AlertTriangle className="w-4 h-4" />
+              <AlertDescription className="text-sm">
+                <strong>Atenção:</strong> você pode continuar usando por enquanto, mas se não informar a data de
+                nascimento até o próximo acesso, sua conta <strong>perderá o acesso automaticamente</strong> por
+                questões de segurança e proteção de menores.
+              </AlertDescription>
+            </Alert>
             <div>
               <Label>Data de nascimento *</Label>
               <Input type="date" value={birth} max={new Date().toISOString().slice(0,10)} onChange={(e) => setBirth(e.target.value)} />
             </div>
-            <Button onClick={saveBirth} disabled={!birth || saving} className="w-full">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salvar"}
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setDismissed(true)} className="flex-1">
+                Preencher depois
+              </Button>
+              <Button onClick={saveBirth} disabled={!birth || saving} className="flex-1">
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salvar agora"}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
