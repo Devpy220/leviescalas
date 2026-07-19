@@ -26,6 +26,7 @@ import Security from "./pages/Security";
 import Admin from "./pages/Admin";
 import WhatsAppLogs from "./pages/WhatsAppLogs";
 import AdminVolunteers from "./pages/AdminVolunteers";
+import HealthCheck from "./pages/admin/HealthCheck";
 import Churches from "./pages/Churches";
 import ChurchDetail from "./pages/ChurchDetail";
 import ChurchSetup from "./pages/ChurchSetup";
@@ -91,6 +92,7 @@ const App = () => (
                   {/* Admin area - restricted to leviescalas@gmail.com */}
                   <Route path="/admin-login" element={<Navigate to="/auth?forceLogin=true" replace />} />
                   <Route path="/admin" element={<Admin />} />
+                  <Route path="/admin/health" element={<HealthCheck />} />
                   <Route path="/admin/whatsapp-logs" element={<WhatsAppLogs />} />
                   <Route path="/admin/voluntarios" element={<AdminVolunteers />} />
                   
