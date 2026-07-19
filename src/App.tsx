@@ -48,6 +48,15 @@ import KidsInclusionAssistant from "./pages/kids/KidsInclusionAssistant";
 import KidsFamilyFeed from "./pages/kids/KidsFamilyFeed";
 import KidsReports from "./pages/kids/KidsReports";
 import KidsTeacherJoin from "./pages/kids/KidsTeacherJoin";
+import ProfileSelector from "./pages/kids/ProfileSelector";
+import KidsChildLogin from "./pages/kids/KidsChildLogin";
+import KidsChildHome from "./pages/kids/KidsChildHome";
+import ParentLayout from "./pages/kids/parent/ParentLayout";
+import ParentHome from "./pages/kids/parent/ParentHome";
+import ParentChildren from "./pages/kids/parent/ParentChildren";
+import ParentAgenda from "./pages/kids/parent/ParentAgenda";
+import ParentPrayer from "./pages/kids/parent/ParentPrayer";
+import ParentProfile from "./pages/kids/parent/ParentProfile";
 import ChooseApp from "./pages/ChooseApp";
 import AuthorizeMinor from "./pages/AuthorizeMinor";
 import { AgeGate } from "./components/AgeGate";
@@ -155,8 +164,11 @@ const App = () => (
                   } />
                   <Route path="/church-setup" element={<ChurchSetup />} />
 
-                  {/* LeviKids module */}
-                  <Route path="/kids" element={<KidsLanding />} />
+                  {/* LeviKids module — Portal Kids */}
+                  <Route path="/kids" element={<ProfileSelector />} />
+                  <Route path="/kids/hub" element={<KidsLanding />} />
+                  <Route path="/kids/child/login" element={<KidsChildLogin />} />
+                  <Route path="/kids/child" element={<KidsChildHome />} />
                   <Route path="/kids/join/:token" element={<KidsJoin />} />
                   <Route path="/kids/teacher-join/:token" element={<KidsTeacherJoin />} />
                   <Route path="/kids/checkin" element={<ProtectedRoute><KidsCheckin /></ProtectedRoute>} />
@@ -165,6 +177,13 @@ const App = () => (
                   <Route path="/kids/inclusao" element={<ProtectedRoute><KidsInclusionAssistant /></ProtectedRoute>} />
                   <Route path="/kids/mensagens" element={<ProtectedRoute><KidsFamilyFeed /></ProtectedRoute>} />
                   <Route path="/kids/relatorios" element={<ProtectedRoute><KidsReports /></ProtectedRoute>} />
+                  <Route path="/kids/parent" element={<ParentLayout />}>
+                    <Route index element={<ParentHome />} />
+                    <Route path="filhos" element={<ParentChildren />} />
+                    <Route path="agenda" element={<ParentAgenda />} />
+                    <Route path="oracao" element={<ParentPrayer />} />
+                    <Route path="perfil" element={<ParentProfile />} />
+                  </Route>
                   <Route path="/escolher-app" element={<ProtectedRoute><ChooseApp /></ProtectedRoute>} />
                   <Route path="/authorize-minor" element={<ProtectedRoute><AuthorizeMinor /></ProtectedRoute>} />
 
