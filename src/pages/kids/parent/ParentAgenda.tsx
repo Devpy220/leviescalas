@@ -44,7 +44,7 @@ export default function ParentAgenda() {
             <PillCard key={e.id} glow="purple">
               <p className="pk-title text-lg">{e.title}</p>
               <p className="text-xs opacity-70 mt-1">
-                {new Date(e.event_at).toLocaleString("pt-BR", { dateStyle: "long", timeStyle: "short" })}
+                {new Date(e.starts_at).toLocaleString("pt-BR", { dateStyle: "long", timeStyle: "short" })}
               </p>
               {e.location && <p className="text-xs mt-1">📍 {e.location}</p>}
               {e.description && <p className="text-sm mt-2 opacity-90">{e.description}</p>}
