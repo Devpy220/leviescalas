@@ -76,7 +76,7 @@ export default function ParentPrayer() {
             <div className="flex items-start gap-2">
               <HandHeart className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
               <div className="flex-1">
-                <p className="text-sm">{p.request}</p>
+                <p className="text-sm">{p.text}</p>
                 <p className="text-xs opacity-70 mt-1">
                   {new Date(p.created_at).toLocaleDateString("pt-BR")} • {p.status === "praying" ? "🙏 Estamos orando" : p.status === "answered" ? "✨ Respondida" : "Recebido"}
                 </p>
