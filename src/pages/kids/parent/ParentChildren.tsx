@@ -24,7 +24,7 @@ function KidCard({ kid, onChanged }: { kid: MyKid; onChanged: () => void }) {
 
   const generatePreCheck = async () => {
     setBusy(true);
-    const { data, error } = await (supabase as any).rpc("kids_generate_precheckin_code", { _child_id: kid.id });
+    const { data, error } = await (supabase as any).rpc("kids_generate_precheckin", { _child_id: kid.id });
     setBusy(false);
     if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
     setPreCode(data as string);
