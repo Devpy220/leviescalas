@@ -26,6 +26,7 @@ import Security from "./pages/Security";
 import Admin from "./pages/Admin";
 import WhatsAppLogs from "./pages/WhatsAppLogs";
 import AdminVolunteers from "./pages/AdminVolunteers";
+import HealthCheck from "./pages/admin/HealthCheck";
 import Churches from "./pages/Churches";
 import ChurchDetail from "./pages/ChurchDetail";
 import ChurchSetup from "./pages/ChurchSetup";
