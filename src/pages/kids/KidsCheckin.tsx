@@ -123,7 +123,7 @@ export default function KidsCheckin() {
         (v.srcObject as MediaStream).getTracks().forEach(t => t.stop());
         v.srcObject = null;
       }
-    } catch {}
+    } catch { /* stream já parado */ }
   }
 
   useEffect(() => () => stopScan(), []);

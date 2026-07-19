@@ -19,7 +19,7 @@ const criteria: StrengthCriteria[] = [
   { label: 'Letra maiúscula', test: (p) => /[A-Z]/.test(p), required: true },
   { label: 'Letra minúscula', test: (p) => /[a-z]/.test(p), required: true },
   { label: 'Número', test: (p) => /\d/.test(p), required: true },
-  { label: 'Caractere especial (!@#$%^&*)', test: (p) => /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\;'`~]/.test(p), required: true },
+  { label: 'Caractere especial (!@#$%^&*)', test: (p) => /[!@#$%^&*(),.?":{}|<>_\-+=[\]\\;'`~]/.test(p), required: true },
 ];
 
 const securityTips = [

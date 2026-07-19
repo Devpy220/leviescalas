@@ -64,7 +64,7 @@ export default function AnnouncementPopup({ departmentId, currentUserId }: Annou
     try {
       // Get department IDs to check
       let departmentIds: string[] = [];
-      let departmentNames = new Map<string, string>();
+      const departmentNames = new Map<string, string>();
 
       if (departmentId) {
         departmentIds = [departmentId];
