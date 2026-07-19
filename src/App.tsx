@@ -92,6 +92,7 @@ const App = () => (
                   {/* Admin area - restricted to leviescalas@gmail.com */}
                   <Route path="/admin-login" element={<Navigate to="/auth?forceLogin=true" replace />} />
                   <Route path="/admin" element={<Admin />} />
+                  <Route path="/admin/health" element={<HealthCheck />} />
                   <Route path="/admin/whatsapp-logs" element={<WhatsAppLogs />} />
                   <Route path="/admin/voluntarios" element={<AdminVolunteers />} />
                   
