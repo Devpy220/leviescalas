@@ -71,8 +71,9 @@ export function AgeGate({ children }: { children: React.ReactNode }) {
 
   // Always render children; overlay dialogs on top when needed.
   const showBirthPrompt = !bypass && user && checked && profile && !profile.birth_date && !dismissed;
-  const isMinor = !!profile?.birth_date && calcAge(profile.birth_date) < 18;
-  const showMinorBlock = !bypass && user && checked && isMinor && !profile?.guardian_authorized_by;
+  // Minor block temporarily disabled — accounts without birth date or minors are NOT blocked.
+  // They only see a dismissible reminder to fill in the birth date.
+  const showMinorBlock = false;
 
   return (
     <>
