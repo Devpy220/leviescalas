@@ -671,7 +671,6 @@ export type Database = {
           child_id: string
           created_at: string
           id: string
-          pickup_code: string | null
           room_id: string
         }
         Insert: {
@@ -682,7 +681,6 @@ export type Database = {
           child_id: string
           created_at?: string
           id?: string
-          pickup_code?: string | null
           room_id: string
         }
         Update: {
@@ -693,7 +691,6 @@ export type Database = {
           child_id?: string
           created_at?: string
           id?: string
-          pickup_code?: string | null
           room_id?: string
         }
         Relationships: [
