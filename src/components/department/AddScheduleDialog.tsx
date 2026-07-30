@@ -363,10 +363,11 @@ export default function AddScheduleDialog({
     setMemberConfigs({});
   };
 
-  const updateMemberConfig = (userId: string, field: keyof MemberConfig, value: string) => {
+  const updateMemberConfig = <K extends keyof MemberConfig>(userId: string, field: K, value: MemberConfig[K]) => {
     setMemberConfigs(prev => ({
       ...prev,
       [userId]: {
+        ...EMPTY_CONFIG,
         ...prev[userId],
         [field]: value
       }
