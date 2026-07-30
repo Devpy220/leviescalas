@@ -64,6 +64,8 @@ interface Schedule {
   time_end: string;
   notes: string | null;
   sector_id: string | null;
+  sector_ids?: string[] | null;
+  sectors_list?: { name: string; color: string }[];
   assignment_role?: string | null;
   profile?: {
     name: string;
@@ -603,17 +605,20 @@ function MemberRow({
           
         </div>
         
-        {/* Sector */}
-        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-          {schedule.sector && (
-            <span className="flex items-center gap-1 truncate">
-              <div 
-                className="w-2 h-2 rounded-full shrink-0" 
-                style={{ backgroundColor: schedule.sector.color }}
+        {/* Sectors */}
+        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground flex-wrap">
+          {(schedule.sectors_list && schedule.sectors_list.length > 0
+            ? schedule.sectors_list
+            : schedule.sector ? [schedule.sector] : []
+          ).map((sec, i) => (
+            <span key={`${sec.name}-${i}`} className="flex items-center gap-1 truncate">
+              <div
+                className="w-2 h-2 rounded-full shrink-0"
+                style={{ backgroundColor: sec.color }}
               />
-              {schedule.sector.name}
+              {sec.name}
             </span>
-          )}
+          ))}
           
           {/* Assignment role badge */}
           {schedule.assignment_role && ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES] && (

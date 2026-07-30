@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/select';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -42,6 +43,7 @@ interface Schedule {
   time_end: string;
   notes: string | null;
   sector_id: string | null;
+  sector_ids?: string[] | null;
   assignment_role?: string | null;
   profile?: {
     name: string;
@@ -86,7 +88,7 @@ export default function EditScheduleDialog({
   const [availabilityMap, setAvailabilityMap] = useState<Record<string, boolean>>({});
   const [blackoutMap, setBlackoutMap] = useState<Record<string, string[]>>({});
   const [loadingAvailability, setLoadingAvailability] = useState(false);
-  const [selectedSectorId, setSelectedSectorId] = useState<string>('');
+  const [selectedSectorIds, setSelectedSectorIds] = useState<string[]>([]);
   const [selectedAssignmentRole, setSelectedAssignmentRole] = useState<string>('');
   const [sectors, setSectors] = useState<{ id: string; name: string; color: string }[]>([]);
   const [assignmentRoles, setAssignmentRoles] = useState<{ id: string; name: string; icon: string }[]>([]);
@@ -168,7 +170,11 @@ export default function EditScheduleDialog({
       setTimeStart(schedule.time_start.slice(0, 5));
       setTimeEnd(schedule.time_end.slice(0, 5));
       setSelectedMemberId(schedule.user_id);
-      setSelectedSectorId(schedule.sector_id || '');
+      setSelectedSectorIds(
+        schedule.sector_ids && schedule.sector_ids.length > 0
+          ? schedule.sector_ids
+          : schedule.sector_id ? [schedule.sector_id] : []
+      );
       setSelectedAssignmentRole(schedule.assignment_role || '');
     }
   }, [schedule, open]);
@@ -239,7 +245,8 @@ export default function EditScheduleDialog({
           time_start: timeStart,
           time_end: timeEnd,
           user_id: selectedMemberId,
-          sector_id: selectedSectorId && selectedSectorId !== 'none' ? selectedSectorId : null,
+          sector_id: selectedSectorIds[0] ?? null,
+          sector_ids: selectedSectorIds,
           assignment_role: selectedAssignmentRole && selectedAssignmentRole !== 'none' ? selectedAssignmentRole : null,
         })
         .eq('id', schedule.id)
@@ -439,24 +446,30 @@ export default function EditScheduleDialog({
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-muted-foreground" />
-                Setor
+                Setores <span className="text-xs text-muted-foreground font-normal">(pode escolher mais de um)</span>
               </Label>
-              <Select value={selectedSectorId || 'none'} onValueChange={setSelectedSectorId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecionar setor" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nenhum</SelectItem>
-                  {sectors.map(s => (
-                    <SelectItem key={s.id} value={s.id}>
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }} />
-                        {s.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="border rounded-md p-2 space-y-1 max-h-40 overflow-y-auto">
+                {sectors.map(s => {
+                  const checked = selectedSectorIds.includes(s.id);
+                  return (
+                    <label
+                      key={s.id}
+                      className="flex items-center gap-2 p-2 rounded-md hover:bg-muted/50 cursor-pointer"
+                    >
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={(v) =>
+                          setSelectedSectorIds(prev =>
+                            v ? [...prev, s.id] : prev.filter(id => id !== s.id)
+                          )
+                        }
+                      />
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }} />
+                      <span className="text-sm">{s.name}</span>
+                    </label>
+                  );
+                })}
+              </div>
             </div>
           )}
 

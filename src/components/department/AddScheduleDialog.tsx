@@ -57,9 +57,11 @@ interface Sector {
 }
 
 interface MemberConfig {
-  sector_id: string;
+  sector_ids: string[];
   assignment_role: string;
 }
+
+const EMPTY_CONFIG: MemberConfig = { sector_ids: [], assignment_role: '' };
 
 interface AddScheduleDialogProps {
   open: boolean;
@@ -94,7 +96,7 @@ export default function AddScheduleDialog({
   
   // NEW: State for member edit dialog
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
-  const [localSectorId, setLocalSectorId] = useState<string>('');
+  const [localSectorIds, setLocalSectorIds] = useState<string[]>([]);
   const [localRole, setLocalRole] = useState<string>('');
   const [crossDeptConflicts, setCrossDeptConflicts] = useState<Record<string, string>>({});
   const [sundayConflicts, setSundayConflicts] = useState<Record<string, string>>({});
@@ -339,7 +341,7 @@ export default function AddScheduleDialog({
         // Add to selection with default config
         setMemberConfigs(prev => ({
           ...prev,
-          [userId]: { sector_id: '', assignment_role: '' }
+          [userId]: { ...EMPTY_CONFIG }
         }));
         return [...prev, userId];
       }
@@ -351,7 +353,7 @@ export default function AddScheduleDialog({
     setSelectedMembers(allIds);
     const configs: Record<string, MemberConfig> = {};
     allIds.forEach(id => {
-      configs[id] = { sector_id: '', assignment_role: '' };
+      configs[id] = { ...EMPTY_CONFIG };
     });
     setMemberConfigs(configs);
   };
@@ -361,10 +363,11 @@ export default function AddScheduleDialog({
     setMemberConfigs({});
   };
 
-  const updateMemberConfig = (userId: string, field: keyof MemberConfig, value: string) => {
+  const updateMemberConfig = <K extends keyof MemberConfig>(userId: string, field: K, value: MemberConfig[K]) => {
     setMemberConfigs(prev => ({
       ...prev,
       [userId]: {
+        ...EMPTY_CONFIG,
         ...prev[userId],
         [field]: value
       }
@@ -436,11 +439,13 @@ export default function AddScheduleDialog({
 
       // Create schedules for all selected members
       const schedulesToInsert = selectedMembers.map(userId => {
-        const config = memberConfigs[userId] || { sector_id: '', assignment_role: '' };
+        const config = memberConfigs[userId] || EMPTY_CONFIG;
+        const sectorIds = (config.sector_ids || []).filter(Boolean);
         return {
           department_id: departmentId,
           user_id: userId,
-          sector_id: config.sector_id && config.sector_id !== 'none' ? config.sector_id : null,
+          sector_id: sectorIds[0] ?? null,
+          sector_ids: sectorIds,
           date: format(date, 'yyyy-MM-dd'),
           time_start: timeStart,
           time_end: timeEnd,
@@ -713,8 +718,10 @@ export default function AddScheduleDialog({
                 {selectedMembers.map((userId) => {
                   const member = getMemberById(userId);
                   if (!member) return null;
-                  const config = memberConfigs[userId] || { sector_id: '', assignment_role: '' };
-                  const sectorName = sectors.find(s => s.id === config.sector_id)?.name || 'Nenhum';
+                  const config = memberConfigs[userId] || EMPTY_CONFIG;
+                  const sectorName = (config.sector_ids || []).length > 0
+                    ? sectors.filter(s => config.sector_ids.includes(s.id)).map(s => s.name).join(', ')
+                    : 'Nenhum';
                   const roleName = config.assignment_role && config.assignment_role !== 'none' 
                     ? `${ASSIGNMENT_ROLES[config.assignment_role as AssignmentRole]?.icon || ''} ${ASSIGNMENT_ROLES[config.assignment_role as AssignmentRole]?.label || 'Nenhuma'}`
                     : 'Nenhuma';
@@ -746,7 +753,7 @@ export default function AddScheduleDialog({
                           className="h-8 px-2"
                           onClick={() => {
                             setEditingMemberId(userId);
-                            setLocalSectorId(config.sector_id || '');
+                            setLocalSectorIds(config.sector_ids || []);
                             setLocalRole(config.assignment_role || '');
                           }}
                         >
@@ -929,24 +936,38 @@ export default function AddScheduleDialog({
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-muted-foreground" />
-                Setor
+                Setores <span className="text-xs text-muted-foreground font-normal">(pode escolher mais de um)</span>
               </Label>
-              <Select 
-                value={localSectorId || 'none'} 
-                onValueChange={(v) => setLocalSectorId(v === 'none' ? '' : v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecionar setor" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nenhum</SelectItem>
-                  {sectors.map((sector) => (
-                    <SelectItem key={sector.id} value={sector.id}>
-                      {sector.name}
-                    </SelectItem>
+              <div className="border rounded-md p-2 space-y-1 max-h-40 overflow-y-auto">
+                {sectors.length === 0 ? (
+                  <p className="text-xs text-muted-foreground p-1">Nenhum setor cadastrado.</p>
+                ) : sectors.map((sector) => {
+                  const checked = localSectorIds.includes(sector.id);
+                  return (
+                    <label
+                      key={sector.id}
+                      className="flex items-center gap-2 p-2 rounded-md hover:bg-muted/50 cursor-pointer"
+                    >
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={(v) =>
+                          setLocalSectorIds(prev =>
+                            v ? [...prev, sector.id] : prev.filter(id => id !== sector.id)
+                          )
+                        }
+                      />
+                      <span className="text-sm">{sector.name}</span>
+                    </label>
+                  );
+                })}
+              </div>
+              {localSectorIds.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {sectors.filter(s => localSectorIds.includes(s.id)).map(s => (
+                    <Badge key={s.id} variant="secondary" className="text-[10px]">{s.name}</Badge>
                   ))}
-                </SelectContent>
-              </Select>
+                </div>
+              )}
             </div>
 
             {/* Role Select */}
@@ -988,14 +1009,14 @@ export default function AddScheduleDialog({
                   onClick={() => {
                     // Apply current sector to all selected members
                     selectedMembers.forEach(userId => {
-                      updateMemberConfig(userId, 'sector_id', localSectorId);
+                      updateMemberConfig(userId, 'sector_ids', localSectorIds);
                     });
                     toast({
-                      title: 'Setor aplicado',
-                      description: `Setor aplicado para ${selectedMembers.length} membro(s).`,
+                      title: 'Setores aplicados',
+                      description: `Setores aplicados para ${selectedMembers.length} membro(s).`,
                     });
                   }}
-                  disabled={!localSectorId}
+                  disabled={localSectorIds.length === 0}
                 >
                   Aplicar Setor a Todos
                 </Button>
@@ -1033,7 +1054,7 @@ export default function AddScheduleDialog({
               type="button"
               onClick={() => {
                 if (editingMemberId) {
-                  updateMemberConfig(editingMemberId, 'sector_id', localSectorId);
+                  updateMemberConfig(editingMemberId, 'sector_ids', localSectorIds);
                   updateMemberConfig(editingMemberId, 'assignment_role', localRole);
                   setEditingMemberId(null);
                 }

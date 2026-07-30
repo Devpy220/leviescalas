@@ -2265,6 +2265,7 @@ export type Database = {
           id: string
           notes: string | null
           sector_id: string | null
+          sector_ids: string[]
           time_end: string
           time_start: string
           updated_at: string
@@ -2283,6 +2284,7 @@ export type Database = {
           id?: string
           notes?: string | null
           sector_id?: string | null
+          sector_ids?: string[]
           time_end: string
           time_start: string
           updated_at?: string
@@ -2301,6 +2303,7 @@ export type Database = {
           id?: string
           notes?: string | null
           sector_id?: string | null
+          sector_ids?: string[]
           time_end?: string
           time_start?: string
           updated_at?: string

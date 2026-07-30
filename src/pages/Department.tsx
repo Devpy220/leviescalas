@@ -106,6 +106,8 @@ interface Schedule {
   time_end: string;
   notes: string | null;
   sector_id: string | null;
+  sector_ids?: string[] | null;
+  sectors_list?: { name: string; color: string }[];
   assignment_role?: string | null;
   confirmation_status?: 'pending' | 'confirmed' | 'declined';
   decline_reason?: string | null;
@@ -374,7 +376,7 @@ export default function Department() {
       // Fetch schedules with sectors (including color) and assignment_role
       const { data: schedulesData, error: schedulesError } = await supabase
         .from('schedules')
-        .select('id, user_id, date, time_start, time_end, notes, sector_id, assignment_role, confirmation_status, decline_reason, sectors(name, color)')
+        .select('id, user_id, date, time_start, time_end, notes, sector_id, sector_ids, assignment_role, confirmation_status, decline_reason, sectors(name, color)')
         .eq('department_id', id)
         .order('date', { ascending: true });
 
@@ -386,6 +388,14 @@ export default function Department() {
 
       if (profilesError) throw profilesError;
 
+      // Sectors of the department, to resolve multiple sectors per schedule
+      const { data: deptSectors } = await supabase
+        .from('sectors')
+        .select('id, name, color')
+        .eq('department_id', id);
+      const sectorMap = new Map<string, { name: string; color: string }>();
+      (deptSectors || []).forEach((s: any) => sectorMap.set(s.id, { name: s.name, color: s.color }));
+
       // Create a map of user_id to profile
       const profileMap = new Map<string, { name: string; avatar_url: string | null }>();
       (memberProfiles || []).forEach((p: any) => {
@@ -395,20 +405,30 @@ export default function Department() {
         });
       });
       
-      const formattedSchedules = (schedulesData || []).map((s: any) => ({
-        id: s.id,
-        user_id: s.user_id,
-        date: s.date,
-        time_start: s.time_start,
-        time_end: s.time_end,
-        notes: s.notes,
-        sector_id: s.sector_id,
-        assignment_role: s.assignment_role,
-        confirmation_status: s.confirmation_status,
-        decline_reason: s.decline_reason,
-        profile: profileMap.get(s.user_id) || { name: 'Membro', avatar_url: null },
-        sector: s.sectors ? { name: s.sectors.name, color: s.sectors.color } : null
-      }));
+      const formattedSchedules = (schedulesData || []).map((s: any) => {
+        const ids: string[] = (s.sector_ids && s.sector_ids.length > 0)
+          ? s.sector_ids
+          : (s.sector_id ? [s.sector_id] : []);
+        const sectorsList = ids
+          .map((sid) => sectorMap.get(sid))
+          .filter(Boolean) as { name: string; color: string }[];
+        return {
+          id: s.id,
+          user_id: s.user_id,
+          date: s.date,
+          time_start: s.time_start,
+          time_end: s.time_end,
+          notes: s.notes,
+          sector_id: s.sector_id,
+          sector_ids: s.sector_ids || [],
+          assignment_role: s.assignment_role,
+          confirmation_status: s.confirmation_status,
+          decline_reason: s.decline_reason,
+          profile: profileMap.get(s.user_id) || { name: 'Membro', avatar_url: null },
+          sector: s.sectors ? { name: s.sectors.name, color: s.sectors.color } : (sectorsList[0] || null),
+          sectors_list: sectorsList,
+        };
+      });
       
       setSchedules(formattedSchedules);
     } catch (error) {
