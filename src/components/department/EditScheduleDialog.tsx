@@ -42,6 +42,7 @@ interface Schedule {
   time_end: string;
   notes: string | null;
   sector_id: string | null;
+  sector_ids?: string[] | null;
   assignment_role?: string | null;
   profile?: {
     name: string;
