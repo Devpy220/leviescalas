@@ -445,24 +445,30 @@ export default function EditScheduleDialog({
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-muted-foreground" />
-                Setor
+                Setores <span className="text-xs text-muted-foreground font-normal">(pode escolher mais de um)</span>
               </Label>
-              <Select value={selectedSectorId || 'none'} onValueChange={setSelectedSectorId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecionar setor" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nenhum</SelectItem>
-                  {sectors.map(s => (
-                    <SelectItem key={s.id} value={s.id}>
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }} />
-                        {s.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="border rounded-md p-2 space-y-1 max-h-40 overflow-y-auto">
+                {sectors.map(s => {
+                  const checked = selectedSectorIds.includes(s.id);
+                  return (
+                    <label
+                      key={s.id}
+                      className="flex items-center gap-2 p-2 rounded-md hover:bg-muted/50 cursor-pointer"
+                    >
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={(v) =>
+                          setSelectedSectorIds(prev =>
+                            v ? [...prev, s.id] : prev.filter(id => id !== s.id)
+                          )
+                        }
+                      />
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }} />
+                      <span className="text-sm">{s.name}</span>
+                    </label>
+                  );
+                })}
+              </div>
             </div>
           )}
 
