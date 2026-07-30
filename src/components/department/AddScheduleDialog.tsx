@@ -110,11 +110,17 @@ export default function AddScheduleDialog({
 
   // Get blocked members for selected date
   const blockedMembers = useMemo(() => {
-    if (!date) return new Set<string>();
+    const blocked = new Set<string>();
+
+    // Voluntários bloqueados no departamento (nunca podem ser escalados)
+    members.forEach(m => {
+      if ((m as any).is_blocked) blocked.add(m.user_id);
+    });
+
+    if (!date) return blocked;
     const dateStr = format(date, 'yyyy-MM-dd');
     const dayOfWeek = getDay(date);
-    const blocked = new Set<string>();
-    
+
     // Check blackout dates
     Object.entries(memberBlackouts)
       .filter(([_, dates]) => dates.includes(dateStr))
@@ -133,6 +139,7 @@ export default function AddScheduleDialog({
     
     return blocked;
   }, [date, memberBlackouts, slotAvailabilityMap, timeStart, members]);
+
 
   // Available (non-blocked and non-conflicting) members
   const availableMembers = useMemo(() => 
