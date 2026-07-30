@@ -34,6 +34,7 @@ import ChurchPublic from "./pages/ChurchPublic";
 import JoinChurch from "./pages/JoinChurch";
 import ChurchJoinHub from "./pages/ChurchJoinHub";
 import Tutorial from "./pages/Tutorial";
+import WorshipScheduleGuide from "./pages/WorshipScheduleGuide";
 import CompleteProfile from "./pages/CompleteProfile";
 import NotFound from "./pages/NotFound";
 
@@ -110,6 +111,7 @@ const App = () => (
                   <Route path="/confirm/:token" element={<ConfirmSchedule />} />
                   <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
                   <Route path="/tutorial" element={<Tutorial />} />
+                  <Route path="/recursos/modelos-escala-louvor" element={<WorshipScheduleGuide />} />
                   <Route path="/complete-profile" element={
                     <ProtectedRoute>
                       <CompleteProfile />

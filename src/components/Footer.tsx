@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import elsdigitalLogo from '@/assets/elsdigital-logo.jpeg';
 
 declare const __APP_VERSION__: string;
@@ -14,6 +15,12 @@ const Footer = () => {
           <span className="text-[10px] opacity-50 ml-1" title="Versão do app">v{APP_VERSION}</span>
         </div>
         <div className="flex items-center gap-3">
+          <Link
+            to="/recursos/modelos-escala-louvor"
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Modelos de escala de louvor
+          </Link>
           <img src={elsdigitalLogo} alt="Logo da ELSDIGITAL, desenvolvedora do LEVI" className="w-5 h-5 rounded-full object-cover" />
           <span className="text-xs text-muted-foreground">Desenvolvendo Soluções</span>
         </div>
