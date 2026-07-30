@@ -164,7 +164,7 @@ export function TwoFactorSetup({ open, onOpenChange, onComplete }: TwoFactorSetu
               
               {qrCodeUrl && (
                 <div className="inline-block p-4 bg-white rounded-lg">
-                  <img src={qrCodeUrl} alt="QR Code" className="w-48 h-48" />
+                  <img src={qrCodeUrl} alt="Código QR para configurar a autenticação em dois fatores" className="w-48 h-48" />
                 </div>
               )}
             </div>
