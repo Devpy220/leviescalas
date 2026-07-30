@@ -353,7 +353,7 @@ export default function AddScheduleDialog({
     setSelectedMembers(allIds);
     const configs: Record<string, MemberConfig> = {};
     allIds.forEach(id => {
-      configs[id] = { sector_id: '', assignment_role: '' };
+      configs[id] = { ...EMPTY_CONFIG };
     });
     setMemberConfigs(configs);
   };
