@@ -90,6 +90,7 @@ interface Member {
   user_id: string;
   role: 'leader' | 'coleader' | 'member';
   joined_at: string;
+  is_blocked?: boolean;
   profile: {
     name: string;
     email: string;
@@ -333,7 +334,7 @@ export default function Department() {
       // Get member records for IDs and joined_at
       const { data: memberRecords, error: membersError } = await supabase
         .from('members')
-        .select('id, user_id, role, joined_at')
+        .select('id, user_id, role, joined_at, is_blocked')
         .eq('department_id', id);
 
       if (membersError) {
@@ -349,6 +350,7 @@ export default function Department() {
           user_id: m.user_id,
           role: m.role as 'leader' | 'coleader' | 'member',
           joined_at: m.joined_at,
+          is_blocked: (m as any).is_blocked ?? false,
           profile: {
             name: profile?.name || 'Usuário',
             email: '', // Protected - only leaders can see via separate call
@@ -357,6 +359,7 @@ export default function Department() {
           }
         };
       });
+
       
       setMembers(formattedMembers);
     } catch (error) {

@@ -42,6 +42,7 @@ interface Member {
   id: string;
   user_id: string;
   role: 'leader' | 'coleader' | 'member';
+  is_blocked?: boolean;
   profile: {
     name: string;
     email: string;
@@ -110,11 +111,17 @@ export default function AddScheduleDialog({
 
   // Get blocked members for selected date
   const blockedMembers = useMemo(() => {
-    if (!date) return new Set<string>();
+    const blocked = new Set<string>();
+
+    // Voluntários bloqueados no departamento (nunca podem ser escalados)
+    members.forEach(m => {
+      if ((m as any).is_blocked) blocked.add(m.user_id);
+    });
+
+    if (!date) return blocked;
     const dateStr = format(date, 'yyyy-MM-dd');
     const dayOfWeek = getDay(date);
-    const blocked = new Set<string>();
-    
+
     // Check blackout dates
     Object.entries(memberBlackouts)
       .filter(([_, dates]) => dates.includes(dateStr))
@@ -133,6 +140,7 @@ export default function AddScheduleDialog({
     
     return blocked;
   }, [date, memberBlackouts, slotAvailabilityMap, timeStart, members]);
+
 
   // Available (non-blocked and non-conflicting) members
   const availableMembers = useMemo(() => 
@@ -470,14 +478,21 @@ export default function AddScheduleDialog({
       onOpenChange(false);
     } catch (error: any) {
       console.error('Error creating schedules:', error);
-      const isConflict = error?.message?.includes('Conflito de horário');
+      const rawMsg: string = error?.message || '';
+      // Mensagens vindas de RAISE EXCEPTION no banco são amigáveis: exibir direto
+      const isBusinessRule = error?.code === 'P0001'
+        || rawMsg.includes('Conflito de horário')
+        || rawMsg.includes('bloqueado')
+        || rawMsg.includes('já escalado')
+        || rawMsg.includes('ja escalado');
       toast({
         variant: 'destructive',
-        title: isConflict ? 'Conflito de horário' : 'Erro ao criar escalas',
-        description: isConflict 
-          ? error.message 
-          : 'Não foi possível criar as escalas. Tente novamente.',
+        title: rawMsg.includes('Conflito de horário') ? 'Conflito de horário' : 'Erro ao criar escalas',
+        description: isBusinessRule
+          ? rawMsg
+          : (rawMsg || 'Não foi possível criar as escalas. Tente novamente.'),
       });
+
     } finally {
       setLoading(false);
     }
