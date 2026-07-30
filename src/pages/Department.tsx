@@ -90,6 +90,7 @@ interface Member {
   user_id: string;
   role: 'leader' | 'coleader' | 'member';
   joined_at: string;
+  is_blocked?: boolean;
   profile: {
     name: string;
     email: string;
