@@ -45,25 +45,15 @@ export default function ConfirmSchedule() {
 
   const fetchScheduleInfo = async () => {
     try {
-      const { data, error: fetchError } = await supabase
-        .from('schedules')
-        .select(`
-          id,
-          date,
-          time_start,
-          time_end,
-          confirmation_status,
-          departments:department_id (name)
-        `)
-        .eq('confirmation_token', token)
-        .single();
+      const { data: rows, error: fetchError } = await supabase
+        .rpc('get_schedule_by_confirmation_token', { p_token: token });
+
+      const data = Array.isArray(rows) ? rows[0] : rows;
 
       if (fetchError || !data) {
         setError('Este link de confirmação não é válido ou já expirou.');
         return;
       }
-
-      const deptData = data.departments as { name: string } | { name: string }[] | null;
 
       setSchedule({
         id: data.id,
@@ -71,9 +61,10 @@ export default function ConfirmSchedule() {
         time_start: data.time_start,
         time_end: data.time_end,
         confirmation_status: data.confirmation_status as ConfirmationStatus,
-        department_name: Array.isArray(deptData) ? deptData[0]?.name : deptData?.name || 'Departamento',
+        department_name: data.department_name || 'Departamento',
         user_name: 'Voluntário',
       });
+
 
       // Auto-process if action is in URL
       if (action === 'confirm' || action === 'decline') {

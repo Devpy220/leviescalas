@@ -3132,6 +3132,17 @@ export type Database = {
       get_my_department_count:
         | { Args: never; Returns: number }
         | { Args: { p_user_id?: string }; Returns: number }
+      get_schedule_by_confirmation_token: {
+        Args: { p_token: string }
+        Returns: {
+          confirmation_status: Database["public"]["Enums"]["confirmation_status"]
+          date: string
+          department_name: string
+          id: string
+          time_end: string
+          time_start: string
+        }[]
+      }
       get_schedule_for_user: {
         Args: { dept_id: string; target_user_id: string }
         Returns: {
