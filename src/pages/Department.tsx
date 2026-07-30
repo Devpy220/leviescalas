@@ -106,6 +106,8 @@ interface Schedule {
   time_end: string;
   notes: string | null;
   sector_id: string | null;
+  sector_ids?: string[] | null;
+  sectors_list?: { name: string; color: string }[];
   assignment_role?: string | null;
   confirmation_status?: 'pending' | 'confirmed' | 'declined';
   decline_reason?: string | null;
