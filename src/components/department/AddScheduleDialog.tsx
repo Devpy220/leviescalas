@@ -57,9 +57,11 @@ interface Sector {
 }
 
 interface MemberConfig {
-  sector_id: string;
+  sector_ids: string[];
   assignment_role: string;
 }
+
+const EMPTY_CONFIG: MemberConfig = { sector_ids: [], assignment_role: '' };
 
 interface AddScheduleDialogProps {
   open: boolean;
