@@ -42,6 +42,7 @@ interface Member {
   id: string;
   user_id: string;
   role: 'leader' | 'coleader' | 'member';
+  is_blocked?: boolean;
   profile: {
     name: string;
     email: string;
