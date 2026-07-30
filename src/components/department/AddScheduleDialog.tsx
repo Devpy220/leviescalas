@@ -774,6 +774,9 @@ export default function AddScheduleDialog({
                   );
                 })}
               </div>
+            </div>
+
+
 
             {/* Sectors for everyone (multi-select) */}
             {sectors.length > 0 && (
