@@ -38,6 +38,9 @@ interface Props {
 
 const URL_REGEX = /(https?:\/\/[^\s]+)/g;
 
+// Cache do flag "usa repertório" por departamento (evita refetch em cada card)
+const repertoireEnabledCache = new Map<string, boolean>();
+
 function renderWithLinks(text: string) {
   const parts = text.split(URL_REGEX);
   return parts.map((part, i) => {
