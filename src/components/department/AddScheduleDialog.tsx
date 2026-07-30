@@ -341,7 +341,7 @@ export default function AddScheduleDialog({
         // Add to selection with default config
         setMemberConfigs(prev => ({
           ...prev,
-          [userId]: { sector_id: '', assignment_role: '' }
+          [userId]: { ...EMPTY_CONFIG }
         }));
         return [...prev, userId];
       }
