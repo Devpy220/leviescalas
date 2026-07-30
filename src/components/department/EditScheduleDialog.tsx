@@ -169,7 +169,11 @@ export default function EditScheduleDialog({
       setTimeStart(schedule.time_start.slice(0, 5));
       setTimeEnd(schedule.time_end.slice(0, 5));
       setSelectedMemberId(schedule.user_id);
-      setSelectedSectorId(schedule.sector_id || '');
+      setSelectedSectorIds(
+        schedule.sector_ids && schedule.sector_ids.length > 0
+          ? schedule.sector_ids
+          : schedule.sector_id ? [schedule.sector_id] : []
+      );
       setSelectedAssignmentRole(schedule.assignment_role || '');
     }
   }, [schedule, open]);
