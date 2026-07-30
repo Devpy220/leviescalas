@@ -1054,7 +1054,7 @@ export default function AddScheduleDialog({
               type="button"
               onClick={() => {
                 if (editingMemberId) {
-                  updateMemberConfig(editingMemberId, 'sector_id', localSectorId);
+                  updateMemberConfig(editingMemberId, 'sector_ids', localSectorIds);
                   updateMemberConfig(editingMemberId, 'assignment_role', localRole);
                   setEditingMemberId(null);
                 }
