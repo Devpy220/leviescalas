@@ -41,6 +41,10 @@ const URL_REGEX = /(https?:\/\/[^\s]+)/g;
 // Cache do flag "usa repertório" por departamento (evita refetch em cada card)
 const repertoireEnabledCache = new Map<string, boolean>();
 
+export function setRepertoireEnabledCache(departmentId: string, enabled: boolean) {
+  repertoireEnabledCache.set(departmentId, enabled);
+}
+
 function renderWithLinks(text: string) {
   const parts = text.split(URL_REGEX);
   return parts.map((part, i) => {
