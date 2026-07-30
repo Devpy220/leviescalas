@@ -753,7 +753,7 @@ export default function AddScheduleDialog({
                           className="h-8 px-2"
                           onClick={() => {
                             setEditingMemberId(userId);
-                            setLocalSectorId(config.sector_id || '');
+                            setLocalSectorIds(config.sector_ids || []);
                             setLocalRole(config.assignment_role || '');
                           }}
                         >
