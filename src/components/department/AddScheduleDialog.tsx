@@ -776,8 +776,57 @@ export default function AddScheduleDialog({
               </div>
             </div>
 
+
+
+            {/* Sectors for everyone (multi-select) */}
+            {sectors.length > 0 && (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2 text-sm">
+                  <Layers className="w-4 h-4 text-muted-foreground" />
+                  Setores <span className="text-xs text-muted-foreground font-normal">(pode escolher mais de um — aplica a todos)</span>
+                </Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {sectors.map((sector) => {
+                    const allChecked = selectedMembers.length > 0 && selectedMembers.every(
+                      (uid) => (memberConfigs[uid]?.sector_ids || []).includes(sector.id)
+                    );
+                    return (
+                      <button
+                        key={sector.id}
+                        type="button"
+                        onClick={() => {
+                          setMemberConfigs((prev) => {
+                            const next = { ...prev };
+                            selectedMembers.forEach((uid) => {
+                              const cur = next[uid]?.sector_ids || [];
+                              next[uid] = {
+                                assignment_role: next[uid]?.assignment_role || '',
+                                sector_ids: allChecked
+                                  ? cur.filter((id) => id !== sector.id)
+                                  : Array.from(new Set([...cur, sector.id])),
+                              };
+                            });
+                            return next;
+                          });
+                        }}
+                        className={cn(
+                          'px-2.5 py-1 rounded-full border text-xs transition-colors',
+                          allChecked
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'bg-background hover:bg-muted/50 border-border'
+                        )}
+                      >
+                        {sector.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Notes */}
             <div className="space-y-2">
+
               <Label className="flex items-center gap-2 text-sm">
                 <FileText className="w-4 h-4 text-muted-foreground" />
                 Observações (opcional)
