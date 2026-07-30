@@ -439,11 +439,13 @@ export default function AddScheduleDialog({
 
       // Create schedules for all selected members
       const schedulesToInsert = selectedMembers.map(userId => {
-        const config = memberConfigs[userId] || { sector_id: '', assignment_role: '' };
+        const config = memberConfigs[userId] || EMPTY_CONFIG;
+        const sectorIds = (config.sector_ids || []).filter(Boolean);
         return {
           department_id: departmentId,
           user_id: userId,
-          sector_id: config.sector_id && config.sector_id !== 'none' ? config.sector_id : null,
+          sector_id: sectorIds[0] ?? null,
+          sector_ids: sectorIds,
           date: format(date, 'yyyy-MM-dd'),
           time_start: timeStart,
           time_end: timeEnd,
