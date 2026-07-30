@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Trash2, AlertTriangle, Sun } from 'lucide-react';
+import { Loader2, Trash2, AlertTriangle, Sun, Music2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -27,6 +27,7 @@ import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { setRepertoireEnabledCache } from '@/components/department/SlotRepertoireEditor';
 
 interface DepartmentSettingsDialogProps {
   open: boolean;
@@ -39,6 +40,7 @@ interface DepartmentSettingsDialogProps {
     
     max_blackout_dates?: number;
     allow_sunday_double?: boolean;
+    repertoire_enabled?: boolean;
   };
   onDepartmentUpdated: () => void;
 }
@@ -57,6 +59,7 @@ export default function DepartmentSettingsDialog({
   const [description, setDescription] = useState(department.description || '');
   const [maxBlackoutDates, setMaxBlackoutDates] = useState(department.max_blackout_dates ?? 5);
   const [allowSundayDouble, setAllowSundayDouble] = useState(department.allow_sunday_double ?? false);
+  const [repertoireEnabled, setRepertoireEnabled] = useState(department.repertoire_enabled ?? false);
   const [saving, setSaving] = useState(false);
   
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -82,10 +85,15 @@ export default function DepartmentSettingsDialog({
           description: description.trim() || null,
           max_blackout_dates: Math.max(1, maxBlackoutDates),
           allow_sunday_double: allowSundayDouble,
+          repertoire_enabled: repertoireEnabled,
         })
         .eq('id', department.id);
 
       if (error) throw error;
+
+      setRepertoireEnabledCache(department.id, repertoireEnabled);
+
+
 
       toast({
         title: 'Configurações salvas',
@@ -230,6 +238,26 @@ export default function DepartmentSettingsDialog({
                   onCheckedChange={setAllowSundayDouble}
                 />
               </div>
+
+              <Separator />
+
+              <div className="flex items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <Label htmlFor="repertoire-enabled" className="flex items-center gap-2">
+                    <Music2 className="w-4 h-4 text-primary" />
+                    Usar Repertório neste departamento
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Quando ativado, o bloco "Repertório de Hoje" (setlist, anexos e observações) aparece nas escalas deste departamento. Desativado, ele fica oculto.
+                  </p>
+                </div>
+                <Switch
+                  id="repertoire-enabled"
+                  checked={repertoireEnabled}
+                  onCheckedChange={setRepertoireEnabled}
+                />
+              </div>
+
 
               <Button 
                 onClick={handleSave} 

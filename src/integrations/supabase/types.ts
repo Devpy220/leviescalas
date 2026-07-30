@@ -463,6 +463,7 @@ export type Database = {
           leader_id: string
           max_blackout_dates: number
           name: string
+          repertoire_enabled: boolean
           subscription_status: Database["public"]["Enums"]["subscription_status"]
           trial_ends_at: string | null
           updated_at: string
@@ -481,6 +482,7 @@ export type Database = {
           leader_id: string
           max_blackout_dates?: number
           name: string
+          repertoire_enabled?: boolean
           subscription_status?: Database["public"]["Enums"]["subscription_status"]
           trial_ends_at?: string | null
           updated_at?: string
@@ -499,6 +501,7 @@ export type Database = {
           leader_id?: string
           max_blackout_dates?: number
           name?: string
+          repertoire_enabled?: boolean
           subscription_status?: Database["public"]["Enums"]["subscription_status"]
           trial_ends_at?: string | null
           updated_at?: string
