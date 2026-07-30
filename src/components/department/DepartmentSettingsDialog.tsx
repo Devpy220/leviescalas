@@ -84,6 +84,7 @@ export default function DepartmentSettingsDialog({
           description: description.trim() || null,
           max_blackout_dates: Math.max(1, maxBlackoutDates),
           allow_sunday_double: allowSundayDouble,
+          repertoire_enabled: repertoireEnabled,
         })
         .eq('id', department.id);
 
