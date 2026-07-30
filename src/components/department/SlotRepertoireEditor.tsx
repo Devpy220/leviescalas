@@ -262,6 +262,9 @@ export default function SlotRepertoireEditor({
     setAttachments(attachments.filter((_, idx) => idx !== i));
   };
 
+  // Departamento não usa repertório (ou ainda verificando) → não mostra nada
+  if (repertoireEnabled !== true) return null;
+
   if (loading) {
     return (
       <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
