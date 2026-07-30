@@ -91,6 +91,10 @@ export default function DepartmentSettingsDialog({
 
       if (error) throw error;
 
+      setRepertoireEnabledCache(department.id, repertoireEnabled);
+
+
+
       toast({
         title: 'Configurações salvas',
         description: 'As alterações foram aplicadas.',
