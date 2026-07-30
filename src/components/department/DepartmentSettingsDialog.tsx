@@ -39,6 +39,7 @@ interface DepartmentSettingsDialogProps {
     
     max_blackout_dates?: number;
     allow_sunday_double?: boolean;
+    repertoire_enabled?: boolean;
   };
   onDepartmentUpdated: () => void;
 }
