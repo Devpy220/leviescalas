@@ -42,6 +42,15 @@ export async function fetchSlotNotesBlock(
 ): Promise<string> {
   try {
     const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+    // Só envia o bloco se o líder ativou o Repertório no departamento
+    const { data: dept } = await supabase
+      .from('departments')
+      .select('repertoire_enabled')
+      .eq('id', departmentId)
+      .maybeSingle();
+    if (!dept || !(dept as any).repertoire_enabled) return '';
+
     const { data, error } = await supabase
       .from('slot_notes')
       .select('content, setlist, attachments')
@@ -52,6 +61,7 @@ export async function fetchSlotNotesBlock(
       .maybeSingle();
 
     if (error || !data) return '';
+
 
     const row = data as any;
     const setlist: SetlistItem[] = Array.isArray(row.setlist) ? row.setlist : [];
