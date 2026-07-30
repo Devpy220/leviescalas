@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Trash2, AlertTriangle, Sun } from 'lucide-react';
+import { Loader2, Trash2, AlertTriangle, Sun, Music2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
