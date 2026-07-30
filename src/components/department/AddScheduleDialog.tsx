@@ -96,7 +96,7 @@ export default function AddScheduleDialog({
   
   // NEW: State for member edit dialog
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
-  const [localSectorId, setLocalSectorId] = useState<string>('');
+  const [localSectorIds, setLocalSectorIds] = useState<string[]>([]);
   const [localRole, setLocalRole] = useState<string>('');
   const [crossDeptConflicts, setCrossDeptConflicts] = useState<Record<string, string>>({});
   const [sundayConflicts, setSundayConflicts] = useState<Record<string, string>>({});
