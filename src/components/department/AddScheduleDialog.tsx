@@ -936,24 +936,38 @@ export default function AddScheduleDialog({
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-muted-foreground" />
-                Setor
+                Setores <span className="text-xs text-muted-foreground font-normal">(pode escolher mais de um)</span>
               </Label>
-              <Select 
-                value={localSectorId || 'none'} 
-                onValueChange={(v) => setLocalSectorId(v === 'none' ? '' : v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecionar setor" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nenhum</SelectItem>
-                  {sectors.map((sector) => (
-                    <SelectItem key={sector.id} value={sector.id}>
-                      {sector.name}
-                    </SelectItem>
+              <div className="border rounded-md p-2 space-y-1 max-h-40 overflow-y-auto">
+                {sectors.length === 0 ? (
+                  <p className="text-xs text-muted-foreground p-1">Nenhum setor cadastrado.</p>
+                ) : sectors.map((sector) => {
+                  const checked = localSectorIds.includes(sector.id);
+                  return (
+                    <label
+                      key={sector.id}
+                      className="flex items-center gap-2 p-2 rounded-md hover:bg-muted/50 cursor-pointer"
+                    >
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={(v) =>
+                          setLocalSectorIds(prev =>
+                            v ? [...prev, sector.id] : prev.filter(id => id !== sector.id)
+                          )
+                        }
+                      />
+                      <span className="text-sm">{sector.name}</span>
+                    </label>
+                  );
+                })}
+              </div>
+              {localSectorIds.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {sectors.filter(s => localSectorIds.includes(s.id)).map(s => (
+                    <Badge key={s.id} variant="secondary" className="text-[10px]">{s.name}</Badge>
                   ))}
-                </SelectContent>
-              </Select>
+                </div>
+              )}
             </div>
 
             {/* Role Select */}
