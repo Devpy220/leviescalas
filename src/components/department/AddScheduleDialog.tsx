@@ -1009,14 +1009,14 @@ export default function AddScheduleDialog({
                   onClick={() => {
                     // Apply current sector to all selected members
                     selectedMembers.forEach(userId => {
-                      updateMemberConfig(userId, 'sector_id', localSectorId);
+                      updateMemberConfig(userId, 'sector_ids', localSectorIds);
                     });
                     toast({
-                      title: 'Setor aplicado',
-                      description: `Setor aplicado para ${selectedMembers.length} membro(s).`,
+                      title: 'Setores aplicados',
+                      description: `Setores aplicados para ${selectedMembers.length} membro(s).`,
                     });
                   }}
-                  disabled={!localSectorId}
+                  disabled={localSectorIds.length === 0}
                 >
                   Aplicar Setor a Todos
                 </Button>
