@@ -160,7 +160,7 @@ export default function KidsDashboard() {
               <CardContent>
                 {qrUrl ? (
                   <div className="text-center space-y-3">
-                    <img src={qrUrl} alt="QR fixo" className="mx-auto rounded-2xl border-4" style={{ borderColor: currentRoom.color, maxWidth: 260 }} />
+                    <img src={qrUrl} alt="Código QR fixo para check-in das crianças na sala" className="mx-auto rounded-2xl border-4" style={{ borderColor: currentRoom.color, maxWidth: 260 }} />
                     <p className="text-xs text-slate-500 dark:text-slate-400">Este QR não muda. Válido dentro da janela de horário configurada pelo líder.</p>
                     <div className="flex gap-2 justify-center flex-wrap">
                       <Button variant="outline" size="sm" onClick={() => downloadPng(currentRoom.static_qr_token, `qr-checkin-${currentRoom.name}.png`)} className="rounded-xl">

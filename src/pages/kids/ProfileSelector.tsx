@@ -1,4 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
+import { SEO } from "@/components/SEO";
 import { PillCard } from "@/components/portal-kids/PillCard";
 import { LeviKidsWordmark } from "@/components/LeviKidsWordmark";
 import { useAuth } from "@/hooks/useAuth";
@@ -37,6 +38,11 @@ export default function ProfileSelector() {
 
   return (
     <div className="pk-root">
+      <SEO
+        title="LeviKids — Ministério infantil da sua igreja"
+        description="Portal do ministério infantil: check-in e check-out de crianças por sala, área dos pais, dos professores e do líder. Escolha seu perfil e entre."
+        path="/kids"
+      />
       <div className="max-w-md mx-auto px-4 py-8 pb-24">
         <div className="text-center mb-6 space-y-2">
           <img src={mascot} alt="" width={120} height={120} className="w-28 h-28 mx-auto pk-float" loading="eager" />

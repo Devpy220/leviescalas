@@ -1080,6 +1080,10 @@ export default function Auth() {
             </div>
           </div>
 
+          <h1 className="font-display text-3xl font-bold text-foreground mb-6">
+            Acesse o LEVI
+          </h1>
+
           {/* Tabs - only show when coming from invite link */}
           {activeTab !== 'recovery' && activeTab !== 'reset-password' && activeTab !== '2fa-verify' && activeTab !== '2fa-verify-password-reset' && hasInviteContext && (
             <div className="flex gap-1 p-1 bg-muted rounded-xl mb-8">
