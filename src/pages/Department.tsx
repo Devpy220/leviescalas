@@ -67,6 +67,7 @@ interface Department {
   
   max_blackout_dates?: number;
   allow_sunday_double?: boolean;
+  repertoire_enabled?: boolean;
 }
 
 // Check if trial has expired
@@ -271,6 +272,7 @@ export default function Department() {
         avatar_url: (data as any).avatar_url || null,
         max_blackout_dates: deptExtra?.max_blackout_dates ?? 5,
         allow_sunday_double: deptExtra?.allow_sunday_double ?? false,
+        repertoire_enabled: !!deptKids?.repertoire_enabled,
       });
       const isOwner = data.leader_id === currentUser?.id;
 
