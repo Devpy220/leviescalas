@@ -234,6 +234,26 @@ export default function DepartmentSettingsDialog({
                 />
               </div>
 
+              <Separator />
+
+              <div className="flex items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <Label htmlFor="repertoire-enabled" className="flex items-center gap-2">
+                    <Music2 className="w-4 h-4 text-primary" />
+                    Usar Repertório neste departamento
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Quando ativado, o bloco "Repertório de Hoje" (setlist, anexos e observações) aparece nas escalas deste departamento. Desativado, ele fica oculto.
+                  </p>
+                </div>
+                <Switch
+                  id="repertoire-enabled"
+                  checked={repertoireEnabled}
+                  onCheckedChange={setRepertoireEnabled}
+                />
+              </div>
+
+
               <Button 
                 onClick={handleSave} 
                 disabled={saving}
