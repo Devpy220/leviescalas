@@ -718,8 +718,10 @@ export default function AddScheduleDialog({
                 {selectedMembers.map((userId) => {
                   const member = getMemberById(userId);
                   if (!member) return null;
-                  const config = memberConfigs[userId] || { sector_id: '', assignment_role: '' };
-                  const sectorName = sectors.find(s => s.id === config.sector_id)?.name || 'Nenhum';
+                  const config = memberConfigs[userId] || EMPTY_CONFIG;
+                  const sectorName = (config.sector_ids || []).length > 0
+                    ? sectors.filter(s => config.sector_ids.includes(s.id)).map(s => s.name).join(', ')
+                    : 'Nenhum';
                   const roleName = config.assignment_role && config.assignment_role !== 'none' 
                     ? `${ASSIGNMENT_ROLES[config.assignment_role as AssignmentRole]?.icon || ''} ${ASSIGNMENT_ROLES[config.assignment_role as AssignmentRole]?.label || 'Nenhuma'}`
                     : 'Nenhuma';
