@@ -1,0 +1,1 @@
+ALTER TABLE public.departments ADD COLUMN IF NOT EXISTS repertoire_enabled boolean NOT NULL DEFAULT false;
