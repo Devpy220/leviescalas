@@ -88,6 +88,29 @@ export default function SlotRepertoireEditor({
   const [repFilter, setRepFilter] = useState<'all' | 'musica' | 'video' | 'cifra'>('all');
   const rowIdRef = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [repertoireEnabled, setRepertoireEnabled] = useState<boolean | null>(null);
+
+  // Só exibe o "Repertório de Hoje" se o líder ativou o recurso no departamento
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const cached = repertoireEnabledCache.get(departmentId);
+      if (cached !== undefined) {
+        if (!cancelled) setRepertoireEnabled(cached);
+        return;
+      }
+      const { data } = await supabase
+        .from('departments')
+        .select('repertoire_enabled')
+        .eq('id', departmentId)
+        .maybeSingle();
+      const enabled = !!(data as any)?.repertoire_enabled;
+      repertoireEnabledCache.set(departmentId, enabled);
+      if (!cancelled) setRepertoireEnabled(enabled);
+    })();
+    return () => { cancelled = true; };
+  }, [departmentId]);
+
 
   const tStart = timeStart.length === 5 ? `${timeStart}:00` : timeStart;
   const tEnd = timeEnd.length === 5 ? `${timeEnd}:00` : timeEnd;
