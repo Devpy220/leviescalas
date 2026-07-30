@@ -470,14 +470,21 @@ export default function AddScheduleDialog({
       onOpenChange(false);
     } catch (error: any) {
       console.error('Error creating schedules:', error);
-      const isConflict = error?.message?.includes('Conflito de horário');
+      const rawMsg: string = error?.message || '';
+      // Mensagens vindas de RAISE EXCEPTION no banco são amigáveis: exibir direto
+      const isBusinessRule = error?.code === 'P0001'
+        || rawMsg.includes('Conflito de horário')
+        || rawMsg.includes('bloqueado')
+        || rawMsg.includes('já escalado')
+        || rawMsg.includes('ja escalado');
       toast({
         variant: 'destructive',
-        title: isConflict ? 'Conflito de horário' : 'Erro ao criar escalas',
-        description: isConflict 
-          ? error.message 
-          : 'Não foi possível criar as escalas. Tente novamente.',
+        title: rawMsg.includes('Conflito de horário') ? 'Conflito de horário' : 'Erro ao criar escalas',
+        description: isBusinessRule
+          ? rawMsg
+          : (rawMsg || 'Não foi possível criar as escalas. Tente novamente.'),
       });
+
     } finally {
       setLoading(false);
     }
