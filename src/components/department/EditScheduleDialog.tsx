@@ -244,7 +244,8 @@ export default function EditScheduleDialog({
           time_start: timeStart,
           time_end: timeEnd,
           user_id: selectedMemberId,
-          sector_id: selectedSectorId && selectedSectorId !== 'none' ? selectedSectorId : null,
+          sector_id: selectedSectorIds[0] ?? null,
+          sector_ids: selectedSectorIds,
           assignment_role: selectedAssignmentRole && selectedAssignmentRole !== 'none' ? selectedAssignmentRole : null,
         })
         .eq('id', schedule.id)
