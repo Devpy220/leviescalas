@@ -253,9 +253,10 @@ export default function Department() {
         .maybeSingle();
       const { data: deptKids } = await (supabase as any)
         .from('departments')
-        .select('kids_linked')
+        .select('kids_linked, repertoire_enabled')
         .eq('id', id)
         .maybeSingle();
+
       setKidsLinked(!!deptKids?.kids_linked);
 
       setDepartment({
