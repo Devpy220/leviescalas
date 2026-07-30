@@ -2394,33 +2394,39 @@ export type Database = {
       }
       slot_notes: {
         Row: {
+          attachments: Json
           content: string
           created_at: string
           date: string
           department_id: string
           id: string
+          setlist: Json
           time_end: string
           time_start: string
           updated_at: string
           updated_by: string | null
         }
         Insert: {
+          attachments?: Json
           content?: string
           created_at?: string
           date: string
           department_id: string
           id?: string
+          setlist?: Json
           time_end: string
           time_start: string
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
+          attachments?: Json
           content?: string
           created_at?: string
           date?: string
           department_id?: string
           id?: string
+          setlist?: Json
           time_end?: string
           time_start?: string
           updated_at?: string
