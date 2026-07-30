@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { useIsMobile } from '@/hooks/use-mobile';
-import elsdigitalLogo from '@/assets/elsdigital-logo.jpeg';
+import elsdigitalLogo from '@/assets/elsdigital-logo.png';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -779,7 +779,7 @@ export default function Landing() {
             <span className="text-xs">© {new Date().getFullYear()} Escalas</span>
           </div>
           <div className="flex items-center gap-3">
-            <img src={elsdigitalLogo} alt="Logo da ELSDIGITAL, desenvolvedora do LEVI" className="w-5 h-5 rounded-full object-cover" />
+            <img src={elsdigitalLogo} alt="Logo da ELSDigital.tech, desenvolvedora do LEVI" className="h-7 sm:h-8 w-auto object-contain dark:bg-white dark:rounded-md dark:px-1 dark:py-0.5" />
             <span className="text-xs text-muted-foreground">{t('landing.developingSolutions')}</span>
           </div>
         </div>
