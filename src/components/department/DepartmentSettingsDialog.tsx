@@ -58,6 +58,7 @@ export default function DepartmentSettingsDialog({
   const [description, setDescription] = useState(department.description || '');
   const [maxBlackoutDates, setMaxBlackoutDates] = useState(department.max_blackout_dates ?? 5);
   const [allowSundayDouble, setAllowSundayDouble] = useState(department.allow_sunday_double ?? false);
+  const [repertoireEnabled, setRepertoireEnabled] = useState(department.repertoire_enabled ?? false);
   const [saving, setSaving] = useState(false);
   
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
