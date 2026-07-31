@@ -28,6 +28,7 @@ import { SwapRequestDialog } from '@/components/schedules/SwapRequestDialog';
 import { SwapResponseDialog } from '@/components/schedules/SwapResponseDialog';
 import { PendingSwapBadge } from '@/components/schedules/PendingSwapBadge';
 import { PersonalScheduleCard } from '@/components/schedules/PersonalScheduleCard';
+import { TeamSlotCard } from '@/components/schedules/TeamSlotCard';
 
 import MyAvailabilitySheet from '@/components/department/MyAvailabilitySheet';
 import SlotRepertoireEditor from '@/components/department/SlotRepertoireEditor';
