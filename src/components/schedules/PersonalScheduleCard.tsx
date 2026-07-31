@@ -1,10 +1,17 @@
+import { useState } from 'react';
 import { ArrowLeftRight, Clock, Church } from 'lucide-react';
 import { format, parseISO, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { PendingSwapBadge } from '@/components/schedules/PendingSwapBadge';
 import SlotRepertoireEditor from '@/components/department/SlotRepertoireEditor';
 import { REPERTOIRE_EDIT_ROLES, ASSIGNMENT_ROLES } from '@/lib/constants';
