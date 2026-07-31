@@ -345,6 +345,7 @@ export default function UnifiedScheduleView({
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 auto-rows-fr">
           {slotGroups.map((group) => (
             <SlotCard
+              key={`${format(group.date, 'yyyy-MM-dd')}-${group.slotInfo.timeStart}`}
               group={group}
               isLeader={isLeader && !readOnly}
               currentUserId={currentUserId}
