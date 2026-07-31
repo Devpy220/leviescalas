@@ -27,6 +27,13 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -338,6 +345,7 @@ export default function UnifiedScheduleView({
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 auto-rows-fr">
           {slotGroups.map((group) => (
             <SlotCard
+              key={`${format(group.date, 'yyyy-MM-dd')}-${group.slotInfo.timeStart}`}
               group={group}
               isLeader={isLeader && !readOnly}
               currentUserId={currentUserId}
@@ -479,72 +487,95 @@ function SlotCard({
   const canEditRepertoire = isLeader || userIsWorshipMinister;
   const dateStr = format(date, 'yyyy-MM-dd');
 
+  const [open, setOpen] = useState(false);
+
   return (
-    <Card className={cn(
-      "overflow-hidden transition-all flex flex-col h-full bg-card/60 backdrop-blur-md border-border/40 shadow-sm",
-      isCurrentDay && "ring-2 ring-primary"
-    )}>
-      {/* Slot Header */}
-      <CardHeader className={cn(
-        "p-2 pb-1.5 backdrop-blur-sm",
-        slotInfo.bgColor
-      )}>
-        <div className="flex items-center justify-between">
-          <div className="space-y-0">
-            <p className="font-bold text-[11px] uppercase tracking-wide">
-              {slotInfo.label}
-            </p>
-            <p className="text-xs font-semibold text-foreground">
-              {format(date, "d 'de' MMMM", { locale: ptBR })}
-            </p>
-            <p className="text-[10px] font-medium text-foreground/70 flex items-center gap-1">
-              <Clock className="w-2.5 h-2.5" />
-              {slotInfo.timeStart} - {slotInfo.timeEnd}
-            </p>
-          </div>
+    <>
+      <Card
+        role="button"
+        tabIndex={0}
+        onClick={() => setOpen(true)}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(true); } }}
+        className={cn(
+          "overflow-hidden transition-all flex flex-col h-full bg-card/60 backdrop-blur-md border-border/40 shadow-sm cursor-pointer hover:shadow-md hover:border-primary/40",
+          isCurrentDay && "ring-2 ring-primary"
+        )}
+      >
+        <CardHeader className={cn("p-2.5 backdrop-blur-sm", slotInfo.bgColor)}>
+          <p className="font-bold text-[11px] uppercase tracking-wide">
+            {slotInfo.label}
+          </p>
+          <p className="text-sm font-semibold text-foreground">
+            {format(date, "d 'de' MMMM", { locale: ptBR })}
+          </p>
+          <p className="text-[11px] font-medium text-foreground/70 flex items-center gap-1">
+            <Clock className="w-3 h-3" />
+            {slotInfo.timeStart} - {slotInfo.timeEnd}
+          </p>
+        </CardHeader>
+        <CardContent className="p-2.5 pt-2 mt-auto flex items-center justify-between">
+          <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+            <Users className="w-3 h-3" />
+            {schedules.length} {schedules.length === 1 ? 'escalado' : 'escalados'}
+          </span>
+          {userIsScheduled && (
+            <Badge variant="outline" className="text-[10px] px-1 py-0 border-primary/40 text-primary">
+              Você
+            </Badge>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="capitalize">
+              {slotInfo.label} • {format(date, "d 'de' MMMM", { locale: ptBR })}
+            </DialogTitle>
+            <DialogDescription className="flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              {slotInfo.timeStart} - {slotInfo.timeEnd} • {schedules.length} {schedules.length === 1 ? 'voluntário' : 'voluntários'}
+            </DialogDescription>
+          </DialogHeader>
+
           {isLeader && (
             <Button
-              size="icon"
-              variant="ghost"
-              className="h-6 w-6"
-              onClick={() => onAddSchedule(date)}
+              size="sm"
+              variant="outline"
+              className="w-full"
+              onClick={() => { setOpen(false); onAddSchedule(date); }}
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-4 h-4 mr-1" />
+              Adicionar voluntário
             </Button>
           )}
-        </div>
-      </CardHeader>
 
-      
-      {/* Members List */}
-      <CardContent className="p-2 pt-1.5">
-        <div className="space-y-1.5">
+          <div className="space-y-1.5">
+            {schedules.map((schedule) => (
+              <MemberRow
+                key={schedule.id}
+                schedule={schedule}
+                isLeader={isLeader}
+                getMemberColorValue={getMemberColorValue}
+                getMemberBgStyle={getMemberBgStyle}
+                onEdit={onEdit}
+                onDelete={onDelete}
+              />
+            ))}
+          </div>
 
-          {schedules.map((schedule) => (
-            <MemberRow
-              key={schedule.id}
-              schedule={schedule}
-              isLeader={isLeader}
-              getMemberColorValue={getMemberColorValue}
-              getMemberBgStyle={getMemberBgStyle}
-              onEdit={onEdit}
-              onDelete={onDelete}
+          <div className="pt-3 border-t border-border/50">
+            <SlotRepertoireEditor
+              departmentId={departmentId}
+              date={dateStr}
+              timeStart={slotInfo.timeStart}
+              timeEnd={slotInfo.timeEnd}
+              canEdit={canEditRepertoire}
             />
-          ))}
-        </div>
-
-        {/* Repertório de Hoje (setlist + anexos + observações) */}
-        <div className="pt-3 mt-3 border-t border-border/50">
-          <SlotRepertoireEditor
-            departmentId={departmentId}
-            date={dateStr}
-            timeStart={slotInfo.timeStart}
-            timeEnd={slotInfo.timeEnd}
-            canEdit={canEditRepertoire}
-          />
-        </div>
-      </CardContent>
-    </Card>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
