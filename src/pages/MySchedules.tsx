@@ -509,165 +509,23 @@ export default function MySchedules() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 auto-rows-fr">
             {slotGroups.map((group) => {
               const { date, slotInfo, schedules: groupSchedules } = group;
-              const isCurrentDay = isToday(date);
               const userScheduleInSlot = groupSchedules.find(s => s.user_id === user?.id);
               const swap = userScheduleInSlot ? getSwapForSchedule(userScheduleInSlot.id) : null;
-              
+
               return (
-                <Card 
+                <TeamSlotCard
                   key={`${format(date, 'yyyy-MM-dd')}-${slotInfo.timeStart}`}
-                  className={cn(
-                    "overflow-hidden flex flex-col h-full bg-card/60 backdrop-blur-md border-border/40 shadow-sm",
-                    isCurrentDay && "ring-2 ring-primary"
-                  )}
-                >
-                  {/* Slot Header */}
-                  <CardHeader className={cn("p-2 pb-1.5 backdrop-blur-sm", slotInfo.bgColor)}>
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="space-y-0 min-w-0">
-                        <p className="font-bold text-[11px] uppercase tracking-wide">
-                          {slotInfo.label}
-                        </p>
-                        <p className="text-xs font-semibold text-foreground">
-                          {format(date, "d 'de' MMMM", { locale: ptBR })}
-                        </p>
-                        <p className="text-[10px] font-medium text-foreground/70 flex items-center gap-1">
-                          <Clock className="w-2.5 h-2.5" />
-                          {slotInfo.timeStart} - {slotInfo.timeEnd}
-                        </p>
-                      </div>
-                      {userScheduleInSlot && (
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className={cn(
-                            "h-7 w-7 rounded-full shrink-0",
-                            swap
-                              ? "text-amber-600 hover:text-amber-700 hover:bg-amber-100 dark:text-amber-400 dark:hover:bg-amber-900/40"
-                              : "hover:bg-primary/10"
-                          )}
-                          onClick={() => swap ? handleRespondToSwap(swap) : handleOpenSwapDialog(userScheduleInSlot)}
-                          aria-label={swap ? "Troca pendente" : "Pedir troca"}
-                          title={swap ? "Troca pendente" : "Pedir troca"}
-                        >
-                          <ArrowLeftRight className="w-3.5 h-3.5" />
-                        </Button>
-                      )}
-                    </div>
-                  </CardHeader>
-
-                  
-                  {/* Members List */}
-                  <CardContent className="p-2 pt-1.5">
-                    <div className="space-y-1.5">
-
-                      {groupSchedules.map((schedule) => {
-                        const isCurrentUser = schedule.user_id === user?.id;
-                        const memberName = memberProfiles[schedule.user_id]?.name || 'Voluntário';
-                        
-                        return (
-                          <div
-                            key={schedule.id}
-                            className={cn(
-                              "flex items-center gap-1.5 p-1.5 rounded-md border-l-4",
-                              isCurrentUser 
-                                ? "bg-green-100 dark:bg-green-900/40 border-l-green-500" 
-                                : "border-l-transparent"
-                            )}
-                            style={!isCurrentUser && schedule.sector_color ? { borderLeftColor: schedule.sector_color } : undefined}
-                          >
-                            {/* Avatar */}
-                            <Avatar className="h-6 w-6">
-                              <AvatarFallback 
-                                className={cn(
-                                  "text-[10px] font-medium",
-                                  isCurrentUser 
-                                    ? "bg-green-500 text-white" 
-                                    : "bg-primary/20 text-primary"
-                                )}
-                              >
-                                {(isCurrentUser ? 'V' : memberName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase())}
-                              </AvatarFallback>
-                            </Avatar>
-                            
-                            {/* Info */}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1">
-                                <p className={cn(
-                                  "font-medium text-xs truncate",
-                                  isCurrentUser && "text-green-700 dark:text-green-400"
-                                )}>
-                                  {isCurrentUser ? 'Você' : memberName}
-                                  {isCurrentUser && <span className="ml-1">⭐</span>}
-                                </p>
-
-                                
-                                {/* Assignment role icon */}
-                                {schedule.assignment_role && ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES] && (
-                                  <span className="text-sm">
-                                    {ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES].icon}
-                                  </span>
-                                )}
-                              </div>
-                              
-                              {/* Sector and Role */}
-                              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                                {schedule.sector_name && (
-                                  <span className="flex items-center gap-1 truncate">
-                                    <div 
-                                      className="w-2 h-2 rounded-full shrink-0" 
-                                      style={{ backgroundColor: schedule.sector_color || undefined }}
-                                    />
-                                    {schedule.sector_name}
-                                  </span>
-                                )}
-                                
-                                {schedule.assignment_role && ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES] && (
-                                  <Badge variant="outline" className={cn(
-                                    "text-[10px] px-1 py-0 shrink-0",
-                                    ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES].color
-                                  )}>
-                                    {ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES].label}
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    
-                    {/* Repertório de Hoje (setlist + anexos + observações) */}
-                    {groupSchedules[0] && (
-                      <div className="pt-3 mt-3 border-t border-border/50">
-                        <SlotRepertoireEditor
-                          departmentId={groupSchedules[0].department_id}
-                          date={groupSchedules[0].date}
-                          timeStart={groupSchedules[0].time_start}
-                          timeEnd={groupSchedules[0].time_end}
-                          canEdit={
-                            !!userScheduleInSlot?.assignment_role
-                            && REPERTOIRE_EDIT_ROLES.includes(userScheduleInSlot.assignment_role as any)
-                          }
-                        />
-                      </div>
-                    )}
-
-                    {/* Pending swap details (only when active) */}
-                    {userScheduleInSlot && swap && (
-                      <div className="pt-3 mt-3 border-t border-border/50">
-                        <PendingSwapBadge
-                          swap={swap}
-                          onCancel={handleCancelSwap}
-                          onRespond={handleRespondToSwap}
-                          cancelling={cancellingSwapId === swap.id}
-                          compact
-                        />
-                      </div>
-                    )}
-
-                  </CardContent>
-                </Card>
+                  date={date}
+                  slotInfo={slotInfo}
+                  schedules={groupSchedules}
+                  currentUserId={user?.id}
+                  memberProfiles={memberProfiles}
+                  swap={swap}
+                  cancellingSwapId={cancellingSwapId}
+                  onRequestSwap={(s) => handleOpenSwapDialog(s as Schedule)}
+                  onRespondSwap={handleRespondToSwap}
+                  onCancelSwap={handleCancelSwap}
+                />
               );
             })}
           </div>
