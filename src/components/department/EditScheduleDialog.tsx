@@ -88,6 +88,7 @@ export default function EditScheduleDialog({
   const [availabilityMap, setAvailabilityMap] = useState<Record<string, boolean>>({});
   const [blackoutMap, setBlackoutMap] = useState<Record<string, string[]>>({});
   const [loadingAvailability, setLoadingAvailability] = useState(false);
+  const [blockedSet, setBlockedSet] = useState<Set<string>>(new Set());
   const [selectedSectorIds, setSelectedSectorIds] = useState<string[]>([]);
   const [selectedAssignmentRole, setSelectedAssignmentRole] = useState<string>('');
   const [sectors, setSectors] = useState<{ id: string; name: string; color: string }[]>([]);
@@ -100,7 +101,7 @@ export default function EditScheduleDialog({
     const fetchData = async () => {
       setLoadingAvailability(true);
       try {
-        const [availRes, prefsRes, dateAvailRes, sectorsRes, rolesRes] = await Promise.all([
+        const [availRes, prefsRes, dateAvailRes, sectorsRes, rolesRes, blockedRes] = await Promise.all([
           supabase
             .from('member_availability')
             .select('user_id, day_of_week, time_start, time_end, is_available')
@@ -125,7 +126,14 @@ export default function EditScheduleDialog({
             .select('id, name, icon')
             .eq('department_id', departmentId)
             .order('name'),
+          supabase
+            .from('members')
+            .select('user_id, is_blocked')
+            .eq('department_id', departmentId)
+            .eq('is_blocked', true),
         ]);
+
+        setBlockedSet(new Set((blockedRes.data || []).map((r: { user_id: string }) => r.user_id)));
 
         const aMap: Record<string, boolean> = {};
         if (availRes.data) {
@@ -187,6 +195,8 @@ export default function EditScheduleDialog({
 
   // Check if a member is available for the selected day/time
   const isMemberAvailable = (userId: string): boolean => {
+    // Voluntário bloqueado (pelo líder ou por ele mesmo) nunca pode ser escalado
+    if (blockedSet.has(userId)) return false;
     if (!selectedDate || !timeStart) return true; // no filter if no date/time selected
     const dayOfWeek = getDay(selectedDate);
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
@@ -201,11 +211,11 @@ export default function EditScheduleDialog({
 
   const availableMembers = useMemo(() => {
     return members.filter(m => isMemberAvailable(m.user_id));
-  }, [members, selectedDate, timeStart, availabilityMap, blackoutMap]);
+  }, [members, selectedDate, timeStart, availabilityMap, blackoutMap, blockedSet]);
 
   const unavailableMembers = useMemo(() => {
     return members.filter(m => !isMemberAvailable(m.user_id));
-  }, [members, selectedDate, timeStart, availabilityMap, blackoutMap]);
+  }, [members, selectedDate, timeStart, availabilityMap, blackoutMap, blockedSet]);
 
   const handleSlotSelect = (slotLabel: string) => {
     const slot = availableSlots.find(s => s.label === slotLabel);
