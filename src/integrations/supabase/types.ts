@@ -3141,6 +3141,7 @@ export type Database = {
           name: string
         }[]
       }
+      get_my_blocked: { Args: { dept_id: string }; Returns: boolean }
       get_my_department_count:
         | { Args: never; Returns: number }
         | { Args: { p_user_id?: string }; Returns: number }
@@ -3431,6 +3432,10 @@ export type Database = {
       }
       set_member_blocked: {
         Args: { blocked: boolean; dept_id: string; target_user_id: string }
+        Returns: boolean
+      }
+      set_my_blocked: {
+        Args: { blocked: boolean; dept_id: string }
         Returns: boolean
       }
       share_department_with: {
