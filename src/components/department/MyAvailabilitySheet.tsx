@@ -2,6 +2,8 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { Clock } from 'lucide-react';
 import SlotAvailability from './SlotAvailability';
 import MemberPreferences from './MemberPreferences';
+import SelfBlockToggle from './SelfBlockToggle';
+
 
 interface MyAvailabilitySheetProps {
   departmentId: string;
