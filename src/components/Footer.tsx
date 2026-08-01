@@ -21,7 +21,7 @@ const Footer = () => {
           >
             Modelos de escala de louvor
           </Link>
-          <img src={elsdigitalLogo} alt="Logo da ELSDigital.tech, desenvolvedora do LEVI" className="h-7 sm:h-8 w-auto object-contain dark:bg-white dark:rounded-md dark:px-1 dark:py-0.5" />
+          <img src={elsdigitalLogo} alt="Logo da ELSDigital.tech, desenvolvedora do LEVI" className="h-10 sm:h-12 w-auto object-contain dark:bg-white dark:rounded-md dark:px-1 dark:py-0.5" />
           <span className="text-xs text-muted-foreground">Desenvolvendo Soluções</span>
         </div>
       </div>
