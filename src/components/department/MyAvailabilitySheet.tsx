@@ -32,7 +32,9 @@ export default function MyAvailabilitySheet({
         </SheetHeader>
         
         <div className="mt-4 space-y-4">
+          <SelfBlockToggle departmentId={departmentId} />
           <SlotAvailability departmentId={departmentId} userId={userId} />
+
           <MemberPreferences departmentId={departmentId} userId={userId} />
         </div>
       </SheetContent>
