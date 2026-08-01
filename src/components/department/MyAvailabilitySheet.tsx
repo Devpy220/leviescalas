@@ -2,6 +2,8 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { Clock } from 'lucide-react';
 import SlotAvailability from './SlotAvailability';
 import MemberPreferences from './MemberPreferences';
+import SelfBlockToggle from './SelfBlockToggle';
+
 
 interface MyAvailabilitySheetProps {
   departmentId: string;
@@ -30,7 +32,9 @@ export default function MyAvailabilitySheet({
         </SheetHeader>
         
         <div className="mt-4 space-y-4">
+          <SelfBlockToggle departmentId={departmentId} />
           <SlotAvailability departmentId={departmentId} userId={userId} />
+
           <MemberPreferences departmentId={departmentId} userId={userId} />
         </div>
       </SheetContent>
