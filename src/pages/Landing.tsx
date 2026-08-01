@@ -779,7 +779,7 @@ export default function Landing() {
             <span className="text-xs">© {new Date().getFullYear()} Escalas</span>
           </div>
           <div className="flex items-center gap-3">
-            <img src={elsdigitalLogo} alt="Logo da ELSDigital.tech, desenvolvedora do LEVI" className="h-7 sm:h-8 w-auto object-contain dark:bg-white dark:rounded-md dark:px-1 dark:py-0.5" />
+            <img src={elsdigitalLogo} alt="Logo da ELSDigital.tech, desenvolvedora do LEVI" className="h-10 sm:h-12 w-auto object-contain dark:bg-white dark:rounded-md dark:px-1 dark:py-0.5" />
             <span className="text-xs text-muted-foreground">{t('landing.developingSolutions')}</span>
           </div>
         </div>
