@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, ShieldAlert, CalendarDays, AlertTriangle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { BirthDateInput } from "@/components/BirthDateInput";
 
 // Public / bypass paths: age gate should not block these
 const BYPASS_PREFIXES = [
@@ -102,7 +103,7 @@ export function AgeGate({ children }: { children: React.ReactNode }) {
             </Alert>
             <div>
               <Label>Data de nascimento *</Label>
-              <Input type="date" value={birth} max={new Date().toISOString().slice(0,10)} onChange={(e) => setBirth(e.target.value)} />
+              <BirthDateInput value={birth} onChange={setBirth} />
             </div>
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setDismissed(true)} className="flex-1">

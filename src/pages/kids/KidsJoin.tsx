@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, Baby, Plus, Trash2, ShieldCheck } from "lucide-react";
 import { uploadKidsPhoto } from "@/lib/kidsStorage";
+import { BirthDateInput } from "@/components/BirthDateInput";
 
 interface Room { id: string; name: string; color: string; age_min: number; age_max: number; page_id: string; }
 interface Page { id: string; name: string; consent_version: string; consent_text: string; }
@@ -225,7 +226,7 @@ export default function KidsJoin() {
                 <Input inputMode="numeric" value={guardian.cpf} onChange={e => setGuardian({ ...guardian, cpf: maskCPF(e.target.value) })} placeholder="000.000.000-00" maxLength={14} />
                 <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Necessário apenas para a área Kids (segurança na retirada da criança).</p>
               </div>
-              <div><Label>Data de nascimento (precisa ser 18+) *</Label><Input type="date" value={guardian.birth_date} onChange={e => setGuardian({ ...guardian, birth_date: e.target.value })} /></div>
+              <div><Label>Data de nascimento (precisa ser 18+) *</Label><BirthDateInput value={guardian.birth_date} onChange={v => setGuardian({ ...guardian, birth_date: v })} /></div>
               <div><Label>Foto (opcional)</Label><Input type="file" accept="image/*" onChange={e => setGuardian({ ...guardian, photoFile: e.target.files?.[0] || null })} /></div>
               <Button onClick={saveGuardian} disabled={busy} className="w-full rounded-xl">
                 {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Continuar"}
@@ -244,7 +245,7 @@ export default function KidsJoin() {
                     <button onClick={() => setChildren(children.filter((_, idx) => idx !== i))} className="absolute top-2 right-2 text-red-500"><Trash2 className="w-4 h-4" /></button>
                   )}
                   <div><Label>Nome completo *</Label><Input value={c.full_name} onChange={e => { const n = [...children]; n[i].full_name = e.target.value; setChildren(n); }} /></div>
-                  <div><Label>Data de nascimento *</Label><Input type="date" value={c.birth_date} onChange={e => { const n = [...children]; n[i].birth_date = e.target.value; setChildren(n); }} /><p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">A idade define automaticamente a sala no check-in.</p></div>
+                  <div><Label>Data de nascimento *</Label><BirthDateInput value={c.birth_date} onChange={v => { const n = [...children]; n[i].birth_date = v; setChildren(n); }} /><p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">A idade define automaticamente a sala no check-in.</p></div>
                   <div><Label>Alergias</Label><Input value={c.allergies} onChange={e => { const n = [...children]; n[i].allergies = e.target.value; setChildren(n); }} placeholder="Ex.: amendoim, leite" /></div>
                   <div><Label>Restrições</Label><Input value={c.restrictions} onChange={e => { const n = [...children]; n[i].restrictions = e.target.value; setChildren(n); }} /></div>
                   <div><Label>Observações</Label><Textarea rows={2} value={c.notes} onChange={e => { const n = [...children]; n[i].notes = e.target.value; setChildren(n); }} /></div>
