@@ -102,7 +102,7 @@ export function AgeGate({ children }: { children: React.ReactNode }) {
             </Alert>
             <div>
               <Label>Data de nascimento *</Label>
-              <Input type="date" value={birth} max={new Date().toISOString().slice(0,10)} onChange={(e) => setBirth(e.target.value)} />
+              <BirthDateInput value={birth} onChange={setBirth} />
             </div>
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setDismissed(true)} className="flex-1">
