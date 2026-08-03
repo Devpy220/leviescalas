@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, ShieldAlert, CalendarDays, AlertTriangle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { BirthDateInput } from "@/components/BirthDateInput";
 
 // Public / bypass paths: age gate should not block these
 const BYPASS_PREFIXES = [
