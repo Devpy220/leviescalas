@@ -249,15 +249,28 @@ export default function SmartScheduleDialog({
         time_start: s.time_start,
         time_end: s.time_end,
         sector_id: s.sector_id || null,
+        sector_ids: s.sector_id ? [s.sector_id] : [],
         created_by: user.id
       }));
 
-      const { data: insertedSchedules, error } = await supabase
-        .from('schedules')
-        .insert(schedulesToInsert)
-        .select();
+      // Insert one by one so a single rejected row (conflito, bloqueio) não derruba tudo
+      const insertedSchedules: any[] = [];
+      const failures: string[] = [];
+      for (let i = 0; i < schedulesToInsert.length; i++) {
+        const row = schedulesToInsert[i];
+        const { data, error } = await supabase.from('schedules').insert(row).select().maybeSingle();
+        if (error) {
+          const who = selectedSchedules[i]?.name ?? '';
+          const msg = String(error.message || '').replace(/^.*?:\s*/, '');
+          failures.push(`${who} (${row.date}): ${msg}`);
+        } else if (data) {
+          insertedSchedules.push(data);
+        }
+      }
 
-      if (error) throw error;
+      if (insertedSchedules.length === 0) {
+        throw new Error(failures[0] || 'Nenhuma escala pôde ser criada.');
+      }
 
       // Create notifications for each scheduled member (only if checkbox is checked)
       if (sendNotificationsOnConfirm && insertedSchedules) {
@@ -292,21 +305,20 @@ export default function SmartScheduleDialog({
       }
 
       toast({
-        title: 'Escalas criadas!',
-        description: `${selectedSchedules.length} escalas foram criadas com sucesso.${sendNotificationsOnConfirm ? ' Notificações enviadas.' : ''}`,
+        title: failures.length > 0 ? 'Escalas criadas parcialmente' : 'Escalas criadas!',
+        description: failures.length > 0
+          ? `${insertedSchedules.length} criadas. ${failures.length} não puderam ser criadas: ${failures.slice(0, 3).join(' | ')}`
+          : `${insertedSchedules.length} escalas foram criadas com sucesso.${sendNotificationsOnConfirm ? ' Notificações enviadas.' : ''}`,
       });
 
       onSchedulesCreated();
       onOpenChange(false);
     } catch (error: any) {
       console.error('Error creating schedules:', error);
-      const isConflict = error?.message?.includes('Conflito de horário');
       toast({
         variant: 'destructive',
-        title: isConflict ? 'Conflito de horário' : 'Erro ao criar escalas',
-        description: isConflict
-          ? error.message
-          : 'Não foi possível salvar as escalas.',
+        title: 'Erro ao criar escalas',
+        description: error?.message || 'Não foi possível salvar as escalas.',
       });
     } finally {
       setSaving(false);
