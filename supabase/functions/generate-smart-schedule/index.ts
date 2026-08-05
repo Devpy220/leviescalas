@@ -91,9 +91,44 @@ serve(async (req) => {
 
     const { department_id, start_date, end_date, sector_id, fixed_slots, selected_dates } = parsed.data;
 
-    // Auth: only leader
-    const { data: dept } = await supabase.from('departments').select('leader_id').eq('id', department_id).single();
-    if (!dept || dept.leader_id !== user.id) {
+    // Service-role client for cross-department reads (RLS would hide other depts)
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    const admin = serviceKey
+      ? createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } })
+      : supabase;
+
+    // Auth: leader, co-leader or coordinator
+    const { data: dept } = await supabase
+      .from('departments')
+      .select('leader_id, allow_sunday_double')
+      .eq('id', department_id)
+      .maybeSingle();
+    if (!dept) {
+      return new Response(JSON.stringify({ error: 'Departamento não encontrado' }), {
+        status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    let canManage = dept.leader_id === user.id;
+    if (!canManage) {
+      const { data: memberRow } = await admin
+        .from('members')
+        .select('role')
+        .eq('department_id', department_id)
+        .eq('user_id', user.id)
+        .maybeSingle();
+      canManage = memberRow?.role === 'leader' || memberRow?.role === 'coleader';
+    }
+    if (!canManage) {
+      const { data: coord } = await admin
+        .from('department_coordinators')
+        .select('id')
+        .eq('department_id', department_id)
+        .eq('user_id', user.id)
+        .maybeSingle();
+      canManage = !!coord;
+    }
+    if (!canManage) {
       return new Response(JSON.stringify({ error: 'Apenas líderes podem gerar escalas' }), {
         status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -108,7 +143,7 @@ serve(async (req) => {
     }
 
     // Blocked members
-    const { data: blockedRows } = await supabase
+    const { data: blockedRows } = await admin
       .from('members').select('user_id').eq('department_id', department_id).eq('is_blocked', true);
     const blockedSet = new Set((blockedRows ?? []).map((r: any) => r.user_id));
     const membersList = (members as any[])
@@ -119,6 +154,7 @@ serve(async (req) => {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
 
     // Availabilities & preferences & history
     const [dateAvailRes, weeklyRes, prefsRes, historyRes, crossRes] = await Promise.all([
