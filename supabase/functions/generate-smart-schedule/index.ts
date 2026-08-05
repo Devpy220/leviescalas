@@ -171,7 +171,7 @@ serve(async (req) => {
         .select('user_id, date')
         .eq('department_id', department_id)
         .gte('date', new Date(Date.now() - 90 * 86400000).toISOString().split('T')[0]),
-      supabase.from('schedules')
+      admin.from('schedules')
         .select('user_id, date, time_start, time_end, department_id')
         .in('user_id', membersList.map(m => m.user_id))
         .neq('department_id', department_id)
@@ -282,8 +282,8 @@ serve(async (req) => {
         if (mine.some(d => daysBetween(d, date) < minGap)) return { ok: false, reason: 'min-gap' };
       }
 
-      // Sunday exclusivity (unless department allows double — we default to strict here)
-      if (slot.dayOfWeek === 0) {
+      // Sunday exclusivity (unless department allows double shifts)
+      if (slot.dayOfWeek === 0 && dept.allow_sunday_double !== true) {
         const isMorning = slot.timeStart < '12:00';
         const prev = sundayShiftByMember[uid]?.[date];
         if (prev && ((prev === 'M') !== isMorning)) return { ok: false, reason: 'sunday-double' };
