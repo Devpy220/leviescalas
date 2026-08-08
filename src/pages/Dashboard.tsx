@@ -17,7 +17,15 @@ import {
   Copy,
   ExternalLink,
   Baby,
+  MoreHorizontal,
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 import { userHasKidsAccess } from '@/lib/kidsAccess';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -524,16 +532,48 @@ export default function Dashboard() {
       <div className="min-w-0 min-h-screen flex flex-col">
         <main className="container mx-auto px-4 py-8 max-w-full flex-1 flex flex-col">
 
-        {/* Top Header: Create button (left) | Avatar centered | Compact dept cards (right) */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mb-8">
-          {/* Left: Create Department */}
-          <div className="flex lg:justify-start justify-center items-center gap-2 order-2 lg:order-1">
+        {/* Barra compacta: avatar + nome (esq) | departamentos + ações (dir) */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4 mb-8">
+          <div className="flex items-center gap-3 min-w-0">
+            <Avatar className="w-10 h-10 border border-border">
+              {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={userName} />}
+              <AvatarFallback className="bg-muted text-foreground text-sm font-semibold">
+                {userName ? userName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'U'}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0">
+              <h1 className="font-display text-base font-semibold text-foreground truncate">{userName || t('dashboard.myProfile')}</h1>
+              <p className="text-xs text-muted-foreground truncate">{currentUser?.email}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 min-w-0">
+            {loading ? (
+              <div className="flex items-center gap-2">
+                {[1, 2].map((i) => <Skeleton key={i} className="h-9 w-9 rounded-full" />)}
+              </div>
+            ) : departments.length > 0 ? (
+              <TooltipProvider>
+                <div className="flex items-center flex-wrap gap-2 justify-end">
+                  {departments.map((dept) => (
+                    <CompactDepartmentCard key={dept.id} department={dept} />
+                  ))}
+                </div>
+              </TooltipProvider>
+            ) : (
+              <p className="text-xs text-muted-foreground max-w-[220px] text-right">
+                {canCreateDepartment
+                  ? t('dashboard.noDepartmentsDescLeader')
+                  : t('dashboard.noDepartmentsDescMember')}
+              </p>
+            )}
+
             {canCreateDepartment && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Link to="/departments/new" aria-label={t('dashboard.createDepartment')}>
-                      <Button size="icon" className="h-9 w-9 rounded-full gradient-fresh text-white shadow-glow-sm hover:shadow-glow transition-all">
+                      <Button size="icon" variant="outline" className="h-9 w-9 rounded-full">
                         <Plus className="w-4 h-4" />
                       </Button>
                     </Link>
@@ -542,168 +582,69 @@ export default function Dashboard() {
                 </Tooltip>
               </TooltipProvider>
             )}
-          </div>
 
-
-          {/* Center: Avatar + Name */}
-          <div className="flex flex-col items-center text-center order-1 lg:order-2">
-            <Avatar className="w-24 h-24 border-4 border-primary/20 mb-3">
-              {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={userName} />}
-              <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
-                {userName ? userName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <h1 className="font-display text-2xl font-bold text-foreground">{userName || t('dashboard.myProfile')}</h1>
-            <p className="text-muted-foreground text-sm">{currentUser?.email}</p>
-          </div>
-
-          {/* Right: Compact department cards */}
-          <div className="order-3 lg:order-3">
-            <h2 className="font-display text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3 lg:text-right">
-              {t('dashboard.myDepartments')}
-            </h2>
-            {loading ? (
-              <div className="flex flex-wrap gap-2 lg:justify-end justify-center">
-                {[1, 2].map((i) => (
-                  <Skeleton key={i} className="h-10 w-10 rounded-full" />
-                ))}
-              </div>
-            ) : departments.length > 0 ? (
-              <TooltipProvider>
-                <div className="flex flex-wrap gap-2 lg:justify-end justify-center">
-                  {departments.map((dept) => (
-                    <CompactDepartmentCard key={dept.id} department={dept} />
-                  ))}
-                </div>
-              </TooltipProvider>
-            ) : (
-              <p className="text-xs text-muted-foreground lg:text-right">
-                {canCreateDepartment
-                  ? t('dashboard.noDepartmentsDescLeader')
-                  : t('dashboard.noDepartmentsDescMember')}
-              </p>
+            {(myChurchCode || myKidsJoinToken || hasKids) && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="icon" variant="outline" className="h-9 w-9 rounded-full" title="Mais ações" aria-label="Mais ações">
+                    <MoreHorizontal className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-72">
+                  {myChurchCode && (
+                    <DropdownMenuItem
+                      onSelect={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/igreja/join/${myChurchCode}`);
+                        toast({ title: 'Link copiado!' });
+                      }}
+                    >
+                      <Church className="w-4 h-4 mr-2" />
+                      <span className="flex-1">Copiar link único da igreja</span>
+                      <Copy className="w-3.5 h-3.5 opacity-60" />
+                    </DropdownMenuItem>
+                  )}
+                  {myKidsJoinToken && (
+                    <DropdownMenuItem
+                      onSelect={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/kids/join/${myKidsJoinToken}`);
+                        toast({ title: 'Link copiado!' });
+                      }}
+                    >
+                      <Baby className="w-4 h-4 mr-2" />
+                      <span className="flex-1">Copiar link de cadastro dos pais</span>
+                      <Copy className="w-3.5 h-3.5 opacity-60" />
+                    </DropdownMenuItem>
+                  )}
+                  {hasKids && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onSelect={async () => {
+                          if (!currentUser?.id) return;
+                          const ok = await userHasKidsAccess(currentUser.id);
+                          if (!ok) {
+                            setHasKids(false);
+                            toast({
+                              variant: 'destructive',
+                              title: 'Sem acesso ao LeviKids',
+                              description:
+                                'Você precisa ser líder, professor ou responsável cadastrado para acessar. Quem apenas cadastrou a igreja recebe somente o link para compartilhar.',
+                            });
+                            return;
+                          }
+                          navigate('/kids');
+                        }}
+                      >
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        <span className="flex-1">Acessar <LeviKidsWordmark /></span>
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
-
         </div>
-
-        {/* Universal church join link (church leader only) */}
-        {myChurchCode && (
-          <section className="mt-4 mb-2">
-            <div className="rounded-3xl border-2 border-primary/20 bg-primary/5 p-4 space-y-2">
-              <div className="flex items-center gap-2">
-                <Church className="w-4 h-4 text-primary" />
-                <p className="text-sm font-semibold">Link único da sua igreja</p>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Compartilhe este link com quem for criar departamentos ou a página LeviKids desta igreja.
-              </p>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 text-xs bg-background rounded-lg px-3 py-2 truncate">
-                  {`${window.location.origin}/igreja/join/${myChurchCode}`}
-                </code>
-                <button
-                  type="button"
-                  className="text-xs px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90"
-                  onClick={() => {
-                    const link = `${window.location.origin}/igreja/join/${myChurchCode}`;
-                    navigator.clipboard.writeText(link);
-                    toast({ title: 'Link copiado!' });
-                  }}
-                >
-                  Copiar
-                </button>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* LeviKids parent registration link (church leader only) */}
-        {myKidsJoinToken && (
-          <section className="mt-4 mb-2">
-            <div className="rounded-3xl border-2 border-violet-200 bg-violet-50/60 p-4 space-y-2">
-              <div className="flex items-center gap-2">
-                <Baby className="w-4 h-4 text-violet-600" />
-                <p className="text-sm font-semibold">Link de cadastro dos responsáveis — <LeviKidsWordmark /></p>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Compartilhe com os pais para cadastrarem seus filhos (foto e data de nascimento).
-              </p>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 text-xs bg-background rounded-lg px-3 py-2 truncate">
-                  {`${window.location.origin}/kids/join/${myKidsJoinToken}`}
-                </code>
-                <button
-                  type="button"
-                  title="Copiar link"
-                  aria-label="Copiar link"
-                  className="p-2 rounded-lg bg-violet-600 text-white hover:opacity-90"
-                  onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}/kids/join/${myKidsJoinToken}`);
-                    toast({ title: 'Link copiado!' });
-                  }}
-                >
-                  <Copy className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  title="Abrir LeviKids"
-                  aria-label="Abrir LeviKids"
-                  className="p-2 rounded-lg border-2 border-violet-300 text-violet-700 hover:bg-violet-100"
-                  onClick={() => navigate('/kids')}
-                >
-                  <ExternalLink className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </section>
-        )}
-
-
-        {/* LeviKids access */}
-        {hasKids && (
-          <section className="mt-4 mb-2">
-            <button
-              type="button"
-              onClick={async () => {
-                if (!currentUser?.id) return;
-                const ok = await userHasKidsAccess(currentUser.id);
-                if (!ok) {
-                  setHasKids(false);
-                  toast({
-                    variant: 'destructive',
-                    title: 'Sem acesso ao LeviKids',
-                    description:
-                      'Você precisa ser líder, professor ou responsável cadastrado para acessar. Quem apenas cadastrou a igreja recebe somente o link para compartilhar.',
-                  });
-                  return;
-                }
-                navigate('/kids');
-              }}
-              className="group w-full flex items-center justify-between gap-4 rounded-3xl border-2 border-violet-200 bg-white/90 backdrop-blur px-5 py-4 shadow-sm hover:shadow-lg hover:border-violet-400 transition-all text-left"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-500 to-amber-400 flex items-center justify-center text-white shadow-md">
-                  <Sparkles className="w-5 h-5" />
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-slate-500 font-semibold">Acessar</p>
-                  <p className="font-display text-xl font-bold leading-tight">
-                    <span style={{ color: '#EF4444' }}>L</span>
-                    <span style={{ color: '#F59E0B' }}>e</span>
-                    <span style={{ color: '#10B981' }}>v</span>
-                    <span style={{ color: '#3B82F6' }}>i</span>
-                    <span style={{ color: '#8B5CF6' }}>K</span>
-                    <span style={{ color: '#EC4899' }}>i</span>
-                    <span style={{ color: '#06B6D4' }}>d</span>
-                    <span style={{ color: '#F97316' }}>s</span>
-                  </p>
-                </div>
-              </div>
-              <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-violet-600 group-hover:translate-x-0.5 transition" />
-            </button>
-          </section>
-        )}
 
         {/* Próximas Escalas — embedded */}
         <section className="mt-4">
