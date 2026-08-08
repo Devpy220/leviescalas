@@ -785,3 +785,113 @@
   animation: neon-pulse 1s ease-in-out infinite;
   color: hsl(var(--secondary));
 }
+
+/* ============================================================
+   FLAT REFRESH — camada global de simplificação visual
+   Uma única cor de destaque (violeta da marca). Neutros no resto.
+   Sem gradientes, glass pesado ou glow colorido.
+   ============================================================ */
+@layer base {
+  :root {
+    /* Paletas decorativas neutralizadas (mantêm apenas tons de cinza) */
+    --orange-50: 240 10% 98%;  --orange-100: 240 8% 96%;  --orange-200: 240 6% 92%;
+    --orange-300: 240 5% 86%;  --orange-400: 240 5% 64%;  --orange-500: 240 5% 46%;
+    --orange-600: 240 6% 36%;  --orange-700: 240 8% 26%;  --orange-800: 240 9% 18%;
+    --orange-900: 240 10% 10%;
+
+    --blue-50: 240 10% 98%;  --blue-100: 240 8% 96%;  --blue-200: 240 6% 92%;
+    --blue-300: 240 5% 86%;  --blue-400: 240 5% 64%;  --blue-500: 240 5% 46%;
+    --blue-600: 240 6% 36%;  --blue-700: 240 8% 26%;  --blue-800: 240 9% 18%;
+    --blue-900: 240 10% 10%;
+
+    --red-50: 240 10% 98%;  --red-100: 240 8% 96%;  --red-200: 240 6% 92%;
+    --red-300: 240 5% 86%;  --red-400: 240 5% 64%;  --red-500: 0 84% 60%;
+    --red-600: 0 72% 51%;
+
+    --coral: 240 5% 46%;
+    --amber: 240 5% 46%;
+    --rose: 240 5% 46%;
+    --cyan: 240 5% 46%;
+    --warning: 240 5% 46%;
+    --info: 258 90% 56%;
+
+    /* Marca: destaque único */
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 10% 12%;
+
+    --gradient-start: 258 90% 56%;
+    --gradient-mid: 258 90% 56%;
+    --gradient-end: 258 90% 56%;
+    --gradient-accent: 258 90% 56%;
+
+    --glass-bg: 0 0% 100% / 1;
+    --glass-border: 240 6% 90% / 1;
+  }
+
+  .dark {
+    --orange-50: 240 8% 12%;  --orange-100: 240 7% 16%;  --orange-200: 240 6% 22%;
+    --orange-300: 240 5% 30%; --orange-400: 240 5% 45%;  --orange-500: 240 5% 60%;
+    --orange-600: 240 5% 70%; --orange-700: 240 5% 80%;  --orange-800: 240 5% 88%;
+    --orange-900: 0 0% 95%;
+
+    --blue-50: 240 8% 12%;  --blue-100: 240 7% 16%;  --blue-200: 240 6% 22%;
+    --blue-300: 240 5% 30%; --blue-400: 240 5% 45%;  --blue-500: 240 5% 60%;
+    --blue-600: 240 5% 70%; --blue-700: 240 5% 80%;  --blue-800: 240 5% 88%;
+    --blue-900: 0 0% 95%;
+
+    --secondary: 240 4% 16%;
+    --secondary-foreground: 0 0% 95%;
+
+    --gradient-start: 258 100% 72%;
+    --gradient-mid: 258 100% 72%;
+    --gradient-end: 258 100% 72%;
+
+    --glass-bg: 240 8% 8% / 1;
+    --glass-border: 240 4% 16% / 1;
+  }
+}
+
+@layer utilities {
+  /* Glass -> superfícies sólidas com borda fina */
+  .glass, .glass-strong, .glass-violet, .glass-dark, .glass-card, .glass-subtle {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: hsl(var(--card)) !important;
+    border: 1px solid hsl(var(--border)) !important;
+    box-shadow: none !important;
+  }
+  .glass-card:hover { border-color: hsl(var(--border)) !important; box-shadow: none !important; }
+
+  /* Gradientes -> superfícies planas */
+  .gradient-primary, .gradient-vibrant { background: hsl(var(--primary)) !important; }
+  .gradient-hero, .gradient-radial, .gradient-glow,
+  .mesh-gradient, .mesh-gradient-animated, .dark .mesh-gradient, .dark .gradient-hero, .dark .gradient-radial {
+    background: hsl(var(--background)) !important;
+    background-image: none !important;
+    animation: none !important;
+  }
+  .text-gradient, .text-gradient-vibrant {
+    background-image: none !important;
+    -webkit-text-fill-color: currentColor;
+    color: hsl(var(--primary)) !important;
+  }
+  .border-gradient::before { background: hsl(var(--border)) !important; }
+
+  /* Glow / sombras coloridas -> sombra neutra discreta */
+  .shadow-glow, .shadow-glow-lg, .shadow-glow-sm, .shadow-colored,
+  .hover-glow:hover, .selection-glow:focus, .hover-lift:hover,
+  .press-effect:hover, .press-effect:active {
+    box-shadow: 0 1px 2px hsl(240 10% 4% / 0.06) !important;
+  }
+  .selection-glow:focus,
+  .selection-glow[data-state="active"],
+  .selection-glow[data-state="on"],
+  .selection-glow[aria-selected="true"] {
+    box-shadow: 0 0 0 2px hsl(var(--primary) / 0.35) !important;
+  }
+  .card-glow::before { display: none !important; }
+  .animate-shimmer { background: none !important; animation: none !important; }
+}
+
+/* Ícones: traço fino e uniforme em todo o app */
+svg.lucide { stroke-width: 1.5; }
