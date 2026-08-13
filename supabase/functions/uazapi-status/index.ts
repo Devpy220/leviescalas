@@ -9,27 +9,27 @@ serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   const baseUrl = (Deno.env.get("UAZAPI_BASE_URL") || "").replace(/\/+$/, "");
-  const token = Deno.env.get("UAZAPI_TOKEN") || "";
-  const instanceToken = Deno.env.get("UAZAPI_INSTANCE_TOKEN") || "";
+  const token = (Deno.env.get("UAZAPI_TOKEN") || "").trim();
 
-  const probe = async (url: string, tk: string) => {
+  const probe = async (label: string, url: string, headers: Record<string, string>) => {
     try {
-      const res = await fetch(url, { headers: { token: tk } });
+      const res = await fetch(url, { headers });
       const body = await res.text();
-      return { status: res.status, body: body.slice(0, 400) };
+      return { label, status: res.status, body: body.slice(0, 300) };
     } catch (e) {
-      return { status: 0, body: e instanceof Error ? e.message : "error" };
+      return { label, status: 0, body: e instanceof Error ? e.message : "error" };
     }
   };
 
+  const results = await Promise.all([
+    probe("status/token", `${baseUrl}/instance/status`, { token }),
+    probe("status/admintoken", `${baseUrl}/instance/status`, { admintoken: token }),
+    probe("status/bearer", `${baseUrl}/instance/status`, { Authorization: `Bearer ${token}` }),
+    probe("instance/all", `${baseUrl}/instance/all`, { admintoken: token }),
+  ]);
+
   return new Response(
-    JSON.stringify({
-      baseUrl,
-      tokenLen: token.length,
-      instanceTokenLen: instanceToken.length,
-      statusWithToken: await probe(`${baseUrl}/instance/status`, token),
-      statusWithInstanceToken: instanceToken ? await probe(`${baseUrl}/instance/status`, instanceToken) : null,
-    }),
+    JSON.stringify({ baseUrl, tokenLen: token.length, tokenPrefix: token.slice(0, 4), results }),
     { headers: { "Content-Type": "application/json", ...corsHeaders } },
   );
 });
