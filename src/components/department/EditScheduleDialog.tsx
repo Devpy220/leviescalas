@@ -260,7 +260,7 @@ export default function EditScheduleDialog({
           assignment_role: selectedAssignmentRole && selectedAssignmentRole !== 'none' ? selectedAssignmentRole : null,
         })
         .eq('id', schedule.id)
-        .select();
+        .select('id, date, time_start, time_end, user_id, sector_id, sector_ids, assignment_role');
 
       if (error) throw error;
 

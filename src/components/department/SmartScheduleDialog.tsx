@@ -258,7 +258,7 @@ export default function SmartScheduleDialog({
       const failures: string[] = [];
       for (let i = 0; i < schedulesToInsert.length; i++) {
         const row = schedulesToInsert[i];
-        const { data, error } = await supabase.from('schedules').insert(row).select().maybeSingle();
+        const { data, error } = await supabase.from('schedules').insert(row).select('id').maybeSingle();
         if (error) {
           const who = selectedSchedules[i]?.name ?? '';
           const msg = String(error.message || '').replace(/^.*?:\s*/, '');
