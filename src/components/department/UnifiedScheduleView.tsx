@@ -11,7 +11,9 @@ import {
   Calendar as CalendarIcon,
   CalendarPlus,
   GripVertical,
+  Search,
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { DraggableFloating } from '@/components/ui/draggable-floating';
 import { ASSIGNMENT_ROLES } from '@/lib/constants';
 import { FIXED_SLOTS, FixedSlot, findSlotByDayAndTime, normalizeTime } from '@/lib/fixedSlots';
