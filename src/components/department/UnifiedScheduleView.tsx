@@ -234,7 +234,29 @@ export default function UnifiedScheduleView({
     return { totalScheduled, daysCount: uniqueDates.size, slotsCount: slotGroups.length };
   }, [slotGroups]);
 
+  // Busca por voluntário (apenas líderes)
+  const matchedMembers = useMemo(() => {
+    const q = memberQuery.trim().toLowerCase();
+    if (!q) return [];
+    return members
+      .filter(m => m.profile?.name?.toLowerCase().includes(q))
+      .slice(0, 8);
+  }, [members, memberQuery]);
+
+  const selectedMember = useMemo(
+    () => members.find(m => m.user_id === selectedMemberId) || null,
+    [members, selectedMemberId]
+  );
+
+  const selectedMemberSchedules = useMemo(() => {
+    if (!selectedMemberId) return [];
+    return schedules
+      .filter(s => s.user_id === selectedMemberId)
+      .sort((a, b) => (a.date + a.time_start).localeCompare(b.date + b.time_start));
+  }, [schedules, selectedMemberId]);
+
   // Confirmation status functions removed - now using swap system instead
+
 
   const handleDeleteSchedule = async () => {
     if (!selectedSchedule) return;
