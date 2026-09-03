@@ -73,7 +73,7 @@ export function LeviTypewriter({ className = '' }: LeviTypewriterProps) {
 
   return (
     <span className={`inline-flex items-baseline ${className}`}>
-      <span className="text-[8px] sm:text-xs text-foreground/75 dark:text-muted-foreground font-medium tracking-wide whitespace-nowrap">
+      <span className="text-[8px] sm:text-xs text-secondary font-medium tracking-wide whitespace-nowrap">
         {visibleText.split('').map((char, i) => {
           const isHighlight = highlightIndices.has(i);
           return (
@@ -81,7 +81,6 @@ export function LeviTypewriter({ className = '' }: LeviTypewriterProps) {
               key={i}
               className={isHighlight ? 'font-extrabold text-[10px] sm:text-base' : ''}
               style={isHighlight ? {
-                color: 'hsl(var(--secondary))',
                 textShadow: '0 0 6px hsla(var(--secondary), 0.4)'
               } : undefined}
             >
@@ -89,7 +88,7 @@ export function LeviTypewriter({ className = '' }: LeviTypewriterProps) {
             </span>
           );
         })}
-        <span className="animate-pulse" style={{ color: 'hsl(var(--secondary))' }}>|</span>
+        <span className="animate-pulse text-secondary">|</span>
       </span>
     </span>
   );
