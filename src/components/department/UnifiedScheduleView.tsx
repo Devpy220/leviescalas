@@ -11,7 +11,9 @@ import {
   Calendar as CalendarIcon,
   CalendarPlus,
   GripVertical,
+  Search,
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { DraggableFloating } from '@/components/ui/draggable-floating';
 import { ASSIGNMENT_ROLES } from '@/lib/constants';
 import { FIXED_SLOTS, FixedSlot, findSlotByDayAndTime, normalizeTime } from '@/lib/fixedSlots';
@@ -133,7 +135,10 @@ export default function UnifiedScheduleView({
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showCalendarPicker, setShowCalendarPicker] = useState(false);
+  const [memberQuery, setMemberQuery] = useState('');
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const { toast } = useToast();
+
 
   // Create extended color map
   const memberColorMap = useMemo(() => createExtendedMemberColorMap(members), [members]);
@@ -231,7 +236,29 @@ export default function UnifiedScheduleView({
     return { totalScheduled, daysCount: uniqueDates.size, slotsCount: slotGroups.length };
   }, [slotGroups]);
 
+  // Busca por voluntário (apenas líderes)
+  const matchedMembers = useMemo(() => {
+    const q = memberQuery.trim().toLowerCase();
+    if (!q) return [];
+    return members
+      .filter(m => m.profile?.name?.toLowerCase().includes(q))
+      .slice(0, 8);
+  }, [members, memberQuery]);
+
+  const selectedMember = useMemo(
+    () => members.find(m => m.user_id === selectedMemberId) || null,
+    [members, selectedMemberId]
+  );
+
+  const selectedMemberSchedules = useMemo(() => {
+    if (!selectedMemberId) return [];
+    return schedules
+      .filter(s => s.user_id === selectedMemberId)
+      .sort((a, b) => (a.date + a.time_start).localeCompare(b.date + b.time_start));
+  }, [schedules, selectedMemberId]);
+
   // Confirmation status functions removed - now using swap system instead
+
 
   const handleDeleteSchedule = async () => {
     if (!selectedSchedule) return;
@@ -313,6 +340,77 @@ export default function UnifiedScheduleView({
           </div>
         </CardHeader>
       </Card>
+
+      {/* Busca por voluntário — apenas líderes */}
+      {isLeader && (
+        <Card>
+          <CardContent className="p-3 space-y-2">
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={memberQuery}
+                onChange={(e) => setMemberQuery(e.target.value)}
+                placeholder="Buscar voluntário para ver os dias escalados..."
+                className="pl-9"
+              />
+            </div>
+            {matchedMembers.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {matchedMembers.map((m) => (
+                  <Button
+                    key={m.user_id}
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => setSelectedMemberId(m.user_id)}
+                  >
+                    {m.profile.name}
+                  </Button>
+                ))}
+              </div>
+            )}
+            {memberQuery.trim() && matchedMembers.length === 0 && (
+              <p className="text-xs text-muted-foreground">Nenhum voluntário encontrado.</p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Dias escalados do voluntário */}
+      <Dialog open={!!selectedMemberId} onOpenChange={(o) => !o && setSelectedMemberId(null)}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{selectedMember?.profile.name}</DialogTitle>
+            <DialogDescription>
+              {selectedMemberSchedules.length} {selectedMemberSchedules.length === 1 ? 'escala' : 'escalas'} no período carregado
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1.5">
+            {selectedMemberSchedules.length === 0 && (
+              <p className="text-sm text-muted-foreground">Este voluntário não está escalado.</p>
+            )}
+            {selectedMemberSchedules.map((s) => (
+              <div key={s.id} className="flex items-center justify-between rounded-md border border-border/50 p-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium capitalize truncate">
+                    {format(parseISO(s.date), "EEEE, d 'de' MMMM", { locale: ptBR })}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {normalizeTime(s.time_start)} - {normalizeTime(s.time_end)}
+                  </p>
+                </div>
+                {s.assignment_role && ASSIGNMENT_ROLES[s.assignment_role as keyof typeof ASSIGNMENT_ROLES] && (
+                  <Badge variant="outline" className="text-[10px] shrink-0">
+                    {ASSIGNMENT_ROLES[s.assignment_role as keyof typeof ASSIGNMENT_ROLES].label}
+                  </Badge>
+                )}
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Individually draggable floating buttons — drag anywhere on the button */}
       {isLeader && !readOnly && (
         <>
