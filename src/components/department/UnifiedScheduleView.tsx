@@ -374,7 +374,7 @@ export default function UnifiedScheduleView({
           </DialogHeader>
           <div className="space-y-1.5">
             {selectedMemberSchedules.length === 0 && (
-              <p className="text-sm text-muted-foreground">Este voluntário não está escalado.</p>
+              <p className="text-sm text-muted-foreground">Este voluntário não está escalado em {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}.</p>
             )}
             {selectedMemberSchedules.map((s) => (
               <div key={s.id} className="flex items-center justify-between rounded-md border border-border/50 p-2">
