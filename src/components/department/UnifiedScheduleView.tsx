@@ -127,7 +127,7 @@ export default function UnifiedScheduleView({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [showCalendarPicker, setShowCalendarPicker] = useState(false);
+  
   const [memberQuery, setMemberQuery] = useState('');
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const { toast } = useToast();
