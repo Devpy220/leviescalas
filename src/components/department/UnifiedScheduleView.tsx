@@ -133,7 +133,10 @@ export default function UnifiedScheduleView({
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showCalendarPicker, setShowCalendarPicker] = useState(false);
+  const [memberQuery, setMemberQuery] = useState('');
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const { toast } = useToast();
+
 
   // Create extended color map
   const memberColorMap = useMemo(() => createExtendedMemberColorMap(members), [members]);
