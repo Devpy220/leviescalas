@@ -285,12 +285,6 @@ export default function UnifiedScheduleView({
     }
   };
 
-  const handleDateSelect = (date: Date | undefined) => {
-    if (date) {
-      setShowCalendarPicker(false);
-      onAddSchedule(date);
-    }
-  };
 
   return (
     <div className="space-y-4">
