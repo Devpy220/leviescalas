@@ -369,7 +369,7 @@ export default function UnifiedScheduleView({
           <DialogHeader>
             <DialogTitle>{selectedMember?.profile.name}</DialogTitle>
             <DialogDescription>
-              {selectedMemberSchedules.length} {selectedMemberSchedules.length === 1 ? 'escala' : 'escalas'} no período carregado
+              {selectedMemberSchedules.length} {selectedMemberSchedules.length === 1 ? 'escala' : 'escalas'} em {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1.5">
