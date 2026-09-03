@@ -774,7 +774,7 @@ export default function Landing() {
       <footer className="relative z-[1] py-3 border-t border-border shrink-0">
         <div className="container mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span className="font-semibold text-foreground">LEVI</span>
+            <span className="font-semibold text-secondary">LEVI</span>
             <span>·</span>
             <span className="text-xs">© {new Date().getFullYear()} Escalas</span>
           </div>
@@ -800,7 +800,7 @@ export default function Landing() {
                 <LeviLogo className="w-7 h-7" />
               </div>
               <div>
-                <span className="font-display text-xl font-bold text-foreground">LEVI</span>
+                <span className="font-display text-xl font-bold text-secondary">LEVI</span>
                 <p className="text-xs text-muted-foreground">{t('landing.scheduleManagement')}</p>
               </div>
             </div>
