@@ -337,7 +337,7 @@ export default function UnifiedScheduleView({
               <Input
                 value={memberQuery}
                 onChange={(e) => setMemberQuery(e.target.value)}
-                placeholder="Buscar voluntário para ver os dias escalados..."
+                placeholder={`Buscar voluntário em ${format(currentMonth, 'MMMM yyyy', { locale: ptBR })}...`}
                 className="pl-9"
               />
             </div>
