@@ -10,7 +10,6 @@ import {
   Sparkles,
   Calendar as CalendarIcon,
   CalendarPlus,
-  GripVertical,
   Search,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -21,13 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import { Calendar } from '@/components/ui/calendar';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Dialog,
   DialogContent,
@@ -134,7 +127,7 @@ export default function UnifiedScheduleView({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [showCalendarPicker, setShowCalendarPicker] = useState(false);
+  
   const [memberQuery, setMemberQuery] = useState('');
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const { toast } = useToast();
@@ -292,12 +285,6 @@ export default function UnifiedScheduleView({
     }
   };
 
-  const handleDateSelect = (date: Date | undefined) => {
-    if (date) {
-      setShowCalendarPicker(false);
-      onAddSchedule(date);
-    }
-  };
 
   return (
     <div className="space-y-4">
