@@ -246,9 +246,9 @@ export default function UnifiedScheduleView({
   const selectedMemberSchedules = useMemo(() => {
     if (!selectedMemberId) return [];
     return schedules
-      .filter(s => s.user_id === selectedMemberId)
+      .filter(s => s.user_id === selectedMemberId && isSameMonth(parseISO(s.date), currentMonth))
       .sort((a, b) => (a.date + a.time_start).localeCompare(b.date + b.time_start));
-  }, [schedules, selectedMemberId]);
+  }, [schedules, selectedMemberId, currentMonth]);
 
   // Confirmation status functions removed - now using swap system instead
 
