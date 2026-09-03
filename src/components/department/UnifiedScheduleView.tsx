@@ -246,9 +246,9 @@ export default function UnifiedScheduleView({
   const selectedMemberSchedules = useMemo(() => {
     if (!selectedMemberId) return [];
     return schedules
-      .filter(s => s.user_id === selectedMemberId)
+      .filter(s => s.user_id === selectedMemberId && isSameMonth(parseISO(s.date), currentMonth))
       .sort((a, b) => (a.date + a.time_start).localeCompare(b.date + b.time_start));
-  }, [schedules, selectedMemberId]);
+  }, [schedules, selectedMemberId, currentMonth]);
 
   // Confirmation status functions removed - now using swap system instead
 
@@ -337,7 +337,7 @@ export default function UnifiedScheduleView({
               <Input
                 value={memberQuery}
                 onChange={(e) => setMemberQuery(e.target.value)}
-                placeholder="Buscar voluntário para ver os dias escalados..."
+                placeholder={`Buscar voluntário em ${format(currentMonth, 'MMMM yyyy', { locale: ptBR })}...`}
                 className="pl-9"
               />
             </div>
@@ -369,12 +369,12 @@ export default function UnifiedScheduleView({
           <DialogHeader>
             <DialogTitle>{selectedMember?.profile.name}</DialogTitle>
             <DialogDescription>
-              {selectedMemberSchedules.length} {selectedMemberSchedules.length === 1 ? 'escala' : 'escalas'} no período carregado
+              {selectedMemberSchedules.length} {selectedMemberSchedules.length === 1 ? 'escala' : 'escalas'} em {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1.5">
             {selectedMemberSchedules.length === 0 && (
-              <p className="text-sm text-muted-foreground">Este voluntário não está escalado.</p>
+              <p className="text-sm text-muted-foreground">Este voluntário não está escalado em {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}.</p>
             )}
             {selectedMemberSchedules.map((s) => (
               <div key={s.id} className="flex items-center justify-between rounded-md border border-border/50 p-2">
