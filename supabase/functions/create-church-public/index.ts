@@ -86,7 +86,6 @@ serve(async (req) => {
     const kidsAdminUrl = `${origin}/auth?tab=register&churchCode=${church.code}&redirect=${encodeURIComponent(`/kids/admin?churchCode=${church.code}`)}`;
     const churchPageUrl = church.slug ? `${origin}/igreja/${church.slug}` : null;
 
-    const wantsLevi = d.product === "levi" || d.product === "both";
     const wantsKids = d.product === "kids" || d.product === "both";
 
     // Send WhatsApp via UAZAPI
@@ -97,33 +96,13 @@ serve(async (req) => {
       const lines: string[] = [
         `🎉 *LEVI* — Igreja *${church.name}* cadastrada com sucesso!`,
         ``,
+        `Próximo passo: crie uma conta e os departamentos/ministérios da sua igreja usando o link abaixo:`,
+        ``,
+        `👉 ${createDeptUrl}`,
       ];
-      if (wantsLevi && wantsKids) {
-        lines.push(
-          `Você escolheu usar *LEVI Escalas + LeviKids*. Guarde os dois links:`,
-          ``,
-          `📅 *LEVI Escalas* (criar departamentos/ministérios):`,
-          `👉 ${createDeptUrl}`,
-          ``,
-          `👶 *LeviKids* (criar a área infantil):`,
-          `👉 ${kidsAdminUrl}`,
-        );
-      } else if (wantsKids) {
-        lines.push(
-          `Você escolheu usar o *LeviKids*.`,
-          ``,
-          `👶 Acesse este link para criar a área infantil da sua igreja:`,
-          `👉 ${kidsAdminUrl}`,
-        );
-      } else {
-        lines.push(
-          `Próximo passo: crie uma conta e os departamentos/ministérios da sua igreja usando o link abaixo:`,
-          ``,
-          `👉 ${createDeptUrl}`,
-        );
-      }
       if (churchPageUrl) lines.push(``, `Página pública: ${churchPageUrl}`);
-      lines.push(``, `⚠️ Igrejas sem departamentos ou área kids em até 5 dias são removidas automaticamente.`);
+      lines.push(``, `⚠️ Igrejas sem departamentos em até 5 dias são removidas automaticamente.`);
+
 
       const r = await sendUazapiText(String(d.registrantPhone), lines.join("\n"), 2);
       if (r.ok) {
@@ -140,7 +119,7 @@ serve(async (req) => {
         ok: true,
         church: { id: church.id, name: church.name, code: church.code, slug: church.slug },
         product: d.product,
-        createDeptUrl: wantsLevi ? createDeptUrl : null,
+        createDeptUrl,
         kidsAdminUrl: wantsKids ? kidsAdminUrl : null,
         churchPageUrl,
         whatsappSent,
