@@ -16,6 +16,7 @@ const BYPASS_PREFIXES = [
   "/", "/auth", "/join", "/church-setup", "/apoiar", "/confirm", "/tutorial",
   "/complete-profile", "/authorize-minor", "/kids", "/igreja", "/oauth",
   "/.lovable", "/admin", "/admin-login", "/login", "/entrar", "/acessar",
+  "/privacidade", "/consentimento-responsavel",
 ];
 
 function isBypass(pathname: string) {
