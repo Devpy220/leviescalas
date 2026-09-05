@@ -1332,15 +1332,25 @@ export default function Auth() {
                     const formatted = formatWhatsapp(e.target.value);
                     registerForm.setValue('whatsapp', formatted);
                   }}
+                  onFocus={() => setWhatsappFocused(true)}
+                  onBlur={() => setWhatsappFocused(false)}
                   className="h-12"
                   disabled={!isFormReadyToSubmit}
                 />
+                {whatsappFocused && (
+                  <p className="text-xs text-primary flex items-start gap-1 animate-fade-in">
+                    <Info className="w-3 h-3 mt-0.5 shrink-0" />
+                    Brasil: 11 dígitos (DDD + número). Fora do Brasil: use + e o código do país, ex: +351912345678
+                  </p>
+                )}
                 {registerForm.formState.errors.whatsapp && (
                   <p className="text-sm text-destructive">{registerForm.formState.errors.whatsapp.message}</p>
                 )}
-                <p className="text-xs text-muted-foreground">
-                  Brasil: 11999999999 (DDD + número). Fora do Brasil: +351912345678
-                </p>
+                {!whatsappFocused && (
+                  <p className="text-xs text-muted-foreground">
+                    Brasil: 11999999999 (DDD + número). Fora do Brasil: +351912345678
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
