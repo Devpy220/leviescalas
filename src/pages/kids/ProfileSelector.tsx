@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { KidsNoAccessDialog } from "@/components/kids/KidsNoAccessDialog";
 import { SEO } from "@/components/SEO";
 import { PillCard } from "@/components/portal-kids/PillCard";
 import { LeviKidsWordmark } from "@/components/LeviKidsWordmark";
