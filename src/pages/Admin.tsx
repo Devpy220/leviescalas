@@ -951,6 +951,10 @@ export default function Admin() {
           </CardContent>
         </Card>
 
+        {/* Conformidade internacional (leis por país) */}
+        <InternationalComplianceCard />
+
+
 
         {/* Comunicados LEVI — modal */}
         <Dialog open={openModal==='broadcast'} onOpenChange={(o)=>!o&&closeModal()}>
