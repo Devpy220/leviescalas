@@ -235,7 +235,19 @@ export default function ChurchSetup() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="registrantPhone">WhatsApp *</Label>
-                    <Input id="registrantPhone" placeholder="(11) 99999-9999" {...churchForm.register('registrantPhone')} />
+                    <Input
+                      id="registrantPhone"
+                      placeholder="(11) 99999-9999"
+                      {...churchForm.register('registrantPhone')}
+                      onFocus={() => setFocusedPhoneField('registrantPhone')}
+                      onBlur={() => setFocusedPhoneField(null)}
+                    />
+                    {focusedPhoneField === 'registrantPhone' && (
+                      <p className="text-xs text-primary flex items-start gap-1">
+                        <Info className="w-3 h-3 mt-0.5 shrink-0" />
+                        Brasil: DDD + número (11 dígitos). Fora do Brasil: use + e o código do país, ex: +351912345678
+                      </p>
+                    )}
                     {churchForm.formState.errors.registrantPhone && (
                       <p className="text-sm text-destructive">{churchForm.formState.errors.registrantPhone.message}</p>
                     )}
