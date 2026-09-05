@@ -434,6 +434,11 @@ export default function Landing() {
   }, [shouldShowInstallPrompt]);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('contato') === '1') setShowContact(true);
+  }, []);
+
+  useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', fn);
     return () => window.removeEventListener('scroll', fn);
