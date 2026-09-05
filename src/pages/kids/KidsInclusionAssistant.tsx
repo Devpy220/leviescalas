@@ -24,7 +24,7 @@ export default function KidsInclusionAssistant() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { if (user) load(); /* eslint-disable-next-line */ }, [user]);
+  useEffect(() => { if (user) load(); }, [user]);
 
   async function load() {
     // Salas de inclusão que o usuário lidera ou ensina

@@ -121,7 +121,7 @@ Deno.serve(async (req) => {
 
     let body: { url?: string } = {};
     if (req.method === "POST") {
-      try { body = await req.json(); } catch {}
+      try { body = await req.json(); } catch { /* body stays empty */ }
     }
     const targetUrl = (body.url && /^https?:\/\//.test(body.url)) ? body.url : DEFAULT_URL;
 

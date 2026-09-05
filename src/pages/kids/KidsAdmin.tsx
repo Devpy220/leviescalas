@@ -285,7 +285,7 @@ export default function KidsAdmin() {
     setContents((data || []) as KidsContent[]);
   }
 
-  useEffect(() => { if (page && rooms.length) loadTeachers(); /* eslint-disable-next-line */ }, [rooms]);
+  useEffect(() => { if (page && rooms.length) loadTeachers(); }, [rooms]);
 
   async function createPage() {
     if (!user || !newPageName.trim()) return;

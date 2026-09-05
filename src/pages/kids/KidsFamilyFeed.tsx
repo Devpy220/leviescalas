@@ -33,7 +33,7 @@ export default function KidsFamilyFeed() {
 
   const canPost = role === "leader" || role === "teacher";
 
-  useEffect(() => { if (user) { load(); loadRooms(); } /* eslint-disable-next-line */ }, [user]);
+  useEffect(() => { if (user) { load(); loadRooms(); } }, [user]);
 
   async function load() {
     setLoading(true);

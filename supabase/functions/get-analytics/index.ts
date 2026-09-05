@@ -179,7 +179,7 @@ serve(async (req) => {
     const recentLogs = logs.slice(0, 50);
     const userIds = [...new Set(recentLogs.map((l: any) => l.user_id))];
 
-    let profileMap: Record<string, { name: string; email: string }> = {};
+    const profileMap: Record<string, { name: string; email: string }> = {};
     if (userIds.length > 0) {
       const { data: profiles } = await supabase
         .from("profiles")

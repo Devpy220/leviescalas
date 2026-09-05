@@ -109,7 +109,7 @@ export function parseUserResponse(text: string, targetMonth: Date): ParsedRespon
     }
   }
 
-  const ddmm = /(\b\d{1,2})[\/\-\.](\d{1,2})(?:[\/\-\.](\d{2,4}))?/g;
+  const ddmm = /(\b\d{1,2})[/\-.](\d{1,2})(?:[/\-.](\d{2,4}))?/g;
   let m: RegExpExecArray | null;
   while ((m = ddmm.exec(lower)) !== null) {
     const day = parseInt(m[1], 10);
@@ -436,7 +436,7 @@ serve(async (req: Request): Promise<Response> => {
     const lowerText = (text || "").toLowerCase();
     const hasBlackoutKeyword =
       /\b(servir|bloquear|bloqueio|bloqueado|livre|liberado|liberada|nenhum|nenhuma|nada|todos|disponivel|disponível|domingos?|segundas?|ter[cç]as?|quartas?|quintas?|sextas?|s[áa]bados?)\b/.test(lowerText) ||
-      /\d{1,2}[\/\-\.]\d{1,2}/.test(lowerText) ||
+      /\d{1,2}[/\-.]\d{1,2}/.test(lowerText) ||
       /\b\d{1,2}\b/.test(lowerText);
     const sentAt = prompt.sent_at ? new Date(prompt.sent_at).getTime() : 0;
     const recentReply = sentAt > 0 && (Date.now() - sentAt) <= 60 * 60 * 1000;
