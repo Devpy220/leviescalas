@@ -66,8 +66,12 @@ const registerSchema = z.object({
   email: z.string().trim().email('Email inválido').max(255, 'Email muito longo'),
   whatsapp: z.string()
     .min(1, 'WhatsApp é obrigatório')
-    .regex(/^\d{11}$/, 'WhatsApp deve ter 11 dígitos (DDD + número)')
-    .transform(val => val.replace(/\D/g, '')),
+    .transform(val => val.replace(/[^\d+]/g, ''))
+    .refine(
+      val => /^\d{11}$/.test(val) || /^\+\d{8,15}$/.test(val),
+      'Use 11 dígitos (DDD + número) ou o formato internacional, ex: +351912345678',
+    ),
+
   password: passwordSchema,
   confirmPassword: z.string().min(1, 'Confirmação de senha é obrigatória'),
   isAdminSignup: z.boolean().optional(),
