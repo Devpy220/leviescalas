@@ -103,9 +103,13 @@ export default function ProfileSelector() {
 
         <div className="text-center mt-6 space-y-2 text-xs opacity-70">
           <p>Novo por aqui? Peça o link de convite ao líder da igreja.</p>
-          <Link to="/" className="underline">← Voltar ao LEVI</Link>
+          <button type="button" onClick={() => setNoAccess(true)} className="underline">
+            Não consigo entrar
+          </button>
+          <p><Link to="/" className="underline">← Voltar ao LEVI</Link></p>
         </div>
       </div>
+      <KidsNoAccessDialog open={noAccess} onOpenChange={setNoAccess} />
     </div>
   );
 }
