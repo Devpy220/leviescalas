@@ -292,6 +292,48 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
+    // ─── RGPD: opt-out / opt-in de mensagens ("SAIR" / "VOLTAR") ───
+    const consentText = (text || "").trim().toLowerCase().replace(/[!?.]+$/, "");
+    if (["sair", "parar", "stop", "cancelar", "descadastrar", "sair da lista"].includes(consentText)) {
+      await supabase.from("whatsapp_consent_log").insert({
+        user_id: profile.id,
+        phone: phoneDigits,
+        action: "opt_out",
+        consent_text: text,
+        source: "whatsapp",
+      });
+      await supabase
+        .from("profiles")
+        .update({ whatsapp_opt_out_at: new Date().toISOString() })
+        .eq("id", profile.id);
+      await sendConfirmation(
+        phoneDigits,
+        "✅ Pedido registado. Deixará de receber mensagens do LEVI neste número.\n\nSe mudar de ideias, responda *VOLTAR* para voltar a receber.",
+      );
+      return new Response(JSON.stringify({ ok: true, action: "opt_out" }), {
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+    if (["voltar", "start", "aceito", "quero receber"].includes(consentText)) {
+      await supabase.from("whatsapp_consent_log").insert({
+        user_id: profile.id,
+        phone: phoneDigits,
+        action: "opt_in",
+        consent_text: text,
+        source: "whatsapp",
+      });
+      await supabase
+        .from("profiles")
+        .update({ whatsapp_opt_in_at: new Date().toISOString(), whatsapp_opt_in_text: text, whatsapp_opt_out_at: null })
+        .eq("id", profile.id);
+      await sendConfirmation(phoneDigits, "✅ Voltou a receber as mensagens do LEVI. Responda *SAIR* a qualquer momento para cancelar.");
+      return new Response(JSON.stringify({ ok: true, action: "opt_in" }), {
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+
+
     // ─── "ajuda" / "comandos" / "?" / standalone "levi" → send commands list ───
     const helpRegex = /^(ajuda|help|comandos?|\?|oi\s+levi|ol[áa]\s+levi|levi)\s*[!?.]*$/i;
 
