@@ -13,21 +13,12 @@ export interface UazapiSendResult {
   error?: string | null;
 }
 
-// Country codes we can safely detect when a number already carries one.
-// (Brazil + Portugal + common destinations for church members abroad.)
-const KNOWN_COUNTRY_CODES = [
-  "351", "244", "258", "238", "239", "245", "670", // PT-speaking
-  "1", "44", "33", "34", "39", "49", "41", "31", "32", "353", "352",
-  "54", "56", "57", "58", "51", "52", "591", "595", "598", "593", "507",
-  "61", "64", "81", "82", "86", "91", "27", "972", "351",
-];
-
 /**
  * Normalize a phone number to international digits (no "+").
  *
- * - Numbers already carrying a country code (typed with "+", "00" or a
- *   recognized prefix) are kept as-is — this allows Portugal (+351) and any
- *   other country.
+ * - Numbers typed with "+" / "00", or longer than a Brazilian local number,
+ *   are treated as already carrying a country code — so Portugal (+351) and
+ *   any other country work normally.
  * - Bare 10/11-digit numbers are treated as Brazilian (legacy stored format)
  *   and get the "55" prefix, with the mobile "9" inserted when missing.
  */
@@ -37,15 +28,15 @@ export function normalizeNumber(raw: string): string {
   if (clean.startsWith("00")) clean = clean.slice(2);
   if (!clean) return "";
 
-  // Brazil
+  // Brazil with country code (12-13 digits)
   if (clean.startsWith("55") && clean.length >= 12 && clean.length <= 13) {
     let br = clean.slice(2);
     if (br.length === 10 && /[6-9]/.test(br[2])) br = br.slice(0, 2) + "9" + br.slice(2);
     return `55${br}`;
   }
 
-  // Already international (explicit "+"/"00" or a recognized country prefix)
-  if (explicitIntl || KNOWN_COUNTRY_CODES.some((c) => clean.startsWith(c) && clean.length >= c.length + 7)) {
+  // Explicit international, or too long to be a bare Brazilian number
+  if (explicitIntl || clean.length >= 12) {
     return clean.length >= 8 ? clean : "";
   }
 
@@ -56,6 +47,7 @@ export function normalizeNumber(raw: string): string {
   if (clean.length < 10) return "";
   return `55${clean}`;
 }
+
 
 
 /**
