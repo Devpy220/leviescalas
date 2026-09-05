@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Calendar, Eye, EyeOff, ArrowLeft, Loader2, Sparkles, Users, Bell, Fingerprint } from 'lucide-react';
+import { Calendar, Eye, EyeOff, ArrowLeft, Loader2, Sparkles, Users, Bell, Fingerprint, Info } from 'lucide-react';
 import { isWebAuthnSupported, loginWithBiometric } from '@/lib/webauthn';
 import { SEO } from '@/components/SEO';
 import { LeviLogo } from '@/components/LeviLogo';
@@ -110,6 +110,7 @@ export default function Auth() {
   const [pendingPasswordReset, setPendingPasswordReset] = useState<string | null>(null);
   const [churchValidated, setChurchValidated] = useState<{ valid: boolean; name: string | null; slug: string | null }>({ valid: false, name: null, slug: null });
   const [isValidatingChurch, setIsValidatingChurch] = useState(false);
+  const [whatsappFocused, setWhatsappFocused] = useState(false);
   // Admin is identified by email only (leviescalas@gmail.com)
   
   // Ref to prevent duplicate redirects
@@ -1331,15 +1332,25 @@ export default function Auth() {
                     const formatted = formatWhatsapp(e.target.value);
                     registerForm.setValue('whatsapp', formatted);
                   }}
+                  onFocus={() => setWhatsappFocused(true)}
+                  onBlur={() => setWhatsappFocused(false)}
                   className="h-12"
                   disabled={!isFormReadyToSubmit}
                 />
+                {whatsappFocused && (
+                  <p className="text-xs text-primary flex items-start gap-1 animate-fade-in">
+                    <Info className="w-3 h-3 mt-0.5 shrink-0" />
+                    Brasil: 11 dígitos (DDD + número). Fora do Brasil: use + e o código do país, ex: +351912345678
+                  </p>
+                )}
                 {registerForm.formState.errors.whatsapp && (
                   <p className="text-sm text-destructive">{registerForm.formState.errors.whatsapp.message}</p>
                 )}
-                <p className="text-xs text-muted-foreground">
-                  Brasil: 11999999999 (DDD + número). Fora do Brasil: +351912345678
-                </p>
+                {!whatsappFocused && (
+                  <p className="text-xs text-muted-foreground">
+                    Brasil: 11999999999 (DDD + número). Fora do Brasil: +351912345678
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
