@@ -63,12 +63,33 @@ export function AgeGate({ children }: { children: React.ReactNode }) {
 
   async function saveBirth() {
     if (!user || !birth) return;
+    const age = calcAge(birth);
+    // RGPD / Lei 58/2019: menores de 13 anos precisam do consentimento do
+    // titular das responsabilidades parentais.
+    if (age < 13 && (!guardianEmail.trim() || !guardianPhone.trim())) {
+      toast({ title: "Dados do responsável", description: "Indique o e-mail e o telefone do responsável legal.", variant: "destructive" });
+      return;
+    }
     setSaving(true);
-    const { error } = await supabase.from("profiles").update({ birth_date: birth } as any).eq("id", user.id);
+    const payload: Record<string, unknown> = { birth_date: birth };
+    let token = "";
+    if (age < 13) {
+      token = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "").slice(0, 8);
+      payload.guardian_email = guardianEmail.trim();
+      payload.guardian_phone = guardianPhone.trim();
+      payload.guardian_consent = false;
+      payload.guardian_consent_token = token;
+    }
+    const { error } = await supabase.from("profiles").update(payload as any).eq("id", user.id);
     setSaving(false);
     if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+    if (token) {
+      setConsentLink(`${window.location.origin}/consentimento-responsavel?token=${token}`);
+      return;
+    }
     setProfile((p) => ({ ...(p as any), birth_date: birth }));
   }
+
 
   // Always render children; overlay dialogs on top when needed.
   const showBirthPrompt = !bypass && user && checked && profile && !profile.birth_date && !dismissed;
