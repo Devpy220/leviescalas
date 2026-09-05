@@ -101,6 +101,7 @@ export default function KidsLanding() {
           )}
         </div>
       </div>
+      <KidsNoAccessDialog open={noAccess} onOpenChange={setNoAccess} />
     </div>
   );
 }
