@@ -89,8 +89,11 @@ export default function KidsLanding() {
           {role === "teacher" && <Button asChild size="lg" className="rounded-2xl"><Link to="/kids/dashboard">Dashboard do professor</Link></Button>}
           {role === "guardian" && <Button asChild size="lg" className="rounded-2xl"><Link to="/kids/checkin">Fazer check-in</Link></Button>}
           {!role && page === null && (
-            <div className="text-center text-slate-600 dark:text-slate-300">
-              <p>Peça o link de ativação do LeviKids ao administrador do LEVI, ou o QR code de cadastro na sua sala da igreja.</p>
+            <div className="text-center text-slate-600 dark:text-slate-300 space-y-3">
+              <p>Fale primeiro com o responsável (líder) da sua igreja para receber o link de acesso ao LeviKids.</p>
+              <Button size="lg" className="rounded-2xl" onClick={() => setNoAccess(true)}>
+                Não consigo entrar
+              </Button>
             </div>
           )}
         </div>
