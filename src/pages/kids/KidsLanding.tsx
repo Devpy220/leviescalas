@@ -1,4 +1,6 @@
 import { LeviKidsWordmark } from "@/components/LeviKidsWordmark";
+import { useState } from "react";
+import { KidsNoAccessDialog } from "@/components/kids/KidsNoAccessDialog";
 import { Link } from "react-router-dom";
 import { Baby, Sparkles, ShieldCheck, QrCode, Copy, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
