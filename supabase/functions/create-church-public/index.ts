@@ -120,7 +120,7 @@ serve(async (req) => {
         ok: true,
         church: { id: church.id, name: church.name, code: church.code, slug: church.slug },
         product: d.product,
-        createDeptUrl: wantsLevi ? createDeptUrl : null,
+        createDeptUrl,
         kidsAdminUrl: wantsKids ? kidsAdminUrl : null,
         churchPageUrl,
         whatsappSent,
