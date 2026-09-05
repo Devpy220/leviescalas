@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { KidsNoAccessDialog } from "@/components/kids/KidsNoAccessDialog";
 import { SEO } from "@/components/SEO";
 import { PillCard } from "@/components/portal-kids/PillCard";
 import { LeviKidsWordmark } from "@/components/LeviKidsWordmark";
@@ -16,16 +18,24 @@ export default function ProfileSelector() {
   const { user, loading: authLoading } = useAuth();
   const { role, loading } = useMyKidsPage();
   const { session: childSession } = useKidChildSession();
+  const [noAccess, setNoAccess] = useState(false);
+
+  // Logged in but with no LeviKids link (no leader/teacher/guardian record)
+  const goOrWarn = (path: string) => {
+    if (!user) return navigate(`/auth?returnUrl=${path}`);
+    if (!role) return setNoAccess(true);
+    navigate(path);
+  };
 
   const profiles = [
     { key: "child", label: "Sou Criança", emoji: "🧒", img: mascot, glow: "pink" as const,
       go: () => navigate("/kids/child") },
     { key: "parent", label: "Sou Pai/Mãe", emoji: "👨‍👩‍👧", img: iconParent, glow: "purple" as const,
-      go: () => navigate(user ? "/kids/parent" : "/auth?returnUrl=/kids/parent") },
+      go: () => goOrWarn("/kids/parent") },
     { key: "teacher", label: "Sou Professor(a)", emoji: "📚", img: iconTeacher, glow: "green" as const,
-      go: () => navigate(user ? "/kids/dashboard" : "/auth?returnUrl=/kids/dashboard") },
+      go: () => goOrWarn("/kids/dashboard") },
     { key: "leader", label: "Sou Líder", emoji: "👑", img: iconLeader, glow: "purple" as const,
-      go: () => navigate(user ? "/kids/admin" : "/auth?returnUrl=/kids/admin") },
+      go: () => goOrWarn("/kids/admin") },
   ];
 
   if (authLoading || loading) {
@@ -93,9 +103,13 @@ export default function ProfileSelector() {
 
         <div className="text-center mt-6 space-y-2 text-xs opacity-70">
           <p>Novo por aqui? Peça o link de convite ao líder da igreja.</p>
-          <Link to="/" className="underline">← Voltar ao LEVI</Link>
+          <button type="button" onClick={() => setNoAccess(true)} className="underline">
+            Não consigo entrar
+          </button>
+          <p><Link to="/" className="underline">← Voltar ao LEVI</Link></p>
         </div>
       </div>
+      <KidsNoAccessDialog open={noAccess} onOpenChange={setNoAccess} />
     </div>
   );
 }

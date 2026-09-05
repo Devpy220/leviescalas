@@ -1,4 +1,6 @@
 import { LeviKidsWordmark } from "@/components/LeviKidsWordmark";
+import { useState } from "react";
+import { KidsNoAccessDialog } from "@/components/kids/KidsNoAccessDialog";
 import { Link } from "react-router-dom";
 import { Baby, Sparkles, ShieldCheck, QrCode, Copy, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,6 +11,7 @@ import { toast } from "@/hooks/use-toast";
 
 export default function KidsLanding() {
   const { page, role, loading } = useMyKidsPage();
+  const [noAccess, setNoAccess] = useState(false);
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin" /></div>;
@@ -89,12 +92,16 @@ export default function KidsLanding() {
           {role === "teacher" && <Button asChild size="lg" className="rounded-2xl"><Link to="/kids/dashboard">Dashboard do professor</Link></Button>}
           {role === "guardian" && <Button asChild size="lg" className="rounded-2xl"><Link to="/kids/checkin">Fazer check-in</Link></Button>}
           {!role && page === null && (
-            <div className="text-center text-slate-600 dark:text-slate-300">
-              <p>Peça o link de ativação do LeviKids ao administrador do LEVI, ou o QR code de cadastro na sua sala da igreja.</p>
+            <div className="text-center text-slate-600 dark:text-slate-300 space-y-3">
+              <p>Fale primeiro com o responsável (líder) da sua igreja para receber o link de acesso ao LeviKids.</p>
+              <Button size="lg" className="rounded-2xl" onClick={() => setNoAccess(true)}>
+                Não consigo entrar
+              </Button>
             </div>
           )}
         </div>
       </div>
+      <KidsNoAccessDialog open={noAccess} onOpenChange={setNoAccess} />
     </div>
   );
 }
