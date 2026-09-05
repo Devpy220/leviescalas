@@ -830,8 +830,11 @@ export default function Auth() {
   };
 
   const formatWhatsapp = (value: string) => {
-    const numbers = value.replace(/\D/g, '').slice(0, 11);
-    return numbers;
+    // Allows Brazilian numbers (11 digits) and international ones (+351..., +1...)
+    if (value.trim().startsWith('+')) {
+      return '+' + value.replace(/\D/g, '').slice(0, 15);
+    }
+    return value.replace(/\D/g, '').slice(0, 11);
   };
 
   const handleRecovery = async (data: RecoveryForm) => {
@@ -1318,7 +1321,7 @@ export default function Auth() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="register-whatsapp">WhatsApp (apenas números)</Label>
+                <Label htmlFor="register-whatsapp">WhatsApp</Label>
                 <Input
                   id="register-whatsapp"
                   type="tel"
@@ -1335,7 +1338,7 @@ export default function Auth() {
                   <p className="text-sm text-destructive">{registerForm.formState.errors.whatsapp.message}</p>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  Exemplo: 11999999999 (DDD + número)
+                  Brasil: 11999999999 (DDD + número). Fora do Brasil: +351912345678
                 </p>
               </div>
 
