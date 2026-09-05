@@ -100,7 +100,7 @@ serve(async (req) => {
         ``,
         `👉 ${createDeptUrl}`,
       ];
-      if (churchPageUrl) lines.push(``, `Página pública: ${churchPageUrl}`);
+      
       lines.push(``, `⚠️ Igrejas sem departamentos em até 5 dias são removidas automaticamente.`);
 
 
