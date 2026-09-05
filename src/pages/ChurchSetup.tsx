@@ -94,6 +94,7 @@ export default function ChurchSetup() {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [whatsappStatus, setWhatsappStatus] = useState<'sent' | 'failed' | null>(null);
   const [registrantPhone, setRegistrantPhone] = useState<string>('');
+  const [focusedPhoneField, setFocusedPhoneField] = useState<string | null>(null);
 
   const navigate = useNavigate();
   const { toast } = useToast();
