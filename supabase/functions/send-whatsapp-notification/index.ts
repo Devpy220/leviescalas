@@ -67,24 +67,18 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    const cleanNumber = phone.replace(/\D/g, "");
-    if (cleanNumber.length < 10) {
+    // Normalize: supports Brazilian numbers (with or without "55") and any
+    // international number typed with "+"/"00" or a full country code (e.g. Portugal 351).
+    const fullNumber = getNormalizedNumber(phone);
+    if (!fullNumber) {
       await logAttempt({ phone, message, status: "invalid_phone", error: "Invalid phone number", origin });
       return new Response(
         JSON.stringify({ sent: false, error: "Invalid phone number" }),
         { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
-
-    // Normalize BR number: strip country code, insert mobile "9" if missing, then re-add 55.
-    // Handles inputs like: 4199458156 (10, no 9), 41999458156 (11), 554199458156 (12, no 9), 5541999458156 (13).
-    let br = cleanNumber.startsWith("55") ? cleanNumber.slice(2) : cleanNumber;
-    // BR mobile subscriber part starts with 6-9 after the 2-digit DDD.
-    if (br.length === 10 && /[6-9]/.test(br[2])) {
-      br = br.slice(0, 2) + "9" + br.slice(2);
-    }
-    const fullNumber = `55${br}`;
     const typing = typeof delayTyping === "number" ? delayTyping : undefined;
+
 
     const result = await sendUazapiText(fullNumber, message, typing);
 
