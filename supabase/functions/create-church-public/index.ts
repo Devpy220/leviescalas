@@ -86,7 +86,6 @@ serve(async (req) => {
     const kidsAdminUrl = `${origin}/auth?tab=register&churchCode=${church.code}&redirect=${encodeURIComponent(`/kids/admin?churchCode=${church.code}`)}`;
     const churchPageUrl = church.slug ? `${origin}/igreja/${church.slug}` : null;
 
-    const wantsLevi = d.product === "levi" || d.product === "both";
     const wantsKids = d.product === "kids" || d.product === "both";
 
     // Send WhatsApp via UAZAPI
