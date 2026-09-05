@@ -11,7 +11,7 @@ export default function Privacidade() {
       <SEO
         title="Política de Privacidade | LEVI Escalas"
         description="Como o LEVI Escalas trata dados pessoais: finalidades, bases legais, prazos de conservação e direitos dos titulares ao abrigo do RGPD e da Lei 58/2019."
-        canonical="https://leviescalas.com.br/privacidade"
+        path="/privacidade"
       />
 
       <main className="flex-1 container mx-auto max-w-3xl px-4 py-10 space-y-6">
