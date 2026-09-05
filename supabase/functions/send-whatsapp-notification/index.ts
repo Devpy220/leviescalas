@@ -79,6 +79,34 @@ serve(async (req: Request): Promise<Response> => {
     }
     const typing = typeof delayTyping === "number" ? delayTyping : undefined;
 
+    // RGPD: never message someone who opted out (unless it is a transactional
+    // consent confirmation triggered by the user themselves).
+    try {
+      const url = Deno.env.get("SUPABASE_URL");
+      if (url && origin !== "consent") {
+        const supabase = createClient(url, serviceRoleKey);
+        const tail = fullNumber.slice(-8);
+        const { data: optedOut } = await supabase
+          .from("profiles")
+          .select("id, whatsapp, whatsapp_opt_out_at")
+          .not("whatsapp_opt_out_at", "is", null);
+        const blocked = (optedOut ?? []).some((p: { whatsapp: string | null }) =>
+          (p.whatsapp || "").replace(/\D/g, "").endsWith(tail)
+        );
+        if (blocked) {
+          await logAttempt({ phone: fullNumber, message, status: "opt_out", error: "Recipient opted out (RGPD)", origin });
+          return new Response(
+            JSON.stringify({ sent: false, error: "opted_out" }),
+            { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+          );
+        }
+      }
+    } catch (e) {
+      console.error("opt-out check failed:", e);
+    }
+
+
+
 
     const result = await sendUazapiText(fullNumber, message, typing);
 

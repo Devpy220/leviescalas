@@ -16,6 +16,12 @@ const Footer = () => {
         </div>
         <div className="flex items-center gap-3">
           <Link
+            to="/privacidade"
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Privacidade
+          </Link>
+          <Link
             to="/recursos/modelos-escala-louvor"
             className="text-xs text-muted-foreground hover:text-foreground transition-colors"
           >

@@ -112,7 +112,7 @@ export function buildBroadcastMessage(params: {
   const emoji = pickVariant(seed + "e", BROADCAST_EMOJIS);
   const greeting = pickVariant(seed + "g", GREETINGS);
   const closing = pickVariant(seed + "c", CLOSINGS);
-  return `${emoji} *Comunicado LEVI*\n\n${greeting}, *${params.userName}*!\n\n*${params.title}*\n\n${params.message}\n\n${closing}`;
+  return `${emoji} *Comunicado LEVI*\n\n${greeting}, *${params.userName}*!\n\n*${params.title}*\n\n${params.message}\n\n${closing}\n\n_Para deixar de receber estas mensagens, responda *SAIR*._`;
 }
 
 // Kept for back-compat; the primary support flow now uses buildSupportOnlyMessage.

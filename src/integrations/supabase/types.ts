@@ -373,6 +373,84 @@ export type Database = {
         }
         Relationships: []
       }
+      data_processing_purposes: {
+        Row: {
+          created_at: string
+          data_categories: string[]
+          id: string
+          legal_basis: Database["public"]["Enums"]["legal_basis"]
+          notes: string | null
+          purpose: string
+          retention_period: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data_categories?: string[]
+          id?: string
+          legal_basis: Database["public"]["Enums"]["legal_basis"]
+          notes?: string | null
+          purpose: string
+          retention_period: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data_categories?: string[]
+          id?: string
+          legal_basis?: Database["public"]["Enums"]["legal_basis"]
+          notes?: string | null
+          purpose?: string
+          retention_period?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      data_subject_requests: {
+        Row: {
+          created_at: string
+          deadline: string
+          details: string | null
+          email: string | null
+          id: string
+          kind: Database["public"]["Enums"]["dsr_kind"]
+          requested_at: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          status: Database["public"]["Enums"]["dsr_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          deadline?: string
+          details?: string | null
+          email?: string | null
+          id?: string
+          kind: Database["public"]["Enums"]["dsr_kind"]
+          requested_at?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["dsr_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          deadline?: string
+          details?: string | null
+          email?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["dsr_kind"]
+          requested_at?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["dsr_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       department_announcements: {
         Row: {
           author_id: string
@@ -1996,12 +2074,22 @@ export type Database = {
           email: string
           guardian_authorized_at: string | null
           guardian_authorized_by: string | null
+          guardian_consent: boolean
+          guardian_consent_at: string | null
+          guardian_consent_token: string | null
+          guardian_email: string | null
+          guardian_phone: string | null
           id: string
           invited_by_department_id: string | null
           name: string
+          privacy_policy_accepted_at: string | null
+          privacy_policy_version: string | null
           share_contact: boolean | null
           updated_at: string
           whatsapp: string
+          whatsapp_opt_in_at: string | null
+          whatsapp_opt_in_text: string | null
+          whatsapp_opt_out_at: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -2010,12 +2098,22 @@ export type Database = {
           email: string
           guardian_authorized_at?: string | null
           guardian_authorized_by?: string | null
+          guardian_consent?: boolean
+          guardian_consent_at?: string | null
+          guardian_consent_token?: string | null
+          guardian_email?: string | null
+          guardian_phone?: string | null
           id: string
           invited_by_department_id?: string | null
           name: string
+          privacy_policy_accepted_at?: string | null
+          privacy_policy_version?: string | null
           share_contact?: boolean | null
           updated_at?: string
           whatsapp: string
+          whatsapp_opt_in_at?: string | null
+          whatsapp_opt_in_text?: string | null
+          whatsapp_opt_out_at?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -2024,12 +2122,22 @@ export type Database = {
           email?: string
           guardian_authorized_at?: string | null
           guardian_authorized_by?: string | null
+          guardian_consent?: boolean
+          guardian_consent_at?: string | null
+          guardian_consent_token?: string | null
+          guardian_email?: string | null
+          guardian_phone?: string | null
           id?: string
           invited_by_department_id?: string | null
           name?: string
+          privacy_policy_accepted_at?: string | null
+          privacy_policy_version?: string | null
           share_contact?: boolean | null
           updated_at?: string
           whatsapp?: string
+          whatsapp_opt_in_at?: string | null
+          whatsapp_opt_in_text?: string | null
+          whatsapp_opt_out_at?: string | null
         }
         Relationships: [
           {
@@ -2524,6 +2632,42 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_consent_log: {
+        Row: {
+          action: string
+          consent_text: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          phone: string
+          source: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          consent_text: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          phone: string
+          source?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          consent_text?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          phone?: string
+          source?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       whatsapp_logs: {
         Row: {
           created_at: string
@@ -2922,9 +3066,19 @@ export type Database = {
         }[]
       }
       claim_church_leadership: { Args: { _code: string }; Returns: string }
+      confirm_guardian_consent: { Args: { _token: string }; Returns: boolean }
+      create_data_subject_request: {
+        Args: {
+          _details?: string
+          _kind: Database["public"]["Enums"]["dsr_kind"]
+        }
+        Returns: string
+      }
+      delete_my_account: { Args: never; Returns: undefined }
       ensure_admin_role: { Args: never; Returns: boolean }
       ensure_kids_department: { Args: { _page_id: string }; Returns: string }
       execute_schedule_swap: { Args: { swap_id: string }; Returns: undefined }
+      export_my_data: { Args: never; Returns: Json }
       generate_church_code: { Args: never; Returns: string }
       get_all_departments_admin: {
         Args: never
@@ -3426,6 +3580,16 @@ export type Database = {
         }
         Returns: string
       }
+      record_whatsapp_consent: {
+        Args: {
+          _action: string
+          _consent_text: string
+          _ip?: string
+          _source?: string
+          _ua?: string
+        }
+        Returns: undefined
+      }
       rotate_coordinator_invite_code: {
         Args: { dept_id: string }
         Returns: string
@@ -3487,7 +3651,21 @@ export type Database = {
     Enums: {
       app_role: "admin" | "user"
       confirmation_status: "pending" | "confirmed" | "declined"
+      dsr_kind:
+        | "acesso"
+        | "retificacao"
+        | "portabilidade"
+        | "apagamento"
+        | "oposicao"
+        | "limitacao"
+      dsr_status: "pendente" | "em_curso" | "concluido" | "recusado"
       kids_age_track: "bercario" | "maternal" | "juniores" | "pre_ado"
+      legal_basis:
+        | "consentimento"
+        | "execucao_contrato"
+        | "interesse_legitimo"
+        | "obrigacao_legal"
+        | "consentimento_explicito"
       member_role: "leader" | "member" | "coleader"
       notification_status: "pending" | "sent" | "failed"
       subscription_status:
@@ -3626,7 +3804,23 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "user"],
       confirmation_status: ["pending", "confirmed", "declined"],
+      dsr_kind: [
+        "acesso",
+        "retificacao",
+        "portabilidade",
+        "apagamento",
+        "oposicao",
+        "limitacao",
+      ],
+      dsr_status: ["pendente", "em_curso", "concluido", "recusado"],
       kids_age_track: ["bercario", "maternal", "juniores", "pre_ado"],
+      legal_basis: [
+        "consentimento",
+        "execucao_contrato",
+        "interesse_legitimo",
+        "obrigacao_legal",
+        "consentimento_explicito",
+      ],
       member_role: ["leader", "member", "coleader"],
       notification_status: ["pending", "sent", "failed"],
       subscription_status: [

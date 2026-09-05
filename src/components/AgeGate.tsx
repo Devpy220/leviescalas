@@ -16,6 +16,7 @@ const BYPASS_PREFIXES = [
   "/", "/auth", "/join", "/church-setup", "/apoiar", "/confirm", "/tutorial",
   "/complete-profile", "/authorize-minor", "/kids", "/igreja", "/oauth",
   "/.lovable", "/admin", "/admin-login", "/login", "/entrar", "/acessar",
+  "/privacidade", "/consentimento-responsavel",
 ];
 
 function isBypass(pathname: string) {
@@ -38,6 +39,9 @@ export function AgeGate({ children }: { children: React.ReactNode }) {
   const [saving, setSaving] = useState(false);
   const [birth, setBirth] = useState("");
   const [dismissed, setDismissed] = useState(false);
+  const [guardianEmail, setGuardianEmail] = useState("");
+  const [guardianPhone, setGuardianPhone] = useState("");
+  const [consentLink, setConsentLink] = useState("");
 
   const bypass = isBypass(location.pathname);
 
@@ -63,12 +67,33 @@ export function AgeGate({ children }: { children: React.ReactNode }) {
 
   async function saveBirth() {
     if (!user || !birth) return;
+    const age = calcAge(birth);
+    // RGPD / Lei 58/2019: menores de 13 anos precisam do consentimento do
+    // titular das responsabilidades parentais.
+    if (age < 13 && (!guardianEmail.trim() || !guardianPhone.trim())) {
+      toast({ title: "Dados do responsável", description: "Indique o e-mail e o telefone do responsável legal.", variant: "destructive" });
+      return;
+    }
     setSaving(true);
-    const { error } = await supabase.from("profiles").update({ birth_date: birth } as any).eq("id", user.id);
+    const payload: Record<string, unknown> = { birth_date: birth };
+    let token = "";
+    if (age < 13) {
+      token = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "").slice(0, 8);
+      payload.guardian_email = guardianEmail.trim();
+      payload.guardian_phone = guardianPhone.trim();
+      payload.guardian_consent = false;
+      payload.guardian_consent_token = token;
+    }
+    const { error } = await supabase.from("profiles").update(payload as any).eq("id", user.id);
     setSaving(false);
     if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+    if (token) {
+      setConsentLink(`${window.location.origin}/consentimento-responsavel?token=${token}`);
+      return;
+    }
     setProfile((p) => ({ ...(p as any), birth_date: birth }));
   }
+
 
   // Always render children; overlay dialogs on top when needed.
   const showBirthPrompt = !bypass && user && checked && profile && !profile.birth_date && !dismissed;
@@ -105,6 +130,30 @@ export function AgeGate({ children }: { children: React.ReactNode }) {
               <Label>Data de nascimento *</Label>
               <BirthDateInput value={birth} onChange={setBirth} />
             </div>
+            {birth && calcAge(birth) < 13 && (
+              <div className="space-y-2 rounded-lg border p-3">
+                <p className="text-xs text-muted-foreground">
+                  Menores de 13 anos precisam da autorização do responsável legal (RGPD / Lei 58/2019).
+                </p>
+                <div>
+                  <Label>E-mail do responsável *</Label>
+                  <Input type="email" value={guardianEmail} onChange={(e) => setGuardianEmail(e.target.value)} placeholder="responsavel@email.com" />
+                </div>
+                <div>
+                  <Label>Telefone do responsável *</Label>
+                  <Input value={guardianPhone} onChange={(e) => setGuardianPhone(e.target.value)} placeholder="+351912345678" />
+                </div>
+              </div>
+            )}
+            {consentLink && (
+              <Alert>
+                <AlertDescription className="text-xs break-all">
+                  Envie esta ligação ao responsável para confirmar a autorização:
+                  <br />
+                  <span className="font-mono">{consentLink}</span>
+                </AlertDescription>
+              </Alert>
+            )}
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setDismissed(true)} className="flex-1">
                 Preencher depois
