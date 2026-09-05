@@ -40,6 +40,9 @@ import NotFound from "./pages/NotFound";
 
 import ConfirmSchedule from "./pages/ConfirmSchedule";
 import Apoiar from "./pages/Apoiar";
+import Privacidade from "./pages/Privacidade";
+import MeusDados from "./pages/MeusDados";
+import ConsentimentoResponsavel from "./pages/ConsentimentoResponsavel";
 import OAuthConsent from "./pages/OAuthConsent";
 import KidsLanding from "./pages/kids/KidsLanding";
 import KidsAdmin from "./pages/kids/KidsAdmin";
@@ -110,6 +113,9 @@ const App = () => (
                   <Route path="/join-coordinator/:code" element={<JoinCoordinator />} />
                   <Route path="/confirm/:token" element={<ConfirmSchedule />} />
                   <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
+                  <Route path="/privacidade" element={<Privacidade />} />
+                  <Route path="/privacidade/meus-dados" element={<MeusDados />} />
+                  <Route path="/consentimento-responsavel" element={<ConsentimentoResponsavel />} />
                   <Route path="/tutorial" element={<Tutorial />} />
                   <Route path="/recursos/modelos-escala-louvor" element={<WorshipScheduleGuide />} />
                   <Route path="/complete-profile" element={
