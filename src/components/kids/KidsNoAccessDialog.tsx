@@ -38,14 +38,14 @@ export function KidsNoAccessDialog({ open, onOpenChange }: KidsNoAccessDialogPro
               Fale primeiro com o responsável (líder) da sua igreja e peça o link de acesso.
             </span>
             <span className="block">
-              Se o responsável não tiver o link, envie uma mensagem para a administração do LEVI
-              pelo formulário de contato.
+              Se o responsável não tiver o link, envie uma mensagem pelo formulário de contato
+              pedindo o link do <LeviKidsWordmark />.
             </span>
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex-col sm:flex-col gap-2">
           <Button className="w-full" onClick={() => navigate("/?contato=1")}>
-            Falar com a administração do LEVI
+            Pedir o link pelo formulário de contato
           </Button>
           <Button variant="outline" className="w-full" onClick={() => onOpenChange(false)}>
             Voltar
