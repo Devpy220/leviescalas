@@ -13,11 +13,42 @@ export interface UazapiSendResult {
   error?: string | null;
 }
 
-function normalizeNumber(raw: string): string {
-  const clean = (raw || "").replace(/\D/g, "");
+/**
+ * Normalize a phone number to international digits (no "+").
+ *
+ * - Numbers typed with "+" / "00", or longer than a Brazilian local number,
+ *   are treated as already carrying a country code — so Portugal (+351) and
+ *   any other country work normally.
+ * - Bare 10/11-digit numbers are treated as Brazilian (legacy stored format)
+ *   and get the "55" prefix, with the mobile "9" inserted when missing.
+ */
+export function normalizeNumber(raw: string): string {
+  let clean = (raw || "").replace(/\D/g, "");
+  const explicitIntl = /^\s*\+/.test(raw || "") || clean.startsWith("00");
+  if (clean.startsWith("00")) clean = clean.slice(2);
+  if (!clean) return "";
+
+  // Brazil with country code (12-13 digits)
+  if (clean.startsWith("55") && clean.length >= 12 && clean.length <= 13) {
+    let br = clean.slice(2);
+    if (br.length === 10 && /[6-9]/.test(br[2])) br = br.slice(0, 2) + "9" + br.slice(2);
+    return `55${br}`;
+  }
+
+  // Explicit international, or too long to be a bare Brazilian number
+  if (explicitIntl || clean.length >= 12) {
+    return clean.length >= 8 ? clean : "";
+  }
+
+  // Bare local number → assume Brazil
+  if (clean.length === 10 && /[6-9]/.test(clean[2])) {
+    clean = clean.slice(0, 2) + "9" + clean.slice(2);
+  }
   if (clean.length < 10) return "";
-  return clean.startsWith("55") ? clean : `55${clean}`;
+  return `55${clean}`;
 }
+
+
 
 /**
  * Send a plain text WhatsApp message via UAZAPI.
