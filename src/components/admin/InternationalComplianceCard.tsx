@@ -28,7 +28,7 @@ export function InternationalComplianceCard() {
     setLoading(true);
     try {
       const [{ data: profiles }, { data: churches }] = await Promise.all([
-        supabase.from('profiles').select('full_name, whatsapp'),
+        supabase.from('profiles').select('name, whatsapp'),
         supabase.from('churches').select('name, phone'),
       ]);
 
@@ -44,7 +44,7 @@ export function InternationalComplianceCard() {
         map.set(country.iso, current);
       };
 
-      (profiles || []).forEach((p) => add(null, detectCountry(p.whatsapp), p.full_name || '', 'people'));
+      (profiles || []).forEach((p) => add(null, detectCountry(p.whatsapp), p.name || '', 'people'));
       (churches || []).forEach((c) => add(null, detectCountry(c.phone), c.name || '', 'churches'));
 
       setBrazil(br);
