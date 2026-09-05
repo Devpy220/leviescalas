@@ -38,6 +38,9 @@ export function AgeGate({ children }: { children: React.ReactNode }) {
   const [saving, setSaving] = useState(false);
   const [birth, setBirth] = useState("");
   const [dismissed, setDismissed] = useState(false);
+  const [guardianEmail, setGuardianEmail] = useState("");
+  const [guardianPhone, setGuardianPhone] = useState("");
+  const [consentLink, setConsentLink] = useState("");
 
   const bypass = isBypass(location.pathname);
 
@@ -126,6 +129,30 @@ export function AgeGate({ children }: { children: React.ReactNode }) {
               <Label>Data de nascimento *</Label>
               <BirthDateInput value={birth} onChange={setBirth} />
             </div>
+            {birth && calcAge(birth) < 13 && (
+              <div className="space-y-2 rounded-lg border p-3">
+                <p className="text-xs text-muted-foreground">
+                  Menores de 13 anos precisam da autorização do responsável legal (RGPD / Lei 58/2019).
+                </p>
+                <div>
+                  <Label>E-mail do responsável *</Label>
+                  <Input type="email" value={guardianEmail} onChange={(e) => setGuardianEmail(e.target.value)} placeholder="responsavel@email.com" />
+                </div>
+                <div>
+                  <Label>Telefone do responsável *</Label>
+                  <Input value={guardianPhone} onChange={(e) => setGuardianPhone(e.target.value)} placeholder="+351912345678" />
+                </div>
+              </div>
+            )}
+            {consentLink && (
+              <Alert>
+                <AlertDescription className="text-xs break-all">
+                  Envie esta ligação ao responsável para confirmar a autorização:
+                  <br />
+                  <span className="font-mono">{consentLink}</span>
+                </AlertDescription>
+              </Alert>
+            )}
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setDismissed(true)} className="flex-1">
                 Preencher depois
