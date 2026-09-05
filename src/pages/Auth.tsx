@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Calendar, Eye, EyeOff, ArrowLeft, Loader2, Sparkles, Users, Bell, Fingerprint } from 'lucide-react';
+import { Calendar, Eye, EyeOff, ArrowLeft, Loader2, Sparkles, Users, Bell, Fingerprint, Info } from 'lucide-react';
 import { isWebAuthnSupported, loginWithBiometric } from '@/lib/webauthn';
 import { SEO } from '@/components/SEO';
 import { LeviLogo } from '@/components/LeviLogo';
