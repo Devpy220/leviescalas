@@ -110,6 +110,7 @@ export default function Auth() {
   const [pendingPasswordReset, setPendingPasswordReset] = useState<string | null>(null);
   const [churchValidated, setChurchValidated] = useState<{ valid: boolean; name: string | null; slug: string | null }>({ valid: false, name: null, slug: null });
   const [isValidatingChurch, setIsValidatingChurch] = useState(false);
+  const [whatsappFocused, setWhatsappFocused] = useState(false);
   // Admin is identified by email only (leviescalas@gmail.com)
   
   // Ref to prevent duplicate redirects
