@@ -1,0 +1,1 @@
+select cron.alter_job(17, schedule := '0 17 * * 3');
