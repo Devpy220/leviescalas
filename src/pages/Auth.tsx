@@ -168,10 +168,14 @@ export default function Auth() {
     const queryType = queryParams.get('type');
     const code = queryParams.get('code');
 
-    // Some providers/flows may omit `type=recovery` but still include `code`.
-    const isRecovery = queryType === 'recovery' || hashType === 'recovery' || !!code || !!hashAccessToken;
+    // A bare `?code=` is only treated as a PKCE recovery code when it looks
+    // like one (long token). Short codes are church invite codes and must
+    // never be exchanged for a session.
+    const looksLikePkceCode = !!code && code.length > 20;
 
-    return { isRecovery, queryType, hashType, code, hashAccessToken };
+    const isRecovery = queryType === 'recovery' || hashType === 'recovery' || looksLikePkceCode || !!hashAccessToken;
+
+    return { isRecovery, queryType, hashType, code: looksLikePkceCode ? code : null, hashAccessToken };
   };
 
   // Handle recovery links that arrive either via URL hash (implicit) or via ?code=... (PKCE)

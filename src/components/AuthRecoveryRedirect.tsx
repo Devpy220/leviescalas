@@ -17,10 +17,16 @@ function detectRecovery(search: string, hash: string) {
   const accessToken = hashParams.get("access_token");
   const hashType = hashParams.get("type");
 
+  // A bare `?code=` is only a recovery/PKCE code when it looks like one:
+  // Supabase PKCE codes are long tokens, while church invite codes are short
+  // (max 20 chars). This prevents invite links like /join?code=ABC123 from
+  // being hijacked into the password-recovery flow.
+  const looksLikePkceCode = !!code && code.length > 20;
+
   return (
     queryType === "recovery" ||
     hashType === "recovery" ||
-    !!code ||
+    looksLikePkceCode ||
     !!accessToken
   );
 }
