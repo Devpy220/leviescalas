@@ -64,6 +64,11 @@ serve(async (req) => {
       if (!phone) phone = c.registrant_phone || c.phone || "";
       if (!phone) continue;
 
+      // RGPD: respect SAIR opt-out
+      const tail = phone.replace(/\D/g, "").slice(-8);
+      const { data: optedOut } = await supabase.from("profiles").select("whatsapp").not("whatsapp_opt_out_at", "is", null);
+      if ((optedOut ?? []).some((o: { whatsapp: string | null }) => (o.whatsapp || "").replace(/\D/g, "").endsWith(tail))) continue;
+
       const daysLeft = Math.max(1, Math.ceil((deadline - now) / DAY));
       const first = (name || "").trim().split(/\s+/)[0] || "líder";
       const text =
