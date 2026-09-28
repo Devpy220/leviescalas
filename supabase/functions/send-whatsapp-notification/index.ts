@@ -69,11 +69,12 @@ serve(async (req: Request): Promise<Response> => {
 
     // Normalize: supports Brazilian numbers (with or without "55") and any
     // international number typed with "+"/"00" or a full country code (e.g. Portugal 351).
-    const fullNumber = getNormalizedNumber(phone);
+    const rawFull = getNormalizedNumber(phone);
+    const fullNumber = rawFull && !/^(\d)\1+$/.test(rawFull.replace(/^55/, "")) ? rawFull : null;
     if (!fullNumber) {
       await logAttempt({ phone, message, status: "invalid_phone", error: "Invalid phone number", origin });
       return new Response(
-        JSON.stringify({ sent: false, error: "Invalid phone number" }),
+        JSON.stringify({ sent: false, error: "Invalid phone number", permanent: true }),
         { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
@@ -96,7 +97,7 @@ serve(async (req: Request): Promise<Response> => {
         if (blocked) {
           await logAttempt({ phone: fullNumber, message, status: "opt_out", error: "Recipient opted out (RGPD)", origin });
           return new Response(
-            JSON.stringify({ sent: false, error: "opted_out" }),
+            JSON.stringify({ sent: false, error: "opted_out", permanent: true }),
             { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
           );
         }
@@ -129,9 +130,10 @@ serve(async (req: Request): Promise<Response> => {
 
     const errText = typeof result.response === "string" ? result.response : JSON.stringify(result.response ?? result.error);
     console.error(`WhatsApp error (UAZAPI) for ${fullNumber}:`, errText);
-    await logAttempt({ phone: fullNumber, message, status: "failed", error: errText, origin, providerResponse: result.response });
+    const permanent = /not on whatsapp|invalid_phone|invalid phone/i.test(errText);
+    await logAttempt({ phone: fullNumber, message, status: permanent ? "invalid_phone" : "failed", error: errText, origin, providerResponse: result.response });
     return new Response(
-      JSON.stringify({ sent: false, error: errText }),
+      JSON.stringify({ sent: false, error: errText, permanent }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   } catch (error) {

@@ -71,7 +71,7 @@ serve(async (req: Request): Promise<Response> => {
         } else {
           const newAttempts = item.attempts + 1;
           await supabase.from("whatsapp_queue").update({
-            status: newAttempts >= MAX_ATTEMPTS ? "failed" : "pending",
+            status: body?.permanent === true || newAttempts >= MAX_ATTEMPTS ? "failed" : "pending",
             attempts: newAttempts,
             scheduled_for: new Date(Date.now() + 60_000).toISOString(),
           }).eq("id", item.id);
