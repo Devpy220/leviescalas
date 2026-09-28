@@ -314,6 +314,8 @@ export type Database = {
         Row: {
           address: string | null
           city: string | null
+          cleanup_deadline: string | null
+          cleanup_last_notice_at: string | null
           cnpj: string | null
           code: string
           created_at: string
@@ -334,6 +336,8 @@ export type Database = {
         Insert: {
           address?: string | null
           city?: string | null
+          cleanup_deadline?: string | null
+          cleanup_last_notice_at?: string | null
           cnpj?: string | null
           code: string
           created_at?: string
@@ -354,6 +358,8 @@ export type Database = {
         Update: {
           address?: string | null
           city?: string | null
+          cleanup_deadline?: string | null
+          cleanup_last_notice_at?: string | null
           cnpj?: string | null
           code?: string
           created_at?: string
