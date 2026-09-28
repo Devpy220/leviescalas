@@ -1,0 +1,1 @@
+ALTER TABLE public.departments ADD COLUMN IF NOT EXISTS inactivity_deadline timestamptz, ADD COLUMN IF NOT EXISTS inactivity_last_notice_at timestamptz;

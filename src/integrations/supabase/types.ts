@@ -541,6 +541,8 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          inactivity_deadline: string | null
+          inactivity_last_notice_at: string | null
           invite_code: string
           kids_linked: boolean
           kids_page_id: string | null
@@ -560,6 +562,8 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          inactivity_deadline?: string | null
+          inactivity_last_notice_at?: string | null
           invite_code?: string
           kids_linked?: boolean
           kids_page_id?: string | null
@@ -579,6 +583,8 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          inactivity_deadline?: string | null
+          inactivity_last_notice_at?: string | null
           invite_code?: string
           kids_linked?: boolean
           kids_page_id?: string | null
