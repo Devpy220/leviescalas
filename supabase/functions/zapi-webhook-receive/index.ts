@@ -364,6 +364,83 @@ serve(async (req: Request): Promise<Response> => {
       return reply({ ok: true, handled: "list_blackouts" });
     }
 
+    // ─── "bloquear <datas>" → bloqueia dias específicos (só datas: 10/10, 10-10) ───
+    if (/^bloquear\b/.test(cmd)) {
+      const today0 = new Date(); today0.setHours(0, 0, 0, 0);
+      const found = new Set<string>();
+      const ddmm = /(\b\d{1,2})[/\-.](\d{1,2})(?:[/\-.](\d{2,4}))?/g;
+      let mm: RegExpExecArray | null;
+      while ((mm = ddmm.exec(cmd)) !== null) {
+        const day = parseInt(mm[1], 10);
+        const mon = parseInt(mm[2], 10) - 1;
+        let yr = mm[3] ? parseInt(mm[3], 10) : today0.getFullYear();
+        if (yr < 100) yr += 2000;
+        if (day < 1 || day > 31 || mon < 0 || mon > 11) continue;
+        const d = new Date(yr, mon, day);
+        if (d.getDate() !== day || d.getMonth() !== mon) continue;
+        if (d < today0) {
+          // Sem ano informado e a data já passou: assume o próximo ano.
+          if (!mm[3]) { d.setFullYear(d.getFullYear() + 1); if (d < today0) continue; }
+          else continue;
+        }
+        found.add(d.toISOString().slice(0, 10));
+      }
+      if (found.size === 0) {
+        await sendConfirmation(
+          supabaseUrl, serviceRoleKey, profile.whatsapp,
+          `🤔 *${firstName}*, para bloquear dias me envie as datas no formato *dia/mês*.\n\nExemplos:\n• *bloquear 10/10*\n• *bloquear 10-10, 25/10*\n\nPara ver seus bloqueios, responda *bloqueios*.`,
+        );
+        return reply({ ok: true, handled: "block_no_dates" });
+      }
+      const { data: blkMemberships } = await supabase
+        .from("members").select("department_id").eq("user_id", profile.id);
+      const blkDeptIds = (blkMemberships ?? []).map((m: any) => m.department_id);
+      if (blkDeptIds.length === 0) {
+        await sendConfirmation(
+          supabaseUrl, serviceRoleKey, profile.whatsapp,
+          `Olá *${firstName}*! Você não está em nenhum departamento ativo. Procure seu líder.`,
+        );
+        return reply({ ok: true, no_depts: true });
+      }
+      const { data: blkDepts } = await supabase
+        .from("departments").select("id, name, max_blackout_dates").in("id", blkDeptIds);
+      const rejectedByDept: Record<string, string[]> = {};
+      for (const dept of blkDepts ?? []) {
+        const max = dept.max_blackout_dates ?? 5;
+        const { data: existing } = await supabase
+          .from("member_preferences").select("blackout_dates")
+          .eq("user_id", profile.id).eq("department_id", dept.id).maybeSingle();
+        const merged = new Set<string>(((existing?.blackout_dates as string[]) ?? []).map((d) => String(d).slice(0, 10)));
+        const rejected: string[] = [];
+        for (const ds of Array.from(found).sort()) {
+          if (merged.has(ds)) continue;
+          if (merged.size >= max) { rejected.push(ds); continue; }
+          merged.add(ds);
+        }
+        if (rejected.length > 0) rejectedByDept[dept.name] = rejected;
+        await supabase.from("member_preferences").upsert(
+          { user_id: profile.id, department_id: dept.id, blackout_dates: Array.from(merged).sort() },
+          { onConflict: "user_id,department_id" },
+        );
+      }
+      const accepted = Array.from(found).sort().filter((d) =>
+        !Object.values(rejectedByDept).some((arr) => arr.includes(d)));
+      let msg = accepted.length > 0
+        ? `🔴 *Anotado, ${firstName}!*\n━━━━━━━━━━━━━━━━━━━━\n\n🚫 *Dias bloqueados:*\n${accepted.map(fmt).join(", ")}`
+        : `⚠️ *${firstName}*, não consegui bloquear essas datas.`;
+      if (Object.keys(rejectedByDept).length > 0) {
+        msg += `\n\n━━━━━━━━━━━━━━━━━━━━\n⚠️ *Limite de bloqueios atingido em:*\n`;
+        for (const [deptName, list] of Object.entries(rejectedByDept)) {
+          msg += `\n• *${deptName}*: ${list.map(fmt).join(", ")}`;
+        }
+        msg += `\n\n👉 Fale com seu líder se precisar liberar mais dias.`;
+      }
+      if (accepted.length > 0) msg += `\n\nPara liberar, responda *desbloquear*.`;
+      msg += `\n\n_LEVI_`;
+      await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, msg);
+      return reply({ ok: true, handled: "block_dates", accepted, rejected_by_dept: rejectedByDept });
+    }
+
     // ─── "desbloquear" → libera dias bloqueados + bloqueio do líder ───
     if (/^(desbloquear|desbloqueio|desbloq|voltar|voltar a servir|liberar meu bloqueio|liberar dias)$/.test(cmd)) {
       try {
