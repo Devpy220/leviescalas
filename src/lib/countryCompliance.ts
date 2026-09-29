@@ -50,6 +50,18 @@ export const COUNTRY_COMPLIANCE: CountryCompliance[] = [
     ],
   },
   {
+    iso: 'PA', dial: '507', name: 'Panamá', flag: '🇵🇦',
+    law: 'Ley 81 de 2019 + Decreto Ejecutivo 285 de 2021', risk: 'atencao',
+    requirements: [
+      'Consentimento prévio, informado e comprovável para tratar dados (já registrado no LEVI).',
+      'Direitos ARCO + portabilidade: responder em até 10 dias úteis.',
+      'Menores de idade: consentimento de quem exerce o pátrio poder.',
+      'Transferência internacional permitida com consentimento do titular ou garantias adequadas (informado no aviso).',
+      'WhatsApp: opt-in registrado e instrução SAIR em cada mensagem.',
+      'Autoridade: ANTAI (Autoridad Nacional de Transparencia y Acceso a la Información).',
+    ],
+  },
+  {
     iso: 'ES', dial: '34', name: 'Espanha', flag: '🇪🇸',
     law: 'RGPD + LOPDGDD', risk: 'critico',
     requirements: [
