@@ -1,11 +1,10 @@
 // Cron worker: processes pending messages from public.whatsapp_queue.
 // Runs frequently (e.g., every minute) and dispatches a small slice each time.
-// Each call sends up to MAX_PER_RUN due messages, which keeps execution well
-// under the edge function timeout while still preserving randomized spacing
-// (the spacing is encoded in `scheduled_for`).
+// When a message fails for good, the leaders of the recipient's departments
+// receive a WhatsApp listing the name and phone that could not be reached.
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { randomBetween } from "../_shared/messageVariants.ts";
 import { requireCronAuth } from "../_shared/cronAuth.ts";
 
@@ -16,6 +15,78 @@ const corsHeaders = {
 
 const MAX_PER_RUN = 5;
 const MAX_ATTEMPTS = 3;
+const ALERT_ORIGIN = "leader_failure_alert";
+
+const digits = (p: string | null | undefined) => (p || "").replace(/\D/g, "");
+const tail = (p: string | null | undefined) => digits(p).slice(-8);
+
+async function alertLeaders(supabase: SupabaseClient, failures: { phone: string; origin: string | null }[]) {
+  // Never alert about failed alerts (avoid loops)
+  const relevant = failures.filter((f) => f.origin !== ALERT_ORIGIN && tail(f.phone).length === 8);
+  if (relevant.length === 0) return;
+
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, name, whatsapp")
+    .not("whatsapp", "is", null);
+  const all = (profiles || []) as { id: string; name: string | null; whatsapp: string | null }[];
+
+  // leaderId -> list of "Name (phone)"
+  const perLeader = new Map<string, Set<string>>();
+  const since = new Date(Date.now() - 24 * 3600_000).toISOString();
+
+  for (const f of relevant) {
+    const t = tail(f.phone);
+    const matches = all.filter((p) => tail(p.whatsapp) === t);
+    if (matches.length === 0) continue;
+    const userIds = matches.map((m) => m.id);
+
+    const { data: mems } = await supabase
+      .from("members").select("department_id").in("user_id", userIds);
+    const deptIds = [...new Set((mems || []).map((m: any) => m.department_id))];
+    if (deptIds.length === 0) continue;
+
+    const { data: depts } = await supabase
+      .from("departments").select("leader_id").in("id", deptIds);
+
+    const label = `• ${matches[0].name || "Sem nome"} — ${f.phone}`;
+    for (const d of depts || []) {
+      const lid = (d as any).leader_id as string | null;
+      if (!lid || userIds.includes(lid)) continue;
+      if (!perLeader.has(lid)) perLeader.set(lid, new Set());
+      perLeader.get(lid)!.add(label);
+    }
+  }
+
+  for (const [leaderId, labels] of perLeader) {
+    const leader = all.find((p) => p.id === leaderId);
+    if (!leader?.whatsapp) continue;
+    const { data: lp } = await supabase
+      .from("profiles").select("whatsapp_opt_out_at").eq("id", leaderId).maybeSingle();
+    if ((lp as any)?.whatsapp_opt_out_at) continue;
+
+    // Dedupe: skip phones already reported to this leader in the last 24h
+    const { data: recent } = await supabase
+      .from("whatsapp_queue").select("message")
+      .eq("origin", ALERT_ORIGIN).eq("phone", leader.whatsapp).gte("created_at", since);
+    const already = (recent || []).map((r: any) => r.message as string).join("\n");
+    const fresh = [...labels].filter((l) => !already.includes(l));
+    if (fresh.length === 0) continue;
+
+    const message =
+      `⚠️ *LEVI — Mensagem não entregue*\n\n` +
+      `Olá, ${leader.name?.split(" ")[0] || "líder"}! Não conseguimos enviar mensagem no WhatsApp para:\n\n` +
+      `${fresh.join("\n")}\n\n` +
+      `Verifique se o número está correto e se tem WhatsApp, e peça para a pessoa atualizar o cadastro no LEVI.`;
+
+    await supabase.from("whatsapp_queue").insert({
+      phone: leader.whatsapp,
+      message,
+      origin: ALERT_ORIGIN,
+      scheduled_for: new Date(Date.now() + 30_000).toISOString(),
+    });
+  }
+}
 
 serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
@@ -47,6 +118,7 @@ serve(async (req: Request): Promise<Response> => {
 
     let sent = 0;
     let failed = 0;
+    const finalFailures: { phone: string; origin: string | null }[] = [];
 
     for (let i = 0; i < due.length; i++) {
       const item = due[i] as { id: string; phone: string; message: string; attempts: number; origin: string | null };
@@ -70,27 +142,38 @@ serve(async (req: Request): Promise<Response> => {
           sent++;
         } else {
           const newAttempts = item.attempts + 1;
+          const isFinal = body?.permanent === true || newAttempts >= MAX_ATTEMPTS;
           await supabase.from("whatsapp_queue").update({
-            status: body?.permanent === true || newAttempts >= MAX_ATTEMPTS ? "failed" : "pending",
+            status: isFinal ? "failed" : "pending",
             attempts: newAttempts,
             scheduled_for: new Date(Date.now() + 60_000).toISOString(),
           }).eq("id", item.id);
+          if (isFinal) finalFailures.push(item);
           failed++;
         }
       } catch (e) {
         console.error("worker item error:", e);
         const newAttempts = item.attempts + 1;
+        const isFinal = newAttempts >= MAX_ATTEMPTS;
         await supabase.from("whatsapp_queue").update({
-          status: newAttempts >= MAX_ATTEMPTS ? "failed" : "pending",
+          status: isFinal ? "failed" : "pending",
           attempts: newAttempts,
           scheduled_for: new Date(Date.now() + 60_000).toISOString(),
         }).eq("id", item.id);
+        if (isFinal) finalFailures.push(item);
         failed++;
       }
 
-      // tiny random spacing within the same run (1-6s) — humanize even within a slice
       if (i < due.length - 1) {
         await new Promise((r) => setTimeout(r, randomBetween(1, 6) * 1000));
+      }
+    }
+
+    if (finalFailures.length > 0) {
+      try {
+        await alertLeaders(supabase, finalFailures);
+      } catch (e) {
+        console.error("leader alert error:", e);
       }
     }
 
