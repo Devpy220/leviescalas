@@ -65,6 +65,7 @@ import ParentProfile from "./pages/kids/parent/ParentProfile";
 import ChooseApp from "./pages/ChooseApp";
 import AuthorizeMinor from "./pages/AuthorizeMinor";
 import { AgeGate } from "./components/AgeGate";
+import { WhatsAppConsentPrompt } from "./components/WhatsAppConsentPrompt";
 
 const queryClient = new QueryClient();
 
@@ -89,6 +90,7 @@ const App = () => (
             <PageTracker>
               <AdminRedirect>
                 <AgeGate>
+                <WhatsAppConsentPrompt />
                 <Routes>
                   {/* Public marketing page */}
                   <Route path="/" element={<Landing />} />
