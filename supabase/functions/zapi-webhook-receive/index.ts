@@ -7,7 +7,7 @@ import {
 } from "../_shared/scheduleDates.ts";
 import { tryHandleSwapMessage } from "./swapFlow.ts";
 import { detectLang, t, fmtTime, DOW, isScheduleListCommand, translateRole } from "../_shared/whatsappI18n.ts";
-import { LEVI_COMMANDS_HINT } from "../_shared/messageVariants.ts";
+import { LEVI_COMMANDS_HINT, buildSupportOnlyMessage } from "../_shared/messageVariants.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -274,7 +274,7 @@ serve(async (req: Request): Promise<Response> => {
 
     const { data: candidates } = await supabase
       .from("profiles")
-      .select("id, name, whatsapp")
+      .select("id, name, whatsapp, whatsapp_opt_out_at")
       .neq("whatsapp", "");
     const profile = (candidates ?? []).find((p: any) => {
       const pd = normalizePhone(p.whatsapp);
