@@ -144,13 +144,13 @@ export function parseBlackoutDates(text: string, targetMonth: Date): Date[] {
   return parseUserResponse(text, targetMonth).dates.map((s) => new Date(s + "T00:00:00"));
 }
 
-async function sendConfirmation(supabaseUrl: string, key: string, phone: string, message: string) {
+async function sendConfirmation(supabaseUrl: string, key: string, phone: string, message: string, origin = "bot_reply") {
   const delayTyping = Math.floor(Math.random() * 6) + 3;
   try {
     await fetch(`${supabaseUrl}/functions/v1/send-whatsapp-notification`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-      body: JSON.stringify({ phone, message, delayTyping }),
+      body: JSON.stringify({ phone, message, delayTyping, origin }),
     });
   } catch (e) {
     console.error("confirmation send error:", e);
@@ -292,89 +292,136 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
+    const reply = (body: Record<string, unknown>) =>
+      new Response(JSON.stringify(body), { headers: { "Content-Type": "application/json", ...corsHeaders } });
+    const firstName = (profile.name || "").split(" ")[0] || "👋";
+    const cmd = (text || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[!?.]+$/, "").replace(/\s+/g, " ");
+
     // ─── RGPD: opt-out / opt-in de mensagens ("SAIR" / "VOLTAR") ───
-    const consentText = (text || "").trim().toLowerCase().replace(/[!?.]+$/, "");
-    if (["sair", "parar", "stop", "cancelar", "descadastrar", "sair da lista"].includes(consentText)) {
+    if (["sair", "parar", "stop", "cancelar", "descadastrar", "sair da lista"].includes(cmd)) {
       await supabase.from("whatsapp_consent_log").insert({
-        user_id: profile.id,
-        phone: phoneDigits,
-        action: "opt_out",
-        consent_text: text,
-        source: "whatsapp",
+        user_id: profile.id, phone: phoneDigits, action: "opt_out", consent_text: text, source: "whatsapp",
       });
-      await supabase
-        .from("profiles")
-        .update({ whatsapp_opt_out_at: new Date().toISOString() })
-        .eq("id", profile.id);
+      await supabase.from("profiles").update({ whatsapp_opt_out_at: new Date().toISOString() }).eq("id", profile.id);
+      // Última mensagem enviada a este número (origin "consent" passa pelo bloqueio de opt-out).
       await sendConfirmation(
-        phoneDigits,
-        "✅ Pedido registado. Deixará de receber mensagens do LEVI neste número.\n\nSe mudar de ideias, responda *VOLTAR* para voltar a receber.",
+        supabaseUrl, serviceRoleKey, profile.whatsapp,
+        `✅ *Pronto, ${firstName}!* Você não vai mais receber mensagens do LEVI neste número.\n\nSe mudar de ideia, responda *VOLTAR* para voltar a receber.`,
+        "consent",
       );
-      return new Response(JSON.stringify({ ok: true, action: "opt_out" }), {
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      return reply({ ok: true, action: "opt_out" });
     }
-    if (["voltar", "start", "aceito", "quero receber"].includes(consentText)) {
+    if (["voltar", "start", "aceito", "quero receber"].includes(cmd) && profile.whatsapp_opt_out_at) {
       await supabase.from("whatsapp_consent_log").insert({
-        user_id: profile.id,
-        phone: phoneDigits,
-        action: "opt_in",
-        consent_text: text,
-        source: "whatsapp",
+        user_id: profile.id, phone: phoneDigits, action: "opt_in", consent_text: text, source: "whatsapp",
       });
-      await supabase
-        .from("profiles")
+      await supabase.from("profiles")
         .update({ whatsapp_opt_in_at: new Date().toISOString(), whatsapp_opt_in_text: text, whatsapp_opt_out_at: null })
         .eq("id", profile.id);
-      await sendConfirmation(phoneDigits, "✅ Voltou a receber as mensagens do LEVI. Responda *SAIR* a qualquer momento para cancelar.");
-      return new Response(JSON.stringify({ ok: true, action: "opt_in" }), {
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp,
+        `✅ *Bem-vindo de volta, ${firstName}!* Você voltou a receber as mensagens do LEVI. Responda *SAIR* a qualquer momento para cancelar.`,
+        "consent");
+      return reply({ ok: true, action: "opt_in" });
     }
-
-
+    // Número que pediu SAIR: não responde a mais nada.
+    if (profile.whatsapp_opt_out_at) {
+      return reply({ ignored: true, reason: "opted_out" });
+    }
 
     // ─── "ajuda" / "comandos" / "?" / standalone "levi" → send commands list ───
     const helpRegex = /^(ajuda|help|comandos?|\?|oi\s+levi|ol[áa]\s+levi|levi)\s*[!?.]*$/i;
-
     if (helpRegex.test((text || "").trim())) {
-      const fname = (profile.name || "").split(" ")[0] || "👋";
-      await sendConfirmation(
-        supabaseUrl,
-        serviceRoleKey,
-        profile.whatsapp,
-        `Olá *${fname}*!\n\n${LEVI_COMMANDS_HINT}`,
-      );
-      return new Response(JSON.stringify({ ok: true, handled: "help" }), {
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, `Olá *${firstName}*!\n\n${LEVI_COMMANDS_HINT}`);
+      return reply({ ok: true, handled: "help" });
     }
 
-    // ─── "desbloquear" / "voltar" → self-unblock in all departments ───
-    const unblockRegex = /^(desbloquear|desbloqueio|desbloq|voltar|voltar\s+a\s+servir|liberar\s+meu\s+bloqueio)\s*[!?.]*$/i;
-    if (unblockRegex.test((text || "").trim())) {
-      const fname = (profile.name || "").split(" ")[0] || "👋";
+    // ─── "apoiar" → link de apoio ───
+    if (/^(apoiar|apoio|doar|doacao|pix)$/.test(cmd)) {
+      await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, buildSupportOnlyMessage(profile.name || ""));
+      return reply({ ok: true, handled: "support" });
+    }
+
+    // Helper: future blackout dates per department
+    const loadBlackouts = async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const { data: prefs } = await supabase
+        .from("member_preferences")
+        .select("id, department_id, blackout_dates, departments(name)")
+        .eq("user_id", profile.id);
+      return (prefs ?? []).map((p: any) => {
+        const all = ((p.blackout_dates as string[]) ?? []).map((d) => String(d).slice(0, 10));
+        return { id: p.id, deptName: p.departments?.name || "—", all, future: all.filter((d) => d >= today).sort() };
+      });
+    };
+
+    // ─── "bloqueios" → listar dias bloqueados ───
+    if (/^(bloqueios|meus bloqueios|dias bloqueados|bloqueados)$/.test(cmd)) {
+      const rows = (await loadBlackouts()).filter((r) => r.future.length > 0);
+      const msg = rows.length === 0
+        ? `Olá *${firstName}*! Você não tem nenhum dia bloqueado no momento. 🙌`
+        : `📅 *Seus dias bloqueados, ${firstName}:*\n${rows.map((r) => `\n*${r.deptName}*\n${r.future.map((d) => `• ${fmt(d)}`).join("\n")}`).join("\n")}\n\nPara liberar todos, responda *desbloquear*.`;
+      await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, msg);
+      return reply({ ok: true, handled: "list_blackouts" });
+    }
+
+    // ─── "desbloquear" → libera dias bloqueados + bloqueio do líder ───
+    if (/^(desbloquear|desbloqueio|desbloq|voltar|voltar a servir|liberar meu bloqueio|liberar dias)$/.test(cmd)) {
       try {
-        const { data: unblocked } = await supabase.rpc("unblock_member_by_phone", {
-          p_phone: profile.whatsapp,
-        });
-        const list = (unblocked ?? []) as Array<{ department_id: string; department_name: string }>;
-        const msg = list.length === 0
-          ? `Olá *${fname}*!\n\nVocê não está bloqueado em nenhum departamento no momento. 🙌`
-          : `✅ *Desbloqueado, ${fname}!*\n\nVocê voltou a ficar disponível para escalas em:\n${list.map((r) => `• ${r.department_name}`).join("\n")}\n\nSeu líder poderá te escalar normalmente a partir de agora.`;
+        const rows = await loadBlackouts();
+        const freed: string[] = [];
+        for (const r of rows) {
+          if (r.future.length === 0) continue;
+          const keep = r.all.filter((d) => !r.future.includes(d));
+          await supabase.from("member_preferences").update({ blackout_dates: keep }).eq("id", r.id);
+          freed.push(`*${r.deptName}*: ${r.future.map(fmt).join(", ")}`);
+        }
+        const { data: unblocked } = await supabase.rpc("unblock_member_by_phone", { p_phone: profile.whatsapp });
+        const depts = (unblocked ?? []) as Array<{ department_name: string }>;
+
+        let msg: string;
+        if (freed.length === 0 && depts.length === 0) {
+          msg = `Olá *${firstName}*! Você não tem nenhum dia bloqueado, então não havia nada para desbloquear. 🙌`;
+        } else {
+          msg = `✅ *Desbloqueado, ${firstName}!*`;
+          if (freed.length) msg += `\n\nDias liberados:\n${freed.map((l) => `• ${l}`).join("\n")}`;
+          if (depts.length) msg += `\n\nVocê voltou a ficar disponível em:\n${depts.map((d) => `• ${d.department_name}`).join("\n")}`;
+          msg += `\n\nSeu líder já pode te escalar nesses dias.`;
+        }
         await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, msg);
       } catch (e) {
         console.error("unblock error:", e);
-        await sendConfirmation(
-          supabaseUrl,
-          serviceRoleKey,
-          profile.whatsapp,
-          `Olá *${fname}*! Não consegui processar seu desbloqueio agora. Tente novamente em instantes.`,
-        );
+        await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp,
+          `Olá *${firstName}*! Não consegui desbloquear agora. Tente novamente em instantes.`);
       }
-      return new Response(JSON.stringify({ ok: true, handled: "unblock" }), {
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      return reply({ ok: true, handled: "unblock" });
+    }
+
+    // ─── "escala todos" → próxima escala de cada departamento do usuário ───
+    if (/^(escalas? (de )?todos|escala geral|escala da equipe|escala do departamento)$/.test(cmd)) {
+      const today = new Date().toISOString().slice(0, 10);
+      const { data: mems } = await supabase
+        .from("members").select("department_id, departments(name)").eq("user_id", profile.id);
+      let msg = `👥 *Próximas escalas da equipe, ${firstName}:*\n`;
+      let any = false;
+      for (const m of (mems ?? []) as any[]) {
+        const { data: next } = await supabase
+          .from("schedules").select("date").eq("department_id", m.department_id)
+          .gte("date", today).order("date").limit(1);
+        const date = next?.[0]?.date;
+        if (!date) continue;
+        const { data: rows } = await supabase
+          .from("schedules").select("time_start, time_end, assignment_role, user_id, profiles!schedules_user_id_fkey(name)")
+          .eq("department_id", m.department_id).eq("date", date).order("time_start");
+        any = true;
+        const d = new Date(date + "T00:00:00");
+        msg += `\n*${m.departments?.name || "—"}* — ${fmt(date)} (${DOW.pt[d.getDay()]})\n`;
+        msg += (rows ?? []).map((r: any) =>
+          `• ${fmtTime(r.time_start)}–${fmtTime(r.time_end)} ${r.profiles?.name || "—"}${r.assignment_role ? ` (${r.assignment_role})` : ""}${r.user_id === profile.id ? " ⭐" : ""}`
+        ).join("\n") + "\n";
+      }
+      if (!any) msg = `Olá *${firstName}*! Não há nenhuma escala futura nos seus departamentos. 🙌`;
+      await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, msg);
+      return reply({ ok: true, handled: "team_schedule" });
     }
 
     // ─── "escala" command: list user's upcoming schedules ───
