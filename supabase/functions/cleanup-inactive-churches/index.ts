@@ -50,7 +50,9 @@ async function cleanupInactiveDepartments(supabase: any) {
       await supabase.from("departments").update({ inactivity_deadline: new Date(deadline).toISOString() }).eq("id", d.id);
     }
 
-    if (now >= deadline) {
+    // Só exclui se pelo menos um aviso foi entregue com sucesso
+    // (inactivity_last_notice_at só é gravado quando o envio dá certo).
+    if (now >= deadline && d.inactivity_last_notice_at) {
       await supabase.from("notifications").delete().eq("department_id", d.id);
       await supabase.from("schedules").delete().eq("department_id", d.id);
       await supabase.from("members").delete().eq("department_id", d.id);
@@ -131,7 +133,9 @@ serve(async (req) => {
         ? new Date(c.cleanup_deadline).getTime()
         : new Date(c.created_at).getTime() + 5 * DAY;
 
-      if (now >= deadline) {
+      // Só exclui se pelo menos um lembrete foi entregue com sucesso
+      // (cleanup_last_notice_at só é gravado quando o envio dá certo).
+      if (now >= deadline && c.cleanup_last_notice_at) {
         const { error: delErr } = await supabase.from("churches").delete().eq("id", c.id);
         if (delErr) { console.error("delete church failed", c.id, delErr); failed++; }
         else { console.log(`Deleted inactive church ${c.name} (${c.id})`); deleted++; }
