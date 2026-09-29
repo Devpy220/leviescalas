@@ -7,11 +7,13 @@ export const INSTAGRAM_LINK = "https://instagram.com/elsdigital_tech";
 // Outside of these keywords (or a recent reply to a LEVI prompt), the bot stays quiet.
 export const LEVI_COMMANDS_HINT =
   `🤖 *Palavras que eu entendo (LEVI Escalas):*\n` +
-  `• *escala* — ver suas próximas escalas\n` +
+  `• *escalas* — ver suas próximas escalas\n` +
+  `• *escala todos* — ver a próxima escala completa dos seus departamentos\n` +
   `• *troca* — pedir troca de uma escala\n` +
   `• *apoiar* — link e PIX para apoiar o LEVI\n` +
-  `• *bloqueios* — ver seus bloqueios do próximo mês\n` +
-  `• *desbloquear* / *voltar* — se seu líder te bloqueou, você volta a ficar disponível\n` +
+  `• *bloqueios* — ver seus dias bloqueados\n` +
+  `• *desbloquear* — liberar todos os seus dias bloqueados\n` +
+  `• *sair* — parar de receber mensagens do LEVI (*voltar* para reativar)\n` +
   `• *ajuda* / *comandos* — ver esta lista de novo\n` +
   `\n📅 *No aviso mensal de disponibilidade, responda com:*\n` +
   `• *bloquear 5/7, 12/7* — bloqueia datas específicas\n` +
