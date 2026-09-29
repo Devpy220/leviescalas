@@ -113,7 +113,11 @@ serve(async (req: Request): Promise<Response> => {
     // can still detect explicit international numbers — passing the already
     // normalized digits would strip that signal and mis-prefix e.g. Panama
     // (+507, 11 digits) with the Brazilian "55".
-    const result = await sendUazapiText(phone, message, typing);
+    // RGPD / Ley 81 Panamá: every outbound message carries cancellation instructions.
+    const finalMessage = origin !== "consent" && !/\bSAIR\b/i.test(message)
+      ? `${message}\n\n_Para deixar de receber mensagens do LEVI, responda *SAIR*._`
+      : message;
+    const result = await sendUazapiText(phone, finalMessage, typing);
 
     if (result.ok) {
       console.log(`WhatsApp sent (UAZAPI) to ${fullNumber}`);
