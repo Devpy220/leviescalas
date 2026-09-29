@@ -146,6 +146,8 @@ export default function Privacidade() {
             Sem prejuízo de outra via, pode apresentar reclamação junto da autoridade de controlo portuguesa:
             <strong> Comissão Nacional de Proteção de Dados (CNPD)</strong>, Av. D. Carlos I, 134 – 1.º, 1200-651 Lisboa,
             <a className="underline ml-1" href="https://www.cnpd.pt" target="_blank" rel="noopener noreferrer">www.cnpd.pt</a>.
+            No Panamá (Ley 81 de 2019), os titulares podem exercer os direitos ARCO e de portabilidade, com resposta
+            em até 10 dias úteis, e reclamar junto da ANTAI (<a className="underline" href="https://www.antai.gob.pa" target="_blank" rel="noopener noreferrer">antai.gob.pa</a>).
             No Brasil, a autoridade competente é a ANPD (<a className="underline" href="https://www.gov.br/anpd" target="_blank" rel="noopener noreferrer">gov.br/anpd</a>).
           </p>
         </section>
