@@ -109,7 +109,11 @@ serve(async (req: Request): Promise<Response> => {
 
 
 
-    const result = await sendUazapiText(fullNumber, message, typing);
+    // Pass the ORIGINAL phone (with "+"/"00" when present) so normalizeNumber
+    // can still detect explicit international numbers — passing the already
+    // normalized digits would strip that signal and mis-prefix e.g. Panama
+    // (+507, 11 digits) with the Brazilian "55".
+    const result = await sendUazapiText(phone, message, typing);
 
     if (result.ok) {
       console.log(`WhatsApp sent (UAZAPI) to ${fullNumber}`);
