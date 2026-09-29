@@ -11,6 +11,7 @@ export const LEVI_COMMANDS_HINT =
   `• *escala todos* — ver a próxima escala completa dos seus departamentos\n` +
   `• *troca* — pedir troca de uma escala\n` +
   `• *apoiar* — link e PIX para apoiar o LEVI\n` +
+  `• *bloquear 10/10* — bloquear datas específicas (ex.: *bloquear 10/10, 25-10*)\n` +
   `• *bloqueios* — ver seus dias bloqueados\n` +
   `• *desbloquear* — liberar todos os seus dias bloqueados\n` +
   `• *sair* — parar de receber mensagens do LEVI (*voltar* para reativar)\n` +
