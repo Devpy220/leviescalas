@@ -13,7 +13,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const MAX_PER_RUN = 5;
+const MAX_PER_RUN = 3;
+// Stop picking new items after this much wall-clock time to avoid worker kills.
+const TIME_BUDGET_MS = 25_000;
 const MAX_ATTEMPTS = 3;
 const ALERT_ORIGIN = "leader_failure_alert";
 
@@ -148,7 +150,8 @@ serve(async (req: Request): Promise<Response> => {
             attempts: newAttempts,
             scheduled_for: new Date(Date.now() + 60_000).toISOString(),
           }).eq("id", item.id);
-          if (isFinal) finalFailures.push(item);
+          // Opt-out is the volunteer's choice, not a delivery failure.
+          if (isFinal && body?.error !== "opted_out") finalFailures.push(item);
           failed++;
         }
       } catch (e) {
