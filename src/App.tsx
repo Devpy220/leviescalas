@@ -26,6 +26,7 @@ import Security from "./pages/Security";
 import Admin from "./pages/Admin";
 import WhatsAppLogs from "./pages/WhatsAppLogs";
 import AdminDonations from "./pages/AdminDonations";
+import AdminChurches from "./pages/AdminChurches";
 import AdminVolunteers from "./pages/AdminVolunteers";
 import HealthCheck from "./pages/admin/HealthCheck";
 import Churches from "./pages/Churches";
@@ -102,6 +103,7 @@ const App = () => (
                   <Route path="/admin/health" element={<HealthCheck />} />
                   <Route path="/admin/whatsapp-logs" element={<WhatsAppLogs />} />
                   <Route path="/admin/doacoes" element={<AdminDonations />} />
+                  <Route path="/admin/igrejas" element={<AdminChurches />} />
                   <Route path="/admin/voluntarios" element={<AdminVolunteers />} />
                   
                   {/* Redirects from old login routes */}
