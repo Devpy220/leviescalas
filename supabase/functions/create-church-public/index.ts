@@ -19,6 +19,7 @@ const schema = z.object({
   address: z.string().trim().max(200).optional().nullable(),
   city: z.string().trim().max(100).optional().nullable(),
   state: z.string().trim().max(50).optional().nullable(),
+  country: z.string().trim().max(60).optional().nullable(),
   product: z.enum(["levi", "kids", "both"]).optional().default("levi"),
 });
 
@@ -64,6 +65,7 @@ serve(async (req) => {
         address: d.address || null,
         city: d.city || null,
         state: d.state || null,
+        country: d.country?.trim() || "Brasil",
         registrant_name: d.registrantName,
         registrant_email: d.registrantEmail,
         registrant_phone: d.registrantPhone,
@@ -112,6 +114,19 @@ serve(async (req) => {
       }
     } catch (e: any) {
       whatsappError = e?.message || "unknown";
+    }
+
+    // Internal compliance alert for churches outside Brazil (fire-and-forget, never blocks)
+    const country = (d.country || "Brasil").trim();
+    const isBrazil = /^(brasil|brazil|br)$/i.test(country);
+    if (!isBrazil) {
+      const task = fetch(`${supabaseUrl}/functions/v1/church-compliance-alert`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceKey}` },
+        body: JSON.stringify({ churchId: church.id, churchName: church.name, country }),
+      }).catch((e) => console.error("compliance alert trigger failed", e));
+      // @ts-ignore EdgeRuntime exists in Supabase edge runtime
+      if (typeof EdgeRuntime !== "undefined") EdgeRuntime.waitUntil(task);
     }
 
     return new Response(
