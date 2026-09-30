@@ -102,7 +102,16 @@ serve(async (req) => {
         ``,
         `👉 ${createDeptUrl}`,
       ];
-      
+
+      if (wantsKids) {
+        lines.push(
+          ``,
+          `🧸 *LeviKids*: configure a área Kids da sua igreja pelo link abaixo:`,
+          ``,
+          `👉 ${kidsAdminUrl}`,
+        );
+      }
+
       lines.push(``, `⚠️ Igrejas sem departamentos em até 5 dias são removidas automaticamente.`);
 
 
