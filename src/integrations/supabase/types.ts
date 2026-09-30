@@ -3105,6 +3105,7 @@ export type Database = {
       }
     }
     Functions: {
+      admin_church_overview: { Args: never; Returns: Json }
       admin_create_church: {
         Args: {
           p_address?: string
@@ -3120,6 +3121,7 @@ export type Database = {
       }
       admin_delete_church: { Args: { church_id: string }; Returns: boolean }
       admin_delete_department: { Args: { dept_id: string }; Returns: boolean }
+      admin_delete_kids_page: { Args: { page_id: string }; Returns: boolean }
       admin_delete_member: { Args: { member_id: string }; Returns: boolean }
       admin_delete_volunteer: { Args: { profile_id: string }; Returns: boolean }
       authorize_minor: { Args: { _minor_id: string }; Returns: undefined }
