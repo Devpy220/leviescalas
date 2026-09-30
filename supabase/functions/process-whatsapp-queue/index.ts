@@ -122,7 +122,9 @@ serve(async (req: Request): Promise<Response> => {
     let failed = 0;
     const finalFailures: { phone: string; origin: string | null }[] = [];
 
+    const startedAt = Date.now();
     for (let i = 0; i < due.length; i++) {
+      if (Date.now() - startedAt > TIME_BUDGET_MS) break;
       const item = due[i] as { id: string; phone: string; message: string; attempts: number; origin: string | null };
       try {
         const delayTyping = randomBetween(3, 8);
@@ -168,7 +170,7 @@ serve(async (req: Request): Promise<Response> => {
       }
 
       if (i < due.length - 1) {
-        await new Promise((r) => setTimeout(r, randomBetween(1, 6) * 1000));
+        await new Promise((r) => setTimeout(r, randomBetween(1, 3) * 1000));
       }
     }
 
