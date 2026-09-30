@@ -297,19 +297,52 @@ serve(async (req: Request): Promise<Response> => {
     const firstName = (profile.name || "").split(" ")[0] || "👋";
     const cmd = (text || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[!?.]+$/, "").replace(/\s+/g, " ");
 
-    // ─── RGPD: opt-out / opt-in de mensagens ("SAIR" / "VOLTAR") ───
-    if (["sair", "parar", "stop", "cancelar", "descadastrar", "sair da lista"].includes(cmd)) {
+    // ─── Pedido de exclusão pendente: resposta SIM / NÃO após "SAIR" ───
+    const { data: pendingDel } = await supabase.from("whatsapp_consent_log")
+      .select("id, action, created_at").eq("user_id", profile.id)
+      .in("action", ["delete_requested", "delete_cancelled"])
+      .order("created_at", { ascending: false }).limit(1).maybeSingle();
+    const hasPending = pendingDel?.action === "delete_requested" &&
+      Date.now() - new Date(pendingDel.created_at).getTime() < 24 * 3600 * 1000;
+    if (hasPending && /^(sim|si|yes|oui|ja|s)$/.test(cmd)) {
+      const { data: result, error: delErr } = await supabase.rpc("delete_account_by_id", { _uid: profile.id });
+      if (delErr || result !== "deleted") {
+        console.error("delete_account_by_id", delErr, result);
+        await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp,
+          result === "is_leader"
+            ? `⚠️ *${firstName}*, você é líder de um departamento, então sua conta não pode ser apagada pelo WhatsApp. Transfira a liderança no app LEVI e tente novamente.`
+            : `⚠️ Não foi possível apagar sua conta agora. Tente novamente mais tarde.`,
+          "consent");
+        return reply({ ok: false, action: "delete_failed", result });
+      }
+      await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp,
+        `🗑️ *Conta apagada, ${firstName}.* Todos os seus dados foram removidos do LEVI. Obrigado por ter servido conosco! 🙏`,
+        "consent");
+      return reply({ ok: true, action: "account_deleted" });
+    }
+    if (hasPending && /^(nao|no|non|nein|n)$/.test(cmd)) {
       await supabase.from("whatsapp_consent_log").insert({
-        user_id: profile.id, phone: phoneDigits, action: "opt_out", consent_text: text, source: "whatsapp",
+        user_id: profile.id, phone: phoneDigits, action: "delete_cancelled", consent_text: text, source: "whatsapp",
       });
+      await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp,
+        `👍 Ok, *${firstName}*! Sua conta foi mantida. Você não vai receber mensagens do LEVI neste número; responda *VOLTAR* se quiser voltar a receber.`,
+        "consent");
+      return reply({ ok: true, action: "delete_cancelled" });
+    }
+
+    // ─── RGPD: opt-out ("SAIR") + pergunta se quer apagar a conta ───
+    if (["sair", "parar", "stop", "cancelar", "descadastrar", "sair da lista"].includes(cmd)) {
+      await supabase.from("whatsapp_consent_log").insert([
+        { user_id: profile.id, phone: phoneDigits, action: "opt_out", consent_text: text, source: "whatsapp" },
+        { user_id: profile.id, phone: phoneDigits, action: "delete_requested", consent_text: text, source: "whatsapp" },
+      ]);
       await supabase.from("profiles").update({ whatsapp_opt_out_at: new Date().toISOString() }).eq("id", profile.id);
-      // Última mensagem enviada a este número (origin "consent" passa pelo bloqueio de opt-out).
       await sendConfirmation(
         supabaseUrl, serviceRoleKey, profile.whatsapp,
-        `✅ *Pronto, ${firstName}!* Você não vai mais receber mensagens do LEVI neste número.\n\nSe mudar de ideia, responda *VOLTAR* para voltar a receber.`,
+        `✅ *Pronto, ${firstName}!* Você não vai mais receber mensagens do LEVI neste número.\n\n❓ *Deseja também apagar sua conta e todos os seus dados do LEVI?*\n\nResponda *SIM* para apagar definitivamente ou *NÃO* para manter a conta.`,
         "consent",
       );
-      return reply({ ok: true, action: "opt_out" });
+      return reply({ ok: true, action: "opt_out_delete_prompt" });
     }
     if (["voltar", "start", "aceito", "quero receber"].includes(cmd) && profile.whatsapp_opt_out_at) {
       await supabase.from("whatsapp_consent_log").insert({
