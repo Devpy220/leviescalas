@@ -104,7 +104,7 @@ export async function sendUazapiText(
     return { ok: false, status: 0, response: null, error: "invalid_phone" };
   }
 
-  const finalText = await translateForCountry(number, text);
+  const finalText = applyLeviSignature(await translateForCountry(number, text));
 
   const delay =
     typeof delaySeconds === "number"
