@@ -73,6 +73,7 @@ const churchSchema = z.object({
   address: z.string().max(200).optional(),
   city: z.string().max(100).optional(),
   state: z.string().max(50).optional(),
+  country: z.string().max(60).optional(),
   product: z.enum(['levi', 'kids', 'both'], { errorMap: () => ({ message: 'Escolha qual app usar' }) }),
   acceptTerms: z.literal(true, { errorMap: () => ({ message: 'Você deve aceitar os termos' }) }),
 });
@@ -104,7 +105,7 @@ export default function ChurchSetup() {
     defaultValues: { 
       registrantName: '', registrantEmail: '', registrantPhone: '',
       name: '', email: '', phone: '', cnpj: '', description: '', 
-      address: '', city: '', state: '', product: 'levi', acceptTerms: undefined as any,
+      address: '', city: '', state: '', country: 'Brasil', product: 'levi', acceptTerms: undefined as any,
     },
   });
 
@@ -124,6 +125,7 @@ export default function ChurchSetup() {
           address: data.address || null,
           city: data.city || null,
           state: data.state || null,
+          country: data.country?.trim() || 'Brasil',
           product: data.product,
         },
       });
@@ -334,7 +336,7 @@ export default function ChurchSetup() {
                   <Textarea id="description" placeholder="Descrição breve da igreja..." {...churchForm.register('description')} className="min-h-[80px] resize-none" />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="city">Cidade</Label>
                     <Input id="city" placeholder="Ex: São Paulo" {...churchForm.register('city')} />
@@ -342,6 +344,10 @@ export default function ChurchSetup() {
                   <div className="space-y-2">
                     <Label htmlFor="state">Estado</Label>
                     <Input id="state" placeholder="Ex: SP" {...churchForm.register('state')} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="country">País</Label>
+                    <Input id="country" placeholder="Brasil" {...churchForm.register('country')} />
                   </div>
                 </div>
 

@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Trash2, Users, Building2, ChevronDown, ChevronUp, Shield, LogOut, Church, Plus, Copy, Link as LinkIcon, Mail, ExternalLink, ChevronRight, Pencil, Upload, X, TrendingUp, Eye, Clock, CalendarDays, CalendarRange, Monitor, Megaphone, Send, Activity, BarChart3, UserX, LineChart as LineChartIcon, Gauge, Baby } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { InternationalComplianceCard } from '@/components/admin/InternationalComplianceCard';
+import { ComplianceAlertSettingsCard } from '@/components/admin/ComplianceAlertSettingsCard';
 import { DataSubjectRequestsCard } from '@/components/admin/DataSubjectRequestsCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -957,6 +958,7 @@ export default function Admin() {
         </Card>
 
         {/* Conformidade internacional (leis por país) */}
+        <ComplianceAlertSettingsCard />
         <InternationalComplianceCard />
 
         <DataSubjectRequestsCard />

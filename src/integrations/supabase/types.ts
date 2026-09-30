@@ -59,6 +59,24 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string | null
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value?: string | null
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string | null
+        }
+        Relationships: []
+      }
       announcement_reads: {
         Row: {
           announcement_id: string
@@ -318,6 +336,7 @@ export type Database = {
           cleanup_last_notice_at: string | null
           cnpj: string | null
           code: string
+          country: string
           created_at: string
           description: string | null
           email: string | null
@@ -340,6 +359,7 @@ export type Database = {
           cleanup_last_notice_at?: string | null
           cnpj?: string | null
           code: string
+          country?: string
           created_at?: string
           description?: string | null
           email?: string | null
@@ -362,6 +382,7 @@ export type Database = {
           cleanup_last_notice_at?: string | null
           cnpj?: string | null
           code?: string
+          country?: string
           created_at?: string
           description?: string | null
           email?: string | null
@@ -376,6 +397,36 @@ export type Database = {
           slug?: string | null
           state?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      compliance_alert_logs: {
+        Row: {
+          church_id: string | null
+          church_name: string | null
+          country: string
+          created_at: string
+          error: string | null
+          id: string
+          status: string
+        }
+        Insert: {
+          church_id?: string | null
+          church_name?: string | null
+          country: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          status: string
+        }
+        Update: {
+          church_id?: string | null
+          church_name?: string | null
+          country?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          status?: string
         }
         Relationships: []
       }
