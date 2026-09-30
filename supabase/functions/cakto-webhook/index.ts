@@ -1,6 +1,7 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2.57.2';
 import { verifyCaktoSignature } from '../_shared/cakto.ts';
+import { applyLeviSignature } from '../_shared/uazapi.ts';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -160,7 +161,7 @@ Deno.serve(async (req) => {
           await fetch(`${base}/send/text`, {
             method: 'POST',
             headers: { token, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ number: phone, text: message }),
+            body: JSON.stringify({ number: phone, text: applyLeviSignature(message) }),
           }).catch((e) => console.error('uazapi thanks err', e));
         }
       }

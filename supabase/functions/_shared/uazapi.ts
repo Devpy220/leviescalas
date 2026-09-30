@@ -51,6 +51,35 @@ export function normalizeNumber(raw: string): string {
 
 
 /**
+ * LEVI brand signature appended to every WhatsApp message.
+ */
+export const LEVI_SIGNATURE =
+  "*LEVI* — _Logística de Escalas de Voluntários da Igreja_\n\nELSD - Desenvolvendo Soluções";
+
+/**
+ * Ensure a message carries the LEVI brand signature:
+ * - Replaces legacy signature closers (`_LEVI_`, `_Até lá! — LEVI_`, `_LEVI — ..._`)
+ *   with the full signature block.
+ * - Appends the signature to messages that don't have one, before an existing
+ *   opt-out ("SAIR") footer when present.
+ */
+export function applyLeviSignature(text: string): string {
+  let out = text
+    .replace(/_LEVI_/g, LEVI_SIGNATURE)
+    .replace(/_((?:[^_\n]*?—\s*)?(?:[^\s_\n]+\s)?LEVI(?:\s*—[^_\n]*?)?)_/g, LEVI_SIGNATURE);
+
+  if (out.includes("Desenvolvendo Soluções")) return out;
+
+  const footerMatch = out.match(/\n(_Para deixar de receber[^_\n]*_)\s*$/);
+  if (footerMatch) {
+    out = out.replace(/\n(_Para deixar de receber[^_\n]*_)\s*$/, `\n\n${LEVI_SIGNATURE}\n\n$1`);
+  } else {
+    out = out.trimEnd() + `\n\n${LEVI_SIGNATURE}`;
+  }
+  return out;
+}
+
+/**
  * Send a plain text WhatsApp message via UAZAPI.
  *
  * @param phone        Raw phone (any format) — will be normalized to E.164 digits.
@@ -75,7 +104,7 @@ export async function sendUazapiText(
     return { ok: false, status: 0, response: null, error: "invalid_phone" };
   }
 
-  const finalText = await translateForCountry(number, text);
+  const finalText = applyLeviSignature(await translateForCountry(number, text));
 
   const delay =
     typeof delaySeconds === "number"
