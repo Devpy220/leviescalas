@@ -89,7 +89,7 @@ export function LeviTypewriter({ className = '' }: LeviTypewriterProps) {
             </span>
           );
         })}
-        <span className="animate-pulse text-secondary">|</span>
+        <span className="animate-pulse" style={{ color: '#FBBF24' }}>|</span>
       </span>
     </span>
   );
