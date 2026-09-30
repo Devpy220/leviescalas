@@ -398,7 +398,9 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // ─── "bloquear <datas>" → bloqueia dias específicos (só datas: 10/10, 10-10) ───
-    if (/^bloquear\b/.test(cmd)) {
+    // Weekday requests ("bloquear domingos de manhã") fall through to the
+    // blackout-prompt parser, which supports weekdays and shifts.
+    if (/^bloquear\b/.test(cmd) && !/(domingo|segunda|ter[cç]a|quarta|quinta|sexta|s[áa]bado)/.test(cmd)) {
       const today0 = new Date(); today0.setHours(0, 0, 0, 0);
       const found = new Set<string>();
       const ddmm = /(\b\d{1,2})[/\-.](\d{1,2})(?:[/\-.](\d{2,4}))?/g;

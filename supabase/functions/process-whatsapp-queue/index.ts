@@ -13,7 +13,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const MAX_PER_RUN = 5;
+const MAX_PER_RUN = 3;
+// Stop picking new items after this much wall-clock time to avoid worker kills.
+const TIME_BUDGET_MS = 25_000;
 const MAX_ATTEMPTS = 3;
 const ALERT_ORIGIN = "leader_failure_alert";
 
@@ -120,7 +122,9 @@ serve(async (req: Request): Promise<Response> => {
     let failed = 0;
     const finalFailures: { phone: string; origin: string | null }[] = [];
 
+    const startedAt = Date.now();
     for (let i = 0; i < due.length; i++) {
+      if (Date.now() - startedAt > TIME_BUDGET_MS) break;
       const item = due[i] as { id: string; phone: string; message: string; attempts: number; origin: string | null };
       try {
         const delayTyping = randomBetween(3, 8);
@@ -148,7 +152,8 @@ serve(async (req: Request): Promise<Response> => {
             attempts: newAttempts,
             scheduled_for: new Date(Date.now() + 60_000).toISOString(),
           }).eq("id", item.id);
-          if (isFinal) finalFailures.push(item);
+          // Opt-out is the volunteer's choice, not a delivery failure.
+          if (isFinal && body?.error !== "opted_out") finalFailures.push(item);
           failed++;
         }
       } catch (e) {
@@ -165,7 +170,7 @@ serve(async (req: Request): Promise<Response> => {
       }
 
       if (i < due.length - 1) {
-        await new Promise((r) => setTimeout(r, randomBetween(1, 6) * 1000));
+        await new Promise((r) => setTimeout(r, randomBetween(1, 3) * 1000));
       }
     }
 

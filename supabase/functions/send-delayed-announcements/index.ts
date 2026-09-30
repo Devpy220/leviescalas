@@ -129,6 +129,9 @@ serve(async (req: Request): Promise<Response> => {
         }
       } catch (err) {
         console.error(`Error processing announcement ${announcement.id}:`, err);
+        // Release the claim so the next run retries instead of losing it.
+        await supabaseAdmin.from("department_announcements")
+          .update({ whatsapp_notified: false }).eq("id", announcement.id);
       }
     }
 
