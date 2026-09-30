@@ -3086,6 +3086,7 @@ export type Database = {
         }
         Returns: string
       }
+      delete_account_by_id: { Args: { _uid: string }; Returns: string }
       delete_my_account: { Args: never; Returns: undefined }
       ensure_admin_role: { Args: never; Returns: boolean }
       ensure_kids_department: { Args: { _page_id: string }; Returns: string }
