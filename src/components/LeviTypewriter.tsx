@@ -79,16 +79,17 @@ export function LeviTypewriter({ className = '' }: LeviTypewriterProps) {
           return (
             <span
               key={i}
-              className={isHighlight ? 'font-extrabold text-[10px] sm:text-base text-secondary' : ''}
+              className={isHighlight ? 'font-extrabold text-[10px] sm:text-base' : ''}
               style={isHighlight ? {
-                textShadow: '0 0 6px hsla(var(--secondary), 0.4)'
+                color: '#FBBF24',
+                textShadow: '0 0 6px rgba(251, 191, 36, 0.45), 0 0 14px rgba(251, 191, 36, 0.25)'
               } : undefined}
             >
               {char}
             </span>
           );
         })}
-        <span className="animate-pulse text-secondary">|</span>
+        <span className="animate-pulse" style={{ color: '#FBBF24' }}>|</span>
       </span>
     </span>
   );
