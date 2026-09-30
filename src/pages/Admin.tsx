@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Trash2, Users, Building2, ChevronDown, ChevronUp, Shield, LogOut, Church, Plus, Copy, Link as LinkIcon, Mail, ExternalLink, ChevronRight, Pencil, Upload, X, TrendingUp, Eye, Clock, CalendarDays, CalendarRange, Monitor, Megaphone, Send, Activity, BarChart3, UserX, LineChart as LineChartIcon, Gauge, Baby } from 'lucide-react';
+import { Loader2, Trash2, Users, Building2, ChevronDown, ChevronUp, Shield, LogOut, Church, Plus, Copy, Link as LinkIcon, Mail, ExternalLink, ChevronRight, Pencil, Upload, X, TrendingUp, Eye, Clock, CalendarDays, CalendarRange, Monitor, Megaphone, Send, Activity, BarChart3, UserX, LineChart as LineChartIcon, Gauge, Baby, Heart } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { InternationalComplianceCard } from '@/components/admin/InternationalComplianceCard';
 import { ComplianceAlertSettingsCard } from '@/components/admin/ComplianceAlertSettingsCard';
@@ -926,6 +926,11 @@ export default function Admin() {
                       <a href="/admin/whatsapp-logs"><Send className="w-4 h-4 text-violet-500" /></a>
                     </Button>
                   </TooltipTrigger><TooltipContent>Logs do WhatsApp</TooltipContent></UITooltip>
+                  <UITooltip><TooltipTrigger asChild>
+                    <Button asChild size="icon" variant="outline" className="h-9 w-9" aria-label="Doações">
+                      <a href="/admin/doacoes"><Heart className="w-4 h-4 text-primary" /></a>
+                    </Button>
+                  </TooltipTrigger><TooltipContent>Doações</TooltipContent></UITooltip>
                 </div>
               </div>
               <div>
