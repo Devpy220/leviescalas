@@ -439,15 +439,19 @@ serve(async (req: Request): Promise<Response> => {
         .from("departments").select("id, name, max_blackout_dates").in("id", blkDeptIds);
       const rejectedByDept: Record<string, string[]> = {};
       for (const dept of blkDepts ?? []) {
-        const max = dept.max_blackout_dates ?? 5;
+        const max = dept.max_blackout_dates ?? 4;
         const { data: existing } = await supabase
           .from("member_preferences").select("blackout_dates")
           .eq("user_id", profile.id).eq("department_id", dept.id).maybeSingle();
-        const merged = new Set<string>(((existing?.blackout_dates as string[]) ?? []).map((d) => String(d).slice(0, 10)));
+        const todayIso = new Date().toISOString().slice(0, 10);
+        // Descarta datas passadas; o limite vale por mês
+        const merged = new Set<string>(((existing?.blackout_dates as string[]) ?? [])
+          .map((d) => String(d).slice(0, 10)).filter((d) => d >= todayIso));
         const rejected: string[] = [];
+        const countMonth = (m: string) => Array.from(merged).filter((d) => d.startsWith(m)).length;
         for (const ds of Array.from(found).sort()) {
           if (merged.has(ds)) continue;
-          if (merged.size >= max) { rejected.push(ds); continue; }
+          if (countMonth(ds.slice(0, 7)) >= max) { rejected.push(ds); continue; }
           merged.add(ds);
         }
         if (rejected.length > 0) rejectedByDept[dept.name] = rejected;
@@ -732,7 +736,7 @@ serve(async (req: Request): Promise<Response> => {
     const rejectedByDept: Record<string, string[]> = {}; // deptName -> rejected ISO
 
     for (const dept of depts ?? []) {
-      const max = dept.max_blackout_dates ?? 5;
+      const max = dept.max_blackout_dates ?? 4;
 
       const { data: existing } = await supabase
         .from("member_preferences")
