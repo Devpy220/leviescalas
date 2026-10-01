@@ -149,8 +149,8 @@ export default function Auth() {
     if (sessionExpired) {
       toast({
         variant: 'destructive',
-        title: 'Sessão expirada',
-        description: 'Sua sessão expirou. Por favor, faça login novamente.',
+        title: t("auth.sessionExpired"),
+        description: t("auth.sessionExpiredDetail"),
       });
       // Clean up URL param to avoid showing toast again on refresh
       const newUrl = new URL(window.location.href);
@@ -205,8 +205,8 @@ export default function Auth() {
           isRecoveryFlowRef.current = false;
           toast({
             variant: 'destructive',
-            title: 'Link inválido',
-            description: 'Esse link de recuperação expirou. Solicite um novo email de recuperação.',
+            title: t("auth.invalidLink"),
+            description: t("auth.invalidLinkDetail"),
           });
           return;
         }
@@ -440,14 +440,14 @@ export default function Auth() {
       if (error) {
         hasRedirectedRef.current = false; // Reset on error so user can try again
         const errorMessage = error.message.includes('Invalid login credentials')
-          ? 'Email ou senha incorretos'
+          ? t("auth.wrongCredentials")
           : error.message.includes('Email not confirmed')
-          ? 'Por favor, confirme seu email antes de entrar'
-          : 'Erro ao fazer login. Tente novamente.';
+          ? t("auth.emailUnconfirmed")
+          : t("auth.loginFailed");
         
         toast({
           variant: 'destructive',
-          title: 'Erro no login',
+          title: t("auth.loginError"),
           description: errorMessage,
         });
         return;
@@ -460,8 +460,8 @@ export default function Auth() {
         hasRedirectedRef.current = false; // Reset on error
         toast({
           variant: 'destructive',
-          title: 'Erro ao entrar',
-          description: 'Não foi possível iniciar a sessão. Tente novamente.',
+          title: t("auth.signInError"),
+          description: t("auth.sessionFailed"),
         });
         return;
       }
@@ -494,8 +494,8 @@ export default function Auth() {
       if (isDepartmentInvite && redirectParam) {
         sessionStorage.setItem('pendingInvite', redirectParam.replace('/join/', ''));
         toast({
-          title: 'Bem-vindo de volta!',
-          description: 'Adicionando você ao novo departamento...',
+          title: t("auth.welcomeBack"),
+          description: t("auth.joiningDepartment"),
         });
         navigate(redirectParam, { replace: true });
         return;
@@ -503,8 +503,8 @@ export default function Auth() {
 
       if (isChurchSetupRedirect) {
         toast({
-          title: 'Login realizado!',
-          description: 'Continue o cadastro da sua igreja.',
+          title: t("auth.loginComplete"),
+          description: t("auth.continueChurch"),
         });
         navigate('/church-setup', { replace: true });
         return;
@@ -518,8 +518,8 @@ export default function Auth() {
       
       if (hasRole) {
         toast({
-          title: 'Bem-vindo, Admin!',
-          description: 'Redirecionando para o painel administrativo.',
+          title: t("auth.welcomeAdmin"),
+          description: t("auth.adminRedirect"),
         });
         navigate('/admin', { replace: true });
         return;
@@ -532,8 +532,8 @@ export default function Auth() {
       console.log('[Auth] Login complete, redirecting to:', finalDest);
       
       toast({
-        title: 'Bem-vindo de volta!',
-        description: 'Login realizado com sucesso.',
+        title: t("auth.welcomeBack"),
+        description: t("auth.signedIn"),
       });
       navigate(finalDest, { replace: true });
     } catch (err) {
@@ -541,8 +541,8 @@ export default function Auth() {
       hasRedirectedRef.current = false;
       toast({
         variant: 'destructive',
-        title: 'Erro inesperado',
-        description: 'Ocorreu um erro. Tente novamente.',
+        title: t("auth.unexpectedError"),
+        description: t("auth.tryAgain"),
       });
     } finally {
       // CRITICAL: Always turn off loading state to prevent stuck UI
@@ -635,8 +635,8 @@ export default function Auth() {
       const redirectDestination = await getSmartRedirectDestination(currentSession.user.id);
       const finalDest = await maybeChooseApp(currentSession.user.id, redirectDestination);
       toast({
-        title: 'Bem-vindo de volta!',
-        description: 'Login realizado com sucesso.',
+        title: t("auth.welcomeBack"),
+        description: t("auth.signedIn"),
       });
       navigate(finalDest, { replace: true });
       return;
@@ -645,8 +645,8 @@ export default function Auth() {
     // Fallback to smart redirect via dashboard
     const destination = redirectParam && redirectParam.startsWith('/') ? redirectParam : '/dashboard';
     toast({
-      title: 'Bem-vindo de volta!',
-      description: 'Login realizado com sucesso.',
+      title: t("auth.welcomeBack"),
+      description: t("auth.signedIn"),
     });
     navigate(destination, { replace: true });
   };
@@ -663,8 +663,8 @@ export default function Auth() {
     if (!churchValidated.valid && !isDepartmentInvite && !isChurchSetupRedirect) {
       toast({
         variant: 'destructive',
-        title: 'Igreja não encontrada',
-        description: 'Você precisa acessar a página de uma igreja ou usar um código de convite para criar conta.',
+        title: t("auth.churchNotFound"),
+        description: t("auth.churchRequired"),
       });
       setIsLoading(false);
       return;
@@ -676,7 +676,7 @@ export default function Auth() {
     if (!passwordValidation.valid) {
       toast({
         variant: 'destructive',
-        title: 'Senha insegura',
+        title: t("auth.unsafePassword"),
         description: passwordValidation.errors.join(' '),
       });
       setIsLoading(false);
@@ -707,11 +707,11 @@ export default function Auth() {
 
         toast({
           variant: 'destructive',
-          title: 'Você já tem uma conta no LEVI',
-          description: 'Esse email já está cadastrado. Faça login com sua conta atual — o novo departamento será adicionado e você verá todos juntos no seu painel.',
+          title: t("auth.alreadyRegistered"),
+          description: t("auth.alreadyRegisteredDetail"),
           action: (
             <ToastAction
-              altText="Ir para login"
+              altText={t("auth.goToLogin")}
               onClick={() => navigate(`/auth?${loginParams.toString()}`)}
             >
               Fazer login
@@ -725,12 +725,12 @@ export default function Auth() {
       }
 
       const errorMessage = error.message.includes('Password')
-        ? 'Senha muito fraca. Use letras e números.'
-        : 'Erro ao criar conta. Tente novamente.';
+        ? t("auth.weakPassword")
+        : t("auth.registerFailed");
 
       toast({
         variant: 'destructive',
-        title: 'Erro no cadastro',
+        title: t("auth.registerError"),
         description: errorMessage,
       });
       return;
@@ -749,8 +749,8 @@ export default function Auth() {
     if (!currentSession?.user) {
       setIsLoading(false);
       toast({
-        title: 'Conta criada!',
-        description: 'Confirme seu email, faça login e você voltará para continuar o cadastro da igreja.',
+        title: t("auth.accountCreated"),
+        description: t("auth.confirmEmail"),
       });
       loginForm.setValue('email', data.email);
       setActiveTab('login');
@@ -798,13 +798,13 @@ export default function Auth() {
     setIsLoading(false);
 
     const welcomeMessage = isChurchSetupRedirect
-      ? 'Conta criada! Agora cadastre os dados da igreja.'
+      ? t("auth.registerChurchNext")
       : isDepartmentInvite
-      ? 'Conta criada! Você será redirecionado para entrar no departamento.'
-      : `Bem-vindo à ${churchValidated.name}!`;
+      ? t("auth.registerDeptNext")
+      : t("auth.welcomeChurch", { church: churchValidated.name });
 
     toast({
-      title: 'Conta criada com sucesso!',
+      title: t("auth.accountCreatedSuccess"),
       description: welcomeMessage,
     });
     
@@ -864,7 +864,7 @@ export default function Auth() {
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: 'Não foi possível enviar o email de recuperação. Tente novamente.',
+        description: t("auth.recoverySendFailed"),
       });
       return;
     }
@@ -872,7 +872,7 @@ export default function Auth() {
     setRecoveryEmailSent(true);
     toast({
       title: 'Email enviado!',
-      description: 'Verifique sua caixa de entrada para redefinir sua senha.',
+      description: t("auth.recoveryCheckInbox"),
     });
   };
 
@@ -886,7 +886,7 @@ export default function Auth() {
       if (!passwordValidation.valid) {
         toast({
           variant: 'destructive',
-          title: 'Senha insegura',
+          title: t("auth.unsafePassword"),
           description: passwordValidation.errors.join(' '),
         });
         setIsLoading(false);
@@ -935,8 +935,8 @@ export default function Auth() {
         console.error('[PasswordReset] No valid session after refresh:', refreshError);
         toast({
           variant: 'destructive',
-          title: 'Sessão de recuperação ausente',
-          description: 'O link de recuperação expirou ou já foi usado. Solicite um novo link de recuperação.',
+          title: t("auth.recoveryMissing"),
+          description: t("auth.recoveryMissingDetail"),
         });
         setActiveTab('recovery');
         return;
@@ -949,19 +949,19 @@ export default function Auth() {
 
       if (error) {
         console.error('[PasswordReset] updateUser error:', error);
-        let friendly = 'Não foi possível redefinir sua senha. Solicite um novo link de recuperação.';
+        let friendly = t("auth.resetFailed");
 
         if (error.message.includes('expired')) {
-          friendly = 'Link de recuperação expirado. Solicite um novo.';
+          friendly = t("auth.resetExpired");
         } else if (error.message.includes('same')) {
-          friendly = 'A nova senha deve ser diferente da atual.';
+          friendly = t("auth.resetSame");
         } else if (error.message.includes('insufficient_aal') || error.message.includes('AAL2')) {
-          friendly = 'Verificação 2FA necessária. Por favor, verifique seu autenticador.';
+          friendly = t("auth.reset2fa");
         }
 
         toast({
           variant: 'destructive',
-          title: 'Erro ao redefinir senha',
+          title: t("auth.resetError"),
           description: `${friendly} (detalhe: ${error.message})`,
         });
         return;
@@ -970,8 +970,8 @@ export default function Auth() {
       console.log('[PasswordReset] Password updated successfully!');
 
       toast({
-        title: 'Senha redefinida!',
-        description: 'Sua senha foi alterada com sucesso.',
+        title: t("auth.resetSuccess"),
+        description: t("auth.resetSuccessDetail"),
       });
 
       window.location.hash = '';
@@ -986,8 +986,8 @@ export default function Auth() {
       await supabase.auth.signOut({ scope: 'local' });
 
       toast({
-        title: 'Faça login novamente',
-        description: 'Use sua nova senha para entrar.',
+        title: t("auth.loginAgain"),
+        description: t("auth.loginAgainDetail"),
       });
     } catch (err) {
       console.error('[PasswordReset] Unexpected error:', err);
