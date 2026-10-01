@@ -6,6 +6,8 @@
 
 @layer base {
   :root {
+    /* Identidade fixa da marca: iniciais no topo e palavras alternadas da home. */
+    --levi-typewriter-amber: 43.26 96.41% 56.27%;
     --background: 0 0% 100%;
     --foreground: 240 10% 4%;
 
@@ -763,10 +765,10 @@
 
 @keyframes neon-pulse {
   0%, 100% {
-    text-shadow: 0 0 4px hsl(var(--secondary) / 0.4), 0 0 8px hsl(var(--secondary) / 0.2);
+    text-shadow: 0 0 4px hsl(var(--levi-typewriter-amber) / 0.4), 0 0 8px hsl(var(--levi-typewriter-amber) / 0.2);
   }
   50% {
-    text-shadow: 0 0 8px hsl(var(--secondary) / 0.6), 0 0 20px hsl(var(--secondary) / 0.3), 0 0 30px hsl(var(--secondary) / 0.15);
+    text-shadow: 0 0 8px hsl(var(--levi-typewriter-amber) / 0.6), 0 0 20px hsl(var(--levi-typewriter-amber) / 0.3), 0 0 30px hsl(var(--levi-typewriter-amber) / 0.15);
   }
 }
 
@@ -776,18 +778,28 @@
 }
 
 .typewriter-word {
-  /* Âmbar direto da marca (não depende do token --secondary, que o tema
-     "flat refresh" neutralizou para cinza) */
-  color: #FBBF24;
-  text-shadow: 0 0 4px rgba(251, 191, 36, 0.4), 0 0 8px rgba(251, 191, 36, 0.2);
+  color: hsl(var(--levi-typewriter-amber)) !important;
+  text-shadow: 0 0 4px hsl(var(--levi-typewriter-amber) / 0.4), 0 0 8px hsl(var(--levi-typewriter-amber) / 0.2);
   animation: shimmer-text 3s ease-in-out infinite;
+}
+
+.typewriter-word .typewriter-char,
+.levi-typewriter-initial,
+.levi-typewriter-cursor,
+.levi-typewriter-wordmark {
+  color: hsl(var(--levi-typewriter-amber)) !important;
+}
+
+.levi-typewriter-initial,
+.levi-typewriter-wordmark {
+  text-shadow: 0 0 6px hsl(var(--levi-typewriter-amber) / 0.45), 0 0 14px hsl(var(--levi-typewriter-amber) / 0.25);
 }
 
 .typewriter-cursor {
   display: inline-block;
   animation: neon-pulse 1s ease-in-out infinite;
-  color: #FBBF24;
-  text-shadow: 0 0 4px rgba(251, 191, 36, 0.4), 0 0 8px rgba(251, 191, 36, 0.2);
+  color: hsl(var(--levi-typewriter-amber)) !important;
+  text-shadow: 0 0 4px hsl(var(--levi-typewriter-amber) / 0.4), 0 0 8px hsl(var(--levi-typewriter-amber) / 0.2);
 }
 
 /* ============================================================

@@ -593,11 +593,7 @@ export default function Landing() {
             <div className="flex flex-col items-center gap-0.5 shrink-0">
               <LeviLogo size="sm" className="transition-all duration-300" />
               <span
-                className="text-[9px] font-bold tracking-widest"
-                style={{
-                  color: '#FBBF24',
-                  textShadow: '0 0 6px rgba(251, 191, 36, 0.45), 0 0 14px rgba(251, 191, 36, 0.25)'
-                }}
+                className="levi-typewriter-wordmark text-[9px] font-bold tracking-widest"
               >
                 LEVI
               </span>

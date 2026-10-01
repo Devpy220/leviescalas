@@ -73,23 +73,19 @@ export function LeviTypewriter({ className = '' }: LeviTypewriterProps) {
 
   return (
     <span className={`inline-flex items-baseline ${className}`}>
-      <span className="text-[8px] sm:text-xs font-medium tracking-wide whitespace-nowrap text-white dark:text-muted-foreground">
+      <span className="text-[8px] sm:text-xs font-medium tracking-wide whitespace-nowrap text-foreground">
         {visibleText.split('').map((char, i) => {
           const isHighlight = highlightIndices.has(i);
           return (
             <span
               key={i}
-              className={isHighlight ? 'font-extrabold text-[10px] sm:text-base' : ''}
-              style={isHighlight ? {
-                color: '#FBBF24',
-                textShadow: '0 0 6px rgba(251, 191, 36, 0.45), 0 0 14px rgba(251, 191, 36, 0.25)'
-              } : undefined}
+              className={isHighlight ? 'levi-typewriter-initial font-extrabold text-[10px] sm:text-base' : ''}
             >
               {char}
             </span>
           );
         })}
-        <span className="animate-pulse" style={{ color: '#FBBF24' }}>|</span>
+        <span className="levi-typewriter-cursor animate-pulse">|</span>
       </span>
     </span>
   );
