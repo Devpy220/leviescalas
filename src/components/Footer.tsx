@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import elsdigitalLogo from '@/assets/elsdigital-logo.png';
+import elsdIcon from '@/assets/elsd-icon.png';
 
 declare const __APP_VERSION__: string;
 const APP_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'dev';
@@ -27,7 +27,7 @@ const Footer = () => {
           >
             Modelos de escala de louvor
           </Link>
-          <img src={elsdigitalLogo} alt="Logo da ELSDigital.tech, desenvolvedora do LEVI" className="h-10 sm:h-12 w-auto object-contain dark:bg-white dark:rounded-md dark:px-1 dark:py-0.5" />
+          <img src={elsdIcon} alt="Logo da ELSDigital.tech, desenvolvedora do LEVI" className="h-8 w-8 sm:h-9 sm:w-9 rounded-full object-cover ring-1 ring-border" />
           <span className="text-xs text-muted-foreground">Desenvolvendo Soluções</span>
         </div>
       </div>
