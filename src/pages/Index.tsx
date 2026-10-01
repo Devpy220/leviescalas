@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+import { LanguageSelector } from '@/components/LanguageSelector';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Loader2, Church, Sparkles } from 'lucide-react';
@@ -14,6 +16,7 @@ export default function Index() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,8 +24,8 @@ export default function Index() {
     if (!churchCode.trim()) {
       toast({
         variant: 'destructive',
-        title: 'Código obrigatório',
-        description: 'Digite o código da sua igreja para continuar.',
+        title: t("index.codeRequired"),
+        description: t("index.enterCode"),
       });
       return;
     }
@@ -39,8 +42,8 @@ export default function Index() {
       if (!data || data.length === 0 || !data[0].is_valid) {
         toast({
           variant: 'destructive',
-          title: 'Código inválido',
-          description: 'O código da igreja não foi encontrado. Verifique com o líder da sua igreja.',
+          title: t("index.invalidCode"),
+          description: t("index.codeNotFound"),
         });
         setIsLoading(false);
         return;
@@ -52,8 +55,8 @@ export default function Index() {
       console.error('Error validating church code:', error);
       toast({
         variant: 'destructive',
-        title: 'Erro',
-        description: 'Não foi possível validar o código. Tente novamente.',
+        title: t("common.error"),
+        description: t("index.codeError"),
       });
     } finally {
       setIsLoading(false);
@@ -70,11 +73,11 @@ export default function Index() {
             <div className="flex items-center gap-2">
               <span className="font-display text-xl font-bold text-foreground">LEVI</span>
               <span className="hidden md:inline text-sm text-muted-foreground border-l border-border pl-2">
-                Logística de Escalas para Voluntários da Igreja
+                {t("landing.typewriterFull")}
               </span>
             </div>
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-2"><LanguageSelector /><ThemeToggle /></div>
         </div>
       </header>
 
@@ -90,15 +93,15 @@ export default function Index() {
             <div className="text-center mb-8">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/10 text-secondary text-sm font-medium mb-6 border border-secondary/20">
                 <Sparkles className="w-4 h-4" />
-                <span>Gestão de Escalas para Voluntários</span>
+                <span>{t("index.scheduleManagement")}</span>
               </div>
               
               <h1 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-4">
-                Bem-vindo ao <span className="text-gradient-vibrant">LEVI</span>
+                {t("index.welcomeTo")} <span className="text-gradient-vibrant">LEVI</span>
               </h1>
               
               <p className="text-muted-foreground">
-                Digite o código da sua igreja para acessar o sistema.
+                {t("index.accessInstructions")}
               </p>
             </div>
 
@@ -108,7 +111,7 @@ export default function Index() {
                 <div className="space-y-2">
                   <Label htmlFor="church-code" className="flex items-center gap-2">
                     <Church className="w-4 h-4 text-accent" />
-                    Código da Igreja
+                    {t("index.churchCode")}
                   </Label>
                   <Input
                     id="church-code"
@@ -121,7 +124,7 @@ export default function Index() {
                     autoFocus
                   />
                   <p className="text-xs text-muted-foreground text-center">
-                    Solicite o código ao líder da sua igreja
+                    {t("index.askCode")}
                   </p>
                 </div>
 
@@ -133,11 +136,11 @@ export default function Index() {
                   {isLoading ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                      Verificando...
+                      {t("index.verifying")}
                     </>
                   ) : (
                     <>
-                      Continuar
+                      {t("index.continue")}
                       <ArrowRight className="w-5 h-5 ml-2" />
                     </>
                   )}
@@ -147,7 +150,7 @@ export default function Index() {
 
             {/* Footer info */}
             <p className="text-center text-sm text-muted-foreground mt-6">
-              O código é fornecido pelo administrador da igreja após o cadastro.
+              {t("index.codeProvided")}
             </p>
           </div>
         </div>
