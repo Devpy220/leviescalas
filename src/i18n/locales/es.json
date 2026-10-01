@@ -569,5 +569,13 @@
     "history": "Historial de solicitudes",
     "historyDetail": "Registro con plazo legal de respuesta de 30 días.",
     "deadline": "plazo"
+  },
+  "scheduleCard": {
+    "details": "Detalles del turno",
+    "requestSwap": "Solicitar cambio",
+    "cancelSwap": "Cancelar solicitud",
+    "respondSwap": "Responder solicitud",
+    "department": "Departamento",
+    "time": "Horario"
   }
 }

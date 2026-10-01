@@ -569,5 +569,13 @@
     "history": "Histórico de pedidos",
     "historyDetail": "Registo com prazo legal de resposta (30 dias).",
     "deadline": "prazo"
+  },
+  "scheduleCard": {
+    "details": "Detalhes da escala",
+    "requestSwap": "Solicitar troca",
+    "cancelSwap": "Cancelar solicitação",
+    "respondSwap": "Responder solicitação",
+    "department": "Departamento",
+    "time": "Horário"
   }
 }

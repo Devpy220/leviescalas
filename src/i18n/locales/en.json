@@ -569,5 +569,13 @@
     "history": "Request history",
     "historyDetail": "Record with a legal response deadline of 30 days.",
     "deadline": "deadline"
+  },
+  "scheduleCard": {
+    "details": "Schedule details",
+    "requestSwap": "Request swap",
+    "cancelSwap": "Cancel request",
+    "respondSwap": "Respond to request",
+    "department": "Department",
+    "time": "Time"
   }
 }

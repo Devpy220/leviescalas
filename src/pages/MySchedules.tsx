@@ -420,7 +420,7 @@ export default function MySchedules() {
               onClick={() => setViewMode('mine')}
             >
               <User className="w-4 h-4 mr-2" />
-              Minhas
+              {t("schedules.mine")}
             </Button>
             <Button
               variant={viewMode === 'team' ? 'default' : 'outline'}
@@ -428,7 +428,7 @@ export default function MySchedules() {
               onClick={() => setViewMode('team')}
             >
               <Users className="w-4 h-4 mr-2" />
-              Equipe
+              {t("schedules.team")}
             </Button>
           </div>
         )}
