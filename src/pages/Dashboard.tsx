@@ -681,8 +681,8 @@ export default function Dashboard() {
                       <p className="font-medium text-xs truncate">{swap.requester_name} quer trocar com você</p>
                       {swap.requester_schedule && swap.target_schedule && (
                         <p className="text-[11px] text-muted-foreground">
-                          {format(parseISO(swap.requester_schedule.date), 'dd/MM', { locale: i18n.language.startsWith('en') ? enUS : i18n.language.startsWith('es') ? es : ptBR })} ↔{' '}
-                          {format(parseISO(swap.target_schedule.date), 'dd/MM', { locale: i18n.language.startsWith('en') ? enUS : i18n.language.startsWith('es') ? es : ptBR })}
+                          {format(parseISO(swap.requester_schedule.date), i18n.language.startsWith('en') ? 'MM/dd' : 'dd/MM', { locale: i18n.language.startsWith('en') ? enUS : i18n.language.startsWith('es') ? es : ptBR })} ↔{' '}
+                          {format(parseISO(swap.target_schedule.date), i18n.language.startsWith('en') ? 'MM/dd' : 'dd/MM', { locale: i18n.language.startsWith('en') ? enUS : i18n.language.startsWith('es') ? es : ptBR })}
                         </p>
                       )}
                     </div>
