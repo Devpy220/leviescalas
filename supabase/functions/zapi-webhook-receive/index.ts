@@ -383,6 +383,9 @@ serve(async (req: Request): Promise<Response> => {
         `✅ *${firstName}*, pedido cancelado. Nenhum dado foi alterado.`);
       return reply({ ok: true, handled: "command_cancelled" });
     } else {
+      // A new message supersedes the previous proposal: a later SIM must
+      // never unexpectedly execute an older request.
+      if (pendingCommand) await supabase.from("whatsapp_pending_commands").delete().eq("user_id", profile.id);
       // Only standalone imperative verbs count: no inflected/quoted verbs or
       // negative instructions. The confirmation repeats the exact action.
       const normalized = cmd.replace(/^[\s,.:;]+/, "");
