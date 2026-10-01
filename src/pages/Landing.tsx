@@ -780,7 +780,7 @@ export default function Landing() {
 
 
 
-      <footer className="relative z-[1] pt-2.5 pb-3 border-t border-border shrink-0">
+      <footer className="relative z-[1] pt-[7px] pb-3 border-t border-border shrink-0">
         <div className="container mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span className="levi-typewriter-wordmark font-bold tracking-widest">LEVI ESCALAS</span>
