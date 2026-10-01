@@ -6,7 +6,7 @@ const APP_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '
 
 const Footer = () => {
   return (
-    <footer className="relative z-[1] py-6 border-t border-border mt-auto">
+    <footer className="relative z-[1] pt-5 pb-6 border-t border-border mt-auto">
       <div className="container mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span className="levi-typewriter-wordmark font-bold tracking-widest">LEVI ESCALAS</span>
