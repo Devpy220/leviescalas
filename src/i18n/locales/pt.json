@@ -378,5 +378,22 @@
     "error": "Erro na verificação",
     "noFactor": "Nenhum fator TOTP encontrado",
     "invalidCode": "Código inválido. Tente novamente."
+  },
+  "authValidation": {
+    "passwordMin": "Senha deve ter no mínimo 8 caracteres",
+    "passwordUpper": "Senha deve conter ao menos uma letra maiúscula",
+    "passwordLower": "Senha deve conter ao menos uma letra minúscula",
+    "passwordNumber": "Senha deve conter ao menos um número",
+    "passwordSpecial": "Senha deve conter ao menos um caractere especial",
+    "invalidEmail": "Email inválido",
+    "passwordRequired": "Senha é obrigatória",
+    "codeLong": "Código muito longo",
+    "nameMin": "Nome deve ter no mínimo 2 caracteres",
+    "nameLong": "Nome muito longo",
+    "emailLong": "Email muito longo",
+    "whatsappRequired": "WhatsApp é obrigatório",
+    "whatsappFormat": "Use 11 dígitos (DDD + número) ou o formato internacional, ex: +351912345678",
+    "confirmationRequired": "Confirmação de senha é obrigatória",
+    "passwordMismatch": "As senhas não coincidem"
   }
 }

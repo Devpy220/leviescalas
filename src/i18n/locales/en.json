@@ -378,5 +378,22 @@
     "error": "Verification error",
     "noFactor": "No TOTP factor found",
     "invalidCode": "Invalid code. Please try again."
+  },
+  "authValidation": {
+    "passwordMin": "Password must be at least 8 characters",
+    "passwordUpper": "Password must contain an uppercase letter",
+    "passwordLower": "Password must contain a lowercase letter",
+    "passwordNumber": "Password must contain a number",
+    "passwordSpecial": "Password must contain a special character",
+    "invalidEmail": "Invalid email address",
+    "passwordRequired": "Password is required",
+    "codeLong": "Code is too long",
+    "nameMin": "Name must be at least 2 characters",
+    "nameLong": "Name is too long",
+    "emailLong": "Email is too long",
+    "whatsappRequired": "WhatsApp number is required",
+    "whatsappFormat": "Use 11 digits (Brazil area code + number) or an international number, e.g. +351912345678",
+    "confirmationRequired": "Confirm your password",
+    "passwordMismatch": "Passwords do not match"
   }
 }

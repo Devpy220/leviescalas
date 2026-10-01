@@ -378,5 +378,22 @@
     "error": "Error de verificación",
     "noFactor": "No se encontró ningún factor TOTP",
     "invalidCode": "Código incorrecto. Inténtalo de nuevo."
+  },
+  "authValidation": {
+    "passwordMin": "La contraseña debe tener al menos 8 caracteres",
+    "passwordUpper": "La contraseña debe incluir una mayúscula",
+    "passwordLower": "La contraseña debe incluir una minúscula",
+    "passwordNumber": "La contraseña debe incluir un número",
+    "passwordSpecial": "La contraseña debe incluir un carácter especial",
+    "invalidEmail": "Email no válido",
+    "passwordRequired": "La contraseña es obligatoria",
+    "codeLong": "El código es demasiado largo",
+    "nameMin": "El nombre debe tener al menos 2 caracteres",
+    "nameLong": "El nombre es demasiado largo",
+    "emailLong": "El email es demasiado largo",
+    "whatsappRequired": "El número de WhatsApp es obligatorio",
+    "whatsappFormat": "Usa 11 dígitos (prefijo de Brasil + número) o un número internacional, p. ej. +351912345678",
+    "confirmationRequired": "Confirma tu contraseña",
+    "passwordMismatch": "Las contraseñas no coinciden"
   }
 }

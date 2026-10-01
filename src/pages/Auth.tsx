@@ -48,59 +48,65 @@ const AppleIcon = () => (
   </svg>
 );
 
-// Validation schemas
+// Validation schemas: translate messages without changing the input rules.
+const createSchemas = (t: (key: string) => string) => {
 const passwordSchema = z.string()
-  .min(8, 'Senha deve ter no mínimo 8 caracteres')
-  .regex(/[A-Z]/, 'Senha deve conter ao menos uma letra maiúscula')
-  .regex(/[a-z]/, 'Senha deve conter ao menos uma letra minúscula')
-  .regex(/\d/, 'Senha deve conter ao menos um número')
-  .regex(/[!@#$%^&*(),.?":{}|<>_\-+=[\]\\;'`~]/, 'Senha deve conter ao menos um caractere especial');
+  .min(8, t("authValidation.passwordMin"))
+  .regex(/[A-Z]/, t("authValidation.passwordUpper"))
+  .regex(/[a-z]/, t("authValidation.passwordLower"))
+  .regex(/\d/, t("authValidation.passwordNumber"))
+  .regex(/[!@#$%^&*(),.?":{}|<>_\-+=[\]\\;'`~]/, t("authValidation.passwordSpecial"));
 
 const loginSchema = z.object({
-  email: z.string().email('Email inválido'),
-  password: z.string().min(1, 'Senha é obrigatória'),
+  email: z.string().email(t("authValidation.invalidEmail")),
+  password: z.string().min(1, t("authValidation.passwordRequired")),
 });
 
 // Schema for regular members (church code required)
 const registerSchema = z.object({
-  churchCode: z.string().max(20, 'Código muito longo').optional(),
-  name: z.string().trim().min(2, 'Nome deve ter no mínimo 2 caracteres').max(100, 'Nome muito longo'),
-  email: z.string().trim().email('Email inválido').max(255, 'Email muito longo'),
+  churchCode: z.string().max(20, t("authValidation.codeLong")).optional(),
+  name: z.string().trim().min(2, t("authValidation.nameMin")).max(100, t("authValidation.nameLong")),
+  email: z.string().trim().email(t("authValidation.invalidEmail")).max(255, t("authValidation.emailLong")),
   whatsapp: z.string()
-    .min(1, 'WhatsApp é obrigatório')
+    .min(1, t("authValidation.whatsappRequired"))
     .transform(val => val.replace(/[^\d+]/g, ''))
     .refine(
       val => /^\d{11}$/.test(val) || /^\+\d{8,15}$/.test(val),
-      'Use 11 dígitos (DDD + número) ou o formato internacional, ex: +351912345678',
+      t("authValidation.whatsappFormat"),
     ),
 
   password: passwordSchema,
-  confirmPassword: z.string().min(1, 'Confirmação de senha é obrigatória'),
+  confirmPassword: z.string().min(1, t("authValidation.confirmationRequired")),
   isAdminSignup: z.boolean().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
-  message: 'As senhas não coincidem',
+  message: t("authValidation.passwordMismatch"),
   path: ['confirmPassword'],
 });
 
 const recoverySchema = z.object({
-  email: z.string().email('Email inválido'),
+  email: z.string().email(t("authValidation.invalidEmail")),
 });
 
 const resetPasswordSchema = z.object({
   password: passwordSchema,
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
-  message: 'As senhas não coincidem',
+  message: t("authValidation.passwordMismatch"),
   path: ['confirmPassword'],
 });
 
-type LoginForm = z.infer<typeof loginSchema>;
-type RegisterForm = z.infer<typeof registerSchema>;
-type RecoveryForm = z.infer<typeof recoverySchema>;
-type ResetPasswordForm = z.infer<typeof resetPasswordSchema>;
+return { loginSchema, registerSchema, recoverySchema, resetPasswordSchema };
+};
+
+type Schemas = ReturnType<typeof createSchemas>;
+type LoginForm = z.infer<Schemas["loginSchema"]>;
+type RegisterForm = z.infer<Schemas["registerSchema"]>;
+type RecoveryForm = z.infer<Schemas["recoverySchema"]>;
+type ResetPasswordForm = z.infer<Schemas["resetPasswordSchema"]>;
 
 export default function Auth() {
   const { t } = useTranslation();
+  const { loginSchema, registerSchema, recoverySchema, resetPasswordSchema } = createSchemas(t);
   const [searchParams] = useSearchParams();
   // Only allow register tab when coming from an invite link (church or department)
   const isChurchSetupRedirect = searchParams.get('redirect') === '/church-setup';
