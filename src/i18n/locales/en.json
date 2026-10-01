@@ -340,5 +340,31 @@
     "verifying": "Checking...",
     "continue": "Continue",
     "codeProvided": "Your church administrator provides the code after registration."
+  },
+  "passwordStrength": {
+    "criteria": [
+      "At least 8 characters",
+      "Uppercase letter",
+      "Lowercase letter",
+      "Number",
+      "Special character (!@#$%^&*)"
+    ],
+    "tips": [
+      "Use a password manager to store and create secure passwords.",
+      "Avoid reusing passwords across websites and apps.",
+      "Do not use personal information in passwords (name, birth date, etc.).",
+      "Enable two-factor authentication (2FA) for added security."
+    ],
+    "strength": [
+      "Very weak",
+      "Weak",
+      "Fair",
+      "Strong",
+      "Very strong"
+    ],
+    "tipsTitle": "Security tips:",
+    "strengthTitle": "Password strength",
+    "required": "Required criteria:",
+    "mustMeet": "The password must meet all the requirements above."
   }
 }

@@ -340,5 +340,31 @@
     "verifying": "Verificando...",
     "continue": "Continuar",
     "codeProvided": "O código é fornecido pelo administrador da igreja após o cadastro."
+  },
+  "passwordStrength": {
+    "criteria": [
+      "Mínimo 8 caracteres",
+      "Letra maiúscula",
+      "Letra minúscula",
+      "Número",
+      "Caractere especial (!@#$%^&*)"
+    ],
+    "tips": [
+      "Utilize um gerenciador de senhas para armazenar e gerar senhas seguras.",
+      "Evite reutilizar senhas em diferentes sites e aplicativos.",
+      "Evite usar informações pessoais em senhas (nome, data de nascimento, etc.).",
+      "Ative a autenticação multifator (2FA) para maior segurança."
+    ],
+    "strength": [
+      "Muito fraca",
+      "Fraca",
+      "Média",
+      "Forte",
+      "Muito forte"
+    ],
+    "tipsTitle": "Dicas de segurança:",
+    "strengthTitle": "Força da senha",
+    "required": "Requisitos obrigatórios:",
+    "mustMeet": "A senha deve atender todos os requisitos acima."
   }
 }

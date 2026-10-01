@@ -340,5 +340,31 @@
     "verifying": "Verificando...",
     "continue": "Continuar",
     "codeProvided": "El administrador proporciona el código tras el registro."
+  },
+  "passwordStrength": {
+    "criteria": [
+      "Mínimo 8 caracteres",
+      "Letra mayúscula",
+      "Letra minúscula",
+      "Número",
+      "Carácter especial (!@#$%^&*)"
+    ],
+    "tips": [
+      "Usa un gestor de contraseñas para crear y guardar contraseñas seguras.",
+      "Evita reutilizar contraseñas en distintos sitios y aplicaciones.",
+      "No uses datos personales en contraseñas (nombre, fecha de nacimiento, etc.).",
+      "Activa la autenticación de dos factores (2FA) para mayor seguridad."
+    ],
+    "strength": [
+      "Muy débil",
+      "Débil",
+      "Media",
+      "Fuerte",
+      "Muy fuerte"
+    ],
+    "tipsTitle": "Consejos de seguridad:",
+    "strengthTitle": "Seguridad de la contraseña",
+    "required": "Requisitos obligatorios:",
+    "mustMeet": "La contraseña debe cumplir todos los requisitos anteriores."
   }
 }
