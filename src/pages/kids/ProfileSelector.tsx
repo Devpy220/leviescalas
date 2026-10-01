@@ -31,13 +31,13 @@ export default function ProfileSelector() {
   };
 
   const profiles = [
-    { key: "child", label: "{t("kids.child")}", emoji: "🧒", img: mascot, glow: "pink" as const,
+    { key: "child", label: t("kids.child"), emoji: "🧒", img: mascot, glow: "pink" as const,
       go: () => navigate("/kids/child") },
-    { key: "parent", label: "{t("kids.parent")}", emoji: "👨‍👩‍👧", img: iconParent, glow: "purple" as const,
+    { key: "parent", label: t("kids.parent"), emoji: "👨‍👩‍👧", img: iconParent, glow: "purple" as const,
       go: () => goOrWarn("/kids/parent") },
-    { key: "teacher", label: "{t("kids.teacher")}", emoji: "📚", img: iconTeacher, glow: "green" as const,
+    { key: "teacher", label: t("kids.teacher"), emoji: "📚", img: iconTeacher, glow: "green" as const,
       go: () => goOrWarn("/kids/dashboard") },
-    { key: "leader", label: "{t("kids.leader")}", emoji: "👑", img: iconLeader, glow: "purple" as const,
+    { key: "leader", label: t("kids.leader"), emoji: "👑", img: iconLeader, glow: "purple" as const,
       go: () => goOrWarn("/kids/admin") },
   ];
 

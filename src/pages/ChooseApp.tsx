@@ -30,7 +30,7 @@ export default function ChooseApp() {
                 <h2 className="text-xl font-bold text-slate-900 mb-1">LEVI Escalas</h2>
                 <p className="text-sm text-slate-600 mb-4">{t("choose.schedulesDescription")}</p>
                 <span className="inline-flex items-center gap-1 text-violet-700 font-semibold text-sm">
-                  {t("choose.enter")} className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  {t("choose.enter")} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </span>
               </CardContent>
             </Card>
@@ -45,7 +45,7 @@ export default function ChooseApp() {
                 <h2 className="text-xl font-bold mb-1"><LeviKidsWordmark /></h2>
                 <p className="text-sm text-slate-600 mb-4">{t("choose.kidsDescription")}</p>
                 <span className="inline-flex items-center gap-1 text-amber-700 font-semibold text-sm">
-                  {t("choose.enter")} className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  {t("choose.enter")} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </span>
               </CardContent>
             </Card>

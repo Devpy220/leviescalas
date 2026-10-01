@@ -69,20 +69,20 @@ export default function KidsLanding() {
               </code>
               <button
                 type="button"
-                title="{t("kids.copyLink")}"
-                aria-label="{t("kids.copyLink")}"
+                title={t("kids.copyLink")}
+                aria-label={t("kids.copyLink")}
                 className="p-2 rounded-lg bg-violet-600 text-white hover:opacity-90"
                 onClick={() => {
                   navigator.clipboard.writeText(`${window.location.origin}/kids/join/${page.static_qr_token}`);
-                  toast({ title: "{t("kids.linkCopied")}" });
+                  toast({ title: t("kids.linkCopied") });
                 }}
               >
                 <Copy className="w-4 h-4" />
               </button>
               <Link
                 to="/kids/admin"
-                title="{t("kids.openDashboard")}"
-                aria-label="{t("kids.openDashboard")}"
+                title={t("kids.openDashboard")}
+                aria-label={t("kids.openDashboard")}
                 className="p-2 rounded-lg border-2 border-violet-300 text-violet-700 hover:bg-violet-100"
               >
                 <ExternalLink className="w-4 h-4" />
