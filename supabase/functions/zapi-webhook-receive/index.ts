@@ -232,7 +232,7 @@ serve(async (req: Request): Promise<Response> => {
       uaMsg.chatlid, uaMsg.chatLid, payload.sender, payload.chatlid, payload.chat?.wa_chatlid,
       payload.chat?.wa_lastMessageSender, payload.chat?.id,
     );
-    const text = pickStr(
+    let text = pickStr(
       // UAZAPI text fields
       uaMsg.text, uaMsg.messageText, uaMsg.content, uaMsg.body,
       // Z-API legacy fields
@@ -295,7 +295,7 @@ serve(async (req: Request): Promise<Response> => {
     const reply = (body: Record<string, unknown>) =>
       new Response(JSON.stringify(body), { headers: { "Content-Type": "application/json", ...corsHeaders } });
     const firstName = (profile.name || "").split(" ")[0] || "👋";
-    const cmd = (text || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[!?.]+$/, "").replace(/\s+/g, " ");
+    let cmd = (text || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[!?.]+$/, "").replace(/\s+/g, " ");
 
     // ─── Pedido de exclusão pendente: resposta SIM / NÃO após "SAIR" ───
     const { data: pendingDel } = await supabase.from("whatsapp_consent_log")
@@ -359,6 +359,57 @@ serve(async (req: Request): Promise<Response> => {
     // Número que pediu SAIR: não responde a mais nada.
     if (profile.whatsapp_opt_out_at) {
       return reply({ ignored: true, reason: "opted_out" });
+    }
+
+    // Requests phrased as sentences are never applied immediately. Store the
+    // explicit action for 15 minutes and require a fresh YES from this number.
+    const { data: pendingCommand, error: pendingReadError } = await supabase
+      .from("whatsapp_pending_commands")
+      .select("command_text, expires_at, phone")
+      .eq("user_id", profile.id).maybeSingle();
+    if (pendingReadError) throw pendingReadError;
+    if (pendingCommand && /^(sim|si|yes)$/.test(cmd)) {
+      await supabase.from("whatsapp_pending_commands").delete().eq("user_id", profile.id);
+      if (pendingCommand.phone !== phoneDigits || new Date(pendingCommand.expires_at).getTime() <= Date.now()) {
+        await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp,
+          `⌛ *${firstName}*, a confirmação expirou. Envie o pedido novamente; nada foi alterado.`);
+        return reply({ ok: true, handled: "command_expired" });
+      }
+      text = pendingCommand.command_text;
+      cmd = text.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[!?.]+$/, "").replace(/\s+/g, " ");
+    } else if (pendingCommand && /^(nao|no|cancelar)$/.test(cmd)) {
+      await supabase.from("whatsapp_pending_commands").delete().eq("user_id", profile.id);
+      await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp,
+        `✅ *${firstName}*, pedido cancelado. Nenhum dado foi alterado.`);
+      return reply({ ok: true, handled: "command_cancelled" });
+    } else {
+      // A new message supersedes the previous proposal: a later SIM must
+      // never unexpectedly execute an older request.
+      if (pendingCommand) await supabase.from("whatsapp_pending_commands").delete().eq("user_id", profile.id);
+      // Only standalone imperative verbs count: no inflected/quoted verbs or
+      // negative instructions. The confirmation repeats the exact action.
+      const normalized = cmd.replace(/^[\s,.:;]+/, "");
+      const match = /\b(bloquear|desbloquear|liberar todos|liberar dias|servir|escala todos|escalas todos|escalas?|bloqueios|ajuda|apoiar)\b/.exec(normalized);
+      const prefix = match ? normalized.slice(0, match.index).trim() : "";
+      if (match && prefix && prefix.split(/\s+/).length <= 8 &&
+          !/\b(nao|nunca|sem|nem|evite|proibido|deixei|ja|antes|depois|quando|porque|por que|disse|falou)\b/.test(prefix) &&
+          !/["“”'‘’]/.test(prefix)) {
+        const action = normalized.slice(match.index);
+        const isChange = /^(bloquear|desbloquear|liberar todos|liberar dias|servir)\b/.test(action);
+        if (isChange) {
+          const { error: pendingWriteError } = await supabase.from("whatsapp_pending_commands").upsert({
+            user_id: profile.id, phone: phoneDigits, command_text: action,
+            expires_at: new Date(Date.now() + 15 * 60_000).toISOString(),
+          }, { onConflict: "user_id" });
+          if (pendingWriteError) throw pendingWriteError;
+          await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp,
+            `*${firstName}*, você quer confirmar este pedido?\n\n*${action}*\n\nResponda *SIM* para executar ou *NÃO* para cancelar. Vale por 15 minutos. Nada foi alterado ainda.`);
+          return reply({ ok: true, handled: "command_confirmation_required" });
+        }
+        // Read-only commands can be answered directly.
+        text = action;
+        cmd = action;
+      }
     }
 
     // ─── "ajuda" / "comandos" / "?" / standalone "levi" → send commands list ───

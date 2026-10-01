@@ -43,13 +43,15 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const { title, message, channels, recipientIds } = await req.json();
-    if (!title || !message) {
+    if (typeof title !== 'string' || !title.trim() || title.length > 160 ||
+        typeof message !== 'string' || !message.trim() || message.length > 4000 ||
+        (recipientIds !== undefined && (!Array.isArray(recipientIds) || recipientIds.some((id: unknown) => typeof id !== 'string')))) {
       return new Response(JSON.stringify({ error: "title and message are required" }), {
         status: 400, headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
-    let query = supabase.from("profiles").select("id, name, whatsapp");
+    let query = supabase.from("profiles").select("id, name, whatsapp, whatsapp_opt_in_at, whatsapp_opt_out_at");
     if (recipientIds && Array.isArray(recipientIds) && recipientIds.length > 0) {
       query = query.in("id", recipientIds);
     }
@@ -70,13 +72,14 @@ const handler = async (req: Request): Promise<Response> => {
       metadata: { user_name: p.name || 'Voluntário', announcement_title: `${title}\n\n${message}` },
     }));
 
-    await supabase
+    const { error: notificationError } = await supabase
       .from("notifications")
       .insert(notifications as any);
+    if (notificationError) throw notificationError;
 
     // WhatsApp — apenas mensagem principal (apoio é enviado só nas quartas)
     const whatsappRecipients = recipients
-      .filter((p) => p.whatsapp)
+      .filter((p) => p.whatsapp && p.whatsapp_opt_in_at && !p.whatsapp_opt_out_at)
       .map((p) => ({
         phone: p.whatsapp as string,
         userName: p.name || "Voluntário",
@@ -88,8 +91,7 @@ const handler = async (req: Request): Promise<Response> => {
         }),
       }));
 
-    const whatsappQueued = whatsappRecipients.length;
-    await enqueueTriplets(supabaseUrl, serviceRoleKey, whatsappRecipients, {
+    const { queued: whatsappQueued } = await enqueueTriplets(supabaseUrl, serviceRoleKey, whatsappRecipients, {
       origin: "admin_broadcast",
       includeInstagram: false,
     });

@@ -2797,6 +2797,36 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_pending_commands: {
+        Row: {
+          command_text: string
+          created_at: string
+          expires_at: string
+          id: string
+          phone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          command_text: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          phone: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          command_text?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          phone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       whatsapp_queue: {
         Row: {
           attempts: number
