@@ -46,7 +46,8 @@ import { useToast } from '@/hooks/use-toast';
 import { ASSIGNMENT_ROLES } from '@/lib/constants';
 import { FIXED_SLOTS, FixedSlot, findSlotByDayAndTime, normalizeTime } from '@/lib/fixedSlots';
 import { format, parseISO, getDay, isToday } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS, es } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 
 interface SlotGroup {
   date: Date;
@@ -78,6 +79,8 @@ interface MemberProfile {
 
 
 export default function MySchedules() {
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.language.startsWith("en") ? enUS : i18n.language.startsWith("es") ? es : ptBR;
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -333,7 +336,7 @@ export default function MySchedules() {
           dayOfWeek,
           timeStart: normalizeTime(schedule.time_start),
           timeEnd: normalizeTime(schedule.time_end),
-          label: format(date, 'EEEE', { locale: ptBR }),
+          label: format(date, 'EEEE', { locale: dateLocale }),
           icon: FIXED_SLOTS[0].icon,
           bgColor: 'bg-muted/50',
           borderColor: 'border-border',
@@ -431,7 +434,7 @@ export default function MySchedules() {
         )}
       <main className="container mx-auto px-4 py-8 flex-1">
         <h3 className="font-display text-xl font-semibold text-foreground mb-6">
-          {viewMode === 'team' ? 'Escala da Equipe' : 'Minhas Escalas'}
+          {viewMode === "team" ? t("schedules.teamTitle") : t("schedules.myTitle")}
         </h3>
 
         {/* Pending swap requests for me */}
@@ -439,7 +442,7 @@ export default function MySchedules() {
           <Card className="mb-6 p-4 border-primary/50 bg-primary/5">
             <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
               <ArrowLeftRight className="w-5 h-5 text-primary" />
-              Solicitações de Troca ({pendingSwapsForMe.length})
+              {t("schedules.swapRequests", { count: pendingSwapsForMe.length })}
             </h4>
             <div className="space-y-2">
               {pendingSwapsForMe.map(swap => (
@@ -448,11 +451,11 @@ export default function MySchedules() {
                   className="flex items-center justify-between p-3 bg-background rounded-lg border"
                 >
                   <div>
-                    <p className="font-medium text-sm">{swap.requester_name} quer trocar com você</p>
+                    <p className="font-medium text-sm">{t("schedules.wantsSwap", { name: swap.requester_name })}</p>
                     {swap.requester_schedule && swap.target_schedule && (
                       <p className="text-xs text-muted-foreground">
-                        {format(parseISO(swap.requester_schedule.date), "dd/MM", { locale: ptBR })} ↔{' '}
-                        {format(parseISO(swap.target_schedule.date), "dd/MM", { locale: ptBR })}
+                        {format(parseISO(swap.requester_schedule.date), "dd/MM", { locale: dateLocale })} ↔{' '}
+                        {format(parseISO(swap.target_schedule.date), "dd/MM", { locale: dateLocale })}
                       </p>
                     )}
                   </div>
@@ -460,7 +463,7 @@ export default function MySchedules() {
                     size="sm" 
                     onClick={() => handleRespondToSwap(swap)}
                   >
-                    Ver Detalhes
+                    {t("schedules.details")}
                   </Button>
                 </div>
               ))}
@@ -469,7 +472,7 @@ export default function MySchedules() {
         )}
 
         <h3 className="font-display text-xl font-semibold text-foreground mb-6">
-          Próximas Escalas
+          {t("schedules.upcoming")}
         </h3>
         
         {loading ? (
@@ -481,9 +484,9 @@ export default function MySchedules() {
         ) : schedules.length === 0 ? (
           <Card className="p-8 text-center">
             <Calendar className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <h4 className="font-semibold text-foreground mb-2">Nenhuma escala encontrada</h4>
+            <h4 className="font-semibold text-foreground mb-2">{t("schedules.none")}</h4>
             <p className="text-sm text-muted-foreground">
-              Você ainda não foi escalado em nenhum departamento.
+              {t("schedules.noneDetail")}
             </p>
           </Card>
         ) : viewMode === 'mine' ? (

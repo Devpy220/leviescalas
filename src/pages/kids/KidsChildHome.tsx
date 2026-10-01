@@ -9,9 +9,11 @@ import { useEffect, useState } from "react";
 import mascot from "@/assets/portal-kids/mascot-child.png";
 import medal from "@/assets/portal-kids/icon-medal.png";
 import { LogOut, Star } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 
 export default function KidsChildHome() {
+  const { t } = useTranslation();
   const { session } = useKidChildSession();
   const navigate = useNavigate();
   const { verse } = useDailyVerse(session?.page_id);
@@ -54,7 +56,7 @@ export default function KidsChildHome() {
     if (error) return toast({ title: "Ops", description: error.message, variant: "destructive" });
     setAlreadyMemorized(true);
     setMedals((m) => m + 1);
-    toast({ title: "🌟 Você ganhou uma medalha!" });
+    toast({ title: t("kidsChild.medalWon") });
   };
 
   const logout = () => { clearChildSession(); navigate("/kids"); };
@@ -72,11 +74,11 @@ export default function KidsChildHome() {
               className="w-14 h-14 rounded-full object-cover border-4 border-white shadow-lg"
             />
             <div>
-              <p className="text-xs opacity-70">Oi,</p>
+              <p className="text-xs opacity-70">{t("kidsChild.hello")}</p>
               <p className="pk-title text-xl pk-heading-gradient">{session.full_name.split(" ")[0]}! 👋</p>
             </div>
           </div>
-          <button onClick={logout} className="pk-pill p-2" aria-label="Sair">
+          <button onClick={logout} className="pk-pill p-2" aria-label={t("kidsChild.signOut")}>
             <LogOut className="w-4 h-4" />
           </button>
         </div>
@@ -90,7 +92,7 @@ export default function KidsChildHome() {
                 disabled={alreadyMemorized}
                 className="pk-btn pk-btn-primary w-full disabled:opacity-60"
               >
-                {alreadyMemorized ? "🌟 Já decorei este!" : "Decorei! 🎉"}
+                {alreadyMemorized ? t("kidsChild.memorized") : t("kidsChild.memorize")}
               </button>
             ) : null
           }
@@ -98,15 +100,15 @@ export default function KidsChildHome() {
 
         <PillCard glow="purple" className="mt-4 text-center">
           <img src={medal} alt="" className="w-24 h-24 mx-auto pk-float" loading="lazy" />
-          <p className="text-xs opacity-70 mt-1">Minhas medalhas</p>
+          <p className="text-xs opacity-70 mt-1">{t("kidsChild.myMedals")}</p>
           <p className="pk-title text-4xl pk-heading-gradient">{medals}</p>
-          <p className="text-xs opacity-70">versículos decorados</p>
+          <p className="text-xs opacity-70">{t("kidsChild.verses")}</p>
         </PillCard>
 
         <PillCard glow="green" className="mt-4 text-center">
           <Star className="w-8 h-8 mx-auto text-amber-400" />
-          <p className="pk-title mt-1">Jesus te ama muito! 💛</p>
-          <p className="text-xs opacity-70">Volte todo dia para um versículo novinho.</p>
+          <p className="pk-title mt-1">{t("kidsChild.love")}</p>
+          <p className="text-xs opacity-70">{t("kidsChild.comeBack")}</p>
         </PillCard>
       </div>
     </div>
