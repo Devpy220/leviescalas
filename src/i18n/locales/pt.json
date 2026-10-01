@@ -375,7 +375,8 @@
     "verify": "Verificar",
     "complete": "Verificação concluída",
     "loginSuccess": "Login realizado com sucesso.",
-    "error": "Erro de verificação",
-    "noFactor": "Nenhum fator TOTP encontrado"
+    "error": "Erro na verificação",
+    "noFactor": "Nenhum fator TOTP encontrado",
+    "invalidCode": "Código inválido. Tente novamente."
   }
 }

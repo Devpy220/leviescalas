@@ -72,12 +72,12 @@ export function TwoFactorVerify({ onSuccess, onCancel }: TwoFactorVerifyProps) {
       supabase.auth.startAutoRefresh();
       
       const message = error.message?.includes('Invalid')
-        ? 'Código inválido. Tente novamente.'
-        : error.message || 'Erro na verificação.';
+        ? t("twoFactor.invalidCode")
+        : error.message || t("twoFactor.error");
       
       toast({
         variant: 'destructive',
-        title: 'Erro na verificação',
+        title: t("twoFactor.error"),
         description: message,
       });
       isVerifying.current = false;

@@ -376,6 +376,7 @@
     "complete": "Verificación completada",
     "loginSuccess": "Sesión iniciada correctamente.",
     "error": "Error de verificación",
-    "noFactor": "No se encontró ningún factor TOTP"
+    "noFactor": "No se encontró ningún factor TOTP",
+    "invalidCode": "Código incorrecto. Inténtalo de nuevo."
   }
 }

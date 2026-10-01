@@ -376,6 +376,7 @@
     "complete": "Verification complete",
     "loginSuccess": "Signed in successfully.",
     "error": "Verification error",
-    "noFactor": "No TOTP factor found"
+    "noFactor": "No TOTP factor found",
+    "invalidCode": "Invalid code. Please try again."
   }
 }
