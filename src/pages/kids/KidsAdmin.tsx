@@ -17,6 +17,8 @@ import { Loader2, Plus, QrCode, Download, FileDown, Trash2, Users, Copy, UserPlu
 import { KIDS_JOIN_BASE, downloadPng, downloadPdf, qrToDataUrl } from "@/lib/kidsQr";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { LanguageSelector } from "@/components/LanguageSelector";
 
 interface Room { id: string; name: string; color: string; age_min: number; age_max: number; static_qr_token: string; active: boolean; is_inclusion?: boolean; }
 interface KidsLeader { id: string; user_id: string; created_at: string; profile?: { name: string; email: string } | null; }
@@ -25,6 +27,7 @@ interface KidsContent { id: string; content_date: string; title: string; body: s
 interface ChildRow { id: string; full_name: string; birth_date: string; current_room_id: string | null; }
 
 export default function KidsAdmin() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { page, loading, reload } = useMyKidsPage();
   const [newPageName, setNewPageName] = useState("");
@@ -403,12 +406,12 @@ export default function KidsAdmin() {
       <div className="min-h-screen bg-gradient-to-br from-violet-50 to-amber-50 dark:from-slate-950 dark:to-slate-900 p-6">
         <div className="max-w-xl mx-auto">
           <Card className="rounded-3xl border-2">
-            <CardHeader><CardTitle>Criar Página Kids da sua igreja</CardTitle></CardHeader>
+            <CardHeader><CardTitle>{t("kidsAdmin.createPage")}</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-sm text-slate-600 dark:text-slate-300">Escolha um nome amigável para o ministério infantil da sua igreja (ex.: "Connect Kids", "Geração Kids").</p>
+              <p className="text-sm text-slate-600 dark:text-slate-300">{t("kidsAdmin.createHelp")}</p>
               <div>
-                <Label>Nome</Label>
-                <Input value={newPageName} onChange={e => setNewPageName(e.target.value)} placeholder="Ex.: Connect Kids" />
+                <Label>{t("kidsAdmin.name")}</Label>
+                <Input value={newPageName} onChange={e => setNewPageName(e.target.value)} placeholder={t("kidsAdmin.nameHint")} />
               </div>
               <Button onClick={createPage} disabled={busy || !newPageName.trim()} className="w-full rounded-xl">
                 {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Criar Página Kids"}
@@ -429,9 +432,10 @@ export default function KidsAdmin() {
             <p className="text-slate-600 dark:text-slate-300 text-sm">Painel do líder — <LeviKidsWordmark /></p>
           </div>
           <div className="flex gap-2 flex-wrap">
+            <LanguageSelector />
             <Button asChild variant="outline" className="rounded-xl"><Link to="/dashboard">← LEVI</Link></Button>
-            <Button asChild variant="secondary" className="rounded-xl"><Link to="/kids/relatorios"><BarChart3 className="w-4 h-4 mr-1"/>Relatórios</Link></Button>
-            <Button asChild variant="secondary" className="rounded-xl"><Link to="/kids/mensagens">Mensagens</Link></Button>
+            <Button asChild variant="secondary" className="rounded-xl"><Link to="/kids/relatorios"><BarChart3 className="w-4 h-4 mr-1"/>{t("kidsAdmin.reports")}</Link></Button>
+            <Button asChild variant="secondary" className="rounded-xl"><Link to="/kids/mensagens">{t("kidsAdmin.messages")}</Link></Button>
           </div>
         </div>
 
@@ -442,10 +446,10 @@ export default function KidsAdmin() {
                 <Users className="w-5 h-5" />
               </div>
               <div className="flex-1 min-w-[200px]">
-                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Departamento vinculado: Professores Kids</p>
-                <p className="text-xs text-slate-600 dark:text-slate-300">Acesse mural de avisos, disponibilidade dos professores, datas de bloqueio e geração automática de escala.</p>
+                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{t("kidsAdmin.linkedDepartment")}</p>
+                <p className="text-xs text-slate-600 dark:text-slate-300">{t("kidsAdmin.linkedHelp")}</p>
               </div>
-              <Button asChild size="icon" className="rounded-xl bg-violet-600 hover:bg-violet-700" title="Abrir Professores Kids" aria-label="Abrir Professores Kids">
+              <Button asChild size="icon" className="rounded-xl bg-violet-600 hover:bg-violet-700" title={t("kidsAdmin.openTeachers")} aria-label={t("kidsAdmin.openTeachers")}>
                 <Link to={`/departments/${linkedDeptId}`}><ExternalLink className="w-4 h-4" /></Link>
               </Button>
             </CardContent>
@@ -454,37 +458,37 @@ export default function KidsAdmin() {
 
         <Tabs defaultValue="rooms" className="w-full">
           <TabsList className="w-full grid grid-cols-3 md:grid-cols-8 rounded-2xl">
-            <TabsTrigger value="rooms" className="rounded-xl"><QrCode className="w-4 h-4 mr-1" /> Salas</TabsTrigger>
-            <TabsTrigger value="schedule" className="rounded-xl"><CalendarDays className="w-4 h-4 mr-1" /> Dias</TabsTrigger>
-            <TabsTrigger value="rota" className="rounded-xl"><CalendarCheck className="w-4 h-4 mr-1" /> Escala</TabsTrigger>
-            <TabsTrigger value="kids" className="rounded-xl"><ArrowLeftRight className="w-4 h-4 mr-1" /> Crianças</TabsTrigger>
-            <TabsTrigger value="leaders" className="rounded-xl"><ShieldCheck className="w-4 h-4 mr-1" /> Líderes</TabsTrigger>
-            <TabsTrigger value="teachers" className="rounded-xl"><Users className="w-4 h-4 mr-1" /> Professores</TabsTrigger>
-            <TabsTrigger value="content" className="rounded-xl"><BookOpen className="w-4 h-4 mr-1" /> Lição</TabsTrigger>
-            <TabsTrigger value="consent" className="rounded-xl">Termo</TabsTrigger>
+            <TabsTrigger value="rooms" className="rounded-xl"><QrCode className="w-4 h-4 mr-1" /> {t("kidsAdmin.rooms")}</TabsTrigger>
+            <TabsTrigger value="schedule" className="rounded-xl"><CalendarDays className="w-4 h-4 mr-1" /> {t("kidsAdmin.days")}</TabsTrigger>
+            <TabsTrigger value="rota" className="rounded-xl"><CalendarCheck className="w-4 h-4 mr-1" /> {t("kidsAdmin.schedule")}</TabsTrigger>
+            <TabsTrigger value="kids" className="rounded-xl"><ArrowLeftRight className="w-4 h-4 mr-1" /> {t("kidsAdmin.children")}</TabsTrigger>
+            <TabsTrigger value="leaders" className="rounded-xl"><ShieldCheck className="w-4 h-4 mr-1" /> {t("kidsAdmin.leaders")}</TabsTrigger>
+            <TabsTrigger value="teachers" className="rounded-xl"><Users className="w-4 h-4 mr-1" /> {t("kidsAdmin.teachers")}</TabsTrigger>
+            <TabsTrigger value="content" className="rounded-xl"><BookOpen className="w-4 h-4 mr-1" /> {t("kidsAdmin.lesson")}</TabsTrigger>
+            <TabsTrigger value="consent" className="rounded-xl">{t("kidsAdmin.consent")}</TabsTrigger>
           </TabsList>
 
           {/* DIAS DE AULA */}
           <TabsContent value="schedule">
             <div className="space-y-4">
               <Card className="rounded-3xl border-2">
-                <CardHeader><CardTitle className="text-base flex items-center gap-2"><CalendarDays className="w-4 h-4"/> Dias de aula recorrentes</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-base flex items-center gap-2"><CalendarDays className="w-4 h-4"/> {t("kidsAdmin.recurring")}</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Configure os dias que se repetem toda semana (ex.: Domingo 09:00–11:00, Quarta 19:30–21:00). Fora destes horários o check-in fica fechado.</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{t("kidsAdmin.recurringHelp")}</p>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-2 items-end">
                     <div>
-                      <Label>Dia da semana</Label>
+                      <Label>{t("kidsAdmin.weekday")}</Label>
                       <select className="w-full border rounded-md h-10 px-3 bg-background" value={newRecurring.weekday} onChange={e => setNewRecurring({ ...newRecurring, weekday: +e.target.value })}>
                         {["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"].map((l,i) => <option key={i} value={i}>{l}</option>)}
                       </select>
                     </div>
-                    <div><Label>Início</Label><Input type="time" value={newRecurring.time_start} onChange={e => setNewRecurring({ ...newRecurring, time_start: e.target.value })} /></div>
-                    <div><Label>Fim</Label><Input type="time" value={newRecurring.time_end} onChange={e => setNewRecurring({ ...newRecurring, time_end: e.target.value })} /></div>
-                    <Button onClick={addRecurringDay} className="rounded-xl"><Plus className="w-4 h-4 mr-1"/> Adicionar</Button>
+                    <div><Label>{t("kidsAdmin.start")}</Label><Input type="time" value={newRecurring.time_start} onChange={e => setNewRecurring({ ...newRecurring, time_start: e.target.value })} /></div>
+                    <div><Label>{t("kidsAdmin.end")}</Label><Input type="time" value={newRecurring.time_end} onChange={e => setNewRecurring({ ...newRecurring, time_end: e.target.value })} /></div>
+                    <Button onClick={addRecurringDay} className="rounded-xl"><Plus className="w-4 h-4 mr-1"/> {t("kidsAdmin.add")}</Button>
                   </div>
                   <div className="space-y-2 pt-2">
                     {serviceDays.filter(s => s.weekday !== null).length === 0 && (
-                      <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-3">Nenhum dia recorrente configurado.</p>
+                      <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-3">{t("kidsAdmin.noRecurring")}</p>
                     )}
                     {serviceDays.filter(s => s.weekday !== null).map(s => (
                       <div key={s.id} className="flex items-center gap-2 p-3 rounded-xl border bg-white dark:bg-slate-900 flex-wrap">
@@ -502,18 +506,18 @@ export default function KidsAdmin() {
               </Card>
 
               <Card className="rounded-3xl border-2">
-                <CardHeader><CardTitle className="text-base flex items-center gap-2"><Clock className="w-4 h-4"/> Datas avulsas</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-base flex items-center gap-2"><Clock className="w-4 h-4"/> {t("kidsAdmin.oneOff")}</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Aulas em datas pontuais (retiros, eventos especiais).</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{t("kidsAdmin.oneOffHelp")}</p>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-2 items-end">
-                    <div><Label>Data</Label><Input type="date" value={newOneOff.specific_date} onChange={e => setNewOneOff({ ...newOneOff, specific_date: e.target.value })} /></div>
-                    <div><Label>Início</Label><Input type="time" value={newOneOff.time_start} onChange={e => setNewOneOff({ ...newOneOff, time_start: e.target.value })} /></div>
-                    <div><Label>Fim</Label><Input type="time" value={newOneOff.time_end} onChange={e => setNewOneOff({ ...newOneOff, time_end: e.target.value })} /></div>
-                    <Button onClick={addOneOffDay} className="rounded-xl"><Plus className="w-4 h-4 mr-1"/> Adicionar</Button>
+                    <div><Label>{t("kidsAdmin.date")}</Label><Input type="date" value={newOneOff.specific_date} onChange={e => setNewOneOff({ ...newOneOff, specific_date: e.target.value })} /></div>
+                    <div><Label>{t("kidsAdmin.start")}</Label><Input type="time" value={newOneOff.time_start} onChange={e => setNewOneOff({ ...newOneOff, time_start: e.target.value })} /></div>
+                    <div><Label>{t("kidsAdmin.end")}</Label><Input type="time" value={newOneOff.time_end} onChange={e => setNewOneOff({ ...newOneOff, time_end: e.target.value })} /></div>
+                    <Button onClick={addOneOffDay} className="rounded-xl"><Plus className="w-4 h-4 mr-1"/> {t("kidsAdmin.add")}</Button>
                   </div>
                   <div className="space-y-2 pt-2">
                     {serviceDays.filter(s => s.specific_date !== null).length === 0 && (
-                      <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-3">Nenhuma data avulsa configurada.</p>
+                      <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-3">{t("kidsAdmin.noOneOff")}</p>
                     )}
                     {serviceDays.filter(s => s.specific_date !== null).map(s => (
                       <div key={s.id} className="flex items-center gap-2 p-3 rounded-xl border bg-white dark:bg-slate-900 flex-wrap">
@@ -534,20 +538,20 @@ export default function KidsAdmin() {
           <TabsContent value="rota">
             <Card className="rounded-3xl border-2">
               <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2"><CalendarCheck className="w-4 h-4"/> Escala de professores por data</CardTitle>
+                <CardTitle className="text-base flex items-center gap-2"><CalendarCheck className="w-4 h-4"/> {t("kidsAdmin.teacherSchedule")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-xs text-slate-500 dark:text-slate-400">Marque quem serve em cada sala em cada data. O professor só verá a sala no dashboard e poderá liberar crianças se estiver escalado <b>naquele dia</b>. O pool de professores por sala é gerenciado na aba "Professores".</p>
                 <div className="flex items-end gap-2 flex-wrap">
-                  <div><Label>Data</Label><Input type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)} className="w-48" /></div>
-                  <Button variant="outline" onClick={copyPreviousWeek} className="rounded-xl">Copiar da semana anterior</Button>
+                  <div><Label>{t("kidsAdmin.date")}</Label><Input type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)} className="w-48" /></div>
+                  <Button variant="outline" onClick={copyPreviousWeek} className="rounded-xl">{t("kidsAdmin.copyPrevious")}</Button>
                   <Button onClick={generateSmartSchedule} disabled={generatingSchedule} className="rounded-xl bg-gradient-to-r from-violet-600 to-amber-500 text-white">
                     {generatingSchedule ? <Loader2 className="w-4 h-4 mr-1 animate-spin"/> : <Sparkles className="w-4 h-4 mr-1"/>}
                     Gerar escala automática (IA)
                   </Button>
                 </div>
                 {rooms.length === 0 ? (
-                  <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-4">Crie salas primeiro.</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-4">{t("kidsAdmin.createRooms")}</p>
                 ) : (
                   <div className="space-y-3">
                     {rooms.map(r => {
@@ -591,9 +595,9 @@ export default function KidsAdmin() {
           {/* CRIANÇAS + TRANSFERÊNCIA */}
           <TabsContent value="kids">
             <Card className="rounded-3xl border-2">
-              <CardHeader><CardTitle>Crianças cadastradas</CardTitle></CardHeader>
+              <CardHeader><CardTitle>{t("kidsAdmin.registeredChildren")}</CardTitle></CardHeader>
               <CardContent>
-                {kids.length === 0 ? <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-6">Nenhuma criança cadastrada ainda.</p> : (
+                {kids.length === 0 ? <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-6">{t("kidsAdmin.noChildren")}</p> : (
                   <div className="space-y-2">
                     {kids.map(c => {
                       const age = Math.floor((Date.now() - new Date(c.birth_date).getTime()) / (365.25*24*3600*1000));
@@ -607,9 +611,9 @@ export default function KidsAdmin() {
                             <p className="text-xs text-slate-500 dark:text-slate-400">{age} anos · Sala: <b>{room?.name || "—"}</b></p>
                             <div className="mt-1">
                               {isActive ? (
-                                <Badge className="text-[10px] bg-emerald-100 text-emerald-800 border-emerald-200">Check-in ativo</Badge>
+                                <Badge className="text-[10px] bg-emerald-100 text-emerald-800 border-emerald-200">{t("kidsAdmin.activeCheckin")}</Badge>
                               ) : (
-                                <Badge variant="outline" className="text-[10px] text-slate-600 dark:text-slate-300">Aguardando check-in</Badge>
+                                <Badge variant="outline" className="text-[10px] text-slate-600 dark:text-slate-300">{t("kidsAdmin.waitingCheckin")}</Badge>
                               )}
                             </div>
                           </div>
@@ -632,7 +636,7 @@ export default function KidsAdmin() {
               {/* QR ÚNICO DA IGREJA */}
               <Card className="rounded-3xl border-2 border-violet-300 bg-gradient-to-br from-violet-50 to-white">
                 <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2"><QrCode className="w-5 h-5 text-violet-600" /> QR único da igreja (todas as salas)</CardTitle>
+                  <CardTitle className="text-base flex items-center gap-2"><QrCode className="w-5 h-5 text-violet-600" /> {t("kidsAdmin.churchQr")}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <p className="text-xs text-slate-600 dark:text-slate-300">
@@ -655,10 +659,10 @@ export default function KidsAdmin() {
               <Card className="rounded-3xl border-2">
                 <CardHeader className="flex flex-row items-center justify-between">
                   <div>
-                    <CardTitle>Salas por faixa etária</CardTitle>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Defina a idade mínima e máxima. O check-in usa isso para escolher a sala automaticamente.</p>
+                    <CardTitle>{t("kidsAdmin.ageRooms")}</CardTitle>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{t("kidsAdmin.ageHelp")}</p>
                   </div>
-                  <Button onClick={() => setShowRoomModal(true)} className="rounded-xl"><Plus className="w-4 h-4 mr-2" /> Nova sala</Button>
+                  <Button onClick={() => setShowRoomModal(true)} className="rounded-xl"><Plus className="w-4 h-4 mr-2" /> {t("kidsAdmin.newRoom")}</Button>
                 </CardHeader>
                 <CardContent>
                   {rooms.length === 0 ? (
@@ -833,9 +837,9 @@ export default function KidsAdmin() {
       {/* Room modal */}
       <Dialog open={showRoomModal} onOpenChange={setShowRoomModal}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Nova sala</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("kidsAdmin.newRoom")}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label>Nome</Label><Input value={roomForm.name} onChange={e => setRoomForm({ ...roomForm, name: e.target.value })} placeholder="Ex.: Berçário" /></div>
+            <div><Label>{t("kidsAdmin.name")}</Label><Input value={roomForm.name} onChange={e => setRoomForm({ ...roomForm, name: e.target.value })} placeholder="Ex.: Berçário" /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Idade mínima</Label><Input type="number" min={0} max={17} value={roomForm.age_min} onChange={e => setRoomForm({ ...roomForm, age_min: +e.target.value })} /></div>
               <div><Label>Idade máxima</Label><Input type="number" min={0} max={17} value={roomForm.age_max} onChange={e => setRoomForm({ ...roomForm, age_max: +e.target.value })} /></div>
@@ -858,7 +862,7 @@ export default function KidsAdmin() {
         <DialogContent>
           <DialogHeader><DialogTitle>Transferir {transferChild?.full_name} de sala</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <Label>Nova sala</Label>
+            <Label>{t("kidsAdmin.newRoom")}</Label>
             <select className="w-full border rounded-md h-10 px-3 bg-background" value={transferTargetRoom} onChange={e => setTransferTargetRoom(e.target.value)}>
               {rooms.map(r => <option key={r.id} value={r.id}>{r.name} ({r.age_min}–{r.age_max} anos){r.is_inclusion ? " · inclusão" : ""}</option>)}
             </select>
@@ -919,7 +923,7 @@ export default function KidsAdmin() {
           <DialogHeader><DialogTitle>{contentForm.id ? "Editar lição" : "Nova lição do dia"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Data</Label><Input type="date" value={contentForm.content_date} onChange={e => setContentForm({ ...contentForm, content_date: e.target.value })} /></div>
+              <div><Label>{t("kidsAdmin.date")}</Label><Input type="date" value={contentForm.content_date} onChange={e => setContentForm({ ...contentForm, content_date: e.target.value })} /></div>
               <div>
                 <Label>Sala (opcional)</Label>
                 <select className="w-full border rounded-md h-10 px-3 bg-background" value={contentForm.room_id} onChange={e => setContentForm({ ...contentForm, room_id: e.target.value })}>
