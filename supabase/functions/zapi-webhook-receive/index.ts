@@ -389,7 +389,7 @@ serve(async (req: Request): Promise<Response> => {
       // Only standalone imperative verbs count: no inflected/quoted verbs or
       // negative instructions. The confirmation repeats the exact action.
       const normalized = cmd.replace(/^[\s,.:;]+/, "");
-      const match = /\b(bloquear|desbloquear|liberar todos|liberar dias|servir|escalas? todos|escalas?|bloqueios)\b/.exec(normalized);
+      const match = /\b(bloquear|desbloquear|liberar todos|liberar dias|servir|escala todos|escalas todos|escalas?|bloqueios|ajuda|apoiar)\b/.exec(normalized);
       const prefix = match ? normalized.slice(0, match.index).trim() : "";
       if (match && prefix && prefix.split(/\s+/).length <= 8 &&
           !/\b(nao|nunca|sem|nem|evite|proibido|deixei|ja|antes|depois|quando|porque|por que|disse|falou)\b/.test(prefix) &&
