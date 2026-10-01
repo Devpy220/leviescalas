@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { LanguageSelector } from "@/components/LanguageSelector";
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -98,6 +100,7 @@ interface RecentLogin {
 // Admin access is controlled by server-side has_role() function via useAdmin hook
 
 export default function Admin() {
+  const { t } = useTranslation();
   const { user, signOut, loading: authLoading } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdmin();
   const navigate = useNavigate();
@@ -775,19 +778,19 @@ export default function Admin() {
               <Shield className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-foreground">Painel Administrativo</h1>
-              <p className="text-sm text-muted-foreground">Gerenciamento do sistema</p>
+              <h1 className="text-xl font-bold text-foreground">{t("adminCore.panel")}</h1>
+              <p className="text-sm text-muted-foreground">{t("adminCore.management")}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
             <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')} className="px-2 sm:px-3">
-              <span className="hidden sm:inline">Voltar ao Dashboard</span>
+              <span className="hidden sm:inline">{t("adminCore.backDashboard")}</span>
               <ExternalLink className="w-4 h-4 sm:hidden" />
             </Button>
-            <ThemeToggle />
-            <Button variant="outline" size="sm" onClick={handleSignOut} className="px-2 sm:px-3" aria-label="Sair">
+            <LanguageSelector /><ThemeToggle />
+            <Button variant="outline" size="sm" onClick={handleSignOut} className="px-2 sm:px-3" aria-label={t("adminCore.signOut")}>
               <LogOut className="w-4 h-4 sm:mr-2" />
-              <span className="hidden sm:inline">Sair</span>
+              <span className="hidden sm:inline">{t("adminCore.signOut")}</span>
             </Button>
           </div>
         </div>
@@ -803,7 +806,7 @@ export default function Admin() {
               </div>
               <div className="min-w-0">
                 <p className="text-lg font-bold text-foreground leading-none">{churches.length}</p>
-                <p className="text-[10px] text-muted-foreground mt-1 leading-tight">Igrejas</p>
+                <p className="text-[10px] text-muted-foreground mt-1 leading-tight">{t("adminCore.churches")}</p>
               </div>
             </CardContent>
           </Card>
@@ -814,7 +817,7 @@ export default function Admin() {
               </div>
               <div className="min-w-0">
                 <p className="text-lg font-bold text-foreground leading-none">{departments.length}</p>
-                <p className="text-[10px] text-muted-foreground mt-1 leading-tight">Departamentos</p>
+                <p className="text-[10px] text-muted-foreground mt-1 leading-tight">{t("adminCore.departments")}</p>
               </div>
             </CardContent>
           </Card>
@@ -825,7 +828,7 @@ export default function Admin() {
               </div>
               <div className="min-w-0">
                 <p className="text-lg font-bold text-foreground leading-none">{allProfiles.length}</p>
-                <p className="text-[10px] text-muted-foreground mt-1 leading-tight">Voluntários</p>
+                <p className="text-[10px] text-muted-foreground mt-1 leading-tight">{t("adminCore.volunteers")}</p>
               </div>
             </CardContent>
           </Card>
@@ -836,7 +839,7 @@ export default function Admin() {
               </div>
               <div className="min-w-0">
                 <p className="text-lg font-bold text-foreground leading-none">{loginsToday}</p>
-                <p className="text-[10px] text-muted-foreground mt-1 leading-tight">Logins hoje</p>
+                <p className="text-[10px] text-muted-foreground mt-1 leading-tight">{t("adminCore.loginsToday")}</p>
               </div>
             </CardContent>
           </Card>
@@ -847,7 +850,7 @@ export default function Admin() {
               </div>
               <div className="min-w-0">
                 <p className="text-lg font-bold text-foreground leading-none">{loginsWeek}</p>
-                <p className="text-[10px] text-muted-foreground mt-1 leading-tight">Logins semana</p>
+                <p className="text-[10px] text-muted-foreground mt-1 leading-tight">{t("adminCore.loginsWeek")}</p>
               </div>
             </CardContent>
           </Card>
@@ -858,7 +861,7 @@ export default function Admin() {
               </div>
               <div className="min-w-0">
                 <p className="text-lg font-bold text-foreground leading-none">{loginsMonth}</p>
-                <p className="text-[10px] text-muted-foreground mt-1 leading-tight">Logins mês</p>
+                <p className="text-[10px] text-muted-foreground mt-1 leading-tight">{t("adminCore.loginsMonth")}</p>
               </div>
             </CardContent>
           </Card>
@@ -880,10 +883,10 @@ export default function Admin() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Activity className="w-4 h-4 text-primary" />
-              Ações rápidas
+              {t("adminCore.quickActions")}
             </CardTitle>
             <CardDescription className="text-xs">
-              Atalhos para as principais áreas administrativas
+              {t("adminCore.quickDescription")}
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-0 grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -897,15 +900,15 @@ export default function Admin() {
                     </Button>
                   </TooltipTrigger><TooltipContent>Todos voluntários</TooltipContent></UITooltip>
                   <UITooltip><TooltipTrigger asChild>
-                    <Button size="icon" variant="outline" className="h-9 w-9" onClick={() => setOpenModal('departments')} aria-label="Departamentos">
+                    <Button size="icon" variant="outline" className="h-9 w-9" onClick={() => setOpenModal('departments')} aria-label={t("adminCore.departments")}>
                       <Building2 className="w-4 h-4 text-blue-500" />
                     </Button>
-                  </TooltipTrigger><TooltipContent>Departamentos</TooltipContent></UITooltip>
+                  </TooltipTrigger><TooltipContent>{t("adminCore.departments")}</TooltipContent></UITooltip>
                   <UITooltip><TooltipTrigger asChild>
-                    <Button size="icon" variant="outline" className="h-9 w-9" onClick={() => setOpenModal('churches')} aria-label="Igrejas">
+                    <Button size="icon" variant="outline" className="h-9 w-9" onClick={() => setOpenModal('churches')} aria-label={t("adminCore.churches")}>
                       <Church className="w-4 h-4 text-violet-500" />
                     </Button>
-                  </TooltipTrigger><TooltipContent>Igrejas</TooltipContent></UITooltip>
+                  </TooltipTrigger><TooltipContent>{t("adminCore.churches")}</TooltipContent></UITooltip>
                   <UITooltip><TooltipTrigger asChild>
                     <Button size="icon" variant="outline" className="h-9 w-9" onClick={() => setOpenModal('guests')} aria-label="Entradas sem login">
                       <UserX className="w-4 h-4 text-rose-500" />
@@ -917,10 +920,10 @@ export default function Admin() {
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70 mb-2">Comunicação</p>
                 <div className="flex flex-wrap gap-2">
                   <UITooltip><TooltipTrigger asChild>
-                    <Button size="icon" variant="outline" className="h-9 w-9" onClick={() => setOpenModal('broadcast')} aria-label="Comunicados LEVI">
+                    <Button size="icon" variant="outline" className="h-9 w-9" onClick={() => setOpenModal('broadcast')} aria-label={t("adminCore.broadcast")}>
                       <Megaphone className="w-4 h-4 text-primary" />
                     </Button>
-                  </TooltipTrigger><TooltipContent>Comunicados LEVI</TooltipContent></UITooltip>
+                  </TooltipTrigger><TooltipContent>{t("adminCore.broadcast")}</TooltipContent></UITooltip>
                   <UITooltip><TooltipTrigger asChild>
                     <Button asChild size="icon" variant="outline" className="h-9 w-9" aria-label="Logs do WhatsApp">
                       <a href="/admin/whatsapp-logs"><Send className="w-4 h-4 text-violet-500" /></a>
@@ -985,18 +988,18 @@ export default function Admin() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Megaphone className="w-5 h-5 text-primary" />
-                    Comunicados LEVI
+                    {t("adminCore.broadcast")}
                   </CardTitle>
                   <ChevronDown className="w-4 h-4 text-muted-foreground" />
                 </div>
-                <CardDescription>Apresente mudanças do LEVI no aplicativo e pelo WhatsApp aos usuários que aceitaram mensagens.</CardDescription>
+                <CardDescription>{t("adminCore.broadcastDescription")}</CardDescription>
               </CardHeader>
             </CollapsibleTrigger>
             <CollapsibleContent>
               <CardContent className="space-y-4">
                 {/* Mode Toggle */}
                 <div className="space-y-2">
-                  <Label>Destinatários</Label>
+                  <Label>{t("adminCore.recipients")}</Label>
                   <div className="flex flex-wrap gap-2">
                     <Button
                       variant={broadcastMode === 'all' ? 'default' : 'outline'}
@@ -1004,7 +1007,7 @@ export default function Admin() {
                       onClick={() => { setBroadcastMode('all'); setSelectedRecipients([]); setRecipientSearch(''); }}
                     >
                       <Users className="w-4 h-4 mr-1" />
-                      Todos ({allProfiles.length})
+                      {t("adminCore.everyone", { count: allProfiles.length })}
                     </Button>
                     <Button
                       variant={broadcastMode === 'leaders' ? 'default' : 'outline'}
@@ -1012,7 +1015,7 @@ export default function Admin() {
                       onClick={() => { setBroadcastMode('leaders'); setSelectedRecipients([]); setRecipientSearch(''); }}
                     >
                       <Users className="w-4 h-4 mr-1" />
-                      Apenas líderes ({new Set(departments.map(d => d.leader_id).filter(Boolean)).size})
+                      {t("adminCore.leadersOnly", { count: new Set(departments.map(d => d.leader_id).filter(Boolean)).size })}
                     </Button>
                     <Button
                       variant={broadcastMode === 'individual' ? 'default' : 'outline'}
@@ -1020,7 +1023,7 @@ export default function Admin() {
                       onClick={() => setBroadcastMode('individual')}
                     >
                       <Send className="w-4 h-4 mr-1" />
-                      Individual
+                      {t("adminCore.individual")}
                     </Button>
                   </div>
                 </div>
@@ -1028,9 +1031,9 @@ export default function Admin() {
                 {/* Individual recipient selector */}
                 {broadcastMode === 'individual' && (
                   <div className="space-y-2">
-                    <Label>Selecionar destinatários</Label>
+                    <Label>{t("adminCore.selectRecipients")}</Label>
                     <Input
-                      placeholder="Buscar por nome, email ou whatsapp..."
+                      placeholder={t("adminCore.searchRecipients")}
                       value={recipientSearch}
                       onChange={(e) => setRecipientSearch(e.target.value)}
                     />
@@ -1074,31 +1077,31 @@ export default function Admin() {
                 )}
 
                 <div className="space-y-2">
-                  <Label htmlFor="broadcast-title">Título</Label>
+                  <Label htmlFor="broadcast-title">{t("adminCore.title")}</Label>
                   <Input
                     id="broadcast-title"
-                    placeholder="Ex: Atualização importante do sistema"
+                    placeholder={t("adminCore.titleHint")}
                     value={broadcastTitle}
                     onChange={(e) => setBroadcastTitle(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="broadcast-message">Mensagem</Label>
+                  <Label htmlFor="broadcast-message">{t("adminCore.message")}</Label>
                   <Textarea
                     id="broadcast-message"
-                    placeholder="Digite o conteúdo do comunicado..."
+                    placeholder={t("adminCore.messageHint")}
                     rows={4}
                     value={broadcastMessage}
                     onChange={(e) => setBroadcastMessage(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Canal de envio</Label>
+                  <Label>{t("adminCore.channel")}</Label>
                   <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-muted/30 text-sm">
-                    📲 WhatsApp para quem autorizou + 📱 aviso no aplicativo para todos
+                    📲 {t("adminCore.channelDescription")}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    O aviso aparece ao entrar no LEVI. O envio pelo WhatsApp respeita o consentimento e o comando SAIR.
+                    {t("adminCore.optOutNotice")}
                   </p>
                 </div>
 
@@ -1113,31 +1116,31 @@ export default function Admin() {
                       {sendingBroadcast
                         ? 'Enviando...'
                         : broadcastMode === 'all'
-                          ? 'Enviar para todos'
+                          ? t("adminCore.sendEveryone")
                           : broadcastMode === 'leaders'
-                            ? `Enviar para ${new Set(departments.map(d => d.leader_id).filter(Boolean)).size} líder(es)`
-                            : `Enviar para ${selectedRecipients.length} selecionado(s)`}
+                            ? t("adminCore.sendLeaders", { count: new Set(departments.map(d => d.leader_id).filter(Boolean)).size })
+                            : t("adminCore.sendSelected", { count: selectedRecipients.length })}
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Confirmar envio do comunicado</AlertDialogTitle>
+                      <AlertDialogTitle>{t("adminCore.confirmSend")}</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Você está prestes a enviar o comunicado <strong>"{broadcastTitle}"</strong> para <strong>{
+                        {t("adminCore.aboutToSend")} <strong>"{broadcastTitle}"</strong> para <strong>{
                           broadcastMode === 'all'
-                            ? `${allProfiles.length} usuários`
+                            ? t("adminCore.users", { count: allProfiles.length })
                             : broadcastMode === 'leaders'
-                              ? `${new Set(departments.map(d => d.leader_id).filter(Boolean)).size} líder(es)`
-                              : `${selectedRecipients.length} usuário(s) selecionado(s)`
-                        }</strong> via WhatsApp e notificação interna.
+                              ? t("adminCore.leaders", { count: new Set(departments.map(d => d.leader_id).filter(Boolean)).size })
+                              : t("adminCore.selectedUsers", { count: selectedRecipients.length })
+                        }</strong> {t("adminCore.viaChannels")}
                         <br /><br />
-                        Esta ação não pode ser desfeita.
+                        {t("adminCore.irreversible")}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancelar</AlertDialogCancel>
                       <AlertDialogAction onClick={handleSendBroadcast}>
-                        Confirmar envio
+                        {t("adminCore.confirm")}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
@@ -1163,15 +1166,15 @@ export default function Admin() {
                         <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
                       </div>
                     ) : broadcastHistory.length === 0 ? (
-                      <p className="text-sm text-muted-foreground py-2">Nenhum comunicado enviado ainda.</p>
+                      <p className="text-sm text-muted-foreground py-2">{t("adminCore.noHistory")}</p>
                     ) : (
                       <Table>
                         <TableHeader>
                           <TableRow>
                             <TableHead>Data</TableHead>
-                            <TableHead>Título</TableHead>
+                            <TableHead>{t("adminCore.title")}</TableHead>
                             <TableHead>Canais</TableHead>
-                            <TableHead>Destinatários</TableHead>
+                            <TableHead>{t("adminCore.recipients")}</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -1540,7 +1543,7 @@ export default function Admin() {
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <Church className="w-5 h-5" />
-                  Igrejas
+                  {t("adminCore.churches")}
                 </CardTitle>
                 <CardDescription>
                   Gerencie as igrejas cadastradas no sistema
@@ -1968,7 +1971,7 @@ export default function Admin() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building2 className="w-5 h-5" />
-              Departamentos
+              {t("adminCore.departments")}
             </CardTitle>
             <CardDescription>
               Gerencie todos os departamentos do sistema
