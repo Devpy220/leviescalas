@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { LanguageSelector } from "@/components/LanguageSelector";
 import { LeviKidsWordmark } from "@/components/LeviKidsWordmark";
 import { useState } from "react";
 import { KidsNoAccessDialog } from "@/components/kids/KidsNoAccessDialog";
@@ -12,6 +14,7 @@ import { toast } from "@/hooks/use-toast";
 export default function KidsLanding() {
   const { page, role, loading } = useMyKidsPage();
   const [noAccess, setNoAccess] = useState(false);
+  const { t } = useTranslation();
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin" /></div>;
@@ -20,34 +23,35 @@ export default function KidsLanding() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-amber-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
       <div className="max-w-4xl mx-auto px-4 py-12">
+        <div className="flex justify-end"><LanguageSelector /></div>
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-100 text-violet-700 text-sm font-semibold mb-4">
             <Sparkles className="w-4 h-4" /> <LeviKidsWordmark />
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-slate-100 mb-3">Ministério infantil seguro e divertido</h1>
-          <p className="text-slate-600 dark:text-slate-300 text-lg">Cadastro, check-in por QR code e retirada com código pessoal.</p>
+          <h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-slate-100 mb-3">{t("kids.headline")}</h1>
+          <p className="text-slate-600 dark:text-slate-300 text-lg">{t("kids.intro")}</p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-4 mb-10">
           <Card className="border-2 border-violet-100 rounded-3xl">
             <CardContent className="p-6 text-center">
               <div className="w-14 h-14 rounded-2xl bg-violet-100 text-violet-700 flex items-center justify-center mx-auto mb-3"><Baby className="w-7 h-7" /></div>
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1">Cadastro simples</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-300">Responsáveis cadastram seus filhos pelo QR code da sala.</p>
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1">{t("kids.easyTitle")}</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-300">{t("kids.easyDesc")}</p>
             </CardContent>
           </Card>
           <Card className="border-2 border-amber-100 rounded-3xl">
             <CardContent className="p-6 text-center">
               <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto mb-3"><QrCode className="w-7 h-7" /></div>
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1">QR fixo por sala</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-300">Um QR único colado na porta da sala. Válido apenas na janela de horário do culto.</p>
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1">{t("kids.qrTitle")}</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-300">{t("kids.qrDesc")}</p>
             </CardContent>
           </Card>
           <Card className="border-2 border-emerald-100 rounded-3xl">
             <CardContent className="p-6 text-center">
               <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto mb-3"><ShieldCheck className="w-7 h-7" /></div>
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1">Retirada segura</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-300">Só sai da sala com código de 4 dígitos.</p>
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1">{t("kids.safeTitle")}</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-300">{t("kids.safeDesc")}</p>
             </CardContent>
           </Card>
         </div>
@@ -56,29 +60,29 @@ export default function KidsLanding() {
           <div className="mb-6 rounded-3xl border-2 border-violet-200 bg-white dark:bg-slate-900/80 dark:bg-slate-900/60 backdrop-blur p-4 space-y-2">
             <div className="flex items-center gap-2">
               <Baby className="w-4 h-4 text-violet-600" />
-              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">Link de cadastro dos responsáveis</p>
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{t("kids.guardianLink")}</p>
             </div>
-            <p className="text-xs text-slate-600 dark:text-slate-300">Compartilhe com os pais para cadastrarem seus filhos (foto e data de nascimento).</p>
+            <p className="text-xs text-slate-600 dark:text-slate-300">{t("kids.shareLink")}</p>
             <div className="flex items-center gap-2">
               <code className="flex-1 text-xs bg-slate-50 dark:bg-slate-800 rounded-lg px-3 py-2 truncate">
                 {`${window.location.origin}/kids/join/${page.static_qr_token}`}
               </code>
               <button
                 type="button"
-                title="Copiar link"
-                aria-label="Copiar link"
+                title="{t("kids.copyLink")}"
+                aria-label="{t("kids.copyLink")}"
                 className="p-2 rounded-lg bg-violet-600 text-white hover:opacity-90"
                 onClick={() => {
                   navigator.clipboard.writeText(`${window.location.origin}/kids/join/${page.static_qr_token}`);
-                  toast({ title: "Link copiado!" });
+                  toast({ title: "{t("kids.linkCopied")}" });
                 }}
               >
                 <Copy className="w-4 h-4" />
               </button>
               <Link
                 to="/kids/admin"
-                title="Abrir painel LeviKids"
-                aria-label="Abrir painel LeviKids"
+                title="{t("kids.openDashboard")}"
+                aria-label="{t("kids.openDashboard")}"
                 className="p-2 rounded-lg border-2 border-violet-300 text-violet-700 hover:bg-violet-100"
               >
                 <ExternalLink className="w-4 h-4" />
@@ -88,14 +92,14 @@ export default function KidsLanding() {
         )}
 
         <div className="flex flex-wrap gap-3 justify-center">
-          {role === "leader" && <Button asChild size="lg" className="rounded-2xl"><Link to="/kids/admin">Painel do líder</Link></Button>}
-          {role === "teacher" && <Button asChild size="lg" className="rounded-2xl"><Link to="/kids/dashboard">Dashboard do professor</Link></Button>}
-          {role === "guardian" && <Button asChild size="lg" className="rounded-2xl"><Link to="/kids/checkin">Fazer check-in</Link></Button>}
+          {role === "leader" && <Button asChild size="lg" className="rounded-2xl"><Link to="/kids/admin">{t("kids.leaderDashboard")}</Link></Button>}
+          {role === "teacher" && <Button asChild size="lg" className="rounded-2xl"><Link to="/kids/dashboard">{t("kids.teacherDashboard")}</Link></Button>}
+          {role === "guardian" && <Button asChild size="lg" className="rounded-2xl"><Link to="/kids/checkin">{t("kids.checkin")}</Link></Button>}
           {!role && page === null && (
             <div className="text-center text-slate-600 dark:text-slate-300 space-y-3">
-              <p>Fale primeiro com o responsável (líder) da sua igreja para receber o link de acesso ao LeviKids.</p>
+              <p>{t("kids.askLeader")}</p>
               <Button size="lg" className="rounded-2xl" onClick={() => setNoAccess(true)}>
-                Não consigo entrar
+                {t("kids.cannotEnter")}
               </Button>
             </div>
           )}

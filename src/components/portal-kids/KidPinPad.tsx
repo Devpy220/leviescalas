@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Delete } from "lucide-react";
@@ -8,7 +9,8 @@ interface Props {
   title?: string;
 }
 
-export function KidPinPad({ onComplete, disabled, title = "Digite seu PIN" }: Props) {
+export function KidPinPad({ onComplete, disabled, title }: Props) {
+  const { t } = useTranslation();
   const [pin, setPin] = useState("");
 
   const push = (d: string) => {
@@ -22,7 +24,7 @@ export function KidPinPad({ onComplete, disabled, title = "Digite seu PIN" }: Pr
 
   return (
     <div className="space-y-6">
-      <p className="text-center text-lg font-bold pk-title">{title}</p>
+      <p className="text-center text-lg font-bold pk-title">{title || t("parent.enterPin")}</p>
       <div className="flex justify-center gap-3">
         {[0, 1, 2, 3].map((i) => (
           <div

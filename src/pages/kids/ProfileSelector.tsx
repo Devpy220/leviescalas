@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { LanguageSelector } from "@/components/LanguageSelector";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { KidsNoAccessDialog } from "@/components/kids/KidsNoAccessDialog";
@@ -15,6 +17,7 @@ import { Loader2, ArrowRight } from "lucide-react";
 
 export default function ProfileSelector() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { user, loading: authLoading } = useAuth();
   const { role, loading } = useMyKidsPage();
   const { session: childSession } = useKidChildSession();
@@ -28,13 +31,13 @@ export default function ProfileSelector() {
   };
 
   const profiles = [
-    { key: "child", label: "Sou Criança", emoji: "🧒", img: mascot, glow: "pink" as const,
+    { key: "child", label: "{t("kids.child")}", emoji: "🧒", img: mascot, glow: "pink" as const,
       go: () => navigate("/kids/child") },
-    { key: "parent", label: "Sou Pai/Mãe", emoji: "👨‍👩‍👧", img: iconParent, glow: "purple" as const,
+    { key: "parent", label: "{t("kids.parent")}", emoji: "👨‍👩‍👧", img: iconParent, glow: "purple" as const,
       go: () => goOrWarn("/kids/parent") },
-    { key: "teacher", label: "Sou Professor(a)", emoji: "📚", img: iconTeacher, glow: "green" as const,
+    { key: "teacher", label: "{t("kids.teacher")}", emoji: "📚", img: iconTeacher, glow: "green" as const,
       go: () => goOrWarn("/kids/dashboard") },
-    { key: "leader", label: "Sou Líder", emoji: "👑", img: iconLeader, glow: "purple" as const,
+    { key: "leader", label: "{t("kids.leader")}", emoji: "👑", img: iconLeader, glow: "purple" as const,
       go: () => goOrWarn("/kids/admin") },
   ];
 
@@ -49,22 +52,23 @@ export default function ProfileSelector() {
   return (
     <div className="pk-root">
       <SEO
-        title="LeviKids — Ministério infantil da sua igreja"
-        description="Portal do ministério infantil: check-in e check-out de crianças por sala, área dos pais, dos professores e do líder. Escolha seu perfil e entre."
+        title={`LeviKids — ${t("kids.headline")}`}
+        description={t("kids.intro")}
         path="/kids"
       />
       <div className="max-w-md mx-auto px-4 py-8 pb-24">
+        <div className="flex justify-end"><LanguageSelector /></div>
         <div className="text-center mb-6 space-y-2">
           <img src={mascot} alt="" width={120} height={120} className="w-28 h-28 mx-auto pk-float" loading="eager" />
           <h1 className="pk-title text-3xl pk-heading-gradient">Portal <LeviKidsWordmark /></h1>
-          <p className="text-sm opacity-80">Escolha como você vai entrar 💜</p>
+          <p className="text-sm opacity-80">{t("kids.chooseProfile")}</p>
         </div>
 
         {childSession && (
           <PillCard glow="pink" className="mb-4">
             <button onClick={() => navigate("/kids/child")} className="w-full flex items-center justify-between">
               <div className="text-left">
-                <p className="text-xs opacity-70">Continuar como</p>
+                <p className="text-xs opacity-70">{t("kids.continueAs")}</p>
                 <p className="pk-title text-lg">{childSession.full_name}</p>
               </div>
               <ArrowRight className="w-5 h-5" />
@@ -83,8 +87,8 @@ export default function ProfileSelector() {
               className="w-full flex items-center justify-between"
             >
               <div className="text-left">
-                <p className="text-xs opacity-70">Entrar rápido</p>
-                <p className="pk-title text-lg">Continuar como {role === "leader" ? "Líder" : role === "teacher" ? "Professor(a)" : "Responsável"}</p>
+                <p className="text-xs opacity-70">{t("kids.quickAccess")}</p>
+                <p className="pk-title text-lg">{t("kids.continueAs")} {role === "leader" ? t("kids.leaderRole") : role === "teacher" ? t("kids.teacherRole") : t("kids.guardianRole")}</p>
               </div>
               <ArrowRight className="w-5 h-5" />
             </button>
@@ -102,11 +106,11 @@ export default function ProfileSelector() {
         </div>
 
         <div className="text-center mt-6 space-y-2 text-xs opacity-70">
-          <p>Novo por aqui? Peça o link de convite ao líder da igreja.</p>
+          <p>{t("kids.newHere")}</p>
           <button type="button" onClick={() => setNoAccess(true)} className="underline">
-            Não consigo entrar
+            {t("kids.cannotEnter")}
           </button>
-          <p><Link to="/" className="underline">← Voltar ao LEVI</Link></p>
+          <p><Link to="/" className="underline">{t("kids.backLevi")}</Link></p>
         </div>
       </div>
       <KidsNoAccessDialog open={noAccess} onOpenChange={setNoAccess} />

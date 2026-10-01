@@ -1,16 +1,18 @@
+import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router-dom";
 import { Home, Baby, Calendar, HandHeart, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items = [
-  { to: "/kids/parent", icon: Home, label: "Início", end: true },
-  { to: "/kids/parent/filhos", icon: Baby, label: "Filhos" },
-  { to: "/kids/parent/agenda", icon: Calendar, label: "Agenda" },
-  { to: "/kids/parent/oracao", icon: HandHeart, label: "Oração" },
-  { to: "/kids/parent/perfil", icon: User, label: "Perfil" },
+  { to: "/kids/parent", icon: Home, label: "home", end: true },
+  { to: "/kids/parent/filhos", icon: Baby, label: "children" },
+  { to: "/kids/parent/agenda", icon: Calendar, label: "agenda" },
+  { to: "/kids/parent/oracao", icon: HandHeart, label: "prayer" },
+  { to: "/kids/parent/perfil", icon: User, label: "profile" },
 ];
 
 export function ParentBottomNav() {
+  const { t } = useTranslation();
   return (
     <nav className="fixed bottom-3 left-3 right-3 z-40 pk-pill flex items-center justify-around px-2 py-1.5 max-w-md mx-auto">
       {items.map((it) => (
@@ -28,7 +30,7 @@ export function ParentBottomNav() {
           }
         >
           <it.icon className="w-5 h-5" />
-          {it.label}
+          {t(`parent.${it.label}`)}
         </NavLink>
       ))}
     </nav>

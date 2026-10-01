@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import {
   Dialog,
@@ -22,33 +23,33 @@ interface KidsNoAccessDialogProps {
  */
 export function KidsNoAccessDialog({ open, onOpenChange }: KidsNoAccessDialogProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm rounded-3xl">
         <DialogHeader>
           <DialogTitle className="text-left">
-            Acesso ao <LeviKidsWordmark /> não liberado
+            {t("kids.accessTo")} <LeviKidsWordmark /> {t("kids.notEnabled")}
           </DialogTitle>
           <DialogDescription className="text-left space-y-2 pt-2">
             <span className="block">
-              A sua conta ainda não está vinculada a nenhuma igreja no <LeviKidsWordmark />.
+              {t("kids.accountUnlinked")} <LeviKidsWordmark />.
             </span>
             <span className="block font-medium text-foreground">
-              Fale primeiro com o responsável (líder) da sua igreja e peça o link de acesso.
+              {t("kids.askLeaderLink")}
             </span>
             <span className="block">
-              Se o responsável não tiver o link, envie uma mensagem pelo formulário de contato
-              pedindo o link do <LeviKidsWordmark />.
+              {t("kids.askContact")} <LeviKidsWordmark />.
             </span>
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex-col sm:flex-col gap-2">
           <Button className="w-full" onClick={() => navigate("/?contato=1")}>
-            Pedir o link pelo formulário de contato
+            {t("kids.requestLink")}
           </Button>
           <Button variant="outline" className="w-full" onClick={() => onOpenChange(false)}>
-            Voltar
+            {t("common.back")}
           </Button>
         </DialogFooter>
       </DialogContent>
