@@ -989,7 +989,7 @@ export default function Admin() {
                   </CardTitle>
                   <ChevronDown className="w-4 h-4 text-muted-foreground" />
                 </div>
-                <CardDescription>Envie mensagens para todos os usuários do sistema</CardDescription>
+                <CardDescription>Apresente mudanças do LEVI no aplicativo e pelo WhatsApp aos usuários que aceitaram mensagens.</CardDescription>
               </CardHeader>
             </CollapsibleTrigger>
             <CollapsibleContent>
@@ -1095,10 +1095,10 @@ export default function Admin() {
                 <div className="space-y-2">
                   <Label>Canal de envio</Label>
                   <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-muted/30 text-sm">
-                    📲 WhatsApp + 📱 Notificação no app
+                    📲 WhatsApp para quem autorizou + 📱 aviso no aplicativo para todos
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Envio único pelo WhatsApp (Z-API) com intervalos aleatórios para evitar bloqueio.
+                    O aviso aparece ao entrar no LEVI. O envio pelo WhatsApp respeita o consentimento e o comando SAIR.
                   </p>
                 </div>
 

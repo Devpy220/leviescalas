@@ -4,6 +4,7 @@ import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import AnnouncementPopup from '@/components/department/AnnouncementPopup';
+import { LeviChangeNotice } from '@/components/LeviChangeNotice';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -85,7 +86,10 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   return (
     <>
       {currentUser && (
-        <AnnouncementPopup currentUserId={currentUser.id} />
+        <>
+          <AnnouncementPopup currentUserId={currentUser.id} />
+          <LeviChangeNotice userId={currentUser.id} />
+        </>
       )}
       {children}
     </>
