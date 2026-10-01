@@ -109,8 +109,8 @@ export default function MeusDados() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <SEO
-        title="Os meus dados e direitos | LEVI Escalas"
-        description="Exporte, corrija ou apague os seus dados pessoais e faça a gestão do consentimento de mensagens no LEVI Escalas."
+        title={`${t("myData.title")} | LEVI Escalas`}
+        description={t("myData.description")}
         path="/privacidade/meus-dados"
       />
 
@@ -118,7 +118,7 @@ export default function MeusDados() {
         <div className="space-y-1">
           <div className="flex items-center justify-between gap-3"><h1 className="text-2xl font-bold tracking-tight">{t("myData.title")}</h1><LanguageSelector /></div>
           <p className="text-sm text-muted-foreground">
-            Exerça os direitos previstos no RGPD. Os pedidos são tratados no prazo máximo de 30 dias.{" "}
+            {t("myData.description")} {" "}
             <Link className="underline" to="/privacidade">{t("myData.privacy")}</Link>
           </p>
         </div>
@@ -126,7 +126,7 @@ export default function MeusDados() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-primary" /> Mensagens por WhatsApp
+              <MessageSquare className="w-4 h-4 text-primary" /> {t("myData.whatsapp")}
             </CardTitle>
             <CardDescription>{t("myData.consent")}</CardDescription>
           </CardHeader>
@@ -139,13 +139,13 @@ export default function MeusDados() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <Download className="w-4 h-4 text-primary" /> Acesso e portabilidade
+              <Download className="w-4 h-4 text-primary" /> {t("myData.access")}
             </CardTitle>
             <CardDescription>{t("myData.accessDetail")}</CardDescription>
           </CardHeader>
           <CardContent>
             <Button onClick={exportData} disabled={exporting} size="sm">
-              {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Exportar os meus dados (JSON)"}
+              {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : t("myData.export")}
             </Button>
           </CardContent>
         </Card>
@@ -153,7 +153,7 @@ export default function MeusDados() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-primary" /> Retificação
+              <ShieldCheck className="w-4 h-4 text-primary" /> {t("myData.correction")}
             </CardTitle>
             <CardDescription>{t("myData.correctionDetail")}</CardDescription>
           </CardHeader>
@@ -165,7 +165,7 @@ export default function MeusDados() {
         <Card className="border-destructive/40">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2 text-destructive">
-              <Trash2 className="w-4 h-4" /> Apagamento da conta
+              <Trash2 className="w-4 h-4" /> {t("myData.deletion")}
             </CardTitle>
             <CardDescription>
               {t("myData.deletionDetail")}
@@ -175,7 +175,7 @@ export default function MeusDados() {
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" size="sm" disabled={deleting}>
-                  {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Apagar a minha conta"}
+                  {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : t("myData.delete")}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
