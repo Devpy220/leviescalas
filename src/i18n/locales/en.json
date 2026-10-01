@@ -443,5 +443,17 @@
     "whatsappFormat": "Use 11 digits (Brazil area code + number) or an international number, e.g. +351912345678",
     "confirmationRequired": "Confirm your password",
     "passwordMismatch": "Passwords do not match"
+  },
+  "interface": {
+    "noticeTitle": "LEVI announcement",
+    "understood": "Got it",
+    "language": "Language",
+    "copyChurch": "Copy church invitation link",
+    "copyParents": "Copy parent registration link",
+    "copied": "Link copied!",
+    "moreActions": "More actions",
+    "teamSchedule": "Team schedule",
+    "noUpcoming": "No upcoming schedules",
+    "enterKids": "Open"
   }
 }

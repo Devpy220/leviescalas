@@ -586,7 +586,7 @@ export default function Dashboard() {
             {(myChurchCode || myKidsJoinToken || hasKids) && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button size="icon" variant="outline" className="h-9 w-9 rounded-full" title="Mais ações" aria-label="Mais ações">
+                  <Button size="icon" variant="outline" className="h-9 w-9 rounded-full" title={t("interface.moreActions")} aria-label={t("interface.moreActions")}>
                     <MoreHorizontal className="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -595,11 +595,11 @@ export default function Dashboard() {
                     <DropdownMenuItem
                       onSelect={() => {
                         navigator.clipboard.writeText(`${window.location.origin}/igreja/join/${myChurchCode}`);
-                        toast({ title: 'Link copiado!' });
+                        toast({ title: t("interface.copied") });
                       }}
                     >
                       <Church className="w-4 h-4 mr-2" />
-                      <span className="flex-1">Copiar link único da igreja</span>
+                      <span className="flex-1">{t("interface.copyChurch")}</span>
                       <Copy className="w-3.5 h-3.5 opacity-60" />
                     </DropdownMenuItem>
                   )}
@@ -607,11 +607,11 @@ export default function Dashboard() {
                     <DropdownMenuItem
                       onSelect={() => {
                         navigator.clipboard.writeText(`${window.location.origin}/kids/join/${myKidsJoinToken}`);
-                        toast({ title: 'Link copiado!' });
+                        toast({ title: t("interface.copied") });
                       }}
                     >
                       <Baby className="w-4 h-4 mr-2" />
-                      <span className="flex-1">Copiar link de cadastro dos pais</span>
+                      <span className="flex-1">{t("interface.copyParents")}</span>
                       <Copy className="w-3.5 h-3.5 opacity-60" />
                     </DropdownMenuItem>
                   )}
@@ -636,7 +636,7 @@ export default function Dashboard() {
                         }}
                       >
                         <ExternalLink className="w-4 h-4 mr-2" />
-                        <span className="flex-1">Acessar <LeviKidsWordmark /></span>
+                        <span className="flex-1">{t("interface.enterKids")} <LeviKidsWordmark /></span>
                       </DropdownMenuItem>
                     </>
                   )}
@@ -653,8 +653,8 @@ export default function Dashboard() {
               size="icon"
               variant="outline"
               onClick={() => navigate('/my-schedules?view=team')}
-              title="Escala da Equipe"
-              aria-label="Escala da Equipe"
+              title={t("interface.teamSchedule")}
+              aria-label={t("interface.teamSchedule")}
               className="h-8 w-8 shrink-0"
             >
               <Users className="w-4 h-4" />

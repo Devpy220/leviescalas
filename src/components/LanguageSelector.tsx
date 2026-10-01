@@ -14,14 +14,14 @@ const languages = [
 ];
 
 export function LanguageSelector() {
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
 
   const currentLang = languages.find(l => l.code === i18n.language?.substring(0, 2)) || languages[0];
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" title="Language">
+        <button className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors" title={t("interface.language")} aria-label={t("interface.language")}>
           <span className="text-sm">{currentLang.flag}</span>
         </button>
       </DropdownMenuTrigger>

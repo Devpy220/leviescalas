@@ -443,5 +443,17 @@
     "whatsappFormat": "Use 11 dígitos (DDD + número) ou o formato internacional, ex: +351912345678",
     "confirmationRequired": "Confirmação de senha é obrigatória",
     "passwordMismatch": "As senhas não coincidem"
+  },
+  "interface": {
+    "noticeTitle": "Comunicado do LEVI",
+    "understood": "Entendi",
+    "language": "Idioma",
+    "copyChurch": "Copiar link único da igreja",
+    "copyParents": "Copiar link de cadastro dos pais",
+    "copied": "Link copiado!",
+    "moreActions": "Mais ações",
+    "teamSchedule": "Escala da Equipe",
+    "noUpcoming": "Nenhuma escala futura",
+    "enterKids": "Acessar"
   }
 }

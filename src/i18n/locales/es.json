@@ -443,5 +443,17 @@
     "whatsappFormat": "Usa 11 dígitos (prefijo de Brasil + número) o un número internacional, p. ej. +351912345678",
     "confirmationRequired": "Confirma tu contraseña",
     "passwordMismatch": "Las contraseñas no coinciden"
+  },
+  "interface": {
+    "noticeTitle": "Comunicado de LEVI",
+    "understood": "Entendido",
+    "language": "Idioma",
+    "copyChurch": "Copiar enlace de invitación de la iglesia",
+    "copyParents": "Copiar enlace de registro de padres",
+    "copied": "¡Enlace copiado!",
+    "moreActions": "Más acciones",
+    "teamSchedule": "Turnos del equipo",
+    "noUpcoming": "No hay próximos turnos",
+    "enterKids": "Abrir"
   }
 }
