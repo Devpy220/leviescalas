@@ -1,3 +1,4 @@
+import { LanguageSelector } from "@/components/LanguageSelector";
 import { Outlet, useNavigate } from "react-router-dom";
 import { ParentBottomNav } from "@/components/portal-kids/ParentBottomNav";
 import { useAuth } from "@/hooks/useAuth";
@@ -13,6 +14,7 @@ export default function ParentLayout() {
 
   return (
     <div className="pk-root">
+      <div className="max-w-md mx-auto flex justify-end px-4 pt-2"><LanguageSelector /></div>
       <Outlet />
       <ParentBottomNav />
     </div>

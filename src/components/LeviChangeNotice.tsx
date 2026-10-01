@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useEffect, useState } from 'react';
 import { Megaphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 type Notice = { id: string; message: string };
 
 export function LeviChangeNotice({ userId }: { userId: string }) {
+  const { t } = useTranslation();
   const [notices, setNotices] = useState<Notice[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -42,10 +44,10 @@ export function LeviChangeNotice({ userId }: { userId: string }) {
     <Dialog open={Boolean(current)}>
       <DialogContent className="max-w-md" onEscapeKeyDown={(event) => event.preventDefault()} onPointerDownOutside={(event) => event.preventDefault()}>
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><Megaphone className="h-5 w-5 text-primary" />Comunicado do LEVI</DialogTitle>
+          <DialogTitle className="flex items-center gap-2"><Megaphone className="h-5 w-5 text-primary" />{t("interface.noticeTitle")}</DialogTitle>
           <DialogDescription className="whitespace-pre-wrap text-left text-foreground pt-3">{current?.message}</DialogDescription>
         </DialogHeader>
-        <DialogFooter><Button onClick={acknowledge} disabled={saving}>Entendi</Button></DialogFooter>
+        <DialogFooter><Button onClick={acknowledge} disabled={saving}>{t("interface.understood")}</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   );

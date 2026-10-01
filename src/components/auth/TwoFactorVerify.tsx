@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState, useRef } from 'react';
 import { Loader2, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ interface TwoFactorVerifyProps {
 }
 
 export function TwoFactorVerify({ onSuccess, onCancel }: TwoFactorVerifyProps) {
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [code, setCode] = useState('');
   const { toast } = useToast();
@@ -35,7 +37,7 @@ export function TwoFactorVerify({ onSuccess, onCancel }: TwoFactorVerifyProps) {
 
       const totpFactor = factors?.totp?.[0];
       if (!totpFactor) {
-        throw new Error('Nenhum fator TOTP encontrado');
+        throw new Error(t("twoFactor.noFactor"));
       }
 
       // Create challenge
@@ -57,8 +59,8 @@ export function TwoFactorVerify({ onSuccess, onCancel }: TwoFactorVerifyProps) {
       supabase.auth.startAutoRefresh();
 
       toast({
-        title: 'Verificação concluída',
-        description: 'Login realizado com sucesso.',
+        title: t("twoFactor.complete"),
+        description: t("twoFactor.loginSuccess"),
       });
       
       // Small delay to ensure session is properly set before navigation
@@ -70,12 +72,12 @@ export function TwoFactorVerify({ onSuccess, onCancel }: TwoFactorVerifyProps) {
       supabase.auth.startAutoRefresh();
       
       const message = error.message?.includes('Invalid')
-        ? 'Código inválido. Tente novamente.'
-        : error.message || 'Erro na verificação.';
+        ? t("twoFactor.invalidCode")
+        : error.message || t("twoFactor.error");
       
       toast({
         variant: 'destructive',
-        title: 'Erro na verificação',
+        title: t("twoFactor.error"),
         description: message,
       });
       isVerifying.current = false;
@@ -90,14 +92,14 @@ export function TwoFactorVerify({ onSuccess, onCancel }: TwoFactorVerifyProps) {
         <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
           <Shield className="w-8 h-8 text-primary" />
         </div>
-        <h2 className="text-2xl font-bold text-foreground mb-2">Verificação 2FA</h2>
+        <h2 className="text-2xl font-bold text-foreground mb-2">{t("auth.twoFactor")}</h2>
         <p className="text-muted-foreground">
           Digite o código do seu aplicativo autenticador para continuar.
         </p>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="2fa-code">Código de verificação</Label>
+        <Label htmlFor="2fa-code">{t("twoFactor.code")}</Label>
         <Input
           id="2fa-code"
           type="text"
@@ -127,7 +129,7 @@ export function TwoFactorVerify({ onSuccess, onCancel }: TwoFactorVerifyProps) {
               Verificando...
             </>
           ) : (
-            'Verificar'
+            t("twoFactor.verify")
           )}
         </Button>
         

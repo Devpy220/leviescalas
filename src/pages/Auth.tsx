@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { LanguageSelector } from "@/components/LanguageSelector";
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -46,58 +48,65 @@ const AppleIcon = () => (
   </svg>
 );
 
-// Validation schemas
+// Validation schemas: translate messages without changing the input rules.
+const createSchemas = (t: (key: string) => string) => {
 const passwordSchema = z.string()
-  .min(8, 'Senha deve ter no mínimo 8 caracteres')
-  .regex(/[A-Z]/, 'Senha deve conter ao menos uma letra maiúscula')
-  .regex(/[a-z]/, 'Senha deve conter ao menos uma letra minúscula')
-  .regex(/\d/, 'Senha deve conter ao menos um número')
-  .regex(/[!@#$%^&*(),.?":{}|<>_\-+=[\]\\;'`~]/, 'Senha deve conter ao menos um caractere especial');
+  .min(8, t("authValidation.passwordMin"))
+  .regex(/[A-Z]/, t("authValidation.passwordUpper"))
+  .regex(/[a-z]/, t("authValidation.passwordLower"))
+  .regex(/\d/, t("authValidation.passwordNumber"))
+  .regex(/[!@#$%^&*(),.?":{}|<>_\-+=[\]\\;'`~]/, t("authValidation.passwordSpecial"));
 
 const loginSchema = z.object({
-  email: z.string().email('Email inválido'),
-  password: z.string().min(1, 'Senha é obrigatória'),
+  email: z.string().email(t("authValidation.invalidEmail")),
+  password: z.string().min(1, t("authValidation.passwordRequired")),
 });
 
 // Schema for regular members (church code required)
 const registerSchema = z.object({
-  churchCode: z.string().max(20, 'Código muito longo').optional(),
-  name: z.string().trim().min(2, 'Nome deve ter no mínimo 2 caracteres').max(100, 'Nome muito longo'),
-  email: z.string().trim().email('Email inválido').max(255, 'Email muito longo'),
+  churchCode: z.string().max(20, t("authValidation.codeLong")).optional(),
+  name: z.string().trim().min(2, t("authValidation.nameMin")).max(100, t("authValidation.nameLong")),
+  email: z.string().trim().email(t("authValidation.invalidEmail")).max(255, t("authValidation.emailLong")),
   whatsapp: z.string()
-    .min(1, 'WhatsApp é obrigatório')
+    .min(1, t("authValidation.whatsappRequired"))
     .transform(val => val.replace(/[^\d+]/g, ''))
     .refine(
       val => /^\d{11}$/.test(val) || /^\+\d{8,15}$/.test(val),
-      'Use 11 dígitos (DDD + número) ou o formato internacional, ex: +351912345678',
+      t("authValidation.whatsappFormat"),
     ),
 
   password: passwordSchema,
-  confirmPassword: z.string().min(1, 'Confirmação de senha é obrigatória'),
+  confirmPassword: z.string().min(1, t("authValidation.confirmationRequired")),
   isAdminSignup: z.boolean().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
-  message: 'As senhas não coincidem',
+  message: t("authValidation.passwordMismatch"),
   path: ['confirmPassword'],
 });
 
 const recoverySchema = z.object({
-  email: z.string().email('Email inválido'),
+  email: z.string().email(t("authValidation.invalidEmail")),
 });
 
 const resetPasswordSchema = z.object({
   password: passwordSchema,
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
-  message: 'As senhas não coincidem',
+  message: t("authValidation.passwordMismatch"),
   path: ['confirmPassword'],
 });
 
-type LoginForm = z.infer<typeof loginSchema>;
-type RegisterForm = z.infer<typeof registerSchema>;
-type RecoveryForm = z.infer<typeof recoverySchema>;
-type ResetPasswordForm = z.infer<typeof resetPasswordSchema>;
+return { loginSchema, registerSchema, recoverySchema, resetPasswordSchema };
+};
+
+type Schemas = ReturnType<typeof createSchemas>;
+type LoginForm = z.infer<Schemas["loginSchema"]>;
+type RegisterForm = z.infer<Schemas["registerSchema"]>;
+type RecoveryForm = z.infer<Schemas["recoverySchema"]>;
+type ResetPasswordForm = z.infer<Schemas["resetPasswordSchema"]>;
 
 export default function Auth() {
+  const { t } = useTranslation();
+  const { loginSchema, registerSchema, recoverySchema, resetPasswordSchema } = createSchemas(t);
   const [searchParams] = useSearchParams();
   // Only allow register tab when coming from an invite link (church or department)
   const isChurchSetupRedirect = searchParams.get('redirect') === '/church-setup';
@@ -140,8 +149,8 @@ export default function Auth() {
     if (sessionExpired) {
       toast({
         variant: 'destructive',
-        title: 'Sessão expirada',
-        description: 'Sua sessão expirou. Por favor, faça login novamente.',
+        title: t("auth.sessionExpired"),
+        description: t("auth.sessionExpiredDetail"),
       });
       // Clean up URL param to avoid showing toast again on refresh
       const newUrl = new URL(window.location.href);
@@ -196,8 +205,8 @@ export default function Auth() {
           isRecoveryFlowRef.current = false;
           toast({
             variant: 'destructive',
-            title: 'Link inválido',
-            description: 'Esse link de recuperação expirou. Solicite um novo email de recuperação.',
+            title: t("auth.invalidLink"),
+            description: t("auth.invalidLinkDetail"),
           });
           return;
         }
@@ -431,14 +440,14 @@ export default function Auth() {
       if (error) {
         hasRedirectedRef.current = false; // Reset on error so user can try again
         const errorMessage = error.message.includes('Invalid login credentials')
-          ? 'Email ou senha incorretos'
+          ? t("auth.wrongCredentials")
           : error.message.includes('Email not confirmed')
-          ? 'Por favor, confirme seu email antes de entrar'
-          : 'Erro ao fazer login. Tente novamente.';
+          ? t("auth.emailUnconfirmed")
+          : t("auth.loginFailed");
         
         toast({
           variant: 'destructive',
-          title: 'Erro no login',
+          title: t("auth.loginError"),
           description: errorMessage,
         });
         return;
@@ -451,8 +460,8 @@ export default function Auth() {
         hasRedirectedRef.current = false; // Reset on error
         toast({
           variant: 'destructive',
-          title: 'Erro ao entrar',
-          description: 'Não foi possível iniciar a sessão. Tente novamente.',
+          title: t("auth.signInError"),
+          description: t("auth.sessionFailed"),
         });
         return;
       }
@@ -485,8 +494,8 @@ export default function Auth() {
       if (isDepartmentInvite && redirectParam) {
         sessionStorage.setItem('pendingInvite', redirectParam.replace('/join/', ''));
         toast({
-          title: 'Bem-vindo de volta!',
-          description: 'Adicionando você ao novo departamento...',
+          title: t("auth.welcomeBack"),
+          description: t("auth.joiningDepartment"),
         });
         navigate(redirectParam, { replace: true });
         return;
@@ -494,8 +503,8 @@ export default function Auth() {
 
       if (isChurchSetupRedirect) {
         toast({
-          title: 'Login realizado!',
-          description: 'Continue o cadastro da sua igreja.',
+          title: t("auth.loginComplete"),
+          description: t("auth.continueChurch"),
         });
         navigate('/church-setup', { replace: true });
         return;
@@ -509,8 +518,8 @@ export default function Auth() {
       
       if (hasRole) {
         toast({
-          title: 'Bem-vindo, Admin!',
-          description: 'Redirecionando para o painel administrativo.',
+          title: t("auth.welcomeAdmin"),
+          description: t("auth.adminRedirect"),
         });
         navigate('/admin', { replace: true });
         return;
@@ -523,8 +532,8 @@ export default function Auth() {
       console.log('[Auth] Login complete, redirecting to:', finalDest);
       
       toast({
-        title: 'Bem-vindo de volta!',
-        description: 'Login realizado com sucesso.',
+        title: t("auth.welcomeBack"),
+        description: t("auth.signedIn"),
       });
       navigate(finalDest, { replace: true });
     } catch (err) {
@@ -532,8 +541,8 @@ export default function Auth() {
       hasRedirectedRef.current = false;
       toast({
         variant: 'destructive',
-        title: 'Erro inesperado',
-        description: 'Ocorreu um erro. Tente novamente.',
+        title: t("auth.unexpectedError"),
+        description: t("auth.tryAgain"),
       });
     } finally {
       // CRITICAL: Always turn off loading state to prevent stuck UI
@@ -626,8 +635,8 @@ export default function Auth() {
       const redirectDestination = await getSmartRedirectDestination(currentSession.user.id);
       const finalDest = await maybeChooseApp(currentSession.user.id, redirectDestination);
       toast({
-        title: 'Bem-vindo de volta!',
-        description: 'Login realizado com sucesso.',
+        title: t("auth.welcomeBack"),
+        description: t("auth.signedIn"),
       });
       navigate(finalDest, { replace: true });
       return;
@@ -636,8 +645,8 @@ export default function Auth() {
     // Fallback to smart redirect via dashboard
     const destination = redirectParam && redirectParam.startsWith('/') ? redirectParam : '/dashboard';
     toast({
-      title: 'Bem-vindo de volta!',
-      description: 'Login realizado com sucesso.',
+      title: t("auth.welcomeBack"),
+      description: t("auth.signedIn"),
     });
     navigate(destination, { replace: true });
   };
@@ -654,8 +663,8 @@ export default function Auth() {
     if (!churchValidated.valid && !isDepartmentInvite && !isChurchSetupRedirect) {
       toast({
         variant: 'destructive',
-        title: 'Igreja não encontrada',
-        description: 'Você precisa acessar a página de uma igreja ou usar um código de convite para criar conta.',
+        title: t("auth.churchNotFound"),
+        description: t("auth.churchRequired"),
       });
       setIsLoading(false);
       return;
@@ -667,7 +676,7 @@ export default function Auth() {
     if (!passwordValidation.valid) {
       toast({
         variant: 'destructive',
-        title: 'Senha insegura',
+        title: t("auth.unsafePassword"),
         description: passwordValidation.errors.join(' '),
       });
       setIsLoading(false);
@@ -698,11 +707,11 @@ export default function Auth() {
 
         toast({
           variant: 'destructive',
-          title: 'Você já tem uma conta no LEVI',
-          description: 'Esse email já está cadastrado. Faça login com sua conta atual — o novo departamento será adicionado e você verá todos juntos no seu painel.',
+          title: t("auth.alreadyRegistered"),
+          description: t("auth.alreadyRegisteredDetail"),
           action: (
             <ToastAction
-              altText="Ir para login"
+              altText={t("auth.goToLogin")}
               onClick={() => navigate(`/auth?${loginParams.toString()}`)}
             >
               Fazer login
@@ -716,12 +725,12 @@ export default function Auth() {
       }
 
       const errorMessage = error.message.includes('Password')
-        ? 'Senha muito fraca. Use letras e números.'
-        : 'Erro ao criar conta. Tente novamente.';
+        ? t("auth.weakPassword")
+        : t("auth.registerFailed");
 
       toast({
         variant: 'destructive',
-        title: 'Erro no cadastro',
+        title: t("auth.registerError"),
         description: errorMessage,
       });
       return;
@@ -740,8 +749,8 @@ export default function Auth() {
     if (!currentSession?.user) {
       setIsLoading(false);
       toast({
-        title: 'Conta criada!',
-        description: 'Confirme seu email, faça login e você voltará para continuar o cadastro da igreja.',
+        title: t("auth.accountCreated"),
+        description: t("auth.confirmEmail"),
       });
       loginForm.setValue('email', data.email);
       setActiveTab('login');
@@ -789,13 +798,13 @@ export default function Auth() {
     setIsLoading(false);
 
     const welcomeMessage = isChurchSetupRedirect
-      ? 'Conta criada! Agora cadastre os dados da igreja.'
+      ? t("auth.registerChurchNext")
       : isDepartmentInvite
-      ? 'Conta criada! Você será redirecionado para entrar no departamento.'
-      : `Bem-vindo à ${churchValidated.name}!`;
+      ? t("auth.registerDeptNext")
+      : t("auth.welcomeChurch", { church: churchValidated.name });
 
     toast({
-      title: 'Conta criada com sucesso!',
+      title: t("auth.accountCreatedSuccess"),
       description: welcomeMessage,
     });
     
@@ -855,7 +864,7 @@ export default function Auth() {
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: 'Não foi possível enviar o email de recuperação. Tente novamente.',
+        description: t("auth.recoverySendFailed"),
       });
       return;
     }
@@ -863,7 +872,7 @@ export default function Auth() {
     setRecoveryEmailSent(true);
     toast({
       title: 'Email enviado!',
-      description: 'Verifique sua caixa de entrada para redefinir sua senha.',
+      description: t("auth.recoveryCheckInbox"),
     });
   };
 
@@ -877,7 +886,7 @@ export default function Auth() {
       if (!passwordValidation.valid) {
         toast({
           variant: 'destructive',
-          title: 'Senha insegura',
+          title: t("auth.unsafePassword"),
           description: passwordValidation.errors.join(' '),
         });
         setIsLoading(false);
@@ -926,8 +935,8 @@ export default function Auth() {
         console.error('[PasswordReset] No valid session after refresh:', refreshError);
         toast({
           variant: 'destructive',
-          title: 'Sessão de recuperação ausente',
-          description: 'O link de recuperação expirou ou já foi usado. Solicite um novo link de recuperação.',
+          title: t("auth.recoveryMissing"),
+          description: t("auth.recoveryMissingDetail"),
         });
         setActiveTab('recovery');
         return;
@@ -940,19 +949,19 @@ export default function Auth() {
 
       if (error) {
         console.error('[PasswordReset] updateUser error:', error);
-        let friendly = 'Não foi possível redefinir sua senha. Solicite um novo link de recuperação.';
+        let friendly = t("auth.resetFailed");
 
         if (error.message.includes('expired')) {
-          friendly = 'Link de recuperação expirado. Solicite um novo.';
+          friendly = t("auth.resetExpired");
         } else if (error.message.includes('same')) {
-          friendly = 'A nova senha deve ser diferente da atual.';
+          friendly = t("auth.resetSame");
         } else if (error.message.includes('insufficient_aal') || error.message.includes('AAL2')) {
-          friendly = 'Verificação 2FA necessária. Por favor, verifique seu autenticador.';
+          friendly = t("auth.reset2fa");
         }
 
         toast({
           variant: 'destructive',
-          title: 'Erro ao redefinir senha',
+          title: t("auth.resetError"),
           description: `${friendly} (detalhe: ${error.message})`,
         });
         return;
@@ -961,8 +970,8 @@ export default function Auth() {
       console.log('[PasswordReset] Password updated successfully!');
 
       toast({
-        title: 'Senha redefinida!',
-        description: 'Sua senha foi alterada com sucesso.',
+        title: t("auth.resetSuccess"),
+        description: t("auth.resetSuccessDetail"),
       });
 
       window.location.hash = '';
@@ -977,8 +986,8 @@ export default function Auth() {
       await supabase.auth.signOut({ scope: 'local' });
 
       toast({
-        title: 'Faça login novamente',
-        description: 'Use sua nova senha para entrar.',
+        title: t("auth.loginAgain"),
+        description: t("auth.loginAgainDetail"),
       });
     } catch (err) {
       console.error('[PasswordReset] Unexpected error:', err);
@@ -1065,7 +1074,7 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen bg-background flex">
-      <SEO title="Entrar — LEVI" description="Acesse sua conta LEVI para gerenciar escalas de voluntários da sua igreja." path="/auth" />
+      <SEO title={`${t("auth.login")} — LEVI`} description={t("landing.heroDescription")} path="/auth" />
       {/* Left side - Form */}
       <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 lg:px-20 py-12">
         <div className="w-full max-w-md mx-auto">
@@ -1076,9 +1085,9 @@ export default function Auth() {
               className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              Voltar ao início
+              {t("auth.backToStart")}
             </Link>
-            <ThemeToggle />
+            <div className="flex items-center gap-2"><LanguageSelector /><ThemeToggle /></div>
           </div>
 
           {/* Logo */}
@@ -1088,12 +1097,12 @@ export default function Auth() {
             </div>
             <div>
               <span className="font-display text-2xl font-bold text-foreground">LEVI</span>
-              <p className="text-sm text-muted-foreground">Gestão de Escalas</p>
+              <p className="text-sm text-muted-foreground">{t("auth.scheduleManagement")}</p>
             </div>
           </div>
 
           <h1 className="font-display text-3xl font-bold text-foreground mb-6">
-            Acesse o LEVI
+            {t("auth.accessTitle")}
           </h1>
 
           {/* Tabs - only show when coming from invite link */}
@@ -1107,7 +1116,7 @@ export default function Auth() {
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                Entrar
+                {t("auth.login")}
               </button>
               <button
                 onClick={() => setActiveTab('register')}
@@ -1117,7 +1126,7 @@ export default function Auth() {
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                Criar conta
+                {t("auth.register")}
               </button>
             </div>
           )}
@@ -1125,9 +1134,9 @@ export default function Auth() {
           {/* Recovery Header */}
           {activeTab === 'recovery' && (
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-foreground mb-2">Recuperar senha</h2>
+              <h2 className="text-2xl font-bold text-foreground mb-2">{t("auth.recoverPassword")}</h2>
               <p className="text-muted-foreground">
-                Digite seu email para receber o link de recuperação.
+                {t("auth.recoverDescription")}
               </p>
             </div>
           )}
@@ -1135,9 +1144,9 @@ export default function Auth() {
           {/* Reset Password Header */}
           {activeTab === 'reset-password' && (
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-foreground mb-2">Nova senha</h2>
+              <h2 className="text-2xl font-bold text-foreground mb-2">{t("auth.newPassword")}</h2>
               <p className="text-muted-foreground">
-                Digite sua nova senha abaixo.
+                {t("auth.enterNewPassword")}
               </p>
             </div>
           )}
@@ -1160,7 +1169,7 @@ export default function Auth() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="login-password">Senha</Label>
+                <Label htmlFor="login-password">{t("common.password")}</Label>
                 <div className="relative">
                   <Input
                     id="login-password"
@@ -1190,10 +1199,10 @@ export default function Auth() {
                 {isLoading ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                    Entrando...
+                    {t("auth.loggingIn")}
                   </>
                 ) : (
-                  'Entrar'
+                  t("auth.login")
                 )}
               </Button>
 
@@ -1208,8 +1217,8 @@ export default function Auth() {
                     if (!email) {
                       toast({
                         variant: 'destructive',
-                        title: 'Informe seu email',
-                        description: 'Digite seu email antes de usar Face ID/digital.',
+                        title: t("auth.provideEmail"),
+                        description: t("auth.provideEmailDesc"),
                       });
                       return;
                     }
@@ -1217,12 +1226,12 @@ export default function Auth() {
                     hasRedirectedRef.current = false;
                     try {
                       await loginWithBiometric(email);
-                      toast({ title: 'Bem-vindo!', description: 'Login com biometria realizado.' });
+                      toast({ title: t("auth.welcome"), description: t("auth.biometricSuccess") });
                     } catch (e: any) {
                       toast({
                         variant: 'destructive',
-                        title: 'Falha na biometria',
-                        description: e?.message || 'Não foi possível entrar com biometria.',
+                        title: t("auth.biometricFailed"),
+                        description: e?.message || t("auth.biometricError"),
                       });
                     } finally {
                       setIsLoading(false);
@@ -1230,7 +1239,7 @@ export default function Auth() {
                   }}
                 >
                   <Fingerprint className="w-5 h-5" />
-                  Entrar com Face ID / digital
+                  {t("auth.biometricLogin")}
                 </Button>
               )}
 
@@ -1242,7 +1251,7 @@ export default function Auth() {
                 }}
                 className="w-full text-center text-sm text-primary hover:underline"
               >
-                Esqueceu sua senha?
+                {t("auth.forgotPassword")}
               </button>
 
             </form>
@@ -1255,14 +1264,14 @@ export default function Auth() {
               {churchValidated.valid && churchValidated.name && (
                 <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 mb-4 space-y-3">
                   <p className="text-sm text-foreground">
-                    <span className="font-medium">Criando conta para:</span>
+                    <span className="font-medium">{t("auth.creatingAccountFor")}</span>
                     <br />
                     <span className="text-primary font-semibold text-lg">{churchValidated.name}</span>
                   </p>
                   {/* Show church code if it came from URL */}
                   {churchCodeParam && (
                     <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">Código da Igreja</Label>
+                      <Label className="text-xs text-muted-foreground">{t("auth.churchCode")}</Label>
                       <Input
                         type="text"
                         value={churchCodeParam.toUpperCase()}
@@ -1278,10 +1287,10 @@ export default function Auth() {
               {!hasChurchContext && !churchValidated.valid && !isDepartmentInvite && !isChurchSetupRedirect && (
                 <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 mb-4">
                   <p className="text-sm text-foreground">
-                    <span className="font-medium text-destructive">Acesso somente por convite</span>
+                    <span className="font-medium text-destructive">{t("auth.inviteOnly")}</span>
                     <br />
                     <span className="text-muted-foreground">
-                      Para criar uma conta, você precisa de um link de convite da sua igreja ou do seu departamento. Solicite ao seu líder ou administrador.
+                      {t("auth.inviteOnlyDesc")}
                     </span>
                   </p>
                 </div>
@@ -1291,16 +1300,16 @@ export default function Auth() {
               {isValidatingChurch && (
                 <div className="flex items-center justify-center p-4">
                   <Loader2 className="w-6 h-6 animate-spin text-primary mr-2" />
-                  <span className="text-muted-foreground">Verificando igreja...</span>
+                  <span className="text-muted-foreground">{t("auth.verifyingChurch")}</span>
                 </div>
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="register-name">Nome completo</Label>
+                <Label htmlFor="register-name">{t("auth.fullName")}</Label>
                 <Input
                   id="register-name"
                   type="text"
-                  placeholder="Seu nome"
+                  placeholder={t("auth.yourName")}
                   {...registerForm.register('name')}
                   className="h-12"
                   disabled={!isFormReadyToSubmit}
@@ -1326,7 +1335,7 @@ export default function Auth() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="register-whatsapp">WhatsApp</Label>
+                <Label htmlFor="register-whatsapp">{t("auth.whatsapp")}</Label>
                 <Input
                   id="register-whatsapp"
                   type="tel"
@@ -1352,13 +1361,13 @@ export default function Auth() {
                 )}
                 {!whatsappFocused && (
                   <p className="text-xs text-muted-foreground">
-                    Brasil: 11999999999 (DDD + número). Fora do Brasil: +351912345678
+                    {t("auth.phoneHint")}
                   </p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="register-password">Senha</Label>
+                <Label htmlFor="register-password">{t("common.password")}</Label>
                 <div className="relative">
                   <Input
                     id="register-password"
@@ -1384,7 +1393,7 @@ export default function Auth() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="register-confirm">Confirmar senha</Label>
+                <Label htmlFor="register-confirm">{t("auth.confirmPassword")}</Label>
                 <Input
                   id="register-confirm"
                   type={showPassword ? 'text' : 'password'}
@@ -1406,29 +1415,29 @@ export default function Auth() {
                 {isLoading ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                    Criando conta...
+                    {t("auth.creatingAccount")}
                   </>
                 ) : !isFormReadyToSubmit ? (
-                  'Acesse a página da igreja primeiro'
+                  t("auth.accessChurchFirst")
                 ) : (
-                  'Criar conta'
+                  t("auth.register")
                 )}
               </Button>
 
               <p className="text-center text-sm text-muted-foreground">
-                Ao criar sua conta, você concorda com nossos{' '}
-                <a href="#" className="text-primary hover:underline">Termos de Uso</a>
-                {' '}e{' '}
-                <a href="#" className="text-primary hover:underline">Política de Privacidade</a>.
+                {t('auth.termsAgree')}{' '}
+                <a href="#" className="text-primary hover:underline">{t("auth.termsOfUse")}</a>
+                {' '}{t('common.and')}{' '}
+                <a href="#" className="text-primary hover:underline">{t("auth.privacyPolicy")}</a>.
               </p>
 
               {/* Info for users without church context */}
               {!hasChurchContext && !isDepartmentInvite && !isChurchSetupRedirect && (
                 <div className="p-4 rounded-xl glass border border-border/50">
                   <p className="text-sm text-muted-foreground">
-                    <span className="font-medium text-foreground">Como criar conta?</span>
+                    <span className="font-medium text-foreground">{t("auth.howToCreateAccount")}</span>
                     <br />
-                    Peça ao líder do seu departamento o link de convite, ou solicite ao administrador da sua igreja o link de cadastro.
+                    {t("auth.howToCreateAccountDesc")}
                   </p>
                 </div>
               )}
@@ -1463,10 +1472,10 @@ export default function Auth() {
                     {isLoading ? (
                       <>
                         <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                        Enviando...
+                        {t("auth.sending")}
                       </>
                     ) : (
-                      'Enviar link de recuperação'
+                      t("auth.sendRecoveryLink")
                     )}
                   </Button>
                 </form>
@@ -1475,9 +1484,9 @@ export default function Auth() {
                   <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
                     <Sparkles className="w-8 h-8 text-primary" />
                   </div>
-                  <h3 className="text-lg font-semibold text-foreground">Email enviado!</h3>
+                  <h3 className="text-lg font-semibold text-foreground">{t("auth.emailSent")}</h3>
                   <p className="text-muted-foreground">
-                    Verifique sua caixa de entrada e clique no link para redefinir sua senha.
+                    {t("auth.checkInbox")}
                   </p>
                 </div>
               )}
@@ -1487,7 +1496,7 @@ export default function Auth() {
                 onClick={() => setActiveTab('login')}
                 className="w-full text-center text-sm text-primary hover:underline"
               >
-                Voltar para o login
+                {t("auth.backToLogin")}
               </button>
             </div>
           )}
@@ -1496,7 +1505,7 @@ export default function Auth() {
           {activeTab === 'reset-password' && (
             <form onSubmit={resetPasswordForm.handleSubmit(handleResetPassword)} className="space-y-6 animate-fade-in">
               <div className="space-y-2">
-                <Label htmlFor="reset-password">Nova senha</Label>
+                <Label htmlFor="reset-password">{t("auth.newPassword")}</Label>
                 <div className="relative">
                   <Input
                     id="reset-password"
@@ -1519,7 +1528,7 @@ export default function Auth() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="reset-confirm">Confirmar nova senha</Label>
+                <Label htmlFor="reset-confirm">{t("auth.confirmNewPassword")}</Label>
                 <Input
                   id="reset-confirm"
                   type={showPassword ? 'text' : 'password'}
@@ -1540,10 +1549,10 @@ export default function Auth() {
                 {isLoading ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                    Redefinindo...
+                    {t("auth.resetting")}
                   </>
                 ) : (
-                  'Redefinir senha'
+                  t("auth.resetPassword")
                 )}
               </Button>
             </form>
@@ -1561,9 +1570,9 @@ export default function Auth() {
           {activeTab === '2fa-verify-password-reset' && (
             <div className="space-y-6 animate-fade-in">
               <div className="mb-8">
-                <h2 className="text-2xl font-bold text-foreground mb-2">Verificação 2FA</h2>
+                <h2 className="text-2xl font-bold text-foreground mb-2">{t("auth.twoFactor")}</h2>
                 <p className="text-muted-foreground">
-                  Como você tem autenticação de dois fatores ativada, por favor verifique sua identidade antes de redefinir a senha.
+                  {t("auth.twoFactorDescription")}
                 </p>
               </div>
               <TwoFactorVerify 
@@ -1583,11 +1592,10 @@ export default function Auth() {
         <div className="relative z-10 flex flex-col justify-center p-16 text-white">
           <div className="max-w-md">
             <h2 className="font-display text-4xl font-bold mb-6">
-              Simplifique a gestão de voluntários
+              {t("auth.simplify")}
             </h2>
             <p className="text-lg text-white/80 mb-8">
-              Com LEVI, você organiza escalas, envia notificações automáticas e mantém 
-              todos os membros sincronizados em tempo real.
+              {t("auth.benefit")}
             </p>
             
             <div className="space-y-4">
@@ -1595,19 +1603,19 @@ export default function Auth() {
                 <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
                   <Calendar className="w-5 h-5" />
                 </div>
-                <span>Calendário visual com drag-and-drop</span>
+                <span>{t("auth.calendarBenefit")}</span>
               </div>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
                   <Bell className="w-5 h-5" />
                 </div>
-                <span>Notificações automáticas via WhatsApp</span>
+                <span>{t("auth.whatsappBenefit")}</span>
               </div>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
                   <Users className="w-5 h-5" />
                 </div>
-                <span>Sincronização em tempo real</span>
+                <span>{t("auth.syncBenefit")}</span>
               </div>
             </div>
           </div>

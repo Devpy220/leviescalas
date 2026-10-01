@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { LanguageSelector } from "@/components/LanguageSelector";
 import { LeviKidsWordmark } from "@/components/LeviKidsWordmark";
 import { Link, useNavigate } from "react-router-dom";
 import { Calendar, Baby, ArrowRight } from "lucide-react";
@@ -7,13 +9,15 @@ import { LeviLogo } from "@/components/LeviLogo";
 
 export default function ChooseApp() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-amber-50 flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-3xl">
+        <div className="flex justify-end mb-2"><LanguageSelector /></div>
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4"><LeviLogo /></div>
-          <h1 className="text-3xl md:text-4xl font-bold text-slate-900">Onde você quer entrar?</h1>
-          <p className="text-slate-600 mt-2">Você tem acesso ao LEVI Escalas e ao LeviKids.</p>
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-900">{t("choose.title")}</h1>
+          <p className="text-slate-600 mt-2">{t("choose.subtitle")}</p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-4">
@@ -24,9 +28,9 @@ export default function ChooseApp() {
                   <Calendar className="w-7 h-7" />
                 </div>
                 <h2 className="text-xl font-bold text-slate-900 mb-1">LEVI Escalas</h2>
-                <p className="text-sm text-slate-600 mb-4">Escalas, departamentos, repertório e voluntários.</p>
+                <p className="text-sm text-slate-600 mb-4">{t("choose.schedulesDescription")}</p>
                 <span className="inline-flex items-center gap-1 text-violet-700 font-semibold text-sm">
-                  Entrar <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  {t("choose.enter")} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </span>
               </CardContent>
             </Card>
@@ -39,9 +43,9 @@ export default function ChooseApp() {
                   <Baby className="w-7 h-7" />
                 </div>
                 <h2 className="text-xl font-bold mb-1"><LeviKidsWordmark /></h2>
-                <p className="text-sm text-slate-600 mb-4">Ministério infantil: check-in por QR e retirada segura.</p>
+                <p className="text-sm text-slate-600 mb-4">{t("choose.kidsDescription")}</p>
                 <span className="inline-flex items-center gap-1 text-amber-700 font-semibold text-sm">
-                  Entrar <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  {t("choose.enter")} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </span>
               </CardContent>
             </Card>
@@ -49,7 +53,7 @@ export default function ChooseApp() {
         </div>
 
         <div className="text-center mt-6">
-          <Button variant="ghost" asChild><Link to="/dashboard">Pular e ir para o Escalas</Link></Button>
+          <Button variant="ghost" asChild><Link to="/dashboard">{t("choose.skip")}</Link></Button>
         </div>
       </div>
     </div>

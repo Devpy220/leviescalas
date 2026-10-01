@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { PillCard } from "@/components/portal-kids/PillCard";
@@ -7,6 +8,7 @@ import { useEffect, useState } from "react";
 
 export default function ParentProfile() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -24,7 +26,7 @@ export default function ParentProfile() {
 
   return (
     <div className="max-w-md mx-auto px-4 py-6 pb-24">
-      <h1 className="pk-title text-2xl pk-heading-gradient mb-4">Meu Perfil</h1>
+      <h1 className="pk-title text-2xl pk-heading-gradient mb-4">{t("parent.myProfile")}</h1>
 
       <PillCard glow="purple" className="text-center">
         <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center text-white text-3xl font-black shadow-lg">
@@ -38,18 +40,18 @@ export default function ParentProfile() {
         <Link to="/dashboard">
           <PillCard as="button" className="w-full flex items-center gap-3">
             <Home className="w-5 h-5 text-purple-500" />
-            <span className="pk-title text-sm">Painel LEVI (adulto)</span>
+            <span className="pk-title text-sm">{t("parent.leviDashboard")}</span>
           </PillCard>
         </Link>
         <Link to="/complete-profile">
           <PillCard as="button" className="w-full flex items-center gap-3">
             <User className="w-5 h-5 text-pink-500" />
-            <span className="pk-title text-sm">Editar meus dados</span>
+            <span className="pk-title text-sm">{t("parent.editDetails")}</span>
           </PillCard>
         </Link>
         <PillCard as="button" onClick={signOut} className="w-full flex items-center gap-3">
           <LogOut className="w-5 h-5 text-rose-500" />
-          <span className="pk-title text-sm">Sair</span>
+          <span className="pk-title text-sm">{t("parent.signOut")}</span>
         </PillCard>
       </div>
     </div>

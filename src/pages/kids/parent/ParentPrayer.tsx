@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,6 +9,7 @@ import { toast } from "@/hooks/use-toast";
 
 export default function ParentPrayer() {
   const { user } = useAuth();
+  const { t, i18n } = useTranslation();
   const { kids } = useMyKids();
   const [childId, setChildId] = useState<string>("");
   const [text, setText] = useState("");
@@ -28,7 +30,7 @@ export default function ParentPrayer() {
   const send = async () => {
     if (!text.trim() || !user) return;
     const target = childId || kids[0]?.id;
-    if (!target) return toast({ title: "Cadastre um filho primeiro", variant: "destructive" });
+    if (!target) return toast({ title: t("parent.registerChildFirst"), variant: "destructive" });
     setBusy(true);
     const { error } = await supabase.from("kids_prayer_requests").insert({
       guardian_user_id: user.id,
@@ -38,13 +40,13 @@ export default function ParentPrayer() {
     setBusy(false);
     if (error) return toast({ title: "Ops", description: error.message, variant: "destructive" });
     setText(""); setChildId("");
-    toast({ title: "🙏 Recebido! Estamos orando com você." });
+    toast({ title: t("parent.prayerReceived") });
     load();
   };
 
   return (
     <div className="max-w-md mx-auto px-4 py-6 pb-24">
-      <h1 className="pk-title text-2xl pk-heading-gradient mb-4">Pedido de Oração 🙏</h1>
+      <h1 className="pk-title text-2xl pk-heading-gradient mb-4">{t("parent.prayerRequest")}</h1>
 
       <PillCard glow="pink" className="space-y-3">
         {kids.length > 0 && (
@@ -53,8 +55,8 @@ export default function ParentPrayer() {
             onChange={(e) => setChildId(e.target.value)}
             className="w-full rounded-2xl border-2 border-white/60 bg-white/70 dark:bg-slate-800/70 px-4 py-2 text-sm font-bold"
           >
-            <option value="">Sobre a família</option>
-            {kids.map((k) => <option key={k.id} value={k.id}>Sobre {k.full_name}</option>)}
+            <option value="">{t("parent.aboutFamily")}</option>
+            {kids.map((k) => <option key={k.id} value={k.id}>{t("parent.aboutName", { name: k.full_name })}</option>)}
           </select>
         )}
         <textarea
@@ -62,11 +64,11 @@ export default function ParentPrayer() {
           onChange={(e) => setText(e.target.value)}
           rows={4}
           maxLength={500}
-          placeholder="Compartilhe seu pedido..."
+          placeholder={t("parent.sharePrayer")}
           className="w-full rounded-2xl border-2 border-white/60 bg-white/70 dark:bg-slate-800/70 px-4 py-3 text-sm resize-none"
         />
         <button onClick={send} disabled={busy || !text.trim()} className="pk-btn pk-btn-primary w-full disabled:opacity-50">
-          {busy ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Enviar pedido 💜"}
+          {busy ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : t("parent.sendPrayer")}
         </button>
       </PillCard>
 
@@ -78,7 +80,7 @@ export default function ParentPrayer() {
               <div className="flex-1">
                 <p className="text-sm">{p.text}</p>
                 <p className="text-xs opacity-70 mt-1">
-                  {new Date(p.created_at).toLocaleDateString("pt-BR")} • {p.status === "praying" ? "🙏 Estamos orando" : p.status === "answered" ? "✨ Respondida" : "Recebido"}
+                  {new Date(p.created_at).toLocaleDateString(i18n.language === "en" ? "en-US" : i18n.language === "es" ? "es-ES" : "pt-BR")} • {p.status === "praying" ? t("parent.praying") : p.status === "answered" ? t("parent.answered") : t("parent.received")}
                 </p>
               </div>
             </div>

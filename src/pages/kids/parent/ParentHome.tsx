@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { useMyKids } from "@/hooks/useMyKids";
 import { useDailyVerse } from "@/hooks/useDailyVerse";
@@ -11,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export default function ParentHome() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const { kids } = useMyKids();
   const pageId = kids[0]?.page_id;
   const { verse } = useDailyVerse(pageId);
@@ -28,20 +30,20 @@ export default function ParentHome() {
     <div className="max-w-md mx-auto px-4 py-6 pb-24">
       <div className="mb-4">
         <span className="pk-chip">Portal <LeviKidsWordmark /></span>
-        <h1 className="pk-title text-3xl mt-2 pk-heading-gradient">Olá, {firstName || "Pai/Mãe"}! 👋</h1>
-        <p className="text-sm opacity-70">Que bom te ver por aqui hoje 💜</p>
+        <h1 className="pk-title text-3xl mt-2 pk-heading-gradient">{t("parent.hello", { name: firstName || t("parent.parent") })}</h1>
+        <p className="text-sm opacity-70">{t("parent.welcome")}</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 mb-4">
         <PillCard glow="pink" className="text-center">
           <Baby className="w-6 h-6 mx-auto text-pink-500" />
           <p className="pk-title text-2xl mt-1">{kids.length}</p>
-          <p className="text-xs opacity-70">{kids.length === 1 ? "filho(a)" : "filhos"}</p>
+          <p className="text-xs opacity-70">{t(kids.length === 1 ? "parent.childSingular" : "parent.childPlural")}</p>
         </PillCard>
         <PillCard glow="green" className="text-center">
           <Bell className="w-6 h-6 mx-auto text-emerald-500" />
           <p className="pk-title text-2xl mt-1">{active}</p>
-          <p className="text-xs opacity-70">na igreja agora</p>
+          <p className="text-xs opacity-70">{t("parent.atChurch")}</p>
         </PillCard>
       </div>
 
@@ -51,19 +53,19 @@ export default function ParentHome() {
         <Link to="/kids/parent/filhos">
           <PillCard as="button" glow="purple" className="text-center h-full">
             <Baby className="w-7 h-7 mx-auto text-purple-500" />
-            <p className="pk-title mt-1 text-sm">Meus Filhos</p>
+            <p className="pk-title mt-1 text-sm">{t("parent.myChildren")}</p>
           </PillCard>
         </Link>
         <Link to="/kids/parent/agenda">
           <PillCard as="button" className="text-center h-full">
             <Calendar className="w-7 h-7 mx-auto text-pink-500" />
-            <p className="pk-title mt-1 text-sm">Agenda</p>
+            <p className="pk-title mt-1 text-sm">{t("parent.agenda")}</p>
           </PillCard>
         </Link>
         <Link to="/kids/parent/oracao">
           <PillCard as="button" glow="pink" className="text-center h-full col-span-2">
             <HandHeart className="w-7 h-7 mx-auto text-rose-500" />
-            <p className="pk-title mt-1">Pedir Oração 🙏</p>
+            <p className="pk-title mt-1">{t("parent.requestPrayer")}</p>
           </PillCard>
         </Link>
       </div>

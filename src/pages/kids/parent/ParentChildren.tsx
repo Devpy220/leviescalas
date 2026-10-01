@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMyKids, MyKid } from "@/hooks/useMyKids";
 import { PillCard } from "@/components/portal-kids/PillCard";
 import { KidPinPad } from "@/components/portal-kids/KidPinPad";
@@ -11,6 +12,7 @@ import mascotFallback from "@/assets/portal-kids/mascot-child.png";
 
 function KidCard({ kid, onChanged }: { kid: MyKid; onChanged: () => void }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [mode, setMode] = useState<"idle" | "set-pin" | "verify-pin" | "precheck">("idle");
   const [busy, setBusy] = useState(false);
@@ -26,7 +28,7 @@ function KidCard({ kid, onChanged }: { kid: MyKid; onChanged: () => void }) {
     setBusy(true);
     const { data, error } = await (supabase as any).rpc("kids_generate_precheckin", { _child_id: kid.id });
     setBusy(false);
-    if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
+    if (error) return toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     setPreCode(data as string);
     setMode("precheck");
   };
@@ -35,8 +37,8 @@ function KidCard({ kid, onChanged }: { kid: MyKid; onChanged: () => void }) {
     setBusy(true);
     const { error } = await (supabase as any).rpc("kids_set_child_pin", { _child_id: kid.id, _pin: pin });
     setBusy(false);
-    if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
-    toast({ title: "PIN salvo! 🔒" });
+    if (error) return toast({ title: t("common.error"), description: error.message, variant: "destructive" });
+    toast({ title: t("parent.pinSaved") });
     setMode("idle");
     onChanged();
   };
@@ -46,7 +48,7 @@ function KidCard({ kid, onChanged }: { kid: MyKid; onChanged: () => void }) {
     const { data, error } = await (supabase as any).rpc("kids_verify_child_pin", { _child_id: kid.id, _pin: pin });
     setBusy(false);
     if (error || !data || (data as any[]).length === 0) {
-      return toast({ title: "PIN incorreto", variant: "destructive" });
+      return toast({ title: t("parent.wrongPin"), variant: "destructive" });
     }
     const row = (data as any[])[0];
     writeChildSession({
@@ -69,10 +71,10 @@ function KidCard({ kid, onChanged }: { kid: MyKid; onChanged: () => void }) {
         <div className="flex-1 min-w-0">
           <p className="pk-title text-lg truncate">{kid.full_name}</p>
           <p className="text-xs opacity-70 truncate">
-            {kid.current_room_name || "Sem sala definida"}
+            {kid.current_room_name || t("parent.noRoom")}
           </p>
           <span className={"pk-chip mt-1 " + (kid.has_open_checkin ? "!bg-emerald-100 !text-emerald-800" : "!bg-slate-100 !text-slate-700")}>
-            {kid.has_open_checkin ? "🟢 Na igreja" : "🏠 Em casa"}
+            {kid.has_open_checkin ? t("parent.atChurchStatus") : t("parent.atHomeStatus")}
           </span>
         </div>
       </div>
@@ -80,30 +82,30 @@ function KidCard({ kid, onChanged }: { kid: MyKid; onChanged: () => void }) {
       {mode === "idle" && (
         <div className="grid grid-cols-3 gap-2">
           <button onClick={generatePreCheck} disabled={busy} className="pk-pill p-2 text-xs font-bold flex flex-col items-center gap-1">
-            <QrCode className="w-4 h-4" /> Pré check-in
+            <QrCode className="w-4 h-4" /> {t("parent.precheck")}
           </button>
           <button onClick={() => setMode("set-pin")} className="pk-pill p-2 text-xs font-bold flex flex-col items-center gap-1">
-            <KeyRound className="w-4 h-4" /> {kid.pin_set ? "Trocar PIN" : "Criar PIN"}
+            <KeyRound className="w-4 h-4" /> {kid.pin_set ? t("parent.changePin") : t("parent.createPin")}
           </button>
           <button
             onClick={() => setMode("verify-pin")}
             disabled={!kid.pin_set}
             className="pk-pill p-2 text-xs font-bold flex flex-col items-center gap-1 disabled:opacity-50"
           >
-            <LogIn className="w-4 h-4" /> Modo Criança
+            <LogIn className="w-4 h-4" /> {t("parent.childMode")}
           </button>
         </div>
       )}
 
       {mode === "precheck" && preCode && (
         <div className="pk-pill p-4 text-center space-y-2">
-          <p className="text-xs opacity-70">Mostre este código na recepção</p>
+          <p className="text-xs opacity-70">{t("parent.showCode")}</p>
           <p className="pk-title text-4xl pk-heading-gradient tracking-widest">{preCode}</p>
           <button
-            onClick={() => { navigator.clipboard.writeText(preCode); toast({ title: "Copiado!" }); }}
+            onClick={() => { navigator.clipboard.writeText(preCode); toast({ title: t("parent.copied") }); }}
             className="text-xs inline-flex items-center gap-1 opacity-70"
           >
-            <Copy className="w-3 h-3" /> Copiar
+            <Copy className="w-3 h-3" /> {t("parent.copy")}
           </button>
           <button onClick={() => setMode("idle")} className="pk-btn pk-btn-primary w-full text-xs">OK</button>
         </div>
@@ -111,15 +113,15 @@ function KidCard({ kid, onChanged }: { kid: MyKid; onChanged: () => void }) {
 
       {mode === "set-pin" && (
         <div className="pk-pill p-4">
-          {busy ? <Loader2 className="w-6 h-6 mx-auto animate-spin" /> : <KidPinPad onComplete={setPin} title="Crie um PIN de 4 dígitos" />}
-          <button onClick={() => setMode("idle")} className="mt-3 text-xs opacity-70 mx-auto block">cancelar</button>
+          {busy ? <Loader2 className="w-6 h-6 mx-auto animate-spin" /> : <KidPinPad onComplete={setPin} title={t("parent.createPinInstruction")} />}
+          <button onClick={() => setMode("idle")} className="mt-3 text-xs opacity-70 mx-auto block">{t("common.cancel")}</button>
         </div>
       )}
 
       {mode === "verify-pin" && (
         <div className="pk-pill p-4">
-          {busy ? <Loader2 className="w-6 h-6 mx-auto animate-spin" /> : <KidPinPad onComplete={enterAsChild} title={`PIN de ${kid.full_name.split(" ")[0]}`} />}
-          <button onClick={() => setMode("idle")} className="mt-3 text-xs opacity-70 mx-auto block">cancelar</button>
+          {busy ? <Loader2 className="w-6 h-6 mx-auto animate-spin" /> : <KidPinPad onComplete={enterAsChild} title={t("parent.pinFor", { name: kid.full_name.split(" ")[0] })} />}
+          <button onClick={() => setMode("idle")} className="mt-3 text-xs opacity-70 mx-auto block">{t("common.cancel")}</button>
         </div>
       )}
     </PillCard>
@@ -127,18 +129,19 @@ function KidCard({ kid, onChanged }: { kid: MyKid; onChanged: () => void }) {
 }
 
 export default function ParentChildren() {
+  const { t } = useTranslation();
   const { kids, loading, reload } = useMyKids();
 
   return (
     <div className="max-w-md mx-auto px-4 py-6 pb-24">
-      <h1 className="pk-title text-2xl pk-heading-gradient mb-4">Meus Filhos 💜</h1>
+      <h1 className="pk-title text-2xl pk-heading-gradient mb-4">{t("parent.myChildren")} 💜</h1>
       {loading ? (
         <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin" /></div>
       ) : kids.length === 0 ? (
         <PillCard className="text-center">
           <Baby className="w-10 h-10 mx-auto opacity-60" />
-          <p className="mt-2 text-sm">Nenhum filho cadastrado ainda.</p>
-          <p className="text-xs opacity-70 mt-1">Faça o cadastro pelo QR Code da igreja no check-in.</p>
+          <p className="mt-2 text-sm">{t("parent.noChildren")}</p>
+          <p className="text-xs opacity-70 mt-1">{t("parent.registerQr")}</p>
         </PillCard>
       ) : (
         <div className="space-y-3">

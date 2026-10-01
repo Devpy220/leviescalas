@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMemo } from 'react';
 import { Check, X, Shield, KeyRound, AlertTriangle, Smartphone } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -58,6 +59,7 @@ export function validatePasswordStrength(password: string): { isValid: boolean; 
 }
 
 export function PasswordStrengthIndicator({ password, showSecurityTips = true }: PasswordStrengthIndicatorProps) {
+  const { t } = useTranslation();
   const { score, passedCriteria } = useMemo(() => {
     const passed = criteria.map((c) => c.test(password));
     const score = passed.filter(Boolean).length;
@@ -66,12 +68,12 @@ export function PasswordStrengthIndicator({ password, showSecurityTips = true }:
 
   const strengthLabel = useMemo(() => {
     if (password.length === 0) return '';
-    if (score <= 1) return 'Muito fraca';
-    if (score === 2) return 'Fraca';
-    if (score === 3) return 'Média';
-    if (score === 4) return 'Forte';
-    return 'Muito forte';
-  }, [score, password.length]);
+    if (score <= 1) return t("passwordStrength.strength.0");
+    if (score === 2) return t("passwordStrength.strength.1");
+    if (score === 3) return t("passwordStrength.strength.2");
+    if (score === 4) return t("passwordStrength.strength.3");
+    return t("passwordStrength.strength.4");
+  }, [score, password.length, t]);
 
   const strengthColor = useMemo(() => {
     if (score <= 1) return 'bg-destructive';
@@ -92,11 +94,11 @@ export function PasswordStrengthIndicator({ password, showSecurityTips = true }:
         <Alert className="bg-primary/5 border-primary/20">
           <Shield className="h-4 w-4 text-primary" />
           <AlertDescription className="text-xs space-y-1.5 mt-1">
-            <p className="font-medium text-foreground mb-2">Dicas de segurança:</p>
+            <p className="font-medium text-foreground mb-2">{t("passwordStrength.tipsTitle")}</p>
             {securityTips.map((tip, index) => (
               <div key={index} className="flex items-start gap-2 text-muted-foreground">
                 <tip.icon className="h-3 w-3 mt-0.5 flex-shrink-0 text-primary/70" />
-                <span>{tip.text}</span>
+                <span>{t(`passwordStrength.tips.${index}`)}</span>
               </div>
             ))}
           </AlertDescription>
@@ -108,7 +110,7 @@ export function PasswordStrengthIndicator({ password, showSecurityTips = true }:
           {/* Strength bar */}
           <div className="space-y-1.5">
             <div className="flex justify-between items-center">
-              <span className="text-xs text-muted-foreground">Força da senha</span>
+              <span className="text-xs text-muted-foreground">{t("passwordStrength.strengthTitle")}</span>
               <span className={cn(
                 'text-xs font-medium',
                 score <= 1 && 'text-destructive',
@@ -151,7 +153,7 @@ export function PasswordStrengthIndicator({ password, showSecurityTips = true }:
                   ) : (
                     <X className="w-3 h-3" />
                   )}
-                  <span>{c.label}</span>
+                  <span>{t(`passwordStrength.criteria.${index}`)}</span>
                 </div>
               ))}
             </div>
