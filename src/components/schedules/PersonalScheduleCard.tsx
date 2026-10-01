@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { ArrowLeftRight, Clock, Church } from 'lucide-react';
 import { format, parseISO, getDay } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS, es } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -52,10 +53,12 @@ export function PersonalScheduleCard({
   onRespondSwap,
   compact = false,
 }: Props) {
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.language.startsWith("en") ? enUS : i18n.language.startsWith("es") ? es : ptBR;
   const dateObj = parseISO(schedule.date);
   const dayOfWeekNum = getDay(dateObj);
-  const dayOfWeek = format(dateObj, 'EEE', { locale: ptBR }).toUpperCase();
-  const dayMonth = format(dateObj, 'dd/MM', { locale: ptBR });
+  const dayOfWeek = format(dateObj, 'EEE', { locale: dateLocale }).toUpperCase();
+  const dayMonth = format(dateObj, 'dd/MM', { locale: dateLocale });
   const slotInfo = findSlotByDayAndTime(dayOfWeekNum, schedule.time_start);
 
   const [open, setOpen] = useState(false);
@@ -99,7 +102,7 @@ export function PersonalScheduleCard({
         <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {dayOfWeek} • {format(dateObj, "d 'de' MMMM", { locale: ptBR })}
+              {dayOfWeek} • {format(dateObj, "d 'de' MMMM", { locale: dateLocale })}
             </DialogTitle>
             <DialogDescription className="flex items-center gap-1">
               <Clock className="w-3 h-3" />

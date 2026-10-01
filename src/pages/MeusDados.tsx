@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
 import { Download, ShieldCheck, Trash2, Loader2, MessageSquare } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { LanguageSelector } from "@/components/LanguageSelector";
 
 const OPT_IN_TEXT =
   "Autorizo o LEVI a enviar-me mensagens por WhatsApp sobre escalas, avisos e comunicados da minha igreja. Posso cancelar a qualquer momento respondendo SAIR.";
@@ -29,6 +31,7 @@ interface RequestRow {
 }
 
 export default function MeusDados() {
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [optIn, setOptIn] = useState(false);
@@ -97,8 +100,8 @@ export default function MeusDados() {
   if (!user) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-3 p-6 text-center">
-        <p className="text-sm text-muted-foreground">Inicie sessão para gerir os seus dados.</p>
-        <Button asChild><Link to="/auth">Entrar</Link></Button>
+        <p className="text-sm text-muted-foreground">{t("myData.loginRequired")}</p>
+        <Button asChild><Link to="/auth">{t("myData.login")}</Link></Button>
       </div>
     );
   }
@@ -106,29 +109,29 @@ export default function MeusDados() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <SEO
-        title="Os meus dados e direitos | LEVI Escalas"
-        description="Exporte, corrija ou apague os seus dados pessoais e faça a gestão do consentimento de mensagens no LEVI Escalas."
+        title={`${t("myData.title")} | LEVI Escalas`}
+        description={t("myData.description")}
         path="/privacidade/meus-dados"
       />
 
       <main className="flex-1 container mx-auto max-w-2xl px-4 py-8 space-y-4">
         <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight">Os meus dados e direitos</h1>
+          <div className="flex items-center justify-between gap-3"><h1 className="text-2xl font-bold tracking-tight">{t("myData.title")}</h1><LanguageSelector /></div>
           <p className="text-sm text-muted-foreground">
-            Exerça os direitos previstos no RGPD. Os pedidos são tratados no prazo máximo de 30 dias.{" "}
-            <Link className="underline" to="/privacidade">Ver política de privacidade</Link>
+            {t("myData.description")} {" "}
+            <Link className="underline" to="/privacidade">{t("myData.privacy")}</Link>
           </p>
         </div>
 
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-primary" /> Mensagens por WhatsApp
+              <MessageSquare className="w-4 h-4 text-primary" /> {t("myData.whatsapp")}
             </CardTitle>
-            <CardDescription>{OPT_IN_TEXT}</CardDescription>
+            <CardDescription>{t("myData.consent")}</CardDescription>
           </CardHeader>
           <CardContent className="flex items-center justify-between gap-4">
-            <Label htmlFor="optin" className="text-sm">Aceito receber mensagens</Label>
+            <Label htmlFor="optin" className="text-sm">{t("myData.accept")}</Label>
             <Switch id="optin" checked={optIn} disabled={savingConsent} onCheckedChange={toggleConsent} />
           </CardContent>
         </Card>
@@ -136,13 +139,13 @@ export default function MeusDados() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <Download className="w-4 h-4 text-primary" /> Acesso e portabilidade
+              <Download className="w-4 h-4 text-primary" /> {t("myData.access")}
             </CardTitle>
-            <CardDescription>Transfira uma cópia legível de todos os dados associados à sua conta.</CardDescription>
+            <CardDescription>{t("myData.accessDetail")}</CardDescription>
           </CardHeader>
           <CardContent>
             <Button onClick={exportData} disabled={exporting} size="sm">
-              {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Exportar os meus dados (JSON)"}
+              {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : t("myData.export")}
             </Button>
           </CardContent>
         </Card>
@@ -150,42 +153,41 @@ export default function MeusDados() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-primary" /> Retificação
+              <ShieldCheck className="w-4 h-4 text-primary" /> {t("myData.correction")}
             </CardTitle>
-            <CardDescription>Pode corrigir nome, e-mail e telefone no seu perfil a qualquer momento.</CardDescription>
+            <CardDescription>{t("myData.correctionDetail")}</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button asChild size="sm" variant="outline"><Link to="/dashboard">Abrir o meu perfil</Link></Button>
+            <Button asChild size="sm" variant="outline"><Link to="/dashboard">{t("myData.openProfile")}</Link></Button>
           </CardContent>
         </Card>
 
         <Card className="border-destructive/40">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2 text-destructive">
-              <Trash2 className="w-4 h-4" /> Apagamento da conta
+              <Trash2 className="w-4 h-4" /> {t("myData.deletion")}
             </CardTitle>
             <CardDescription>
-              Elimina definitivamente o seu perfil, escalas, disponibilidades, preferências e histórico de mensagens.
-              Esta ação é irreversível.
+              {t("myData.deletionDetail")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" size="sm" disabled={deleting}>
-                  {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Apagar a minha conta"}
+                  {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : t("myData.delete")}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Apagar definitivamente a conta?</AlertDialogTitle>
+                  <AlertDialogTitle>{t("myData.confirmDelete")}</AlertDialogTitle>
                   <AlertDialogDescription>
                     Todos os seus dados serão eliminados e não poderão ser recuperados. Recomendamos exportar os dados antes.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={deleteAccount}>Apagar</AlertDialogAction>
+                  <AlertDialogCancel>{t("myData.cancel")}</AlertDialogCancel>
+                  <AlertDialogAction onClick={deleteAccount}>{t("myData.erase")}</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -195,15 +197,15 @@ export default function MeusDados() {
         {requests.length > 0 && (
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Histórico de pedidos</CardTitle>
-              <CardDescription>Registo com prazo legal de resposta (30 dias).</CardDescription>
+              <CardTitle className="text-base">{t("myData.history")}</CardTitle>
+              <CardDescription>{t("myData.historyDetail")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
               {requests.map((r) => (
                 <div key={r.id} className="flex items-center justify-between gap-2 text-sm border-b border-border pb-2 last:border-0">
                   <span className="capitalize">{r.kind}</span>
                   <span className="text-xs text-muted-foreground">
-                    {new Date(r.requested_at).toLocaleDateString("pt-PT")} · prazo {new Date(r.deadline).toLocaleDateString("pt-PT")}
+                    {new Date(r.requested_at).toLocaleDateString(i18n.language)} · {t("myData.deadline")} {new Date(r.deadline).toLocaleDateString(i18n.language)}
                   </span>
                   <Badge variant={r.status === "concluido" ? "secondary" : "outline"}>{r.status}</Badge>
                 </div>

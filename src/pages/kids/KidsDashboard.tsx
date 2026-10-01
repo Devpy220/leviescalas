@@ -10,6 +10,7 @@ import { Loader2, AlertTriangle, PhoneCall, LogOut, QrCode, Download, FileDown, 
 import { qrToDataUrl, KIDS_JOIN_BASE, downloadPng, downloadPdf } from "@/lib/kidsQr";
 import { getKidsPhotoUrl } from "@/lib/kidsStorage";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 interface Room { id: string; name: string; color: string; page_id: string; static_qr_token: string; is_inclusion?: boolean; }
 interface ActiveChild {
@@ -18,6 +19,7 @@ interface ActiveChild {
 }
 
 export default function KidsDashboard() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [rooms, setRooms] = useState<Room[]>([]);
   const [currentRoom, setCurrentRoom] = useState<Room | null>(null);
@@ -97,11 +99,11 @@ export default function KidsDashboard() {
     const { error } = await (supabase.rpc as any)("kids_perform_checkout", {
       _checkin_id: checkoutFor.checkin_id
     });
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+    if (error) { toast({ title: t("kidsTeacher.error"), description: error.message, variant: "destructive" }); return; }
     supabase.functions.invoke("kids-notify-whatsapp", {
       body: { event: "checkout", child_id: checkoutFor.child_id, room_id: checkoutFor.room_id }
     }).catch(() => {});
-    toast({ title: "Retirada confirmada" });
+    toast({ title: t("kidsTeacher.checkoutDone") });
     setCheckoutFor(null);
     loadActive();
   }
@@ -110,8 +112,8 @@ export default function KidsDashboard() {
     const { error } = await supabase.functions.invoke("kids-notify-whatsapp", {
       body: { event: "teacher_call", child_id: it.child_id, room_id: it.room_id }
     });
-    if (error) { toast({ title: "Falha ao chamar", variant: "destructive" }); return; }
-    toast({ title: "Responsável chamado por WhatsApp" });
+    if (error) { toast({ title: t("kidsTeacher.callFailed"), variant: "destructive" }); return; }
+    toast({ title: t("kidsTeacher.guardianCalled") });
   }
 
   if (!user) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin" /></div>;
@@ -120,15 +122,15 @@ export default function KidsDashboard() {
     <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-amber-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-4">
       <div className="max-w-5xl mx-auto space-y-4">
         <div className="flex justify-between items-center flex-wrap gap-3">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Dashboard do professor</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{t("kidsTeacher.title")}</h1>
           <div className="flex gap-2 items-center">
             {currentRoom?.is_inclusion && (
               <Button asChild variant="secondary" className="rounded-xl">
-                <Link to="/kids/inclusao">Sala de inclusão · IA</Link>
+                <Link to="/kids/inclusao">{t("kidsTeacher.inclusion")}</Link>
               </Button>
             )}
             <Button asChild variant="outline" className="rounded-xl">
-              <Link to="/kids/mensagens">Mensagens</Link>
+              <Link to="/kids/mensagens">{t("kidsTeacher.messages")}</Link>
             </Button>
             {rooms.length > 1 && (
               <select value={currentRoom?.id || ""} onChange={e => setCurrentRoom(rooms.find(r => r.id === e.target.value) || null)} className="border rounded-xl px-3 py-2">
@@ -141,47 +143,47 @@ export default function KidsDashboard() {
         {linkedDeptId && (
           <Card className="rounded-2xl border-2 border-violet-200 bg-gradient-to-r from-violet-50 to-amber-50 dark:from-violet-950/40 dark:to-amber-950/30">
             <CardContent className="p-3 flex items-center gap-2 flex-wrap">
-              <p className="text-xs text-slate-700 dark:text-slate-200 flex-1 min-w-[200px]">📌 <b>Área do professor:</b> marque sua disponibilidade, datas de bloqueio e veja os avisos do líder no departamento vinculado.</p>
-              <Button asChild size="icon" variant="outline" className="rounded-xl border-violet-300" title="Abrir Professores Kids" aria-label="Abrir Professores Kids">
+              <p className="text-xs text-slate-700 dark:text-slate-200 flex-1 min-w-[200px]">📌 {t("kidsTeacher.teacherArea")}</p>
+              <Button asChild size="icon" variant="outline" className="rounded-xl border-violet-300" title={t("kidsTeacher.openTeachers")} aria-label={t("kidsTeacher.openTeachers")}>
                 <Link to={`/departments/${linkedDeptId}`}><ExternalLink className="w-4 h-4" /></Link>
               </Button>
             </CardContent>
           </Card>
         )}
 
-        {rooms.length === 0 && <Card className="rounded-3xl"><CardContent className="p-8 text-center text-slate-600 dark:text-slate-300">Você não está escalado(a) em nenhuma sala hoje. Fale com o líder do LeviKids se precisar acessar.</CardContent></Card>}
+        {rooms.length === 0 && <Card className="rounded-3xl"><CardContent className="p-8 text-center text-slate-600 dark:text-slate-300">{t("kidsTeacher.notScheduled")}</CardContent></Card>}
 
         {currentRoom && (
           <>
             <Card className="rounded-3xl border-2" style={{ borderColor: currentRoom.color + "60" }}>
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-base flex items-center gap-2"><QrCode className="w-4 h-4" /> QR fixo da sala (imprimir e colar na porta)</CardTitle>
+                <CardTitle className="text-base flex items-center gap-2"><QrCode className="w-4 h-4" /> {t("kidsTeacher.roomQr")}</CardTitle>
               </CardHeader>
               <CardContent>
                 {qrUrl ? (
                   <div className="text-center space-y-3">
                     <img src={qrUrl} alt="Código QR fixo para check-in das crianças na sala" className="mx-auto rounded-2xl border-4" style={{ borderColor: currentRoom.color, maxWidth: 260 }} />
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Este QR não muda. Válido dentro da janela de horário configurada pelo líder.</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{t("kidsTeacher.qrDetail")}</p>
                     <div className="flex gap-2 justify-center flex-wrap">
                       <Button variant="outline" size="sm" onClick={() => downloadPng(currentRoom.static_qr_token, `qr-checkin-${currentRoom.name}.png`)} className="rounded-xl">
                         <Download className="w-4 h-4 mr-1" /> PNG
                       </Button>
                       <Button size="sm" onClick={() => downloadPdf(currentRoom.static_qr_token, `qr-checkin-${currentRoom.name}.pdf`, { title: pageName || "LeviKids", subtitle: `Sala: ${currentRoom.name} — Check-in`, footer: "leviescalas.com.br" })} className="rounded-xl">
-                        <FileDown className="w-4 h-4 mr-1" /> PDF para imprimir
+                        <FileDown className="w-4 h-4 mr-1" /> {t("kidsTeacher.printingPdf")}
                       </Button>
                     </div>
                   </div>
                 ) : (
-                  <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-4">Gerando QR…</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-4">{t("kidsTeacher.generatingQr")}</p>
                 )}
               </CardContent>
             </Card>
 
             <Card className="rounded-3xl border-2">
-              <CardHeader><CardTitle>Crianças presentes ({items.length})</CardTitle></CardHeader>
+              <CardHeader><CardTitle>{t("kidsTeacher.present", { count: items.length })}</CardTitle></CardHeader>
               <CardContent>
                 {items.length === 0 ? (
-                  <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-6">Nenhuma criança em check-in.</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-6">{t("kidsTeacher.nonePresent")}</p>
                 ) : (
                   <div className="grid md:grid-cols-2 gap-3">
                     {items.map(it => {
@@ -196,10 +198,10 @@ export default function KidsDashboard() {
                             )}
                             <div className="flex-1 min-w-0">
                               <p className="font-bold text-slate-900 dark:text-slate-100 truncate">{it.full_name}</p>
-                              <p className="text-xs text-slate-500 dark:text-slate-400">{age} anos</p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">{t("kidsTeacher.years", { count: age })}</p>
                               {it.allergies && (
                                 <Badge className="mt-1 bg-red-100 text-red-700 hover:bg-red-100 border-red-200">
-                                  <AlertTriangle className="w-3 h-3 mr-1" /> Alergia: {it.allergies}
+                                  <AlertTriangle className="w-3 h-3 mr-1" /> {t("kidsTeacher.allergy", { value: it.allergies })}
                                 </Badge>
                               )}
                               {it.restrictions && <p className="text-[11px] text-amber-700 mt-1">⚠ {it.restrictions}</p>}
@@ -208,10 +210,10 @@ export default function KidsDashboard() {
 
                           <div className="flex gap-2 mt-3">
                             <Button size="sm" variant="secondary" onClick={() => callGuardian(it)} className="rounded-xl flex-1">
-                              <PhoneCall className="w-4 h-4 mr-1" /> Chamar responsável
+                              <PhoneCall className="w-4 h-4 mr-1" /> {t("kidsTeacher.callGuardian")}
                             </Button>
                             <Button size="sm" onClick={() => setCheckoutFor(it)} className="rounded-xl flex-1">
-                              <LogOut className="w-4 h-4 mr-1" /> Retirar
+                              <LogOut className="w-4 h-4 mr-1" /> {t("kidsTeacher.checkout")}
                             </Button>
                           </div>
                         </div>
@@ -228,14 +230,14 @@ export default function KidsDashboard() {
       <AlertDialog open={!!checkoutFor} onOpenChange={o => !o && setCheckoutFor(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar retirada</AlertDialogTitle>
+            <AlertDialogTitle>{t("kidsTeacher.confirmCheckout")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Confirma que <b>{checkoutFor?.full_name}</b> está sendo retirado(a) por um responsável autorizado?
+              {t("kidsTeacher.confirmDetail", { name: checkoutFor?.full_name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={performCheckout}>Confirmar retirada</AlertDialogAction>
+            <AlertDialogCancel>{t("kidsTeacher.cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={performCheckout}>{t("kidsTeacher.confirmCheckout")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
