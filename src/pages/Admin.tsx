@@ -733,7 +733,7 @@ export default function Admin() {
 
       if (error) throw error;
 
-      const summary = `${data.recipients} in-app, ${data.whatsapp_queued ?? data.whatsapp_sent ?? 0} WhatsApp na fila`;
+      const summary = `${data.recipients} avisos no aplicativo, ${data.whatsapp_queued ?? data.whatsapp_sent ?? 0} WhatsApp na fila`;
 
       toast({
         title: '📢 Comunicado enviado!',
