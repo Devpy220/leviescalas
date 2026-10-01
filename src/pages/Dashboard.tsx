@@ -41,7 +41,7 @@ import { SwapRequestDialog } from '@/components/schedules/SwapRequestDialog';
 import { SwapResponseDialog } from '@/components/schedules/SwapResponseDialog';
 import { useScheduleSwaps, type ScheduleSwap } from '@/hooks/useScheduleSwaps';
 import { format, parseISO } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS, es } from 'date-fns/locale';
 
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useAuth } from '@/hooks/useAuth';
@@ -76,7 +76,7 @@ interface DepartmentWithRole extends Department {
 
 
 export default function Dashboard() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [departments, setDepartments] = useState<DepartmentWithRole[]>([]);
   const [hasKids, setHasKids] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -681,8 +681,8 @@ export default function Dashboard() {
                       <p className="font-medium text-xs truncate">{swap.requester_name} quer trocar com você</p>
                       {swap.requester_schedule && swap.target_schedule && (
                         <p className="text-[11px] text-muted-foreground">
-                          {format(parseISO(swap.requester_schedule.date), 'dd/MM', { locale: ptBR })} ↔{' '}
-                          {format(parseISO(swap.target_schedule.date), 'dd/MM', { locale: ptBR })}
+                          {format(parseISO(swap.requester_schedule.date), 'dd/MM', { locale: i18n.language.startsWith('en') ? enUS : i18n.language.startsWith('es') ? es : ptBR })} ↔{' '}
+                          {format(parseISO(swap.target_schedule.date), 'dd/MM', { locale: i18n.language.startsWith('en') ? enUS : i18n.language.startsWith('es') ? es : ptBR })}
                         </p>
                       )}
                     </div>

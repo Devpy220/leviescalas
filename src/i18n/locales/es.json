@@ -366,5 +366,16 @@
     "strengthTitle": "Seguridad de la contraseña",
     "required": "Requisitos obligatorios:",
     "mustMeet": "La contraseña debe cumplir todos los requisitos anteriores."
+  },
+  "twoFactor": {
+    "description": "Introduce el código de tu aplicación de autenticación para continuar.",
+    "code": "Código de verificación",
+    "hint": "Abre tu aplicación de autenticación e introduce el código de 6 dígitos.",
+    "verifying": "Verificando...",
+    "verify": "Verificar",
+    "complete": "Verificación completada",
+    "loginSuccess": "Sesión iniciada correctamente.",
+    "error": "Error de verificación",
+    "noFactor": "No se encontró ningún factor TOTP"
   }
 }

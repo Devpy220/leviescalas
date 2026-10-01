@@ -366,5 +366,16 @@
     "strengthTitle": "Força da senha",
     "required": "Requisitos obrigatórios:",
     "mustMeet": "A senha deve atender todos os requisitos acima."
+  },
+  "twoFactor": {
+    "description": "Digite o código do seu aplicativo autenticador para continuar.",
+    "code": "Código de verificação",
+    "hint": "Abra seu aplicativo autenticador e insira o código de 6 dígitos.",
+    "verifying": "Verificando...",
+    "verify": "Verificar",
+    "complete": "Verificação concluída",
+    "loginSuccess": "Login realizado com sucesso.",
+    "error": "Erro de verificação",
+    "noFactor": "Nenhum fator TOTP encontrado"
   }
 }

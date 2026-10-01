@@ -366,5 +366,16 @@
     "strengthTitle": "Password strength",
     "required": "Required criteria:",
     "mustMeet": "The password must meet all the requirements above."
+  },
+  "twoFactor": {
+    "description": "Enter the code from your authenticator app to continue.",
+    "code": "Verification code",
+    "hint": "Open your authenticator app and enter the 6-digit code.",
+    "verifying": "Verifying...",
+    "verify": "Verify",
+    "complete": "Verification complete",
+    "loginSuccess": "Signed in successfully.",
+    "error": "Verification error",
+    "noFactor": "No TOTP factor found"
   }
 }
