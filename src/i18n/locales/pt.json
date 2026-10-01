@@ -279,8 +279,10 @@
   },
   "notifications": {
     "notifications": "Notificações",
-    "noNotifications": "Nenhuma notificação",
-    "markAllRead": "Marcar todas como lidas"
+    "markAll": "Marcar todas",
+    "none": "Nenhuma notificação ainda",
+    "allDepartments": "Ver todos os departamentos",
+    "delete": "Eliminar notificação"
   },
   "language": {
     "portuguese": "Português",

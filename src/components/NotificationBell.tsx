@@ -9,10 +9,13 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useNotifications } from '@/hooks/useNotifications';
 import { formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS, es } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
 export function NotificationBell() {
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.language.startsWith("en") ? enUS : i18n.language.startsWith("es") ? es : ptBR;
   const { notifications, unreadCount, loading, markAsRead, markAllAsRead, deleteNotification, deleteAllNotifications } = useNotifications();
   const [open, setOpen] = useState(false);
 
@@ -37,7 +40,7 @@ export function NotificationBell() {
         <Button 
           variant="ghost" 
           size="icon" 
-          className="relative text-muted-foreground hover:text-foreground"
+          className="relative text-muted-foreground hover:text-foreground" aria-label={t("notifications.notifications")}
         >
           <Bell className="w-5 h-5" />
           {unreadCount > 0 && (
@@ -49,7 +52,7 @@ export function NotificationBell() {
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="end">
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <h3 className="font-semibold text-foreground">Notificações</h3>
+          <h3 className="font-semibold text-foreground">{t("notifications.notifications")}</h3>
           <div className="flex items-center gap-1">
             {unreadCount > 0 && (
               <Button 
@@ -59,7 +62,7 @@ export function NotificationBell() {
                 onClick={() => markAllAsRead()}
               >
                 <CheckCheck className="w-3.5 h-3.5 mr-1" />
-                Marcar todas
+                {t("notifications.markAll")}
               </Button>
             )}
             {notifications.length > 0 && (
@@ -86,7 +89,7 @@ export function NotificationBell() {
                 <Bell className="w-6 h-6 text-muted-foreground" />
               </div>
               <p className="text-sm text-muted-foreground">
-                Nenhuma notificação ainda
+                {t("notifications.none")}
               </p>
             </div>
           ) : (
@@ -114,7 +117,7 @@ export function NotificationBell() {
                       <p className="text-xs text-muted-foreground mt-1">
                         {formatDistanceToNow(new Date(notification.created_at), {
                           addSuffix: true,
-                          locale: ptBR
+                          locale: dateLocale
                         })}
                       </p>
                     </div>
@@ -126,7 +129,7 @@ export function NotificationBell() {
                         variant="ghost"
                         size="icon"
                         className="w-6 h-6 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                        onClick={(e) => handleDelete(e, notification.id)}
+                        onClick={(e) => handleDelete(e, notification.id)} aria-label={t("notifications.delete")}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </Button>
@@ -145,7 +148,7 @@ export function NotificationBell() {
               className="text-sm text-primary hover:underline"
               onClick={() => setOpen(false)}
             >
-              Ver todos os departamentos
+              {t("notifications.allDepartments")}
             </Link>
           </div>
         )}
