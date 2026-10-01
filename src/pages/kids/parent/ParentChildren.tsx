@@ -71,10 +71,10 @@ function KidCard({ kid, onChanged }: { kid: MyKid; onChanged: () => void }) {
         <div className="flex-1 min-w-0">
           <p className="pk-title text-lg truncate">{kid.full_name}</p>
           <p className="text-xs opacity-70 truncate">
-            {kid.current_room_name || "{t("parent.noRoom")}"}
+            {kid.current_room_name || t("parent.noRoom")}
           </p>
           <span className={"pk-chip mt-1 " + (kid.has_open_checkin ? "!bg-emerald-100 !text-emerald-800" : "!bg-slate-100 !text-slate-700")}>
-            {kid.has_open_checkin ? "{t("parent.atChurchStatus")}" : "{t("parent.atHomeStatus")}"}
+            {kid.has_open_checkin ? t("parent.atChurchStatus") : t("parent.atHomeStatus")}
           </span>
         </div>
       </div>
@@ -105,7 +105,7 @@ function KidCard({ kid, onChanged }: { kid: MyKid; onChanged: () => void }) {
             onClick={() => { navigator.clipboard.writeText(preCode); toast({ title: t("parent.copied") }); }}
             className="text-xs inline-flex items-center gap-1 opacity-70"
           >
-            <Copy className="w-3 h-3" /{t("parent.> {t("parent.copy")}")}
+            <Copy className="w-3 h-3" /> {t("parent.copy")}
           </button>
           <button onClick={() => setMode("idle")} className="pk-btn pk-btn-primary w-full text-xs">OK</button>
         </div>
@@ -134,7 +134,7 @@ export default function ParentChildren() {
 
   return (
     <div className="max-w-md mx-auto px-4 py-6 pb-24">
-      <h1 className="pk-title text-2xl pk-heading-gradient mb-4"{t("parent.>{t("parent.myChildren")} 💜</h1>")}
+      <h1 className="pk-title text-2xl pk-heading-gradient mb-4">{t("parent.myChildren")} 💜</h1>
       {loading ? (
         <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin" /></div>
       ) : kids.length === 0 ? (

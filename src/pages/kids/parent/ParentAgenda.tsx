@@ -32,7 +32,7 @@ export default function ParentAgenda() {
 
   return (
     <div className="max-w-md mx-auto px-4 py-6 pb-24">
-      <h1 className="pk-title text-2xl pk-heading-gradient mb-4"{t("parent.>{t("parent.agenda")} 📅</h1>")}
+      <h1 className="pk-title text-2xl pk-heading-gradient mb-4">{t("parent.agenda")} 📅</h1>
       {loading ? (
         <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin" /></div>
       ) : events.length === 0 ? (

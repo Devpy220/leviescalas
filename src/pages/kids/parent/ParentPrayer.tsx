@@ -46,7 +46,7 @@ export default function ParentPrayer() {
 
   return (
     <div className="max-w-md mx-auto px-4 py-6 pb-24">
-      <h1 className="pk-title text-2xl pk-heading-gradient mb-4"{t("parent.>{t("parent.prayerRequest")}</h1>")}
+      <h1 className="pk-title text-2xl pk-heading-gradient mb-4">{t("parent.prayerRequest")}</h1>
 
       <PillCard glow="pink" className="space-y-3">
         {kids.length > 0 && (
@@ -68,7 +68,7 @@ export default function ParentPrayer() {
           className="w-full rounded-2xl border-2 border-white/60 bg-white/70 dark:bg-slate-800/70 px-4 py-3 text-sm resize-none"
         />
         <button onClick={send} disabled={busy || !text.trim()} className="pk-btn pk-btn-primary w-full disabled:opacity-50">
-          {busy ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "{t("parent.sendPrayer")}"}
+          {busy ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : t("parent.sendPrayer")}
         </button>
       </PillCard>
 
