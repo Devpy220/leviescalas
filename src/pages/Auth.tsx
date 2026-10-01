@@ -1193,10 +1193,10 @@ export default function Auth() {
                 {isLoading ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                    Entrando...
+                    {t("auth.loggingIn")}
                   </>
                 ) : (
-                  'Entrar'
+                  t("auth.login")
                 )}
               </Button>
 
@@ -1409,19 +1409,19 @@ export default function Auth() {
                 {isLoading ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                    Criando conta...
+                    {t("auth.creatingAccount")}
                   </>
                 ) : !isFormReadyToSubmit ? (
                   t("auth.accessChurchFirst")
                 ) : (
-                  'Criar conta'
+                  t("auth.register")
                 )}
               </Button>
 
               <p className="text-center text-sm text-muted-foreground">
-                Ao criar sua conta, você concorda com nossos{' '}
+                {t('auth.termsAgree')}{' '}
                 <a href="#" className="text-primary hover:underline">{t("auth.termsOfUse")}</a>
-                {' '}e{' '}
+                {' '}{t('common.and')}{' '}
                 <a href="#" className="text-primary hover:underline">{t("auth.privacyPolicy")}</a>.
               </p>
 
@@ -1466,7 +1466,7 @@ export default function Auth() {
                     {isLoading ? (
                       <>
                         <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                        Enviando...
+                        {t("auth.sending")}
                       </>
                     ) : (
                       t("auth.sendRecoveryLink")
@@ -1543,7 +1543,7 @@ export default function Auth() {
                 {isLoading ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                    Redefinindo...
+                    {t("auth.resetting")}
                   </>
                 ) : (
                   t("auth.resetPassword")

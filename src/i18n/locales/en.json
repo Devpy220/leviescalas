@@ -25,7 +25,8 @@
     "volunteers": "volunteers",
     "volunteer": "volunteer",
     "registered": "registered",
-    "dragToRotate": "↻ drag to rotate"
+    "dragToRotate": "↻ drag to rotate",
+    "and": "and"
   },
   "landing": {
     "scheduleManagement": "Schedule Management",

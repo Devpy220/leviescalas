@@ -25,7 +25,8 @@
     "volunteers": "voluntários",
     "volunteer": "voluntário",
     "registered": "cadastrados",
-    "dragToRotate": "↻ arraste para girar"
+    "dragToRotate": "↻ arraste para girar",
+    "and": "e"
   },
   "landing": {
     "scheduleManagement": "Gestão de Escalas",

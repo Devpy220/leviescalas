@@ -25,7 +25,8 @@
     "volunteers": "voluntarios",
     "volunteer": "voluntario",
     "registered": "registrados",
-    "dragToRotate": "↻ arrastra para girar"
+    "dragToRotate": "↻ arrastra para girar",
+    "and": "y"
   },
   "landing": {
     "scheduleManagement": "Gestión de Turnos",
