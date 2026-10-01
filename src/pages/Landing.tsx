@@ -783,9 +783,9 @@ export default function Landing() {
       <footer className="relative z-[1] py-3 border-t border-border shrink-0">
         <div className="container mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span className="font-semibold text-secondary">LEVI</span>
+            <span className="levi-typewriter-wordmark font-bold tracking-widest">LEVI ESCALAS</span>
             <span>·</span>
-            <span className="text-xs">© {new Date().getFullYear()} Escalas</span>
+            <span className="text-xs">© {new Date().getFullYear()} ELSD</span>
           </div>
           <div className="flex items-center gap-3">
             <img src={elsdIcon} alt="Logo da ELSDigital.tech, desenvolvedora do LEVI" className="h-8 w-8 sm:h-9 sm:w-9 rounded-full object-cover ring-1 ring-border" />
