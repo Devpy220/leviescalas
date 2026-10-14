@@ -392,6 +392,7 @@ serve(async (req: Request): Promise<Response> => {
       const match = /\b(bloquear|desbloquear|liberar todos|liberar dias|servir|escala todos|escalas todos|escalas?|bloqueios|ajuda|apoiar)\b/.exec(normalized);
       const prefix = match ? normalized.slice(0, match.index).trim() : "";
       if (match && prefix && prefix.split(/\s+/).length <= 8 &&
+          !/^(troca|trocar|cambio|cambiar|swap|change)\b/.test(normalized) &&
           !/\b(nao|nunca|sem|nem|evite|proibido|deixei|ja|antes|depois|quando|porque|por que|disse|falou)\b/.test(prefix) &&
           !/["“”'‘’]/.test(prefix)) {
         const action = normalized.slice(match.index);
@@ -451,7 +452,7 @@ serve(async (req: Request): Promise<Response> => {
     // ─── "bloquear <datas>" → bloqueia dias específicos (só datas: 10/10, 10-10) ───
     // Weekday requests ("bloquear domingos de manhã") fall through to the
     // blackout-prompt parser, which supports weekdays and shifts.
-    if (/^bloquear\b/.test(cmd) && !/(domingo|segunda|ter[cç]a|quarta|quinta|sexta|s[áa]bado)/.test(cmd)) {
+    if (/^bloquear\b/.test(cmd)) {
       const today0 = new Date(); today0.setHours(0, 0, 0, 0);
       const found = new Set<string>();
       const ddmm = /(\b\d{1,2})[/\-.](\d{1,2})(?:[/\-.](\d{2,4}))?/g;
@@ -470,6 +471,19 @@ serve(async (req: Request): Promise<Response> => {
           else continue;
         }
         found.add(d.toISOString().slice(0, 10));
+      }
+      // Weekday names without explicit dates ("bloquear domingo") block the
+      // matching days in the next 30 days.
+      if (found.size === 0) {
+        const WD: Array<[RegExp, number]> = [
+          [/domingo/, 0], [/segunda/, 1], [/ter[cç]a/, 2], [/quarta/, 3],
+          [/quinta/, 4], [/sexta/, 5], [/s[áa]bado/, 6],
+        ];
+        const dows = new Set(WD.filter(([r]) => r.test(cmd)).map(([, d]) => d));
+        for (let i = 0; i < 30 && dows.size > 0; i++) {
+          const d = new Date(today0); d.setDate(d.getDate() + i);
+          if (dows.has(d.getDay())) found.add(d.toISOString().slice(0, 10));
+        }
       }
       if (found.size === 0) {
         await sendConfirmation(
