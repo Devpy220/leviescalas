@@ -531,6 +531,53 @@ serve(async (req: Request): Promise<Response> => {
       return reply({ ok: true, handled: "block_dates", accepted, rejected_by_dept: rejectedByDept });
     }
 
+    // ─── "desbloquear <datas|dias da semana>" → libera só os dias pedidos ───
+    if (/^(desbloquear|desbloqueio|desbloq|liberar)\s+\S/.test(cmd) && !/^liberar (todos|dias|meu bloqueio)$/.test(cmd)) {
+      const DOWS: Array<[RegExp, number]> = [
+        [/domingo/, 0], [/segunda/, 1], [/ter[cç]a/, 2], [/quarta/, 3],
+        [/quinta/, 4], [/sexta/, 5], [/s[áa]bado/, 6],
+      ];
+      const dows = new Set(DOWS.filter(([r]) => r.test(cmd)).map(([, d]) => d));
+      const dates = new Set<string>();
+      const re = /(\b\d{1,2})[/\-.](\d{1,2})(?:[/\-.](\d{2,4}))?/g;
+      let mm: RegExpExecArray | null;
+      while ((mm = re.exec(cmd)) !== null) {
+        const day = +mm[1], mon = +mm[2] - 1;
+        let yr = mm[3] ? +mm[3] : new Date().getFullYear();
+        if (yr < 100) yr += 2000;
+        const d = new Date(Date.UTC(yr, mon, day));
+        if (d.getUTCDate() !== day || d.getUTCMonth() !== mon) continue;
+        dates.add(d.toISOString().slice(0, 10));
+        if (!mm[3]) { d.setUTCFullYear(yr + 1); dates.add(d.toISOString().slice(0, 10)); }
+      }
+      if (dows.size === 0 && dates.size === 0) {
+        await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp,
+          `Olá *${firstName}*! Não entendi quais dias liberar. Exemplos: *desbloquear domingo*, *desbloquear 10/10* ou só *desbloquear* para liberar todos.`);
+        return reply({ ok: true, handled: "unblock_specific_invalid" });
+      }
+      try {
+        const rows = await loadBlackouts();
+        const freed: string[] = [];
+        for (const r of rows) {
+          const hit = r.future.filter((d) =>
+            dates.has(d) || dows.has(new Date(d + "T12:00:00Z").getUTCDay()));
+          if (hit.length === 0) continue;
+          const keep = r.all.filter((d) => !hit.includes(d));
+          await supabase.from("member_preferences").update({ blackout_dates: keep }).eq("id", r.id);
+          freed.push(`*${r.deptName}*: ${hit.map(fmt).join(", ")}`);
+        }
+        const msg = freed.length === 0
+          ? `Olá *${firstName}*! Não encontrei bloqueio nesses dias, então nada foi alterado. Envie *bloqueios* para ver seus dias bloqueados.`
+          : `✅ *Desbloqueado, ${firstName}!*\n\nDias liberados:\n${freed.map((l) => `• ${l}`).join("\n")}\n\nSeu líder já pode te escalar nesses dias.`;
+        await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, msg);
+      } catch (e) {
+        console.error("unblock specific error:", e);
+        await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp,
+          `Olá *${firstName}*! Não consegui desbloquear agora. Tente novamente em instantes.`);
+      }
+      return reply({ ok: true, handled: "unblock_specific" });
+    }
+
     // ─── "desbloquear" → libera dias bloqueados + bloqueio do líder ───
     if (/^(desbloquear|desbloqueio|desbloq|voltar|voltar a servir|liberar meu bloqueio|liberar dias)$/.test(cmd)) {
       try {
