@@ -144,6 +144,14 @@ serve(async (req: Request): Promise<Response> => {
             attempts: item.attempts + 1,
           }).eq("id", item.id);
           sent++;
+        } else if (/disconnected|not connected|not_configured/i.test(String(body?.error ?? ""))) {
+          // Provider offline: not the recipient's fault — keep the message
+          // waiting without spending attempts, and stop this run.
+          await supabase.from("whatsapp_queue").update({
+            scheduled_for: new Date(Date.now() + 10 * 60_000).toISOString(),
+          }).eq("id", item.id);
+          failed++;
+          break;
         } else {
           const newAttempts = item.attempts + 1;
           const isFinal = body?.permanent === true || newAttempts >= MAX_ATTEMPTS;
