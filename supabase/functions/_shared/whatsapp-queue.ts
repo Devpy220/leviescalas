@@ -222,7 +222,7 @@ export async function enqueueTriplets(
       cursor = supportAt;
       rows.push({
         phone: r.phone,
-        message: buildSupportOnlyMessage(r.userName),
+        message: buildSupportOnlyMessage(r.userName, r.phone),
         scheduled_for: new Date(supportAt).toISOString(),
         origin: `${opts.origin}:support`,
       });

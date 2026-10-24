@@ -66,6 +66,11 @@ async function cleanupInactiveDepartments(supabase: any) {
     const { data: p } = await supabase.from("profiles").select("name, whatsapp").eq("id", d.leader_id).maybeSingle();
     const phone = p?.whatsapp || "";
     if (!phone || await isOptedOut(supabase, phone)) continue;
+    // Número já confirmado como sem WhatsApp: desiste, como os demais avisos.
+    const { count: invalidCount } = await supabase.from("whatsapp_logs")
+      .select("id", { count: "exact", head: true })
+      .eq("phone", phone).eq("status", "invalid_phone");
+    if ((invalidCount ?? 0) > 0) continue;
 
     const daysLeft = Math.max(1, Math.ceil((deadline - now) / DAY));
     const first = (p?.name || "").trim().split(/\s+/)[0] || "líder";
@@ -77,8 +82,9 @@ async function cleanupInactiveDepartments(supabase: any) {
       `Crie uma escala em:\nhttps://leviescalas.com.br/dashboard\n\n` +
       `Responda *SAIR* para não receber mais mensagens.`;
     const r = await sendUazapiText(phone, text);
+    const permanentFail = !r.ok && /not on whatsapp|invalid_phone|invalid phone/i.test(String(r.error ?? "") + JSON.stringify(r.response ?? ""));
     await supabase.from("whatsapp_logs").insert({
-      phone, message: text, status: r.ok ? "sent" : "failed",
+      phone, message: text, status: r.ok ? "sent" : permanentFail ? "invalid_phone" : "failed",
       error: r.ok ? null : r.error ?? null, origin: "department-inactivity-reminder", zapi_response: r.response ?? null,
     });
     if (r.ok) { deptNotified++; await supabase.from("departments").update({ inactivity_last_notice_at: new Date().toISOString() }).eq("id", d.id); }

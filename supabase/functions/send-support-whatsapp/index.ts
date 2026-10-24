@@ -57,7 +57,7 @@ serve(async (req: Request): Promise<Response> => {
     const flat: { phone: string; message: string }[] = [];
     for (const p of profiles as any[]) {
       if (!p.whatsapp) continue;
-      flat.push({ phone: p.whatsapp, message: buildSupportOnlyMessage(p.name || "Voluntário") });
+      flat.push({ phone: p.whatsapp, message: buildSupportOnlyMessage(p.name || "Voluntário", p.whatsapp) });
     }
 
     // Shuffle recipients to avoid blasting in profile order.

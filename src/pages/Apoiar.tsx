@@ -35,7 +35,7 @@ const Apoiar = () => {
             </p>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
               <Heart className="w-3.5 h-3.5 text-primary" fill="currentColor" />
-              <span className="text-xs font-medium text-primary">Sugestão: R$ 25,00</span>
+              <span className="text-xs font-medium text-primary">Sugestão: R$ 30,00</span>
             </div>
           </div>
 
@@ -52,6 +52,14 @@ const Apoiar = () => {
               </div>
             </CardContent>
           </Card>
+
+          <p className="text-sm text-center text-muted-foreground">
+            🌎 Fora do Brasil?{" "}
+            <Link to="/?contato=1" className="text-primary font-medium underline underline-offset-2">
+              Entre em contato
+            </Link>{" "}
+            para apoiar o LEVI.
+          </p>
 
           <div className="flex justify-center">
             <Button asChild variant="ghost" size="sm">
