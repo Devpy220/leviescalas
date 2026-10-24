@@ -78,8 +78,10 @@ O LEVI é gratuito e depende do seu apoio para continuar no ar.
 
 💡 *Sugestão: R$ 25,00* (você escolhe o valor)
 
-👉 https://leviescalas.com.br/apoiar
-_(PIX com 1 clique, cartão ou assinatura mensal)_
+🔑 *Chave PIX (aleatória):*
+7ab64b21-1d99-4c7c-bff6-6696cdeeddec
+
+🏦 Banco Celcoin — ELSD
 
 🙏 Obrigado pelo carinho!`
   );
