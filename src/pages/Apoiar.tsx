@@ -53,6 +53,14 @@ const Apoiar = () => {
             </CardContent>
           </Card>
 
+          <p className="text-sm text-center text-muted-foreground">
+            🌎 Fora do Brasil?{" "}
+            <Link to="/?contato=1" className="text-primary font-medium underline underline-offset-2">
+              Entre em contato
+            </Link>{" "}
+            para apoiar o LEVI.
+          </p>
+
           <div className="flex justify-center">
             <Button asChild variant="ghost" size="sm">
               <Link to="/dashboard">
