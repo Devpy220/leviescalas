@@ -3,9 +3,6 @@ project_id = "zuksvsxnchwskqytuxxq"
 [functions.confirm-schedule]
 verify_jwt = false
 
-[functions.update-subscription-quantity]
-verify_jwt = true
-
 [functions.send-schedule-notification]
 verify_jwt = true
 
@@ -24,18 +21,6 @@ verify_jwt = false
 [functions.generate-smart-schedule]
 verify_jwt = true
 
-[functions.send-push-notification]
-verify_jwt = false
-
-[functions.telegram-webhook]
-verify_jwt = false
-
-[functions.send-telegram-notification]
-verify_jwt = false
-
-[functions.setup-telegram-webhook]
-verify_jwt = false
-
 [functions.calendar-sync]
 verify_jwt = false
 
@@ -43,9 +28,6 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.send-admin-broadcast]
-verify_jwt = false
-
-[functions.view-notification]
 verify_jwt = false
 
 [functions.send-support-whatsapp]
