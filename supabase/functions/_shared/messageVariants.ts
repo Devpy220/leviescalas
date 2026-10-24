@@ -68,15 +68,30 @@ export const SUPPORT_EMOJIS = ["❤️", "🙏", "💝", "✨"];
 // Instagram or support block — those go in separate follow-ups.
 // ─────────────────────────────────────────────────────────────
 
-export function buildSupportOnlyMessage(userName: string): string {
+export function buildSupportOnlyMessage(userName: string, phone?: string): string {
   const first = (userName || "").split(/\s+/)[0] || "amigo(a)";
+  const digits = String(phone || "").replace(/\D/g, "");
+  const isBrazil = !digits || digits.startsWith("55") || digits.length <= 11;
+  if (!isBrazil) {
+    return (
+`💛 *Apoie o LEVI, ${first}!*
+━━━━━━━━━━━━━━━━━━━━
+
+O LEVI é gratuito e depende do seu apoio para continuar no ar.
+
+🌎 Para apoiar de fora do Brasil, entre em contato conosco:
+👉 https://leviescalas.com.br/?contato=1
+
+🙏 Obrigado pelo carinho!`
+    );
+  }
   return (
 `💛 *Apoie o LEVI, ${first}!*
 ━━━━━━━━━━━━━━━━━━━━
 
 O LEVI é gratuito e depende do seu apoio para continuar no ar.
 
-💡 *Sugestão: R$ 25,00* (você escolhe o valor)
+💡 *Sugestão: R$ 30,00* (você escolhe o valor)
 
 🔑 *Chave PIX (aleatória):*
 7ab64b21-1d99-4c7c-bff6-6696cdeeddec

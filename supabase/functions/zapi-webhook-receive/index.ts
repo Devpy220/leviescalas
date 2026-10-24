@@ -422,7 +422,7 @@ serve(async (req: Request): Promise<Response> => {
 
     // ─── "apoiar" → link de apoio ───
     if (/^(apoiar|apoio|doar|doacao|pix)$/.test(cmd)) {
-      await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, buildSupportOnlyMessage(profile.name || ""));
+      await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, buildSupportOnlyMessage(profile.name || "", profile.whatsapp));
       return reply({ ok: true, handled: "support" });
     }
 

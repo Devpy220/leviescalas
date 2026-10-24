@@ -35,7 +35,7 @@ const Apoiar = () => {
             </p>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
               <Heart className="w-3.5 h-3.5 text-primary" fill="currentColor" />
-              <span className="text-xs font-medium text-primary">Sugestão: R$ 25,00</span>
+              <span className="text-xs font-medium text-primary">Sugestão: R$ 30,00</span>
             </div>
           </div>
 
