@@ -244,6 +244,8 @@ serve(async (req) => {
     );
 
     const deptResult = await cleanupInactiveDepartments(supabase);
+    const memberResult = await cleanupInactiveMembers(supabase);
+    const phoneReport = await weeklyPhoneProblemReport(supabase);
 
     const { data: churches, error } = await supabase
       .from("churches")
@@ -308,7 +310,7 @@ serve(async (req) => {
       } else failed++;
     }
 
-    return new Response(JSON.stringify({ deleted, notified, failed, checked: churches?.length ?? 0, departments: deptResult }), {
+    return new Response(JSON.stringify({ deleted, notified, failed, checked: churches?.length ?? 0, departments: deptResult, members: memberResult, phoneReport }), {
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (error: any) {
