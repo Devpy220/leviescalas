@@ -102,6 +102,131 @@ async function cleanupInactiveDepartments(supabase: any) {
   return { deptDeleted, deptNotified, churchDeleted };
 }
 
+async function phoneIsBad(supabase: any, phone: string) {
+  const { count } = await supabase.from("whatsapp_logs").select("id", { count: "exact", head: true })
+    .eq("phone", phone).eq("status", "invalid_phone");
+  return (count ?? 0) > 0;
+}
+
+async function trySend(supabase: any, phone: string, text: string, origin: string) {
+  if (!phone || await isOptedOut(supabase, phone) || await phoneIsBad(supabase, phone)) return false;
+  const r = await sendUazapiText(phone, text);
+  const permanentFail = !r.ok && /not on whatsapp|invalid_phone|invalid phone/i.test(String(r.error ?? "") + JSON.stringify(r.response ?? ""));
+  await supabase.from("whatsapp_logs").insert({
+    phone, message: text, status: r.ok ? "sent" : permanentFail ? "invalid_phone" : "failed",
+    error: r.ok ? null : r.error ?? null, origin, zapi_response: r.response ?? null,
+  });
+  return r.ok;
+}
+
+// Volunteers (any role) not scheduled for 60+ days get a 5-day warning (to them and
+// to their department leaders). If still unscheduled, the whole account is deleted.
+// Department leaders are skipped by delete_account_by_id; kids parents (no members row) are never touched.
+async function cleanupInactiveMembers(supabase: any) {
+  const now = Date.now();
+  const cutoff = now - 60 * DAY;
+  const cutoffIso = new Date(cutoff).toISOString();
+  const cutoffDate = cutoffIso.slice(0, 10);
+  let deleted = 0, notified = 0;
+
+  const { data: mems } = await supabase.from("members").select("user_id, department_id, joined_at");
+  const byUser = new Map<string, { depts: string[]; joined: number }>();
+  for (const m of mems ?? []) {
+    const e = byUser.get(m.user_id) ?? { depts: [], joined: 0 };
+    e.depts.push(m.department_id);
+    e.joined = Math.max(e.joined, new Date(m.joined_at).getTime());
+    byUser.set(m.user_id, e);
+  }
+  const { data: admins } = await supabase.from("user_roles").select("user_id").eq("role", "admin");
+  const adminIds = new Set((admins ?? []).map((a: any) => a.user_id));
+  const { data: leaderRows } = await supabase.from("departments").select("leader_id");
+  const leaderIds = new Set((leaderRows ?? []).map((d: any) => d.leader_id));
+
+  for (const [uid, info] of byUser) {
+    if (adminIds.has(uid) || leaderIds.has(uid)) continue;
+    const { data: p } = await supabase.from("profiles")
+      .select("id, name, whatsapp, created_at, inactivity_deadline, inactivity_last_notice_at").eq("id", uid).maybeSingle();
+    if (!p) continue;
+    const recentStart = Math.max(new Date(p.created_at).getTime(), info.joined);
+    const [{ count: a }, { count: b }, { count: k }] = await Promise.all([
+      supabase.from("schedules").select("id", { count: "exact", head: true }).eq("user_id", uid).gte("date", cutoffDate),
+      supabase.from("schedules").select("id", { count: "exact", head: true }).eq("user_id", uid).gte("created_at", cutoffIso),
+      supabase.from("kids_room_schedules").select("id", { count: "exact", head: true }).eq("user_id", uid).gte("service_date", cutoffDate),
+    ]);
+    if ((a ?? 0) > 0 || (b ?? 0) > 0 || (k ?? 0) > 0 || recentStart > cutoff) {
+      if (p.inactivity_deadline) await supabase.from("profiles").update({ inactivity_deadline: null, inactivity_last_notice_at: null }).eq("id", uid);
+      continue;
+    }
+
+    let deadline = p.inactivity_deadline ? new Date(p.inactivity_deadline).getTime() : 0;
+    if (!deadline) {
+      deadline = now + 5 * DAY;
+      await supabase.from("profiles").update({ inactivity_deadline: new Date(deadline).toISOString() }).eq("id", uid);
+    }
+
+    if (now >= deadline && p.inactivity_last_notice_at) {
+      const { data: res, error: e } = await supabase.rpc("delete_account_by_id", { _uid: uid });
+      if (e) console.error("delete member failed", uid, e);
+      else if (res === "deleted") { deleted++; console.log(`Deleted inactive volunteer ${p.name}`); }
+      continue;
+    }
+    if (p.inactivity_last_notice_at && now - new Date(p.inactivity_last_notice_at).getTime() < 20 * 60 * 60 * 1000) continue;
+
+    const daysLeft = Math.max(1, Math.ceil((deadline - now) / DAY));
+    const first = (p.name || "").trim().split(/\s+/)[0] || "voluntário";
+    const personText =
+      `Olá, ${first}! 👋\n\nVocê não foi escalado(a) em nenhum departamento nos últimos 60 dias.\n\n` +
+      `⏳ Faltam *${daysLeft} dia(s)*. Se você não for escalado(a) até lá, sua conta no LEVI e seus dados serão excluídos automaticamente.\n\n` +
+      `Fale com seu líder se quiser continuar servindo.\n\nResponda *SAIR* para não receber mais mensagens.`;
+    let ok = await trySend(supabase, p.whatsapp || "", personText, "member-inactivity-reminder");
+
+    const { data: depts } = await supabase.from("departments").select("name, leader_id").in("id", info.depts);
+    for (const d of depts ?? []) {
+      const { data: l } = await supabase.from("profiles").select("name, whatsapp").eq("id", d.leader_id).maybeSingle();
+      const lf = (l?.name || "").trim().split(/\s+/)[0] || "líder";
+      const leaderText =
+        `Olá, ${lf}! 👋\n\n*${p.name}* (${d.name}) não é escalado(a) há mais de 60 dias.\n\n` +
+        `⏳ Em *${daysLeft} dia(s)* a conta dessa pessoa será excluída automaticamente, a não ser que você a escale.\n\n` +
+        `https://leviescalas.com.br/dashboard`;
+      if (await trySend(supabase, l?.whatsapp || "", leaderText, "member-inactivity-leader")) ok = true;
+    }
+    if (ok) { notified++; await supabase.from("profiles").update({ inactivity_last_notice_at: new Date().toISOString() }).eq("id", uid); }
+  }
+  return { deleted, notified };
+}
+
+// Once a week (Monday), each department leader gets a list of members whose
+// WhatsApp number failed (invalid / not on WhatsApp) in the last 7 days.
+async function weeklyPhoneProblemReport(supabase: any) {
+  if (new Date().getUTCDay() !== 1) return { skipped: true };
+  const { data: last } = await supabase.from("admin_settings").select("value").eq("key", "phone_problems_report_at").maybeSingle();
+  if (last?.value && Date.now() - new Date(last.value).getTime() < 6 * DAY) return { skipped: true };
+  const since = new Date(Date.now() - 7 * DAY).toISOString();
+  const { data: bad } = await supabase.from("whatsapp_logs").select("phone").in("status", ["invalid_phone", "failed"]).gte("created_at", since);
+  const tails = new Set((bad ?? []).map((b: any) => (b.phone || "").replace(/\D/g, "").slice(-8)).filter((t: string) => t.length === 8));
+  let sent = 0;
+  if (tails.size) {
+    const { data: depts } = await supabase.from("departments").select("id, name, leader_id");
+    for (const d of depts ?? []) {
+      const { data: mems } = await supabase.from("members").select("user_id").eq("department_id", d.id);
+      const ids = (mems ?? []).map((m: any) => m.user_id);
+      if (!ids.length) continue;
+      const { data: profs } = await supabase.from("profiles").select("name, whatsapp").in("id", ids);
+      const problems = (profs ?? []).filter((x: any) => tails.has((x.whatsapp || "").replace(/\D/g, "").slice(-8)));
+      if (!problems.length) continue;
+      const { data: l } = await supabase.from("profiles").select("name, whatsapp").eq("id", d.leader_id).maybeSingle();
+      const lf = (l?.name || "").trim().split(/\s+/)[0] || "líder";
+      const text =
+        `Olá, ${lf}! 📋\n\nResumo semanal do departamento *${d.name}*: o WhatsApp destas pessoas não recebeu mensagens do LEVI:\n\n` +
+        problems.map((x: any) => `• ${x.name} — ${x.whatsapp || "sem número"}`).join("\n") +
+        `\n\nPeça para corrigirem o número no perfil em https://leviescalas.com.br/dashboard`;
+      if (await trySend(supabase, l?.whatsapp || "", text, "weekly-phone-problems")) sent++;
+    }
+  }
+  await supabase.from("admin_settings").upsert({ key: "phone_problems_report_at", value: new Date().toISOString(), updated_at: new Date().toISOString() });
+  return { sent };
+}
+
 // Churches without departments get 5 days (cleanup_deadline) to create one.
 // Every day until the deadline the leader/registrant gets a WhatsApp reminder.
 // After the deadline the church and everything linked to it is deleted.
