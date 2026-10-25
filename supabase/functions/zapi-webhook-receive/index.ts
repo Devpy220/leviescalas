@@ -691,18 +691,17 @@ serve(async (req: Request): Promise<Response> => {
           : L({ pt: "✅ Ninguém bloqueou dias.\n", es: "✅ Nadie bloqueó días.\n", en: "✅ No blocked days.\n" });
       }
       msg += `\n${LINE}\n` + L({
-        pt: "⚙️ Para mudar o limite, envie *qtd* + número (ex.: *qtd 6*).",
-        es: "⚙️ Para cambiar el límite, envía *qtd* + número (ej.: *qtd 6*).",
-        en: "⚙️ To change the limit, send *qtd* + number (e.g. *qtd 6*).",
+        pt: "⚙️ Para mudar o limite, envie *qtd* + o número de dias que você escolher (ex.: *qtd 5*).",
+        es: "⚙️ Para cambiar el límite, envía *qtd* + el número de días que elijas (ej.: *qtd 5*).",
+        en: "⚙️ To change the limit, send *qtd* + the number of days you choose (e.g. *qtd 5*).",
       });
       await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, msg);
       return reply({ ok: true, handled: "team_blackouts" });
     }
 
     // ─── "qtd N" (líderes) → limite de dias bloqueáveis por voluntário ───
-    const qtd = /^qtd\s*(\d{1,2})$/.exec(cmd);
+    const qtd = /^qtd\s*(\d{1,3})?$/.exec(cmd);
     if (qtd) {
-      const n = parseInt(qtd[1], 10);
       const depts = await ledDepts();
       if (!depts.length) {
         await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, L({
@@ -712,11 +711,15 @@ serve(async (req: Request): Promise<Response> => {
         }));
         return reply({ ok: true, handled: "qtd_denied" });
       }
-      if (n < 0 || n > 31) {
+      const n = qtd[1] !== undefined ? parseInt(qtd[1], 10) : NaN;
+      if (!Number.isFinite(n) || n < 0 || n > 31) {
+        const cur = depts.map((d) => `🏷️ ${d.name}: *${d.max_blackout_dates ?? 4}*`).join("\n");
         await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, L({
-          pt: "⚠️ Envie um número entre 0 e 31. Ex.: *qtd 6*", es: "⚠️ Envía un número entre 0 y 31. Ej.: *qtd 6*", en: "⚠️ Send a number between 0 and 31. E.g. *qtd 6*",
+          pt: `⚙️ *Limite de bloqueios*\n${LINE}\nEnvie *qtd* seguido do número de dias que você escolher (de 0 a 31).\nExemplo: *qtd 5* → cada voluntário pode bloquear até 5 dias.\n\n📊 Limite atual:\n${cur}`,
+          es: `⚙️ *Límite de bloqueos*\n${LINE}\nEnvía *qtd* seguido del número de días que elijas (de 0 a 31).\nEjemplo: *qtd 5* → cada voluntario puede bloquear hasta 5 días.\n\n📊 Límite actual:\n${cur}`,
+          en: `⚙️ *Block limit*\n${LINE}\nSend *qtd* followed by the number of days you choose (0 to 31).\nExample: *qtd 5* → each volunteer can block up to 5 days.\n\n📊 Current limit:\n${cur}`,
         }));
-        return reply({ ok: true, handled: "qtd_invalid" });
+        return reply({ ok: true, handled: "qtd_help" });
       }
       const { error: qErr } = await supabase.from("departments").update({ max_blackout_dates: n }).in("id", depts.map((d) => d.id));
       await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, qErr

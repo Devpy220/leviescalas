@@ -18,7 +18,7 @@ export const LEVI_COMMANDS_HINT =
   `• *ajuda* / *comandos* — ver esta lista de novo\n` +
   `\n👑 *Só para líderes:*\n` +
   `• *DB* — ver os dias bloqueados de toda a equipe (nome e data)\n` +
-  `• *qtd 6* — mudar quantos dias cada voluntário pode bloquear\n` +
+  `• *qtd* + número — você escolhe quantos dias cada voluntário pode bloquear (ex.: *qtd 5*)\n` +
   `\n📅 *No aviso mensal de disponibilidade, responda com:*\n` +
   `• *bloquear 5/7, 12/7* — bloqueia datas específicas\n` +
   `• *bloquear segundas* / *terças* / *quartas* / *quintas* / *sextas* / *sábados* / *domingos* — bloqueia todos esses dias no próximo mês\n` +
