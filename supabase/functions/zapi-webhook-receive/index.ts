@@ -768,11 +768,10 @@ serve(async (req: Request): Promise<Response> => {
     // ─── "escala" command: list user's upcoming schedules ───
     try {
       if (isScheduleListCommand(text)) {
-        const lang = detectLang(profile.whatsapp);
         const today = new Date().toISOString().slice(0, 10);
         const { data: scheds } = await supabase
           .from("schedules")
-          .select("date, time_start, time_end, assignment_role, department_id")
+          .select("date, time_start, time_end, assignment_role, department_id, sector_id, sector_ids")
           .eq("user_id", profile.id)
           .gte("date", today)
           .order("date", { ascending: true })
@@ -781,37 +780,24 @@ serve(async (req: Request): Promise<Response> => {
         const fname = (profile.name || "").split(" ")[0] || "👋";
 
         if (!scheds || scheds.length === 0) {
-          await sendConfirmation(
-            supabaseUrl,
-            serviceRoleKey,
-            profile.whatsapp,
-            t(lang, "no_future_schedules", { fname }),
-          );
+          await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, t(lang, "no_future_schedules", { fname }));
         } else {
           const deptIdsSet = Array.from(new Set(scheds.map((s: any) => s.department_id)));
-          const { data: deptRows } = await supabase
-            .from("departments")
-            .select("id, name")
-            .in("id", deptIdsSet);
+          const { data: deptRows } = await supabase.from("departments").select("id, name").in("id", deptIdsSet);
           const deptName: Record<string, string> = {};
           for (const d of deptRows ?? []) deptName[d.id] = d.name;
+          const sectors = await sectorNames(deptIdsSet as string[]);
 
           const grouped: Record<string, string[]> = {};
           for (const s of scheds as any[]) {
-            const d = new Date(s.date + "T00:00:00");
-            const [, m, dd] = s.date.split("-");
-            const dow = DOW[lang][d.getDay()];
-            const ts = fmtTime(s.time_start);
-            const te = fmtTime(s.time_end);
-            const role = s.assignment_role ? ` — ${translateRole(s.assignment_role, lang)}` : "";
-            const line = `• ${dd}/${m} (${dow}) ${ts}–${te}${role}`;
-            const dn = deptName[s.department_id] || "—";
-            (grouped[dn] ||= []).push(line);
+            const det = schedDetails(s, sectors);
+            const line = `📆 *${dateLabel(s.date)}*  ⏰ ${fmtTime(s.time_start)}–${fmtTime(s.time_end)}${det ? `\n     ${det}` : ""}`;
+            (grouped[deptName[s.department_id] || "—"] ||= []).push(line);
           }
 
           let msg = t(lang, "list_header", { fname });
           for (const [dn, lines] of Object.entries(grouped)) {
-            msg += `\n*${dn}*\n${lines.join("\n")}\n`;
+            msg += `\n🏷️ *${dn}*\n${lines.join("\n")}\n`;
           }
           msg += t(lang, "list_footer");
 
