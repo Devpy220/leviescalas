@@ -732,6 +732,53 @@ serve(async (req: Request): Promise<Response> => {
       return reply({ ok: true, handled: "qtd_updated" });
     }
 
+    // ─── "colider [N]" (líder principal) → tornar/remover co-líder ───
+    const col = /^(?:co-?lider|colíder|co-líder)\s*(\d{1,3})?$/.exec(cmd);
+    if (col) {
+      const { data: owned } = await supabase.from("departments").select("id, name").eq("leader_id", profile.id).order("name");
+      if (!owned?.length) {
+        await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, L({
+          pt: `🔒 *${firstName}*, só o líder principal do departamento pode definir co-líderes.`,
+          es: `🔒 *${firstName}*, solo el líder principal puede definir co-líderes.`,
+          en: `🔒 *${firstName}*, only the main department leader can set co-leaders.`,
+        }));
+        return reply({ ok: true, handled: "coleader_denied" });
+      }
+      const { data: mem } = await supabase.from("members")
+        .select("id, user_id, role, department_id, profiles(name)")
+        .in("department_id", owned.map((d) => d.id)).neq("user_id", profile.id).neq("role", "leader");
+      const dn: Record<string, string> = {};
+      for (const d of owned) dn[d.id] = d.name;
+      const list = ((mem ?? []) as any[]).map((m) => ({ ...m, name: m.profiles?.name || "—" }))
+        .sort((a, b) => dn[a.department_id].localeCompare(dn[b.department_id]) || a.name.localeCompare(b.name));
+      const n = col[1] !== undefined ? parseInt(col[1], 10) : NaN;
+      if (!Number.isFinite(n) || n < 1 || n > list.length) {
+        let msg = L({ pt: `⭐ *Co-líderes*`, es: `⭐ *Co-líderes*`, en: `⭐ *Co-leaders*` }) + `\n${LINE}\n`;
+        let last = "";
+        list.forEach((m, i) => {
+          if (m.department_id !== last) { msg += `\n🏷️ *${dn[m.department_id]}*\n`; last = m.department_id; }
+          msg += `${i + 1}. ${m.name}${m.role === "coleader" ? " ⭐" : ""}\n`;
+        });
+        if (!list.length) msg += L({ pt: "Nenhum membro na equipe ainda.\n", es: "Aún no hay miembros.\n", en: "No members yet.\n" });
+        msg += `\n${LINE}\n` + L({
+          pt: "Envie *colider* + o número da pessoa (ex.: *colider 3*). Se ela já for co-líder (⭐), o papel é removido.",
+          es: "Envía *colider* + el número de la persona (ej.: *colider 3*). Si ya es co-líder (⭐), se quita.",
+          en: "Send *colider* + the person's number (e.g. *colider 3*). If already co-leader (⭐), it's removed.",
+        });
+        await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, msg);
+        return reply({ ok: true, handled: "coleader_list" });
+      }
+      const t = list[n - 1];
+      const make = t.role !== "coleader";
+      const { error: cErr } = await supabase.from("members").update({ role: make ? "coleader" : "member" }).eq("id", t.id);
+      await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, cErr
+        ? L({ pt: "❌ Não consegui alterar agora. Tente de novo.", es: "❌ No pude cambiarlo ahora.", en: "❌ Couldn't change it now." })
+        : make
+          ? L({ pt: `✅ *${t.name}* agora é co-líder de *${dn[t.department_id]}* ⭐`, es: `✅ *${t.name}* ahora es co-líder de *${dn[t.department_id]}* ⭐`, en: `✅ *${t.name}* is now co-leader of *${dn[t.department_id]}* ⭐` })
+          : L({ pt: `✅ *${t.name}* voltou a ser membro em *${dn[t.department_id]}*.`, es: `✅ *${t.name}* volvió a ser miembro en *${dn[t.department_id]}*.`, en: `✅ *${t.name}* is a member again in *${dn[t.department_id]}*.` }));
+      return reply({ ok: true, handled: make ? "coleader_set" : "coleader_removed" });
+    }
+
     // ─── "escala todos" → próxima escala de cada departamento do usuário ───
     if (/^(escalas? (de )?todos|escala geral|escala da equipe|escala do departamento|turnos? (de )?todos|team schedule)$/.test(cmd)) {
       const today = new Date().toISOString().slice(0, 10);
