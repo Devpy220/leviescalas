@@ -8,6 +8,13 @@
       "when": 1792933886296,
       "tag": "0000_profile_inactivity_tracking",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792933987407,
+      "tag": "0001_fix_security_audit_trigger",
+      "breakpoints": true
     }
   ]
 }
