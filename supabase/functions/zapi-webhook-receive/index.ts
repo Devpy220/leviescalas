@@ -624,12 +624,116 @@ serve(async (req: Request): Promise<Response> => {
       return reply({ ok: true, handled: "unblock" });
     }
 
+    const lang = detectLang(profile.whatsapp);
+    const L = (o: { pt: string; es: string; en: string }) => o[lang];
+    const LINE = "━━━━━━━━━━━━━━━";
+    const dateLabel = (iso: string) => {
+      const d = new Date(iso + "T00:00:00");
+      const [, m, dd] = iso.split("-");
+      return `${DOW[lang][d.getDay()]}, ${dd}/${m}`;
+    };
+    const sectorNames = async (deptIds: string[]) => {
+      const map: Record<string, string> = {};
+      if (!deptIds.length) return map;
+      const { data } = await supabase.from("sectors").select("id, name").in("department_id", deptIds);
+      for (const s of data ?? []) map[s.id] = s.name;
+      return map;
+    };
+    const schedDetails = (s: any, sectors: Record<string, string>) => {
+      const ids: string[] = [...new Set([...(s.sector_ids ?? []), ...(s.sector_id ? [s.sector_id] : [])])];
+      const sec = ids.map((i) => sectors[i]).filter(Boolean).join(", ");
+      const role = s.assignment_role ? translateRole(s.assignment_role, lang) : "";
+      const icon = s.assignment_role === "on_duty" ? "🛡️" : "🙌";
+      return [role ? `${icon} ${role}` : "", sec ? `📍 ${sec}` : ""].filter(Boolean).join("  ·  ");
+    };
+    const ledDepts = async () => {
+      const [{ data: own }, { data: co }] = await Promise.all([
+        supabase.from("departments").select("id, name, max_blackout_dates").eq("leader_id", profile.id),
+        supabase.from("members").select("department_id, departments(id, name, max_blackout_dates)").eq("user_id", profile.id).in("role", ["leader", "coleader"]),
+      ]);
+      const map = new Map<string, any>();
+      for (const d of own ?? []) map.set(d.id, d);
+      for (const m of (co ?? []) as any[]) if (m.departments) map.set(m.departments.id, m.departments);
+      return [...map.values()];
+    };
+
+    // ─── "db" (líderes) → dias bloqueados da equipe ───
+    if (/^(db|dias bloqueados da equipe|bloqueios da equipe)$/.test(cmd)) {
+      const depts = await ledDepts();
+      if (!depts.length) {
+        await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, L({
+          pt: `🔒 *${firstName}*, o comando *DB* é só para líderes de departamento.`,
+          es: `🔒 *${firstName}*, el comando *DB* es solo para líderes de departamento.`,
+          en: `🔒 *${firstName}*, the *DB* command is for department leaders only.`,
+        }));
+        return reply({ ok: true, handled: "team_blackouts_denied" });
+      }
+      const today = new Date().toISOString().slice(0, 10);
+      let msg = L({ pt: `🗓️ *Bloqueios da equipe*`, es: `🗓️ *Bloqueos del equipo*`, en: `🗓️ *Team blocked days*` }) + `\n${LINE}\n`;
+      for (const d of depts) {
+        const { data: prefs } = await supabase.from("member_preferences")
+          .select("user_id, blackout_dates").eq("department_id", d.id);
+        const rows = (prefs ?? []).map((p: any) => ({
+          uid: p.user_id,
+          dates: ((p.blackout_dates as string[]) ?? []).map((x) => String(x).slice(0, 10)).filter((x) => x >= today).sort(),
+        })).filter((r) => r.dates.length);
+        const { data: names } = rows.length
+          ? await supabase.from("profiles").select("id, name").in("id", rows.map((r) => r.uid))
+          : { data: [] as any[] };
+        const nm: Record<string, string> = {};
+        for (const n of names ?? []) nm[n.id] = n.name;
+        msg += `\n🏷️ *${d.name}*  _(${L({ pt: "limite", es: "límite", en: "limit" })}: ${d.max_blackout_dates ?? 4})_\n`;
+        msg += rows.length
+          ? rows.sort((a, b) => (nm[a.uid] || "").localeCompare(nm[b.uid] || ""))
+              .map((r) => `👤 *${nm[r.uid] || "—"}* (${r.dates.length})\n   ${r.dates.map(dateLabel).join(" • ")}`).join("\n") + "\n"
+          : L({ pt: "✅ Ninguém bloqueou dias.\n", es: "✅ Nadie bloqueó días.\n", en: "✅ No blocked days.\n" });
+      }
+      msg += `\n${LINE}\n` + L({
+        pt: "⚙️ Para mudar o limite, envie *qtd* + número (ex.: *qtd 6*).",
+        es: "⚙️ Para cambiar el límite, envía *qtd* + número (ej.: *qtd 6*).",
+        en: "⚙️ To change the limit, send *qtd* + number (e.g. *qtd 6*).",
+      });
+      await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, msg);
+      return reply({ ok: true, handled: "team_blackouts" });
+    }
+
+    // ─── "qtd N" (líderes) → limite de dias bloqueáveis por voluntário ───
+    const qtd = /^qtd\s*(\d{1,2})$/.exec(cmd);
+    if (qtd) {
+      const n = parseInt(qtd[1], 10);
+      const depts = await ledDepts();
+      if (!depts.length) {
+        await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, L({
+          pt: `🔒 *${firstName}*, só líderes de departamento podem mudar o limite de bloqueios.`,
+          es: `🔒 *${firstName}*, solo los líderes pueden cambiar el límite de bloqueos.`,
+          en: `🔒 *${firstName}*, only department leaders can change the block limit.`,
+        }));
+        return reply({ ok: true, handled: "qtd_denied" });
+      }
+      if (n < 0 || n > 31) {
+        await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, L({
+          pt: "⚠️ Envie um número entre 0 e 31. Ex.: *qtd 6*", es: "⚠️ Envía un número entre 0 y 31. Ej.: *qtd 6*", en: "⚠️ Send a number between 0 and 31. E.g. *qtd 6*",
+        }));
+        return reply({ ok: true, handled: "qtd_invalid" });
+      }
+      const { error: qErr } = await supabase.from("departments").update({ max_blackout_dates: n }).in("id", depts.map((d) => d.id));
+      await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, qErr
+        ? L({ pt: "❌ Não consegui alterar agora. Tente de novo.", es: "❌ No pude cambiarlo ahora. Inténtalo de nuevo.", en: "❌ Couldn't change it now. Try again." })
+        : L({
+            pt: `✅ *Limite atualizado!*\n${LINE}\nCada voluntário agora pode bloquear até *${n} dia(s)* por mês em:\n`,
+            es: `✅ *¡Límite actualizado!*\n${LINE}\nCada voluntario ahora puede bloquear hasta *${n} día(s)* por mes en:\n`,
+            en: `✅ *Limit updated!*\n${LINE}\nEach volunteer can now block up to *${n} day(s)* per month in:\n`,
+          }) + depts.map((d) => `🏷️ ${d.name}`).join("\n"));
+      return reply({ ok: true, handled: "qtd_updated" });
+    }
+
     // ─── "escala todos" → próxima escala de cada departamento do usuário ───
-    if (/^(escalas? (de )?todos|escala geral|escala da equipe|escala do departamento)$/.test(cmd)) {
+    if (/^(escalas? (de )?todos|escala geral|escala da equipe|escala do departamento|turnos? (de )?todos|team schedule)$/.test(cmd)) {
       const today = new Date().toISOString().slice(0, 10);
       const { data: mems } = await supabase
         .from("members").select("department_id, departments(name)").eq("user_id", profile.id);
-      let msg = `👥 *Próximas escalas da equipe, ${firstName}:*\n`;
+      const sectors = await sectorNames((mems ?? []).map((m: any) => m.department_id));
+      let msg = L({ pt: `👥 *Próximas escalas da equipe*`, es: `👥 *Próximos turnos del equipo*`, en: `👥 *Upcoming team shifts*` }) + `\n${LINE}\n`;
       let any = false;
       for (const m of (mems ?? []) as any[]) {
         const { data: next } = await supabase
@@ -638,16 +742,25 @@ serve(async (req: Request): Promise<Response> => {
         const date = next?.[0]?.date;
         if (!date) continue;
         const { data: rows } = await supabase
-          .from("schedules").select("time_start, time_end, assignment_role, user_id, profiles!schedules_user_id_fkey(name)")
+          .from("schedules").select("time_start, time_end, assignment_role, sector_id, sector_ids, user_id, profiles!schedules_user_id_fkey(name)")
           .eq("department_id", m.department_id).eq("date", date).order("time_start");
         any = true;
-        const d = new Date(date + "T00:00:00");
-        msg += `\n*${m.departments?.name || "—"}* — ${fmt(date)} (${DOW.pt[d.getDay()]})\n`;
-        msg += (rows ?? []).map((r: any) =>
-          `• ${fmtTime(r.time_start)}–${fmtTime(r.time_end)} ${r.profiles?.name || "—"}${r.assignment_role ? ` (${r.assignment_role})` : ""}${r.user_id === profile.id ? " ⭐" : ""}`
-        ).join("\n") + "\n";
+        msg += `\n🏷️ *${m.departments?.name || "—"}*\n📆 *${dateLabel(date)}*\n`;
+        let lastSlot = "";
+        for (const r of (rows ?? []) as any[]) {
+          const slot = `${fmtTime(r.time_start)}–${fmtTime(r.time_end)}`;
+          if (slot !== lastSlot) { msg += `\n⏰ *${slot}*\n`; lastSlot = slot; }
+          const det = schedDetails(r, sectors);
+          msg += `${r.user_id === profile.id ? "⭐" : "👤"} ${r.profiles?.name || "—"}${det ? `\n     ${det}` : ""}\n`;
+        }
       }
-      if (!any) msg = `Olá *${firstName}*! Não há nenhuma escala futura nos seus departamentos. 🙌`;
+      msg = any
+        ? msg + `\n${LINE}\n` + L({ pt: "⭐ = você", es: "⭐ = tú", en: "⭐ = you" })
+        : L({
+            pt: `🙌 *${firstName}*, não há escalas futuras nos seus departamentos.`,
+            es: `🙌 *${firstName}*, no hay turnos futuros en tus departamentos.`,
+            en: `🙌 *${firstName}*, there are no upcoming shifts in your departments.`,
+          });
       await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, msg);
       return reply({ ok: true, handled: "team_schedule" });
     }
