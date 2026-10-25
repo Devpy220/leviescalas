@@ -70,8 +70,8 @@ const interp = (s: string, p: TParams = {}) =>
 const STR: Record<Lang, Record<string, string>> = {
   pt: {
     no_future_schedules: "📭 *Olá {fname}!*\n\nVocê não tem escalas futuras agendadas no momento.\n\n_LEVI_",
-    list_header: "📅 *Olá {fname}!* Suas próximas escalas:\n━━━━━━━━━━━━━━━━━━━━\n",
-    list_footer: "\n━━━━━━━━━━━━━━━━━━━━\nPara trocar uma escala, envie *troca*.\n\n_LEVI_",
+    list_header: "✨ *Oi, {fname}!* Aqui estão suas próximas escalas:\n━━━━━━━━━━━━━━━\n",
+    list_footer: "\n━━━━━━━━━━━━━━━\n🔄 Precisa trocar? Envie *troca*\n👥 Ver a equipe toda: *escala todos*\n\n_LEVI_",
     no_active_dept: "Olá *{fname}*! Você não está em nenhum departamento ativo.\n\n_LEVI_",
     no_swap_schedules: "Olá *{fname}*! Você não tem escalas futuras para trocar.\n\n_LEVI_",
     swap_start_title: "🔄 *Troca de Escala*",
@@ -107,8 +107,8 @@ const STR: Record<Lang, Record<string, string>> = {
   },
   es: {
     no_future_schedules: "📭 *¡Hola {fname}!*\n\nNo tienes turnos futuros programados en este momento.\n\n_LEVI_",
-    list_header: "📅 *¡Hola {fname}!* Tus próximos turnos:\n━━━━━━━━━━━━━━━━━━━━\n",
-    list_footer: "\n━━━━━━━━━━━━━━━━━━━━\nPara cambiar un turno, envía *cambio*.\n\n_LEVI_",
+    list_header: "✨ *¡Hola, {fname}!* Estos son tus próximos turnos:\n━━━━━━━━━━━━━━━\n",
+    list_footer: "\n━━━━━━━━━━━━━━━\n🔄 ¿Necesitas cambiar? Envía *cambio*\n👥 Ver todo el equipo: *escala todos*\n\n_LEVI_",
     no_active_dept: "¡Hola *{fname}*! No estás en ningún departamento activo.\n\n_LEVI_",
     no_swap_schedules: "¡Hola *{fname}*! No tienes turnos futuros para cambiar.\n\n_LEVI_",
     swap_start_title: "🔄 *Cambio de Turno*",
@@ -144,8 +144,8 @@ const STR: Record<Lang, Record<string, string>> = {
   },
   en: {
     no_future_schedules: "📭 *Hi {fname}!*\n\nYou have no upcoming shifts scheduled at the moment.\n\n_LEVI_",
-    list_header: "📅 *Hi {fname}!* Your upcoming shifts:\n━━━━━━━━━━━━━━━━━━━━\n",
-    list_footer: "\n━━━━━━━━━━━━━━━━━━━━\nTo swap a shift, send *swap*.\n\n_LEVI_",
+    list_header: "✨ *Hi, {fname}!* Here are your upcoming shifts:\n━━━━━━━━━━━━━━━\n",
+    list_footer: "\n━━━━━━━━━━━━━━━\n🔄 Need to swap? Send *swap*\n👥 See the whole team: *escala todos*\n\n_LEVI_",
     no_active_dept: "Hi *{fname}*! You're not in any active department.\n\n_LEVI_",
     no_swap_schedules: "Hi *{fname}*! You have no upcoming shifts to swap.\n\n_LEVI_",
     swap_start_title: "🔄 *Shift Swap*",
