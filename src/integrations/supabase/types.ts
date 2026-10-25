@@ -2143,6 +2143,8 @@ export type Database = {
           guardian_email: string | null
           guardian_phone: string | null
           id: string
+          inactivity_deadline: string | null
+          inactivity_last_notice_at: string | null
           invited_by_department_id: string | null
           name: string
           privacy_policy_accepted_at: string | null
@@ -2167,6 +2169,8 @@ export type Database = {
           guardian_email?: string | null
           guardian_phone?: string | null
           id: string
+          inactivity_deadline?: string | null
+          inactivity_last_notice_at?: string | null
           invited_by_department_id?: string | null
           name: string
           privacy_policy_accepted_at?: string | null
@@ -2191,6 +2195,8 @@ export type Database = {
           guardian_email?: string | null
           guardian_phone?: string | null
           id?: string
+          inactivity_deadline?: string | null
+          inactivity_last_notice_at?: string | null
           invited_by_department_id?: string | null
           name?: string
           privacy_policy_accepted_at?: string | null
