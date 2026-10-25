@@ -637,12 +637,14 @@ serve(async (req: Request): Promise<Response> => {
       if (!deptIds.length) return map;
       const { data } = await supabase.from("sectors").select("id, name").in("department_id", deptIds);
       for (const s of data ?? []) map[s.id] = s.name;
+      const { data: roles } = await supabase.from("assignment_roles").select("id, name").in("department_id", deptIds);
+      for (const r of roles ?? []) map["role:" + r.id] = r.name;
       return map;
     };
     const schedDetails = (s: any, sectors: Record<string, string>) => {
       const ids: string[] = [...new Set([...(s.sector_ids ?? []), ...(s.sector_id ? [s.sector_id] : [])])];
       const sec = ids.map((i) => sectors[i]).filter(Boolean).join(", ");
-      const role = s.assignment_role ? translateRole(s.assignment_role, lang) : "";
+      const role = s.assignment_role ? (sectors["role:" + s.assignment_role] ?? translateRole(s.assignment_role, lang)) : "";
       const icon = s.assignment_role === "on_duty" ? "🛡️" : "🙌";
       return [role ? `${icon} ${role}` : "", sec ? `📍 ${sec}` : ""].filter(Boolean).join("  ·  ");
     };
