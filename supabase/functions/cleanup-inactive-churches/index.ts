@@ -202,8 +202,14 @@ async function weeklyPhoneProblemReport(supabase: any) {
   const { data: last } = await supabase.from("admin_settings").select("value").eq("key", "phone_problems_report_at").maybeSingle();
   if (last?.value && Date.now() - new Date(last.value).getTime() < 6 * DAY) return { skipped: true };
   const since = new Date(Date.now() - 7 * DAY).toISOString();
-  const { data: bad } = await supabase.from("whatsapp_logs").select("phone").in("status", ["invalid_phone", "failed"]).gte("created_at", since);
-  const tails = new Set((bad ?? []).map((b: any) => (b.phone || "").replace(/\D/g, "").slice(-8)).filter((t: string) => t.length === 8));
+  // Only permanent "not on WhatsApp" failures count; temporary provider outages
+  // ("failed") are not the volunteer's fault. A number that received any message
+  // recently is fine and never reported.
+  const t8 = (p: string) => (p || "").replace(/\D/g, "").slice(-8);
+  const { data: bad } = await supabase.from("whatsapp_logs").select("phone").eq("status", "invalid_phone").gte("created_at", since);
+  const { data: ok } = await supabase.from("whatsapp_logs").select("phone").eq("status", "sent").gte("created_at", since);
+  const okTails = new Set((ok ?? []).map((b: any) => t8(b.phone)));
+  const tails = new Set((bad ?? []).map((b: any) => t8(b.phone)).filter((t: string) => t.length === 8 && !okTails.has(t)));
   let sent = 0;
   if (tails.size) {
     const { data: depts } = await supabase.from("departments").select("id, name, leader_id");
