@@ -141,6 +141,11 @@ async function cleanupInactiveMembers(supabase: any) {
   const adminIds = new Set((admins ?? []).map((a: any) => a.user_id));
   const { data: leaderRows } = await supabase.from("departments").select("leader_id");
   const leaderIds = new Set((leaderRows ?? []).map((d: any) => d.leader_id));
+  // Co-leaders and coordinators organize schedules without being on them — never auto-delete.
+  const { data: coRows } = await supabase.from("members").select("user_id").in("role", ["leader", "coleader"]);
+  for (const r of coRows ?? []) leaderIds.add((r as any).user_id);
+  const { data: coordRows } = await supabase.from("department_coordinators").select("user_id");
+  for (const r of coordRows ?? []) leaderIds.add((r as any).user_id);
 
   for (const [uid, info] of byUser) {
     if (adminIds.has(uid) || leaderIds.has(uid)) continue;
