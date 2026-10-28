@@ -144,7 +144,7 @@ export async function sendUazapiText(
   }
 }
 
-export const PIX_KEY = "7ab64b21-1d99-4c7c-bff6-6696cdeeddec";
+export const PIX_KEY = "00020126580014BR.GOV.BCB.PIX01367ab64b21-1d99-4c7c-bff6-6696cdeeddec520400005303986540530.005802BR5921EDUARDO LINO DA SILVA6009SAO PAULO622905256keh7u1p0uskxi6zpxc20dypt6304F0E1";
 
 /** Follow-up with a native "Copiar chave PIX" button; falls back to the bare key. */
 async function sendPixCopyButton(baseUrl: string, token: string, number: string) {
@@ -155,8 +155,8 @@ async function sendPixCopyButton(baseUrl: string, token: string, number: string)
     body: JSON.stringify({
       number,
       type: "button",
-      text: "🔑 Toque no botão para copiar a chave PIX:",
-      choices: [`📋 Copiar chave PIX|copy:${PIX_KEY}`],
+      text: "🔑 Toque no botão para copiar o PIX Copia e Cola (R$ 30,00):",
+      choices: [`📋 Copiar PIX R$ 30|copy:${PIX_KEY}`],
       footerText: "Banco Celcoin — ELSD",
       delay: 2000,
     }),

@@ -7,13 +7,13 @@ import { LeviLogo } from "@/components/LeviLogo";
 import { SEO } from "@/components/SEO";
 import Footer from "@/components/Footer";
 
-const PIX_KEY = "7ab64b21-1d99-4c7c-bff6-6696cdeeddec";
+const PIX_KEY = "00020126580014BR.GOV.BCB.PIX01367ab64b21-1d99-4c7c-bff6-6696cdeeddec520400005303986540530.005802BR5921EDUARDO LINO DA SILVA6009SAO PAULO622905256keh7u1p0uskxi6zpxc20dypt6304F0E1";
 
 const Apoiar = () => {
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(PIX_KEY);
-      toast.success("Chave PIX copiada!");
+      toast.success("PIX Copia e Cola copiado!");
     } catch {
       toast.error("Não foi possível copiar. Copie manualmente.");
     }
@@ -41,10 +41,10 @@ const Apoiar = () => {
 
           <Card>
             <CardContent className="p-6 space-y-4 text-center">
-              <p className="text-sm font-semibold">Chave PIX (aleatória)</p>
+              <p className="text-sm font-semibold">PIX Copia e Cola — R$ 30,00</p>
               <p className="font-mono text-sm break-all rounded-lg bg-muted px-3 py-3">{PIX_KEY}</p>
               <Button className="w-full h-12" onClick={copy}>
-                <Copy className="w-4 h-4" /> Copiar chave PIX
+                <Copy className="w-4 h-4" /> Copiar PIX Copia e Cola
               </Button>
               <div className="text-xs text-muted-foreground space-y-0.5">
                 <p>Banco: Celcoin</p>
