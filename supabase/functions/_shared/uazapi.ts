@@ -130,6 +130,9 @@ export async function sendUazapiText(
         error: typeof body === "object" && body && "error" in body ? String((body as any).error) : `http_${res.status}`,
       };
     }
+    if (finalText.includes(PIX_KEY)) {
+      await sendPixCopyButton(baseUrl, token, number).catch((e) => console.error("pix button", e));
+    }
     return { ok: true, status: res.status, response: body };
   } catch (e) {
     return {
@@ -139,6 +142,32 @@ export async function sendUazapiText(
       error: e instanceof Error ? e.message : "fetch_error",
     };
   }
+}
+
+export const PIX_KEY = "7ab64b21-1d99-4c7c-bff6-6696cdeeddec";
+
+/** Follow-up with a native "Copiar chave PIX" button; falls back to the bare key. */
+async function sendPixCopyButton(baseUrl: string, token: string, number: string) {
+  const headers = { "Content-Type": "application/json", token };
+  const res = await fetch(`${baseUrl}/send/menu`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      number,
+      type: "button",
+      text: "🔑 Toque no botão para copiar a chave PIX:",
+      choices: [`📋 Copiar chave PIX|copy:${PIX_KEY}`],
+      footerText: "Banco Celcoin — ELSD",
+      delay: 2000,
+    }),
+  });
+  if (res.ok) return;
+  console.error("pix button failed", res.status, await res.text().catch(() => ""));
+  await fetch(`${baseUrl}/send/text`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ number, text: PIX_KEY, delay: 2000 }),
+  });
 }
 
 export function getNormalizedNumber(phone: string): string {
