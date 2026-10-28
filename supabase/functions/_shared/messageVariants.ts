@@ -95,12 +95,9 @@ O LEVI é gratuito e depende do seu apoio para continuar no ar.
 
 O LEVI é gratuito e depende do seu apoio para continuar no ar.
 
-💡 *Sugestão: R$ 30,00* (você escolhe o valor)
+✨ Cada apoio faz a diferença para manter o LEVI online para todas as igrejas.
 
-🔑 *PIX Copia e Cola (R$ 30,00):*
-00020126580014BR.GOV.BCB.PIX01367ab64b21-1d99-4c7c-bff6-6696cdeeddec520400005303986540530.005802BR5921EDUARDO LINO DA SILVA6009SAO PAULO622905256keh7u1p0uskxi6zpxc20dypt6304F0E1
-
-🏦 Banco Celcoin — ELSD
+👇 Toque no botão abaixo para copiar o PIX de R$ 30,00.
 
 🙏 Obrigado pelo carinho!`
   );
