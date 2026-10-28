@@ -97,8 +97,8 @@ O LEVI é gratuito e depende do seu apoio para continuar no ar.
 
 💡 *Sugestão: R$ 30,00* (você escolhe o valor)
 
-🔑 *Chave PIX (aleatória):*
-7ab64b21-1d99-4c7c-bff6-6696cdeeddec
+🔑 *PIX Copia e Cola (R$ 30,00):*
+00020126580014BR.GOV.BCB.PIX01367ab64b21-1d99-4c7c-bff6-6696cdeeddec520400005303986540530.005802BR5921EDUARDO LINO DA SILVA6009SAO PAULO622905256keh7u1p0uskxi6zpxc20dypt6304F0E1
 
 🏦 Banco Celcoin — ELSD
 
