@@ -528,12 +528,16 @@
     "callGuardian": "Call guardian",
     "checkout": "Check out",
     "confirmCheckout": "Confirm checkout",
-    "confirmDetail": "Confirm that {{name}} is being collected by an authorized guardian?",
+    "confirmDetail": "Confirm who is picking up {{name}}. Parents and teacher will be notified on WhatsApp.",
     "cancel": "Cancel",
     "checkoutDone": "Checkout confirmed",
     "callFailed": "Unable to call",
     "guardianCalled": "Guardian contacted by WhatsApp",
-    "error": "Error"
+    "error": "Error",
+    "pickupWho": "Who is picking up the child?",
+    "pickupOther": "Someone else (not registered)",
+    "pickupOtherName": "Full name of the person picking up",
+    "pickupOtherWarning": "Registered guardians will be told that an unregistered person picked up the child. Check a photo ID."
   },
   "kidsChild": {
     "hello": "Hi,",

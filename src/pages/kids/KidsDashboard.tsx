@@ -4,7 +4,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, AlertTriangle, PhoneCall, LogOut, QrCode, Download, FileDown, ExternalLink } from "lucide-react";
 import { qrToDataUrl, KIDS_JOIN_BASE, downloadPng, downloadPdf } from "@/lib/kidsQr";
@@ -13,6 +16,9 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 interface Room { id: string; name: string; color: string; page_id: string; static_qr_token: string; is_inclusion?: boolean; }
+interface PickupCandidate { guardian_id: string; full_name: string; relationship: string | null; }
+const OTHER = "__other__";
+
 interface ActiveChild {
   checkin_id: string; child_id: string; room_id: string; checkin_at: string;
   full_name: string; birth_date: string; allergies: string | null; restrictions: string | null; photo_path: string | null;
@@ -26,6 +32,11 @@ export default function KidsDashboard() {
   const [items, setItems] = useState<ActiveChild[]>([]);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
   const [checkoutFor, setCheckoutFor] = useState<ActiveChild | null>(null);
+  const [guardians, setGuardians] = useState<PickupCandidate[]>([]);
+  const [guardiansLoading, setGuardiansLoading] = useState(false);
+  const [pickupChoice, setPickupChoice] = useState<string>(""); // guardian_id | OTHER
+  const [pickupOtherName, setPickupOtherName] = useState("");
+  const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [photos, setPhotos] = useState<Record<string, string>>({});
   const [pageName, setPageName] = useState<string>("");
   const [linkedDeptId, setLinkedDeptId] = useState<string | null>(null);
@@ -94,14 +105,38 @@ export default function KidsDashboard() {
     }
   }
 
+  async function openCheckout(it: ActiveChild) {
+    setCheckoutFor(it);
+    setPickupChoice("");
+    setPickupOtherName("");
+    setGuardians([]);
+    setGuardiansLoading(true);
+    const { data, error } = await (supabase.rpc as any)("kids_checkout_candidates", { _checkin_id: it.checkin_id });
+    setGuardiansLoading(false);
+    if (error) { toast({ title: t("kidsTeacher.error"), description: error.message, variant: "destructive" }); return; }
+    const list = (data || []) as PickupCandidate[];
+    setGuardians(list);
+    // Sem responsáveis cadastrados: só resta "outra pessoa".
+    if (list.length === 0) setPickupChoice(OTHER);
+  }
+
+  const pickupValid = pickupChoice === OTHER
+    ? pickupOtherName.trim().length >= 2
+    : pickupChoice !== "";
+
   async function performCheckout() {
-    if (!checkoutFor) return;
+    if (!checkoutFor || !pickupValid || checkoutBusy) return;
+    setCheckoutBusy(true);
+    const isOther = pickupChoice === OTHER;
     const { error } = await (supabase.rpc as any)("kids_perform_checkout", {
-      _checkin_id: checkoutFor.checkin_id
+      _checkin_id: checkoutFor.checkin_id,
+      _pickup_guardian_id: isOther ? null : pickupChoice,
+      _pickup_person_name: isOther ? pickupOtherName.trim() : null,
     });
+    setCheckoutBusy(false);
     if (error) { toast({ title: t("kidsTeacher.error"), description: error.message, variant: "destructive" }); return; }
     supabase.functions.invoke("kids-notify-whatsapp", {
-      body: { event: "checkout", child_id: checkoutFor.child_id, room_id: checkoutFor.room_id }
+      body: { event: "checkout", checkin_id: checkoutFor.checkin_id }
     }).catch(() => {});
     toast({ title: t("kidsTeacher.checkoutDone") });
     setCheckoutFor(null);
@@ -110,7 +145,7 @@ export default function KidsDashboard() {
 
   async function callGuardian(it: ActiveChild) {
     const { error } = await supabase.functions.invoke("kids-notify-whatsapp", {
-      body: { event: "teacher_call", child_id: it.child_id, room_id: it.room_id }
+      body: { event: "teacher_call", checkin_id: it.checkin_id }
     });
     if (error) { toast({ title: t("kidsTeacher.callFailed"), variant: "destructive" }); return; }
     toast({ title: t("kidsTeacher.guardianCalled") });
@@ -212,7 +247,7 @@ export default function KidsDashboard() {
                             <Button size="sm" variant="secondary" onClick={() => callGuardian(it)} className="rounded-xl flex-1">
                               <PhoneCall className="w-4 h-4 mr-1" /> {t("kidsTeacher.callGuardian")}
                             </Button>
-                            <Button size="sm" onClick={() => setCheckoutFor(it)} className="rounded-xl flex-1">
+                            <Button size="sm" onClick={() => openCheckout(it)} className="rounded-xl flex-1">
                               <LogOut className="w-4 h-4 mr-1" /> {t("kidsTeacher.checkout")}
                             </Button>
                           </div>
@@ -227,20 +262,59 @@ export default function KidsDashboard() {
         )}
       </div>
 
-      <AlertDialog open={!!checkoutFor} onOpenChange={o => !o && setCheckoutFor(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("kidsTeacher.confirmCheckout")}</AlertDialogTitle>
-            <AlertDialogDescription>
+      <Dialog open={!!checkoutFor} onOpenChange={o => { if (!o && !checkoutBusy) setCheckoutFor(null); }}>
+        <DialogContent className="rounded-3xl">
+          <DialogHeader>
+            <DialogTitle>{t("kidsTeacher.confirmCheckout")}</DialogTitle>
+            <DialogDescription>
               {t("kidsTeacher.confirmDetail", { name: checkoutFor?.full_name })}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t("kidsTeacher.cancel")}</AlertDialogCancel>
-            <AlertDialogAction onClick={performCheckout}>{t("kidsTeacher.confirmCheckout")}</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <p className="text-sm font-semibold">{t("kidsTeacher.pickupWho")}</p>
+            {guardiansLoading ? (
+              <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin" /></div>
+            ) : (
+              <RadioGroup value={pickupChoice} onValueChange={setPickupChoice} className="gap-2">
+                {guardians.map(g => (
+                  <Label key={g.guardian_id} htmlFor={`pk-${g.guardian_id}`} className="flex items-center gap-3 rounded-xl border-2 p-3 cursor-pointer font-normal">
+                    <RadioGroupItem id={`pk-${g.guardian_id}`} value={g.guardian_id} />
+                    <span className="flex-1">{g.full_name}{g.relationship ? <span className="text-xs text-muted-foreground"> · {g.relationship}</span> : null}</span>
+                  </Label>
+                ))}
+                <Label htmlFor="pk-other" className="flex items-center gap-3 rounded-xl border-2 border-amber-300 p-3 cursor-pointer font-normal">
+                  <RadioGroupItem id="pk-other" value={OTHER} />
+                  <span className="flex-1">{t("kidsTeacher.pickupOther")}</span>
+                </Label>
+              </RadioGroup>
+            )}
+
+            {pickupChoice === OTHER && (
+              <div className="space-y-2">
+                <Input
+                  value={pickupOtherName}
+                  onChange={e => setPickupOtherName(e.target.value)}
+                  maxLength={120}
+                  placeholder={t("kidsTeacher.pickupOtherName")}
+                  aria-label={t("kidsTeacher.pickupOtherName")}
+                  autoFocus
+                />
+                <p className="text-xs text-amber-700 dark:text-amber-400 flex gap-1">
+                  <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" /> {t("kidsTeacher.pickupOtherWarning")}
+                </p>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setCheckoutFor(null)} disabled={checkoutBusy}>{t("kidsTeacher.cancel")}</Button>
+            <Button onClick={performCheckout} disabled={!pickupValid || checkoutBusy}>
+              {checkoutBusy && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}{t("kidsTeacher.confirmCheckout")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

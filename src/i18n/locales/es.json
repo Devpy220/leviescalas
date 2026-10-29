@@ -528,12 +528,16 @@
     "callGuardian": "Llamar al responsable",
     "checkout": "Retirar",
     "confirmCheckout": "Confirmar retirada",
-    "confirmDetail": "¿Confirmas que un responsable autorizado retira a {{name}}?",
+    "confirmDetail": "Confirma quién retira a {{name}}. Los padres y el profesor serán avisados por WhatsApp.",
     "cancel": "Cancelar",
     "checkoutDone": "Retirada confirmada",
     "callFailed": "No se pudo llamar",
     "guardianCalled": "Responsable avisado por WhatsApp",
-    "error": "Error"
+    "error": "Error",
+    "pickupWho": "¿Quién retira al niño?",
+    "pickupOther": "Otra persona (no registrada)",
+    "pickupOtherName": "Nombre completo de quien retira",
+    "pickupOtherWarning": "Los responsables registrados serán avisados de que una persona no registrada retiró al niño. Verifica un documento con foto."
   },
   "kidsChild": {
     "hello": "Hola,",
