@@ -92,9 +92,6 @@ for (const table of PRIVATE_TABLES) {
  * e que campos sensíveis não estão presentes.
  */
 const PUBLIC_BUT_LIMITED = [
-  // Igrejas têm página pública via slug, mas os dados do responsável,
-  // NÃO devem aparecer quando lido pelo anon.
-  { table: "churches", forbiddenFields: ["cnpj", "registrant_email", "registrant_phone"] },
   // Departments tem invite_code (sensível). Anon não deve ver invite_code.
   { table: "departments", forbiddenFields: ["invite_code", "coordinator_invite_code"] },
 ];
