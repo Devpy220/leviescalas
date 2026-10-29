@@ -161,11 +161,19 @@ serve(async (req: Request): Promise<Response> => {
       (oo ?? []).forEach((p: any) => optedOut.add(p.id));
     }
 
-    // Quem fez o check-in (para a mensagem do professor)
-    let checkinByName = "";
-    if (event === "checkin") {
-      const { data: who } = await admin.from("kids_guardians").select("full_name").eq("user_id", ci.checkin_by).maybeSingle();
-      checkinByName = clean(who?.full_name);
+    // Quem fez o check-in (responsável) e o check-out (professor)
+    const nameOf = async (uid: string | null | undefined): Promise<string> => {
+      if (!uid) return "";
+      const { data: g } = await admin.from("kids_guardians").select("full_name").eq("user_id", uid).limit(1).maybeSingle();
+      if (clean(g?.full_name)) return clean(g?.full_name);
+      const { data: p } = await admin.from("profiles").select("name").eq("id", uid).maybeSingle();
+      return clean(p?.name);
+    };
+    const checkinByName = event === "checkin" ? await nameOf(ci.checkin_by) : "";
+    let checkoutByName = "";
+    if (event === "checkout" && ci.checkout_by) {
+      const { data: p } = await admin.from("profiles").select("name").eq("id", ci.checkout_by).maybeSingle();
+      checkoutByName = clean(p?.name);
     }
 
     const recipients: Recipient[] = [];
@@ -191,12 +199,14 @@ serve(async (req: Request): Promise<Response> => {
         return `${hi}\n\n🔔 ${header}\n\nFavor comparecer à sala *${roomName}* para atender *${childName}*.\n\nAguardamos você.`;
       }
       if (event === "checkin") {
+        const by = checkinByName ? `\n👤 Check-in feito por: *${checkinByName}*` : "";
         return r.role === "guardian"
-          ? `${hi}\n\n👶 ${header}\n\nCheck-in confirmado às ${when}: *${childName}* está na sala *${roomName}*.\n\nVocê será avisado(a) quando a retirada for feita.`
-          : `${hi}\n\n👶 ${header}\n\nCheck-in às ${when}: *${childName}* chegou na sala *${roomName}*${checkinByName ? `, trazido(a) por *${checkinByName}*` : ""}.`;
+          ? `${hi}\n\n👶 ${header}\n\nCheck-in confirmado às ${when}.\n🧒 Criança: *${childName}*\n🏫 Sala: *${roomName}*${by}\n\nVocê será avisado(a) quando a retirada for feita.`
+          : `${hi}\n\n👶 ${header}\n\nCheck-in às ${when}.\n🧒 Criança: *${childName}*\n🏫 Sala: *${roomName}*${by}`;
       }
       // checkout
-      const base = `✅ ${header}\n\n*${childName}* foi retirado(a) da sala *${roomName}* às ${when} por *${pickupName}*.`;
+      const teacherLine = checkoutByName ? `\n👩‍🏫 Check-out feito por: *${checkoutByName}*` : "";
+      const base = `✅ ${header}\n\nCheck-out às ${when}.\n🧒 Criança: *${childName}*\n🏫 Sala: *${roomName}*${teacherLine}\n🙋 Retirado(a) por: *${pickupName}*`;
       if (r.role === "guardian") {
         return pickupRegistered
           ? `${hi}\n\n${base}\n\nObrigado por confiar em nós!`
