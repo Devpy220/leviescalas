@@ -46,7 +46,7 @@ export default function JoinDepartment() {
 
   const fetchDepartment = async () => {
     try {
-      // Use secure RPC function that only returns public info (no Stripe data)
+      // Use secure RPC function that only returns public info
       const { data, error } = await supabase
         .rpc('get_department_by_invite_code', { code: inviteCode })
         .maybeSingle();

@@ -15,6 +15,13 @@
       "when": 1792933987407,
       "tag": "0001_fix_security_audit_trigger",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793311960237,
+      "tag": "0002_deprecate_cakto_payment_tables",
+      "breakpoints": true
     }
   ]
 }
