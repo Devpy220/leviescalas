@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { LeviLogo } from "@/components/LeviLogo";
 import { SEO } from "@/components/SEO";
 import Footer from "@/components/Footer";
+import pixQr from "@/assets/pix-qrcode-levi.jpg";
 
 const PIX_KEY = "00020126580014BR.GOV.BCB.PIX01367ab64b21-1d99-4c7c-bff6-6696cdeeddec520400005303986540530.005802BR5921EDUARDO LINO DA SILVA6009SAO PAULO622905256keh7u1p0uskxi6zpxc20dypt6304F0E1";
 
@@ -41,7 +42,16 @@ const Apoiar = () => {
 
           <Card>
             <CardContent className="p-6 space-y-4 text-center">
-              <p className="text-sm font-semibold">PIX Copia e Cola — R$ 30,00</p>
+              <p className="text-sm font-semibold">PIX — R$ 30,00</p>
+              <img
+                src={pixQr}
+                alt="QR Code PIX de R$ 30,00 para apoiar o LEVI"
+                width={224}
+                height={224}
+                loading="lazy"
+                className="mx-auto w-56 h-56 rounded-lg border border-border bg-card p-2"
+              />
+              <p className="text-xs text-muted-foreground">Aponte a câmera do app do banco ou copie o código abaixo.</p>
               <p className="font-mono text-sm break-all rounded-lg bg-muted px-3 py-3">{PIX_KEY}</p>
               <Button className="w-full h-12" onClick={copy}>
                 <Copy className="w-4 h-4" /> Copiar PIX Copia e Cola
