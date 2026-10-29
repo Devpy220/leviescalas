@@ -810,31 +810,46 @@ export type Database = {
         Row: {
           checkin_at: string
           checkin_by: string
+          checkin_notified_at: string | null
           checkout_at: string | null
           checkout_by: string | null
+          checkout_notified_at: string | null
           child_id: string
           created_at: string
           id: string
+          pickup_guardian_id: string | null
+          pickup_is_registered: boolean | null
+          pickup_person_name: string | null
           room_id: string
         }
         Insert: {
           checkin_at?: string
           checkin_by: string
+          checkin_notified_at?: string | null
           checkout_at?: string | null
           checkout_by?: string | null
+          checkout_notified_at?: string | null
           child_id: string
           created_at?: string
           id?: string
+          pickup_guardian_id?: string | null
+          pickup_is_registered?: boolean | null
+          pickup_person_name?: string | null
           room_id: string
         }
         Update: {
           checkin_at?: string
           checkin_by?: string
+          checkin_notified_at?: string | null
           checkout_at?: string | null
           checkout_by?: string | null
+          checkout_notified_at?: string | null
           child_id?: string
           created_at?: string
           id?: string
+          pickup_guardian_id?: string | null
+          pickup_is_registered?: boolean | null
+          pickup_person_name?: string | null
           room_id?: string
         }
         Relationships: [
@@ -843,6 +858,13 @@ export type Database = {
             columns: ["child_id"]
             isOneToOne: false
             referencedRelation: "kids_children"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kids_checkins_pickup_guardian_id_fkey"
+            columns: ["pickup_guardian_id"]
+            isOneToOne: false
+            referencedRelation: "kids_guardians"
             referencedColumns: ["id"]
           },
           {
@@ -3538,6 +3560,14 @@ export type Database = {
           success: boolean
         }[]
       }
+      kids_checkout_candidates: {
+        Args: { _checkin_id: string }
+        Returns: {
+          full_name: string
+          guardian_id: string
+          relationship: string
+        }[]
+      }
       kids_child_attendance: {
         Args: { _child_id: string; _from?: string; _to?: string }
         Returns: {
@@ -3641,7 +3671,14 @@ export type Database = {
           pickup_code: string
         }[]
       }
-      kids_perform_checkout: { Args: { _checkin_id: string }; Returns: boolean }
+      kids_perform_checkout: {
+        Args: {
+          _checkin_id: string
+          _pickup_guardian_id?: string
+          _pickup_person_name?: string
+        }
+        Returns: boolean
+      }
       kids_report_dropoff: {
         Args: { _page_id: string }
         Returns: {

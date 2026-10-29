@@ -22,6 +22,13 @@
       "when": 1793311960237,
       "tag": "0002_deprecate_cakto_payment_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793312661394,
+      "tag": "0003_kids_checkout_pickup_person",
+      "breakpoints": true
     }
   ]
 }
