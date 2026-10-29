@@ -150,7 +150,7 @@ export default function KidsCheckin() {
 
     for (const r of rows) {
       supabase.functions.invoke("kids-notify-whatsapp", {
-        body: { event: "checkin", child_id: r.child_id, room_id: "" }
+        body: { event: "checkin", checkin_id: r.checkin_id }
       }).catch(() => {});
     }
 
