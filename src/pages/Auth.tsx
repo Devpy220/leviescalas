@@ -295,7 +295,6 @@ export default function Auth() {
       // This happens when user was redirected to /auth from a protected page
       const stateReturnUrl = routerLocation.state?.returnUrl as string | undefined;
       if (stateReturnUrl && stateReturnUrl.startsWith('/')) {
-        console.log('[Auth] Using returnUrl from state:', stateReturnUrl);
         navigate(stateReturnUrl, { replace: true, state: {} });
         return;
       }
@@ -314,7 +313,6 @@ export default function Auth() {
         .maybeSingle();
       
       if (profile && (!profile.name || !profile.whatsapp || profile.name.trim() === '' || profile.whatsapp.trim() === '')) {
-        console.log('[Auth] Profile incomplete, redirecting to complete-profile');
         const completeProfileUrl = redirectParam ? `/complete-profile?redirect=${encodeURIComponent(redirectParam)}` : '/complete-profile';
         navigate(completeProfileUrl, { replace: true });
         return;
@@ -323,7 +321,6 @@ export default function Auth() {
       // PRIORITY 4: Smart redirect based on department count
       const destination = await getSmartRedirectDestination(session.user.id);
       const finalDest = await maybeChooseApp(session.user.id, destination);
-      console.log('[Auth] Already authenticated, smart redirecting to:', finalDest);
       navigate(finalDest, { replace: true });
     }, 150);
     
@@ -529,7 +526,6 @@ export default function Auth() {
       const redirectDestination = await getSmartRedirectDestination(currentSession.user.id);
       const finalDest = await maybeChooseApp(currentSession.user.id, redirectDestination);
       
-      console.log('[Auth] Login complete, redirecting to:', finalDest);
       
       toast({
         title: t("auth.welcomeBack"),
@@ -592,7 +588,6 @@ export default function Auth() {
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       if (attempt > 0) {
         // Wait before retry to let session propagate
-        console.log(`[Auth] Retrying department count (attempt ${attempt + 1}/${MAX_RETRIES + 1}) after ${RETRY_DELAY_MS}ms delay...`);
         await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
       }
       
@@ -606,18 +601,15 @@ export default function Auth() {
       
       // If we got a non-zero count, we're good
       if (lastResult.count > 0) {
-        console.log(`[Auth] Smart redirect - departments found via RPC: ${lastResult.count} (attempt ${attempt + 1}, ${lastResult.elapsed}ms)`);
         
         // Always go to dashboard (Meu Perfil)
         return '/dashboard';
       }
       
       // Got 0 - this might be a session propagation issue, retry if we have attempts left
-      console.log(`[Auth] Smart redirect - got 0 departments (attempt ${attempt + 1}, ${lastResult.elapsed}ms), ${attempt < MAX_RETRIES ? 'retrying...' : 'giving up'}`);
     }
     
     // After all retries, if still 0, go to dashboard
-    console.log(`[Auth] Smart redirect - final count: ${lastResult.count} after ${MAX_RETRIES + 1} attempts, going to /dashboard`);
     return '/dashboard';
   };
 
@@ -769,7 +761,6 @@ export default function Auth() {
           // Clear storage after saving
           sessionStorage.removeItem('invitedByDepartment');
         } catch (err) {
-          console.log('Não foi possível salvar origem do cadastro:', err);
         }
       }
 
@@ -790,7 +781,6 @@ export default function Auth() {
             });
           }
         } catch (err) {
-          console.log('Não foi possível definir role de admin:', err);
         }
       }
     }
@@ -920,16 +910,10 @@ export default function Auth() {
     setIsLoading(true);
 
     try {
-      console.log('[PasswordReset] Starting password reset flow...');
 
       // Use refreshSession() instead of getSession() to ensure a fresh, valid token
       const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
       
-      console.log('[PasswordReset] refreshSession result:', {
-        hasSession: !!refreshData?.session,
-        hasUser: !!refreshData?.session?.user,
-        error: refreshError?.message,
-      });
 
       if (refreshError || !refreshData?.session) {
         console.error('[PasswordReset] No valid session after refresh:', refreshError);
@@ -942,7 +926,6 @@ export default function Auth() {
         return;
       }
 
-      console.log('[PasswordReset] Session valid, calling updateUser...');
       const { error } = await supabase.auth.updateUser({
         password,
       });
@@ -967,7 +950,6 @@ export default function Auth() {
         return;
       }
 
-      console.log('[PasswordReset] Password updated successfully!');
 
       toast({
         title: t("auth.resetSuccess"),
@@ -982,7 +964,6 @@ export default function Auth() {
       await new Promise(resolve => setTimeout(resolve, 500));
 
       // Use scope: 'local' to avoid triggering TOKEN_REFRESHED redirect
-      console.log('[PasswordReset] Signing out locally...');
       await supabase.auth.signOut({ scope: 'local' });
 
       toast({

@@ -87,7 +87,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // This prevents the "session exists but user is null" race condition
   useEffect(() => {
     if (session?.user && !user) {
-      console.log('[Auth] Syncing user from session.user');
       setUser(session.user);
     }
   }, [session, user]);
@@ -148,7 +147,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (!isAuthError || attempt === maxRetries) {
             return result;
           }
-          console.log(`[Auth] Bootstrap retry ${attempt + 1}/${maxRetries} after auth error`);
         }
         return { data: null, error: new Error('Max retries exceeded') };
       };
@@ -209,7 +207,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
       keysToRemove.forEach(key => {
-        console.log('[Auth] Removing localStorage key:', key);
         localStorage.removeItem(key);
       });
       
@@ -316,7 +313,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(null);
           setLoading(false);
 
-          console.log('[Auth] Clean logout completed after invalid refresh token');
           return null;
         }
 

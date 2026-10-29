@@ -159,7 +159,6 @@ export default function Department() {
 
   useEffect(() => {
     // Debug: track loading state
-    console.log('[Department] State:', { authLoading, loading, hasUser: !!currentUser, hasId: !!id });
     
     // Wait for auth to finish loading
     if (authLoading) return;
@@ -225,7 +224,7 @@ export default function Department() {
     if (!id) return;
     
     try {
-      // Use secure function that conditionally returns stripe data based on role
+      // Use secure function that returns data based on role
       const { data, error } = await supabase
         .rpc('get_department_secure', { dept_id: id })
         .single();

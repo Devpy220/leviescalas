@@ -20,11 +20,9 @@ export function usePWAUpdate() {
       try {
         const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
         setRegistration(reg as ServiceWorkerRegistrationWithUpdate);
-        console.log('[PWA] Service Worker registered');
 
         // Check if there's already a waiting worker
         if (reg.waiting) {
-          console.log('[PWA] Update available (waiting worker found)');
           setShowUpdatePrompt(true);
         }
 
@@ -35,7 +33,6 @@ export function usePWAUpdate() {
 
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              console.log('[PWA] New content available');
               setShowUpdatePrompt(true);
             }
           });
@@ -59,7 +56,6 @@ export function usePWAUpdate() {
 
     // Handle controller change (when skipWaiting is called)
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-      console.log('[PWA] Controller changed, reloading...');
       window.location.reload();
     });
 
@@ -77,13 +73,11 @@ export function usePWAUpdate() {
   }, []);
 
   const applyUpdate = useCallback(async () => {
-    console.log('[PWA] User accepted update');
     
     // Clear ALL caches first to force fresh icon/asset downloads
     if ('caches' in window) {
       const cacheNames = await caches.keys();
       await Promise.all(cacheNames.map(name => caches.delete(name)));
-      console.log('[PWA] All caches cleared for fresh assets');
     }
 
     if (registration?.waiting) {
@@ -97,7 +91,6 @@ export function usePWAUpdate() {
   }, [registration]);
 
   const dismissUpdate = useCallback(() => {
-    console.log('[PWA] User dismissed update');
     setShowUpdatePrompt(false);
   }, []);
 

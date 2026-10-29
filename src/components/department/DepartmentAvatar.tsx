@@ -70,11 +70,9 @@ export default function DepartmentAvatar({
     setSelectedFile(null);
     setUploading(true);
 
-    console.log('Starting avatar upload for department:', departmentId);
 
     try {
       const fileName = `${departmentId}/avatar.jpg`;
-      console.log('Uploading to path:', fileName);
 
       // Upload cropped image to storage
       const { error: uploadError, data: uploadData } = await supabase.storage
@@ -84,7 +82,6 @@ export default function DepartmentAvatar({
           contentType: 'image/jpeg'
         });
 
-      console.log('Upload result:', { error: uploadError, data: uploadData });
 
       if (uploadError) {
         console.error('Upload error details:', uploadError);
@@ -96,7 +93,6 @@ export default function DepartmentAvatar({
         .from('department-avatars')
         .getPublicUrl(fileName);
 
-      console.log('Public URL:', publicUrl);
 
       // Add timestamp to bust cache
       const urlWithTimestamp = `${publicUrl}?t=${Date.now()}`;
@@ -107,7 +103,6 @@ export default function DepartmentAvatar({
         .update({ avatar_url: urlWithTimestamp } as any)
         .eq('id', departmentId);
 
-      console.log('Department update result:', { error: updateError });
 
       if (updateError) {
         console.error('Update error details:', updateError);

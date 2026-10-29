@@ -240,13 +240,6 @@ export default function EditScheduleDialog({
     try {
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
       
-      console.log('Saving schedule update:', {
-        id: schedule.id,
-        date: dateStr,
-        time_start: timeStart,
-        time_end: timeEnd,
-        user_id: selectedMemberId,
-      });
 
       const { data, error, count } = await supabase
         .from('schedules')
@@ -264,7 +257,6 @@ export default function EditScheduleDialog({
 
       if (error) throw error;
 
-      console.log('Schedule update result:', { data, count });
 
       if (!data || data.length === 0) {
         toast({

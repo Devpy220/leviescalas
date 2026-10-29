@@ -36,12 +36,6 @@ verify_jwt = false
 [functions.send-contact-email]
 verify_jwt = false
 
-[functions.cakto-create-payment]
-verify_jwt = false
-
-[functions.cakto-webhook]
-verify_jwt = false
-
 [functions.cleanup-inactive-churches]
 verify_jwt = false
 

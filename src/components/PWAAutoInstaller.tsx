@@ -39,7 +39,6 @@ export function PWAAutoInstaller() {
       try {
         const installed = await autoInstall();
         if (installed) {
-          console.log('[PWAAutoInstaller] PWA installed');
         }
       } catch (error) {
         console.error('[PWAAutoInstaller] Error:', error);

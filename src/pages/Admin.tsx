@@ -930,11 +930,6 @@ export default function Admin() {
                     </Button>
                   </TooltipTrigger><TooltipContent>Logs do WhatsApp</TooltipContent></UITooltip>
                   <UITooltip><TooltipTrigger asChild>
-                    <Button asChild size="icon" variant="outline" className="h-9 w-9" aria-label="Doações">
-                      <a href="/admin/doacoes"><Heart className="w-4 h-4 text-primary" /></a>
-                    </Button>
-                  </TooltipTrigger><TooltipContent>Doações</TooltipContent></UITooltip>
-                  <UITooltip><TooltipTrigger asChild>
                     <Button asChild size="icon" variant="outline" className="h-9 w-9" aria-label="Painel de igrejas">
                       <a href="/admin/igrejas"><Church className="w-4 h-4 text-primary" /></a>
                     </Button>
