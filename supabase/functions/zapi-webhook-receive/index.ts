@@ -1,10 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import {
-  buildCandidateDays,
-  getActiveSlotsForUser,
-  type AvailabilityRow,
-} from "../_shared/scheduleDates.ts";
+import { serveOnlyBlackouts } from "../_shared/scheduleDates.ts";
 import { tryHandleSwapMessage } from "./swapFlow.ts";
 import { detectLang, t, fmtTime, DOW, isScheduleListCommand, translateRole } from "../_shared/whatsappI18n.ts";
 import { LEVI_COMMANDS_HINT, buildSupportOnlyMessage } from "../_shared/messageVariants.ts";
@@ -833,12 +829,6 @@ serve(async (req: Request): Promise<Response> => {
       .limit(1);
 
     const prompt = prompts?.[0];
-    if (!prompt) {
-      return new Response(JSON.stringify({ ignored: true, reason: "no active prompt" }), {
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
-    }
-
     // Only act when the user sends an EXPLICIT command at the start of the message
     // (bloquear / servir / nenhum / liberar). Free conversation like
     // "qualquer dia tá bom, desde que seja domingo de manhã" must NEVER change data.
@@ -852,14 +842,30 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    const targetMonth = new Date(prompt.target_month + "T00:00:00");
-    const windowStart = new Date(targetMonth.getFullYear(), targetMonth.getMonth() - 1, 28);
-    const windowEnd = new Date(targetMonth.getFullYear(), targetMonth.getMonth(), 5, 23, 59, 59);
     const now = new Date();
-    if (now < windowStart || now > windowEnd) {
-      return new Response(JSON.stringify({ ignored: true, reason: "outside window" }), {
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+    let targetMonth: Date | null = null;
+    let activePrompt: any = null;
+    if (prompt) {
+      const tm = new Date(prompt.target_month + "T00:00:00");
+      const windowStart = new Date(tm.getFullYear(), tm.getMonth() - 1, 28);
+      const windowEnd = new Date(tm.getFullYear(), tm.getMonth(), 5, 23, 59, 59);
+      if (now >= windowStart && now <= windowEnd) {
+        targetMonth = tm;
+        activePrompt = prompt;
+      }
+    }
+    if (!targetMonth) {
+      // Outside the monthly collection window, "servir <datas>" still works at
+      // any time: the month comes from the first dd/mm date (or the current month).
+      if (!/^(servir|vou servir|posso servir)\b/.test(lowerText)) {
+        return new Response(JSON.stringify({ ignored: true, reason: prompt ? "outside window" : "no active prompt" }), {
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+      const dm = /(\b\d{1,2})[/\-.](\d{1,2})/.exec(lowerText);
+      const mon = dm ? Math.min(11, Math.max(0, parseInt(dm[2], 10) - 1)) : now.getMonth();
+      const yr = mon < now.getMonth() ? now.getFullYear() + 1 : now.getFullYear();
+      targetMonth = new Date(yr, mon, 1);
     }
 
     const parsed = parseUserResponse(text, targetMonth);
@@ -911,31 +917,22 @@ serve(async (req: Request): Promise<Response> => {
     } else if (parsed.mode === "block") {
       blackoutDateStrings = parsed.dates;
     } else {
-      // serve_only: blackouts = candidate days NOT in parsed.dates
-      const { data: availRows } = await supabase
-        .from("member_availability")
-        .select("day_of_week, time_start, time_end, is_available, department_id")
-        .eq("user_id", profile.id);
-
-      const userRows: AvailabilityRow[] = (availRows ?? []).map((r: any) => ({
-        day_of_week: r.day_of_week,
-        time_start: r.time_start,
-        time_end: r.time_end,
-        is_available: r.is_available,
-      }));
-      const activeSlots = getActiveSlotsForUser(userRows);
-      const allCandidates = buildCandidateDays(
-        targetMonth.getFullYear(),
-        targetMonth.getMonth(),
-        activeSlots,
-      ).map((c) => c.iso);
+      // serve_only: every remaining day of the month is blocked except the
+      // chosen dates, in every department, regardless of weekly availability.
+      const y = targetMonth.getFullYear();
+      const mIdx = targetMonth.getMonth();
+      const lastDay = new Date(y, mIdx + 1, 0).getDate();
+      const todayIso = new Date().toISOString().slice(0, 10);
       const chosen = new Set(parsed.dates);
-      blackoutDateStrings = allCandidates.filter((iso) => !chosen.has(iso));
+      for (let d = 1; d <= lastDay; d++) {
+        const iso = `${y}-${String(mIdx + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+        if (iso >= todayIso && !chosen.has(iso)) blackoutDateStrings.push(iso);
+      }
       serveOnlyDates = parsed.dates;
     }
 
     // No per-department block limit: every requested day is applied.
-    const monthPrefix = prompt.target_month.slice(0, 7);
+    const monthPrefix = `${targetMonth.getFullYear()}-${String(targetMonth.getMonth() + 1).padStart(2, "0")}`;
     for (const dept of depts ?? []) {
       const { data: existing } = await supabase
         .from("member_preferences")
@@ -969,10 +966,12 @@ serve(async (req: Request): Promise<Response> => {
     // the parser already expanded them into `parsed.dates`. Track for the reply text.
     const appliedWeekly: WeeklyBlock[] = parsed.weeklyBlocks ?? [];
 
-    await supabase
-      .from("blackout_collection_prompts")
-      .update({ responded_at: new Date().toISOString(), parsed_dates: parsed.dates })
-      .eq("id", prompt.id);
+    if (activePrompt) {
+      await supabase
+        .from("blackout_collection_prompts")
+        .update({ responded_at: new Date().toISOString(), parsed_dates: parsed.dates })
+        .eq("id", activePrompt.id);
+    }
 
     // Build confirmation message
     let confirmMsg: string;

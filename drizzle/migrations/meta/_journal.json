@@ -36,6 +36,20 @@
       "when": 1793455023779,
       "tag": "0004_deprecate_blackout_limit",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793459375778,
+      "tag": "0005_remove_unused_cakto_limit_functions",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793459443198,
+      "tag": "0006_revoke_anon_permission_helpers",
+      "breakpoints": true
     }
   ]
 }
