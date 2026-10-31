@@ -232,78 +232,6 @@ export type Database = {
         }
         Relationships: []
       }
-      cakto_offers: {
-        Row: {
-          active: boolean
-          amount_cents: number
-          checkout_url: string
-          created_at: string
-          id: string
-          label: string
-          mode: string
-          sort_order: number
-          updated_at: string
-        }
-        Insert: {
-          active?: boolean
-          amount_cents: number
-          checkout_url: string
-          created_at?: string
-          id?: string
-          label: string
-          mode: string
-          sort_order?: number
-          updated_at?: string
-        }
-        Update: {
-          active?: boolean
-          amount_cents?: number
-          checkout_url?: string
-          created_at?: string
-          id?: string
-          label?: string
-          mode?: string
-          sort_order?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      cakto_products: {
-        Row: {
-          amount_cents: number | null
-          cakto_offer_id: string | null
-          cakto_price_id: string | null
-          cakto_product_id: string | null
-          created_at: string
-          id: string
-          kind: string
-          metadata: Json
-          updated_at: string
-        }
-        Insert: {
-          amount_cents?: number | null
-          cakto_offer_id?: string | null
-          cakto_price_id?: string | null
-          cakto_product_id?: string | null
-          created_at?: string
-          id?: string
-          kind: string
-          metadata?: Json
-          updated_at?: string
-        }
-        Update: {
-          amount_cents?: number | null
-          cakto_offer_id?: string | null
-          cakto_price_id?: string | null
-          cakto_product_id?: string | null
-          created_at?: string
-          id?: string
-          kind?: string
-          metadata?: Json
-          updated_at?: string
-        }
-        Relationships: []
-      }
       calendar_sync_tokens: {
         Row: {
           created_at: string
@@ -598,7 +526,6 @@ export type Database = {
           kids_linked: boolean
           kids_page_id: string | null
           leader_id: string
-          max_blackout_dates: number
           name: string
           repertoire_enabled: boolean
           subscription_status: Database["public"]["Enums"]["subscription_status"]
@@ -619,7 +546,6 @@ export type Database = {
           kids_linked?: boolean
           kids_page_id?: string | null
           leader_id: string
-          max_blackout_dates?: number
           name: string
           repertoire_enabled?: boolean
           subscription_status?: Database["public"]["Enums"]["subscription_status"]
@@ -640,7 +566,6 @@ export type Database = {
           kids_linked?: boolean
           kids_page_id?: string | null
           leader_id?: string
-          max_blackout_dates?: number
           name?: string
           repertoire_enabled?: boolean
           subscription_status?: Database["public"]["Enums"]["subscription_status"]
@@ -677,63 +602,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      donations: {
-        Row: {
-          amount_cents: number
-          cakto_payment_id: string | null
-          cakto_session_id: string | null
-          cakto_subscription_id: string | null
-          created_at: string
-          currency: string
-          donor_email: string | null
-          donor_name: string | null
-          donor_whatsapp: string | null
-          id: string
-          mode: string
-          paid_at: string | null
-          payment_method: string | null
-          raw_payload: Json | null
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          amount_cents: number
-          cakto_payment_id?: string | null
-          cakto_session_id?: string | null
-          cakto_subscription_id?: string | null
-          created_at?: string
-          currency?: string
-          donor_email?: string | null
-          donor_name?: string | null
-          donor_whatsapp?: string | null
-          id?: string
-          mode: string
-          paid_at?: string | null
-          payment_method?: string | null
-          raw_payload?: Json | null
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          amount_cents?: number
-          cakto_payment_id?: string | null
-          cakto_session_id?: string | null
-          cakto_subscription_id?: string | null
-          created_at?: string
-          currency?: string
-          donor_email?: string | null
-          donor_name?: string | null
-          donor_whatsapp?: string | null
-          id?: string
-          mode?: string
-          paid_at?: string | null
-          payment_method?: string | null
-          raw_payload?: Json | null
-          status?: string
-          updated_at?: string
-        }
-        Relationships: []
       }
       escala_repertorio: {
         Row: {
@@ -2998,7 +2866,6 @@ export type Database = {
           description: string | null
           id: string | null
           leader_id: string | null
-          max_blackout_dates: number | null
           name: string | null
           subscription_status:
             | Database["public"]["Enums"]["subscription_status"]
@@ -3014,7 +2881,6 @@ export type Database = {
           description?: string | null
           id?: string | null
           leader_id?: string | null
-          max_blackout_dates?: number | null
           name?: string | null
           subscription_status?:
             | Database["public"]["Enums"]["subscription_status"]
@@ -3030,7 +2896,6 @@ export type Database = {
           description?: string | null
           id?: string | null
           leader_id?: string | null
-          max_blackout_dates?: number | null
           name?: string | null
           subscription_status?:
             | Database["public"]["Enums"]["subscription_status"]
@@ -3196,15 +3061,6 @@ export type Database = {
           user_id: string
         }[]
       }
-      check_rate_limit: {
-        Args: {
-          p_endpoint: string
-          p_max_requests: number
-          p_user_id: string
-          p_window_minutes: number
-        }
-        Returns: boolean
-      }
       check_rate_limit_public: {
         Args: {
           p_endpoint: string
@@ -3249,16 +3105,6 @@ export type Database = {
           name: string
         }[]
       }
-      get_all_profiles_admin: {
-        Args: never
-        Returns: {
-          created_at: string
-          email: string
-          id: string
-          name: string
-          whatsapp: string
-        }[]
-      }
       get_all_profiles_with_departments: {
         Args: never
         Returns: {
@@ -3269,16 +3115,6 @@ export type Database = {
           id: string
           name: string
           whatsapp: string
-        }[]
-      }
-      get_billing_audit_logs: {
-        Args: { dept_id: string; limit_count?: number }
-        Returns: {
-          action: string
-          created_at: string
-          id: string
-          user_id: string
-          user_name: string
         }[]
       }
       get_church_code_by_slug: { Args: { p_slug: string }; Returns: string }
@@ -3358,44 +3194,6 @@ export type Database = {
           name: string
         }[]
       }
-      get_department_contacts: {
-        Args: { dept_id: string }
-        Returns: {
-          avatar_url: string
-          email: string
-          id: string
-          name: string
-          role: string
-          share_contact: boolean
-          whatsapp: string
-        }[]
-      }
-      get_department_for_member: {
-        Args: { dept_id: string }
-        Returns: {
-          created_at: string
-          description: string
-          id: string
-          invite_code: string
-          leader_id: string
-          name: string
-          updated_at: string
-        }[]
-      }
-      get_department_full: {
-        Args: { dept_id: string }
-        Returns: {
-          created_at: string
-          description: string
-          id: string
-          invite_code: string
-          leader_id: string
-          name: string
-          subscription_status: string
-          trial_ends_at: string
-          updated_at: string
-        }[]
-      }
       get_department_member_profiles: {
         Args: { dept_id: string }
         Returns: {
@@ -3465,18 +3263,6 @@ export type Database = {
           id: string
           time_end: string
           time_start: string
-        }[]
-      }
-      get_schedule_for_user: {
-        Args: { dept_id: string; target_user_id: string }
-        Returns: {
-          created_by: string
-          date: string
-          id: string
-          notes: string
-          time_end: string
-          time_start: string
-          user_id: string
         }[]
       }
       get_user_count: { Args: never; Returns: number }
@@ -3742,16 +3528,6 @@ export type Database = {
           photo_path: string
         }[]
       }
-      log_billing_audit: {
-        Args: {
-          p_action: string
-          p_department_id: string
-          p_ip_address?: string
-          p_user_agent?: string
-          p_user_id: string
-        }
-        Returns: string
-      }
       record_whatsapp_consent: {
         Args: {
           _action: string
@@ -3807,13 +3583,6 @@ export type Database = {
       }
       validate_coordinator_code_secure: {
         Args: { p_code: string }
-        Returns: {
-          department_name: string
-          is_valid: boolean
-        }[]
-      }
-      validate_invite_code_secure: {
-        Args: { code: string }
         Returns: {
           department_name: string
           is_valid: boolean
