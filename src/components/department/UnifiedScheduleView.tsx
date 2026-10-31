@@ -7,13 +7,10 @@ import {
   Trash2,
   Pencil,
   Users,
-  Sparkles,
   Calendar as CalendarIcon,
-  CalendarPlus,
   Search,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { DraggableFloating } from '@/components/ui/draggable-floating';
 import { ASSIGNMENT_ROLES } from '@/lib/constants';
 import { FIXED_SLOTS, FixedSlot, findSlotByDayAndTime, getDayColorSlot, normalizeTime } from '@/lib/fixedSlots';
 import { Button } from '@/components/ui/button';
