@@ -59,7 +59,7 @@ export function PersonalScheduleCard({
   const dayOfWeekNum = getDay(dateObj);
   const dayOfWeek = format(dateObj, 'EEE', { locale: dateLocale }).toUpperCase();
   const dayMonth = format(dateObj, 'dd/MM', { locale: dateLocale });
-  const slotInfo = findSlotByDayAndTime(dayOfWeekNum, schedule.time_start);
+  const slotInfo = findSlotByDayAndTime(dayOfWeekNum, schedule.time_start) ?? getDayColorSlot(dayOfWeekNum, schedule.time_start);
 
   const [open, setOpen] = useState(false);
   const role = schedule.assignment_role
