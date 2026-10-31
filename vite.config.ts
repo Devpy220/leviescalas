@@ -85,8 +85,6 @@ export default defineConfig(({ mode }) => {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         // More aggressive cache invalidation
         cleanupOutdatedCaches: true,
-        // Own Web Push (VAPID) handlers
-        importScripts: ["/push-handlers.js"],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
