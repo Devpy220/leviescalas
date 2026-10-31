@@ -970,10 +970,12 @@ serve(async (req: Request): Promise<Response> => {
     // the parser already expanded them into `parsed.dates`. Track for the reply text.
     const appliedWeekly: WeeklyBlock[] = parsed.weeklyBlocks ?? [];
 
-    await supabase
-      .from("blackout_collection_prompts")
-      .update({ responded_at: new Date().toISOString(), parsed_dates: parsed.dates })
-      .eq("id", prompt.id);
+    if (activePrompt) {
+      await supabase
+        .from("blackout_collection_prompts")
+        .update({ responded_at: new Date().toISOString(), parsed_dates: parsed.dates })
+        .eq("id", activePrompt.id);
+    }
 
     // Build confirmation message
     let confirmMsg: string;
