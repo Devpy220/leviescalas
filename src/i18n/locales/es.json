@@ -231,6 +231,8 @@
     "exportExcel": "Exportar Excel",
     "teamAvailabilityTitle": "Disponibilidad del Equipo",
     "menu": "Menú",
+    "hideMenus": "Ocultar menús",
+    "showMenus": "Mostrar menús",
     "schedulesTab": "Escalas",
     "muralTab": "Mural",
     "repertoireTab": "Repertorio",
