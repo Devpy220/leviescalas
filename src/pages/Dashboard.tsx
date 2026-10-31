@@ -522,12 +522,6 @@ export default function Dashboard() {
   return (
     <div className="relative min-h-screen overflow-x-hidden">
       <VideoBackground />
-      <FloatingActionMenu
-        isAdmin={isAdmin}
-        shouldShowInstallPrompt={shouldShowInstallPrompt()}
-        onInstallClick={() => setShowInstallDialog(true)}
-        onSignOut={handleSignOut}
-      />
 
       <div className="min-w-0 min-h-screen flex flex-col">
         <main className="container mx-auto px-4 py-8 max-w-full flex-1 flex flex-col">
@@ -545,6 +539,15 @@ export default function Dashboard() {
               <h1 className="font-display text-base font-semibold text-foreground truncate">{userName || t('dashboard.myProfile')}</h1>
               <p className="text-xs text-muted-foreground truncate">{currentUser?.email}</p>
             </div>
+          </div>
+          <div className="w-full order-last">
+            <FloatingActionMenu
+              inline
+              isAdmin={isAdmin}
+              shouldShowInstallPrompt={shouldShowInstallPrompt()}
+              onInstallClick={() => setShowInstallDialog(true)}
+              onSignOut={handleSignOut}
+            />
           </div>
 
           <div className="flex items-center gap-2 min-w-0">
