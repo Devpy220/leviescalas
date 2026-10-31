@@ -502,47 +502,24 @@ serve(async (req: Request): Promise<Response> => {
         );
         return reply({ ok: true, no_depts: true });
       }
-      const { data: blkDepts } = await supabase
-        .from("departments").select("id, name, max_blackout_dates").in("id", blkDeptIds);
-      const rejectedByDept: Record<string, string[]> = {};
-      for (const dept of blkDepts ?? []) {
-        const max = dept.max_blackout_dates ?? 4;
+      // No block limit: every requested date is saved in every department.
+      const todayIso = new Date().toISOString().slice(0, 10);
+      for (const deptId of blkDeptIds) {
         const { data: existing } = await supabase
           .from("member_preferences").select("blackout_dates")
-          .eq("user_id", profile.id).eq("department_id", dept.id).maybeSingle();
-        const todayIso = new Date().toISOString().slice(0, 10);
-        // Descarta datas passadas; o limite vale por mês
+          .eq("user_id", profile.id).eq("department_id", deptId).maybeSingle();
         const merged = new Set<string>(((existing?.blackout_dates as string[]) ?? [])
           .map((d) => String(d).slice(0, 10)).filter((d) => d >= todayIso));
-        const rejected: string[] = [];
-        const countMonth = (m: string) => Array.from(merged).filter((d) => d.startsWith(m)).length;
-        for (const ds of Array.from(found).sort()) {
-          if (merged.has(ds)) continue;
-          if (countMonth(ds.slice(0, 7)) >= max) { rejected.push(ds); continue; }
-          merged.add(ds);
-        }
-        if (rejected.length > 0) rejectedByDept[dept.name] = rejected;
+        for (const ds of found) merged.add(ds);
         await supabase.from("member_preferences").upsert(
-          { user_id: profile.id, department_id: dept.id, blackout_dates: Array.from(merged).sort() },
+          { user_id: profile.id, department_id: deptId, blackout_dates: Array.from(merged).sort() },
           { onConflict: "user_id,department_id" },
         );
       }
-      const accepted = Array.from(found).sort().filter((d) =>
-        !Object.values(rejectedByDept).some((arr) => arr.includes(d)));
-      let msg = accepted.length > 0
-        ? `🔴 *Anotado, ${firstName}!*\n━━━━━━━━━━━━━━━━━━━━\n\n🚫 *Dias bloqueados:*\n${accepted.map(fmt).join(", ")}`
-        : `⚠️ *${firstName}*, não consegui bloquear essas datas.`;
-      if (Object.keys(rejectedByDept).length > 0) {
-        msg += `\n\n━━━━━━━━━━━━━━━━━━━━\n⚠️ *Limite de bloqueios atingido em:*\n`;
-        for (const [deptName, list] of Object.entries(rejectedByDept)) {
-          msg += `\n• *${deptName}*: ${list.map(fmt).join(", ")}`;
-        }
-        msg += `\n\n👉 Fale com seu líder se precisar liberar mais dias.`;
-      }
-      if (accepted.length > 0) msg += `\n\nPara liberar, responda *desbloquear*.`;
-      msg += `\n\n_LEVI_`;
+      const accepted = Array.from(found).sort();
+      const msg = `🔴 *Anotado, ${firstName}!*\n━━━━━━━━━━━━━━━━━━━━\n\n🚫 *Dias bloqueados:*\n${accepted.map(fmt).join(", ")}\n\nPara liberar, responda *desbloquear*.\n\n_LEVI_`;
       await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, msg);
-      return reply({ ok: true, handled: "block_dates", accepted, rejected_by_dept: rejectedByDept });
+      return reply({ ok: true, handled: "block_dates", accepted });
     }
 
     // ─── "desbloquear <datas|dias da semana>" → libera só os dias pedidos ───
@@ -650,8 +627,8 @@ serve(async (req: Request): Promise<Response> => {
     };
     const ledDepts = async () => {
       const [{ data: own }, { data: co }] = await Promise.all([
-        supabase.from("departments").select("id, name, max_blackout_dates").eq("leader_id", profile.id),
-        supabase.from("members").select("department_id, departments(id, name, max_blackout_dates)").eq("user_id", profile.id).in("role", ["leader", "coleader"]),
+        supabase.from("departments").select("id, name").eq("leader_id", profile.id),
+        supabase.from("members").select("department_id, departments(id, name)").eq("user_id", profile.id).in("role", ["leader", "coleader"]),
       ]);
       const map = new Map<string, any>();
       for (const d of own ?? []) map.set(d.id, d);
@@ -684,52 +661,14 @@ serve(async (req: Request): Promise<Response> => {
           : { data: [] as any[] };
         const nm: Record<string, string> = {};
         for (const n of names ?? []) nm[n.id] = n.name;
-        msg += `\n🏷️ *${d.name}*  _(${L({ pt: "limite", es: "límite", en: "limit" })}: ${d.max_blackout_dates ?? 4})_\n`;
+        msg += `\n🏷️ *${d.name}*\n`;
         msg += rows.length
           ? rows.sort((a, b) => (nm[a.uid] || "").localeCompare(nm[b.uid] || ""))
               .map((r) => `👤 *${nm[r.uid] || "—"}* (${r.dates.length})\n   ${r.dates.map(dateLabel).join(" • ")}`).join("\n") + "\n"
           : L({ pt: "✅ Ninguém bloqueou dias.\n", es: "✅ Nadie bloqueó días.\n", en: "✅ No blocked days.\n" });
       }
-      msg += `\n${LINE}\n` + L({
-        pt: "⚙️ Para mudar o limite, envie *qtd* + o número de dias que você escolher (ex.: *qtd 5*).",
-        es: "⚙️ Para cambiar el límite, envía *qtd* + el número de días que elijas (ej.: *qtd 5*).",
-        en: "⚙️ To change the limit, send *qtd* + the number of days you choose (e.g. *qtd 5*).",
-      });
       await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, msg);
       return reply({ ok: true, handled: "team_blackouts" });
-    }
-
-    // ─── "qtd N" (líderes) → limite de dias bloqueáveis por voluntário ───
-    const qtd = /^qtd\s*(\d{1,3})?$/.exec(cmd);
-    if (qtd) {
-      const depts = await ledDepts();
-      if (!depts.length) {
-        await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, L({
-          pt: `🔒 *${firstName}*, só líderes de departamento podem mudar o limite de bloqueios.`,
-          es: `🔒 *${firstName}*, solo los líderes pueden cambiar el límite de bloqueos.`,
-          en: `🔒 *${firstName}*, only department leaders can change the block limit.`,
-        }));
-        return reply({ ok: true, handled: "qtd_denied" });
-      }
-      const n = qtd[1] !== undefined ? parseInt(qtd[1], 10) : NaN;
-      if (!Number.isFinite(n) || n < 0 || n > 31) {
-        const cur = depts.map((d) => `🏷️ ${d.name}: *${d.max_blackout_dates ?? 4}*`).join("\n");
-        await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, L({
-          pt: `⚙️ *Limite de bloqueios*\n${LINE}\nEnvie *qtd* seguido do número de dias que você escolher (de 0 a 31).\nExemplo: *qtd 5* → cada voluntário pode bloquear até 5 dias.\n\n📊 Limite atual:\n${cur}`,
-          es: `⚙️ *Límite de bloqueos*\n${LINE}\nEnvía *qtd* seguido del número de días que elijas (de 0 a 31).\nEjemplo: *qtd 5* → cada voluntario puede bloquear hasta 5 días.\n\n📊 Límite actual:\n${cur}`,
-          en: `⚙️ *Block limit*\n${LINE}\nSend *qtd* followed by the number of days you choose (0 to 31).\nExample: *qtd 5* → each volunteer can block up to 5 days.\n\n📊 Current limit:\n${cur}`,
-        }));
-        return reply({ ok: true, handled: "qtd_help" });
-      }
-      const { error: qErr } = await supabase.from("departments").update({ max_blackout_dates: n }).in("id", depts.map((d) => d.id));
-      await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, qErr
-        ? L({ pt: "❌ Não consegui alterar agora. Tente de novo.", es: "❌ No pude cambiarlo ahora. Inténtalo de nuevo.", en: "❌ Couldn't change it now. Try again." })
-        : L({
-            pt: `✅ *Limite atualizado!*\n${LINE}\nCada voluntário agora pode bloquear até *${n} dia(s)* por mês em:\n`,
-            es: `✅ *¡Límite actualizado!*\n${LINE}\nCada voluntario ahora puede bloquear hasta *${n} día(s)* por mes en:\n`,
-            en: `✅ *Limit updated!*\n${LINE}\nEach volunteer can now block up to *${n} day(s)* per month in:\n`,
-          }) + depts.map((d) => `🏷️ ${d.name}`).join("\n"));
-      return reply({ ok: true, handled: "qtd_updated" });
     }
 
     // ─── "colider [N]" (líder principal) → tornar/remover co-líder ───
@@ -883,11 +822,13 @@ serve(async (req: Request): Promise<Response> => {
       console.error("swap flow error:", e instanceof Error ? `${e.message}\n${e.stack}` : e);
     }
 
+    // Latest monthly prompt, even if already answered — the user may send a
+    // correction ("Se errei alguma data, é só me responder novamente").
+    // The response window check below keeps old prompts from being reused.
     const { data: prompts } = await supabase
       .from("blackout_collection_prompts")
       .select("*")
       .eq("user_id", profile.id)
-      .is("responded_at", null)
       .order("sent_at", { ascending: false })
       .limit(1);
 
@@ -959,7 +900,7 @@ serve(async (req: Request): Promise<Response> => {
 
     const { data: depts } = await supabase
       .from("departments")
-      .select("id, name, max_blackout_dates")
+      .select("id, name")
       .in("id", deptIds);
 
     // Compute target blackout list per mode
@@ -971,7 +912,6 @@ serve(async (req: Request): Promise<Response> => {
       blackoutDateStrings = parsed.dates;
     } else {
       // serve_only: blackouts = candidate days NOT in parsed.dates
-      // Use availability per dept and union — we mark blackout = any candidate day not chosen
       const { data: availRows } = await supabase
         .from("member_availability")
         .select("day_of_week, time_start, time_end, is_available, department_id")
@@ -983,7 +923,6 @@ serve(async (req: Request): Promise<Response> => {
         time_end: r.time_end,
         is_available: r.is_available,
       }));
-      // Treat slot active if available in at least one row (or no row at all = default true)
       const activeSlots = getActiveSlotsForUser(userRows);
       const allCandidates = buildCandidateDays(
         targetMonth.getFullYear(),
@@ -995,11 +934,9 @@ serve(async (req: Request): Promise<Response> => {
       serveOnlyDates = parsed.dates;
     }
 
-    const rejectedByDept: Record<string, string[]> = {}; // deptName -> rejected ISO
-
+    // No per-department block limit: every requested day is applied.
+    const monthPrefix = prompt.target_month.slice(0, 7);
     for (const dept of depts ?? []) {
-      const max = dept.max_blackout_dates ?? 4;
-
       const { data: existing } = await supabase
         .from("member_preferences")
         .select("blackout_dates")
@@ -1007,43 +944,14 @@ serve(async (req: Request): Promise<Response> => {
         .eq("department_id", dept.id)
         .maybeSingle();
 
-      const _current = new Set<string>(((existing?.blackout_dates as string[]) ?? []).map((d) => d.toString()));
+      // Replace this month's list; keep dates from other months.
+      const priorOtherMonths = ((existing?.blackout_dates as string[]) ?? [])
+        .map((d) => String(d).slice(0, 10))
+        .filter((iso) => !iso.startsWith(monthPrefix));
+      const finalDates = parsed.mode === "none"
+        ? priorOtherMonths
+        : Array.from(new Set([...priorOtherMonths, ...blackoutDateStrings])).sort();
 
-      let finalDates: string[];
-      const rejected: string[] = [];
-
-      if (parsed.mode === "none") {
-        finalDates = [];
-      } else if (parsed.mode === "block") {
-        // Replace the user's blackout list for this month (start fresh, respect max)
-        // Keep prior dates from other months
-        const priorOtherMonths = Array.from(_current).filter((iso) => !iso.startsWith(prompt.target_month.slice(0, 7)));
-        const merged = new Set(priorOtherMonths);
-        for (const ds of blackoutDateStrings) {
-          if (merged.size - priorOtherMonths.length >= max) {
-            rejected.push(ds);
-            continue;
-          }
-          merged.add(ds);
-        }
-        finalDates = Array.from(merged).sort();
-      } else {
-        // serve_only: same — respect max
-        const priorOtherMonths = Array.from(_current).filter((iso) => !iso.startsWith(prompt.target_month.slice(0, 7)));
-        const merged = new Set(priorOtherMonths);
-        // Sort blackoutDateStrings so earliest are kept first
-        const sorted = [...blackoutDateStrings].sort();
-        for (const ds of sorted) {
-          if (merged.size - priorOtherMonths.length >= max) {
-            rejected.push(ds);
-            continue;
-          }
-          merged.add(ds);
-        }
-        finalDates = Array.from(merged).sort();
-      }
-
-      if (rejected.length > 0) rejectedByDept[dept.name] = rejected;
 
       await supabase
         .from("member_preferences")
@@ -1080,9 +988,7 @@ Se quiser bloquear algum dia, é só me responder novamente.
 
 _LEVI_`;
     } else if (parsed.mode === "block") {
-      const acceptedIso = blackoutDateStrings.filter((d) =>
-        !Object.values(rejectedByDept).some((arr) => arr.includes(d) && arr.length === blackoutDateStrings.length)
-      );
+      const acceptedIso = blackoutDateStrings;
       const acceptedList = acceptedIso.map(fmt).join(", ");
       let msg =
 `🔴 *Anotado, ${fname}!*
@@ -1096,19 +1002,12 @@ ${acceptedList}` : ""}${appliedWeekly.length > 0 ? `
 🔁 *Turnos bloqueados neste mês:*
 ${appliedWeekly.map((w) => `• ${w.label}`).join("\n")}
 _(vale só para o mês em curso; se quiser bloquear no próximo mês, me responda de novo quando eu perguntar)_` : ""}${acceptedIso.length === 0 && appliedWeekly.length === 0 ? "\n\n(nenhuma data válida)" : ""}`;
-      if (Object.keys(rejectedByDept).length > 0) {
-        msg += `\n\n━━━━━━━━━━━━━━━━━━━━\n⚠️ *Limite atingido em alguns departamentos.*\nNão consegui bloquear estes dias:\n`;
-        for (const [deptName, list] of Object.entries(rejectedByDept)) {
-          msg += `\n• *${deptName}*: ${list.map(fmt).join(", ")}`;
-        }
-        msg += `\n\n👉 Fale com seu líder se precisar liberar mais dias.`;
-      }
       msg += `\n\n━━━━━━━━━━━━━━━━━━━━\nSe errei alguma data, é só me responder novamente.\n\n_LEVI_`;
       confirmMsg = msg;
     } else {
       // serve_only
       const serveList = serveOnlyDates.map(fmt).join(", ") || "(nenhuma)";
-      let msg =
+      confirmMsg =
 `🟢 *Anotado, ${fname}!*
 ━━━━━━━━━━━━━━━━━━━━
 
@@ -1117,16 +1016,12 @@ _(vale só para o mês em curso; se quiser bloquear no próximo mês, me respond
 ✅ *Você servirá apenas em:*
 ${serveList}
 
-🚫 Os demais dias do mês ficarão *bloqueados*.`;
-      if (Object.keys(rejectedByDept).length > 0) {
-        msg += `\n\n━━━━━━━━━━━━━━━━━━━━\n⚠️ *Atenção:* o limite de bloqueios foi atingido em alguns departamentos.\nAlguns dias podem continuar como disponíveis:\n`;
-        for (const [deptName, list] of Object.entries(rejectedByDept)) {
-          msg += `\n• *${deptName}*: ${list.length} dia(s) não bloqueados`;
-        }
-        msg += `\n\n👉 Fale com seu líder para ajustar.`;
-      }
-      msg += `\n\n━━━━━━━━━━━━━━━━━━━━\nSe errei alguma data, é só me responder novamente.\n\n_LEVI_`;
-      confirmMsg = msg;
+🚫 Os demais dias do mês ficaram *bloqueados* (${blackoutDateStrings.length} dia(s)).
+
+━━━━━━━━━━━━━━━━━━━━
+Se errei alguma data, é só me responder novamente.
+
+_LEVI_`;
     }
 
     await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, confirmMsg);
