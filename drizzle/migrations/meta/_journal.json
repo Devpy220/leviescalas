@@ -57,6 +57,13 @@
       "when": 1793459857827,
       "tag": "0007_fix_deep_scan_critical",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793460844000,
+      "tag": "0008_church_code_only_for_church_leaders",
+      "breakpoints": true
     }
   ]
 }
