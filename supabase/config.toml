@@ -3,8 +3,6 @@ project_id = "zuksvsxnchwskqytuxxq"
 [functions.confirm-schedule]
 verify_jwt = false
 
-[functions.send-schedule-notification]
-verify_jwt = true
 
 [functions.notify-slot-repertoire]
 verify_jwt = true
