@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { buildCsv } from "@/lib/csv";
 import { supabase } from "@/integrations/supabase/client";
 import { useMyKidsPage } from "@/hooks/useKidsPage";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,8 +32,7 @@ export default function KidsReports() {
 
   function csv(rows: any[], filename: string) {
     if (!rows.length) return;
-    const cols = Object.keys(rows[0]);
-    const body = [cols.join(",")].concat(rows.map(r => cols.map(c => JSON.stringify(r[c] ?? "")).join(","))).join("\n");
+    const body = buildCsv(rows);
     const blob = new Blob([body], { type: "text/csv" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = filename; a.click();
   }
