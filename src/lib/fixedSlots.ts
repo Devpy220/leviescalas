@@ -136,3 +136,12 @@ export const findSlotByDayAndTime = (dayOfWeek: number, timeStart: string): Fixe
   const normalizedTime = normalizeTime(timeStart);
   return FIXED_SLOTS.find(s => s.dayOfWeek === dayOfWeek && s.timeStart === normalizedTime);
 };
+
+// Cor do dia para horários fora do padrão (domingo: manhã antes das 14h, noite depois)
+export const getDayColorSlot = (dayOfWeek: number, timeStart: string): FixedSlot | undefined => {
+  const t = normalizeTime(timeStart);
+  if (dayOfWeek === 0) {
+    return FIXED_SLOTS.find(s => s.dayOfWeek === 0 && s.timeStart === (t < '14:00' ? '08:00' : '18:00'));
+  }
+  return FIXED_SLOTS.find(s => s.dayOfWeek === dayOfWeek);
+};
