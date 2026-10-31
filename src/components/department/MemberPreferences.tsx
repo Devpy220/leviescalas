@@ -23,7 +23,6 @@ export default function MemberPreferences({ departmentId, userId }: MemberPrefer
   const [minDaysBetween, setMinDaysBetween] = useState<number | string>(3);
   const [blackoutDates, setBlackoutDates] = useState<string[]>([]);
   const [newBlackoutDate, setNewBlackoutDate] = useState('');
-  const [maxBlackoutDates, setMaxBlackoutDates] = useState(5);
 
   useEffect(() => {
     fetchPreferences();
@@ -31,18 +30,6 @@ export default function MemberPreferences({ departmentId, userId }: MemberPrefer
 
   const fetchPreferences = async () => {
     try {
-      // Fetch department blackout limit
-      const { data: deptData } = await supabase
-        .from('departments_safe' as any)
-        .select('max_blackout_dates')
-        .eq('id', departmentId)
-        .maybeSingle();
-
-      const dd = deptData as any;
-      if (dd?.max_blackout_dates) {
-        setMaxBlackoutDates(dd.max_blackout_dates);
-      }
-
       const { data, error } = await supabase
         .from('member_preferences')
         .select('*')
@@ -71,14 +58,6 @@ export default function MemberPreferences({ departmentId, userId }: MemberPrefer
         variant: 'destructive',
         title: 'Data já adicionada',
         description: 'Esta data já está na lista de bloqueio.',
-      });
-      return;
-    }
-    if (blackoutDates.length >= maxBlackoutDates) {
-      toast({
-        variant: 'destructive',
-        title: 'Limite atingido',
-        description: `Você pode bloquear no máximo ${maxBlackoutDates} datas. Remova uma data antes de adicionar outra.`,
       });
       return;
     }
@@ -173,7 +152,7 @@ export default function MemberPreferences({ departmentId, userId }: MemberPrefer
             Datas de Bloqueio
           </Label>
           <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-            {blackoutDates.length}/{maxBlackoutDates}
+            {blackoutDates.length}
           </Badge>
         </div>
         

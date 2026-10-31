@@ -29,6 +29,17 @@ import { SwapResponseDialog } from '@/components/schedules/SwapResponseDialog';
 import { PendingSwapBadge } from '@/components/schedules/PendingSwapBadge';
 import { PersonalScheduleCard } from '@/components/schedules/PersonalScheduleCard';
 import { TeamSlotCard } from '@/components/schedules/TeamSlotCard';
+import EditScheduleDialog from '@/components/department/EditScheduleDialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 import MyAvailabilitySheet from '@/components/department/MyAvailabilitySheet';
 import SlotRepertoireEditor from '@/components/department/SlotRepertoireEditor';
@@ -70,12 +81,22 @@ interface Schedule {
   assignment_role: string | null;
   user_id: string;
   user_name?: string;
+  sector_id?: string | null;
+  sector_ids?: string[] | null;
 }
 
 interface MemberProfile {
   id: string;
   name: string;
 }
+
+interface EditMember {
+  id: string;
+  user_id: string;
+  role: 'leader' | 'coleader' | 'member';
+  profile: { name: string; avatar_url: string | null };
+}
+
 
 
 export default function MySchedules() {
@@ -102,7 +123,12 @@ export default function MySchedules() {
   }, [searchParams]);
   const [memberProfiles, setMemberProfiles] = useState<Record<string, MemberProfile>>({});
   const [availabilitySheetOpen, setAvailabilitySheetOpen] = useState(false);
-  const [leaderDepartments, setLeaderDepartments] = useState<{ id: string; name: string }[]>([]);
+  const [managedDeptIds, setManagedDeptIds] = useState<Set<string>>(new Set());
+  const [deptMembers, setDeptMembers] = useState<Record<string, EditMember[]>>({});
+  const [editSchedule, setEditSchedule] = useState<Schedule | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Schedule | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const { user, session, loading: authLoading, signOut } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -138,29 +164,53 @@ export default function MySchedules() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser?.id, authLoading, viewMode]);
 
+  // Departments the user can manage (main leader, leader or co-leader):
+  // they may edit or remove any schedule there, even after it is published.
   const fetchLeaderDepartments = async () => {
     if (!currentUser) return;
     
     try {
-      const { data: memberData, error } = await supabase
-        .from('members')
-        .select('department_id, role, departments(id, name)')
-        .eq('user_id', currentUser.id)
-        .eq('role', 'leader');
+      const [{ data: memberData, error }, { data: owned }] = await Promise.all([
+        supabase
+          .from('members')
+          .select('department_id, role')
+          .eq('user_id', currentUser.id)
+          .in('role', ['leader', 'coleader']),
+        supabase
+          .from('departments')
+          .select('id')
+          .eq('leader_id', currentUser.id),
+      ]);
 
       if (error) throw error;
 
-      const depts = (memberData || [])
-        .filter(m => m.departments)
-        .map(m => ({
-          id: (m.departments as any).id,
-          name: (m.departments as any).name
-        }));
-      
-      setLeaderDepartments(depts);
+      setManagedDeptIds(new Set([
+        ...(memberData || []).map((m) => m.department_id),
+        ...(owned || []).map((d) => d.id),
+      ]));
     } catch (error) {
       console.error('Error fetching leader departments:', error);
     }
+  };
+
+  const handleOpenEdit = (s: Schedule) => {
+    setEditSchedule(s);
+    setEditOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    const { data, error } = await supabase.from('schedules').delete().eq('id', deleteTarget.id).select('id');
+    setDeleting(false);
+    if (error || !data?.length) {
+      toast({ variant: 'destructive', title: t('common.error'), description: t('schedules.removeError') });
+      return;
+    }
+    toast({ title: t('schedules.removed') });
+    setDeleteTarget(null);
+    window.dispatchEvent(new CustomEvent('schedules-updated'));
+    fetchSchedules();
   };
 
   const fetchSchedules = async () => {
@@ -188,15 +238,24 @@ export default function MySchedules() {
       // Fetch member profiles for team view
       if (viewMode === 'team') {
         const profilesMap: Record<string, MemberProfile> = {};
+        const membersByDept: Record<string, EditMember[]> = {};
         for (const deptId of deptIds) {
           const { data: profiles } = await supabase.rpc('get_department_member_profiles', { dept_id: deptId });
           if (profiles) {
+            membersByDept[deptId] = [];
             profiles.forEach((p: any) => {
               profilesMap[p.id] = { id: p.id, name: p.name };
+              membersByDept[deptId].push({
+                id: p.id,
+                user_id: p.id,
+                role: (p.role === 'leader' || p.role === 'coleader') ? p.role : 'member',
+                profile: { name: p.name, avatar_url: p.avatar_url ?? null },
+              });
             });
           }
         }
         setMemberProfiles(profilesMap);
+        setDeptMembers(membersByDept);
       }
 
       // Build query - filter by user only in 'mine' mode
@@ -210,6 +269,7 @@ export default function MySchedules() {
           notes,
           department_id,
           sector_id,
+          sector_ids,
           assignment_role,
           user_id,
           sectors(name, color)
@@ -269,6 +329,8 @@ export default function MySchedules() {
         assignment_role: s.assignment_role || null,
         user_id: s.user_id,
         user_name: memberProfiles[s.user_id]?.name || undefined,
+        sector_id: s.sector_id ?? null,
+        sector_ids: s.sector_ids ?? null,
       }));
 
       setSchedules(enrichedSchedules);
@@ -529,6 +591,9 @@ export default function MySchedules() {
                   onRequestSwap={(s) => handleOpenSwapDialog(s as Schedule)}
                   onRespondSwap={handleRespondToSwap}
                   onCancelSwap={handleCancelSwap}
+                  canManage={(s) => managedDeptIds.has(s.department_id)}
+                  onEdit={(s) => handleOpenEdit(s as Schedule)}
+                  onDelete={(s) => setDeleteTarget(s as Schedule)}
                 />
               );
             })}
@@ -562,6 +627,52 @@ export default function MySchedules() {
         onAccept={handleAcceptSwap}
         onReject={handleRejectSwap}
       />
+
+      {/* Leader: edit a published schedule */}
+      <EditScheduleDialog
+        open={editOpen}
+        onOpenChange={(o) => { setEditOpen(o); if (!o) setEditSchedule(null); }}
+        schedule={editSchedule ? {
+          id: editSchedule.id,
+          user_id: editSchedule.user_id,
+          date: editSchedule.date,
+          time_start: editSchedule.time_start,
+          time_end: editSchedule.time_end,
+          notes: editSchedule.notes,
+          sector_id: editSchedule.sector_id ?? null,
+          sector_ids: editSchedule.sector_ids ?? null,
+          assignment_role: editSchedule.assignment_role,
+          profile: { name: memberProfiles[editSchedule.user_id]?.name || '', avatar_url: null },
+        } : null}
+        members={editSchedule ? (deptMembers[editSchedule.department_id] || []) : []}
+        departmentId={editSchedule?.department_id || ''}
+        onScheduleUpdated={() => {
+          window.dispatchEvent(new CustomEvent('schedules-updated'));
+          fetchSchedules();
+        }}
+      />
+
+      {/* Leader: remove someone from a published schedule */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('schedules.removeTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('schedules.removeConfirm', { name: deleteTarget ? (memberProfiles[deleteTarget.user_id]?.name || '') : '' })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handleConfirmDelete(); }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleting}
+            >
+              {deleting ? t('schedules.removing') : t('schedules.remove')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* My Availability Sheet */}
       {departmentIds.length > 0 && currentUser && (

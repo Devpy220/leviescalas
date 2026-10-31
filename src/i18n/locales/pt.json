@@ -275,7 +275,13 @@
     "details": "Ver Detalhes",
     "upcoming": "Próximas Escalas",
     "none": "Nenhuma escala encontrada",
-    "noneDetail": "Você ainda não foi escalado em nenhum departamento."
+    "noneDetail": "Você ainda não foi escalado em nenhum departamento.",
+    "removeTitle": "Remover da escala",
+    "removeConfirm": "Tem certeza que deseja remover {{name}} desta escala?",
+    "removed": "Removido da escala",
+    "removeError": "Não foi possível remover. Verifique suas permissões.",
+    "removing": "Removendo...",
+    "remove": "Remover"
   },
   "notifications": {
     "notifications": "Notificações",

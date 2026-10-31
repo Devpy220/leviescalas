@@ -114,17 +114,6 @@ serve(async (req: Request): Promise<Response> => {
       .select("user_id, department_id, day_of_week, time_start, time_end, is_available")
       .in("user_id", userIds);
 
-    // Fetch department blackout limits
-    const deptIds = Array.from(new Set((members ?? []).map((m: any) => m.department_id)));
-    const { data: depts } = await supabase
-      .from("departments")
-      .select("id, name, max_blackout_dates")
-      .in("id", deptIds);
-    const deptById = new Map<string, { name: string; max: number }>();
-    for (const d of depts ?? []) {
-      deptById.set(d.id, { name: d.name, max: d.max_blackout_dates ?? 5 });
-    }
-
     // Build per-user dept memberships
     const userDepts = new Map<string, string[]>();
     for (const m of members ?? []) {
@@ -171,14 +160,6 @@ serve(async (req: Request): Promise<Response> => {
       const moreCount = candidates.length - shown.length;
       const linesStr = shown.map(formatCandidateLine).join("\n");
       const moreLine = moreCount > 0 ? `\n…e mais ${moreCount} dia(s)` : "";
-
-      const userDeptInfos = (userDepts.get(p.id) ?? [])
-        .map((id) => deptById.get(id))
-        .filter(Boolean) as { name: string; max: number }[];
-      const minMax = userDeptInfos.length > 0
-        ? Math.min(...userDeptInfos.map((d) => d.max))
-        : 5;
-      const limitLine = `\n\nℹ️ Você pode bloquear até *${minMax} dia(s)* por departamento. Se passar do limite, o LEVI ignora os extras.`;
 
       const greet = pickVariant(`${p.id}-${targetMonthIso}`, ["Olá", "Oi", "Opa", "E aí"]);
       const close = pickVariant(`${p.id}-bo-${targetMonthIso}`, [
@@ -230,7 +211,6 @@ ${linesStr}${moreLine}
 
 ✅ *4) LIBERAR todos os dias*
    _nenhum_ (ou simplesmente não responda)
-${limitLine}
 
 ⏳ Prazo: até *dia ${lastDayCurrent}*.
 _Depois desse dia, os comandos_ *bloquear* / *servir* _passam a valer para o mês seguinte._

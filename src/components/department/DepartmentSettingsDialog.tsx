@@ -37,8 +37,7 @@ interface DepartmentSettingsDialogProps {
     name: string;
     description: string | null;
     subscription_status: string;
-    
-    max_blackout_dates?: number;
+
     allow_sunday_double?: boolean;
     repertoire_enabled?: boolean;
   };
@@ -57,7 +56,6 @@ export default function DepartmentSettingsDialog({
   
   const [name, setName] = useState(department.name);
   const [description, setDescription] = useState(department.description || '');
-  const [maxBlackoutDates, setMaxBlackoutDates] = useState(department.max_blackout_dates ?? 5);
   const [allowSundayDouble, setAllowSundayDouble] = useState(department.allow_sunday_double ?? false);
   const [repertoireEnabled, setRepertoireEnabled] = useState(department.repertoire_enabled ?? false);
   const [saving, setSaving] = useState(false);
@@ -83,7 +81,6 @@ export default function DepartmentSettingsDialog({
         .update({ 
           name: name.trim(),
           description: description.trim() || null,
-          max_blackout_dates: Math.max(1, maxBlackoutDates),
           allow_sunday_double: allowSundayDouble,
           repertoire_enabled: repertoireEnabled,
         })
@@ -203,21 +200,6 @@ export default function DepartmentSettingsDialog({
                   placeholder="Uma breve descrição do departamento..."
                   rows={3}
                 />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="max-blackout">Limite de datas de bloqueio (por membro)</Label>
-                <Input
-                  id="max-blackout"
-                  type="number"
-                  min={1}
-                  max={365}
-                  value={maxBlackoutDates}
-                  onChange={(e) => setMaxBlackoutDates(parseInt(e.target.value) || 1)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Quantidade máxima de datas que cada voluntário pode bloquear.
-                </p>
               </div>
 
               <Separator />

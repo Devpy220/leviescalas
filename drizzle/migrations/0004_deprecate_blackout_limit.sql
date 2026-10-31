@@ -1,0 +1,1 @@
+COMMENT ON COLUMN public.departments.max_blackout_dates IS 'DEPRECATED: blackout days are unlimited; the app and WhatsApp no longer read or change this value.';

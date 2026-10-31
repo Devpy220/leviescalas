@@ -296,7 +296,7 @@ export function FloatingActionMenu(props: FloatingActionMenuProps) {
         try {
           const { data: deptData } = await (supabase as any)
             .from('departments_safe')
-            .select('id, name, description, subscription_status, max_blackout_dates, allow_sunday_double')
+            .select('id, name, description, subscription_status, allow_sunday_double')
             .eq('id', dept.id)
             .single();
           if (deptData) {
