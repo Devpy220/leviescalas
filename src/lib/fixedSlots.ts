@@ -19,9 +19,9 @@ export const FIXED_SLOTS: FixedSlot[] = [
     timeEnd: '12:00', 
     label: 'Domingo de Manhã',
     icon: Sun,
-    bgColor: 'bg-blue-100/80 dark:bg-blue-800/50',
-    borderColor: 'border-blue-300 dark:border-blue-700/50',
-    activeColor: 'bg-blue-500'
+    bgColor: 'bg-sky-100/80 dark:bg-sky-800/50',
+    borderColor: 'border-sky-300 dark:border-sky-700/50',
+    activeColor: 'bg-sky-500'
   },
   { 
     dayOfWeek: 0, 
