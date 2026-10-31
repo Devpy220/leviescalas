@@ -29,6 +29,7 @@ export interface ParsedResponse {
   mode: ResponseMode;
   dates: string[]; // ISO YYYY-MM-DD
   weeklyBlocks?: WeeklyBlock[];
+  shifts?: string[]; // single Sunday shifts, "YYYY-MM-DD|M" or "|N"
 }
 
 // Parse the user's reply. Detects mode from keywords, plus dates.
@@ -87,6 +88,8 @@ export function parseUserResponse(text: string, targetMonth: Date): ParsedRespon
   const weeklyBlocks: WeeklyBlock[] = [];
   const WEEKDAY_LABELS = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
 
+  // Sunday has two shifts: "domingos de manhã" blocks only that shift.
+  const shiftKeys = new Set<string>();
   if (weekdayShifts.size > 0) {
     const lastDay = new Date(tYear, tMonth + 1, 0).getDate();
     for (const [dow, shift] of weekdayShifts.entries()) {
@@ -96,7 +99,10 @@ export function parseUserResponse(text: string, targetMonth: Date): ParsedRespon
       for (let d = 1; d <= lastDay; d++) {
         const dt = new Date(tYear, tMonth, d);
         if (dt < today) continue;
-        if (dt.getDay() === dow) found.add(dt.toISOString().slice(0, 10));
+        if (dt.getDay() !== dow) continue;
+        const iso = dt.toISOString().slice(0, 10);
+        if (dow === 0 && shift) shiftKeys.add(`${iso}|${shift === 'manha' ? 'M' : 'N'}`);
+        else found.add(iso);
       }
       const label = shift === 'manha'
         ? `${WEEKDAY_LABELS[dow]}s de manhã`
@@ -133,8 +139,10 @@ export function parseUserResponse(text: string, targetMonth: Date): ParsedRespon
   }
 
   const dates = Array.from(found).sort();
+  // A whole-day pick wins over a shift pick on the same date.
+  const shifts = Array.from(shiftKeys).filter((k) => !found.has(k.slice(0, 10))).sort();
   const mode: ResponseMode = serveOnly ? "serve_only" : "block";
-  return { mode, dates, weeklyBlocks };
+  return { mode, dates, weeklyBlocks, shifts };
 }
 
 // Backward-compat export name (legacy callers)
@@ -686,10 +694,16 @@ serve(async (req: Request): Promise<Response> => {
       let msg = L({ pt: `🗓️ *Bloqueios da equipe*`, es: `🗓️ *Bloqueos del equipo*`, en: `🗓️ *Team blocked days*` }) + `\n${LINE}\n`;
       for (const d of depts) {
         const { data: prefs } = await supabase.from("member_preferences")
-          .select("user_id, blackout_dates").eq("department_id", d.id);
+          .select("user_id, blackout_dates, blackout_shifts").eq("department_id", d.id);
+        const shiftWord = (s?: Shift) => s === "M"
+          ? L({ pt: " (manhã)", es: " (mañana)", en: " (morning)" })
+          : s === "N" ? L({ pt: " (noite)", es: " (noche)", en: " (evening)" }) : "";
         const rows = (prefs ?? []).map((p: any) => ({
           uid: p.user_id,
-          dates: ((p.blackout_dates as string[]) ?? []).map((x) => String(x).slice(0, 10)).filter((x) => x >= today).sort(),
+          dates: blockItems({
+            dates: ((p.blackout_dates as string[]) ?? []).map((x) => String(x).slice(0, 10)),
+            shifts: (p.blackout_shifts as string[]) ?? [],
+          }, today).map((it) => dateLabel(it.date) + shiftWord(it.shift)),
         })).filter((r) => r.dates.length);
         const { data: names } = rows.length
           ? await supabase.from("profiles").select("id, name").in("id", rows.map((r) => r.uid))
@@ -699,7 +713,7 @@ serve(async (req: Request): Promise<Response> => {
         msg += `\n🏷️ *${d.name}*\n`;
         msg += rows.length
           ? rows.sort((a, b) => (nm[a.uid] || "").localeCompare(nm[b.uid] || ""))
-              .map((r) => `👤 *${nm[r.uid] || "—"}* (${r.dates.length})\n   ${r.dates.map(dateLabel).join(" • ")}`).join("\n") + "\n"
+              .map((r) => `👤 *${nm[r.uid] || "—"}* (${r.dates.length})\n   ${r.dates.join(" • ")}`).join("\n") + "\n"
           : L({ pt: "✅ Ninguém bloqueou dias.\n", es: "✅ Nadie bloqueó días.\n", en: "✅ No blocked days.\n" });
       }
       await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, msg);
@@ -948,25 +962,23 @@ serve(async (req: Request): Promise<Response> => {
       .select("id, name")
       .in("id", deptIds);
 
-    // Compute target blackout list per mode
+    // Compute target blocks per mode. Sunday shifts ("domingos de manhã")
+    // arrive as parsed.shifts ("YYYY-MM-DD|M") and block only that shift.
+    const parsedShifts = (parsed.shifts ?? []).map(parseShiftKey).filter((x): x is { date: string; shift: Shift } => !!x);
     let blackoutDateStrings: string[] = [];
+    let blockShiftItems: Array<{ date: string; shift: Shift }> = [];
     let serveOnlyDates: string[] = [];
-    if (parsed.mode === "none") {
-      blackoutDateStrings = [];
-    } else if (parsed.mode === "block") {
+    if (parsed.mode === "block") {
       blackoutDateStrings = parsed.dates;
-    } else {
-      // serve_only: every remaining day of the month is blocked except the
-      // chosen dates, in every department, regardless of weekly availability.
-      const y = targetMonth.getFullYear();
-      const mIdx = targetMonth.getMonth();
-      const lastDay = new Date(y, mIdx + 1, 0).getDate();
-      const todayIso = new Date().toISOString().slice(0, 10);
-      const chosen = new Set(parsed.dates);
-      for (let d = 1; d <= lastDay; d++) {
-        const iso = `${y}-${String(mIdx + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-        if (iso >= todayIso && !chosen.has(iso)) blackoutDateStrings.push(iso);
-      }
+      blockShiftItems = parsedShifts;
+    } else if (parsed.mode === "serve_only") {
+      // Every remaining day of the month is blocked except the chosen ones;
+      // choosing one Sunday shift blocks the other shift of that Sunday.
+      const wholeChosen = new Set(parsed.dates);
+      const partial = parsedShifts.filter((p) => !wholeChosen.has(p.date));
+      blackoutDateStrings = serveOnlyBlackouts(targetMonth.getFullYear(), targetMonth.getMonth(),
+        [...parsed.dates, ...partial.map((p) => p.date)], new Date().toISOString().slice(0, 10));
+      blockShiftItems = partial.map((p) => ({ date: p.date, shift: otherShift(p.shift) }));
       serveOnlyDates = parsed.dates;
     }
 
@@ -975,19 +987,19 @@ serve(async (req: Request): Promise<Response> => {
     for (const dept of depts ?? []) {
       const { data: existing } = await supabase
         .from("member_preferences")
-        .select("blackout_dates")
+        .select("blackout_dates, blackout_shifts")
         .eq("user_id", profile.id)
         .eq("department_id", dept.id)
         .maybeSingle();
 
-      // Replace this month's list; keep dates from other months.
-      const priorOtherMonths = ((existing?.blackout_dates as string[]) ?? [])
-        .map((d) => String(d).slice(0, 10))
-        .filter((iso) => !iso.startsWith(monthPrefix));
-      const finalDates = parsed.mode === "none"
-        ? priorOtherMonths
-        : Array.from(new Set([...priorOtherMonths, ...blackoutDateStrings])).sort();
-
+      // Replace this month's blocks; keep blocks from other months.
+      let b: Blocks = {
+        dates: ((existing?.blackout_dates as string[]) ?? [])
+          .map((d) => String(d).slice(0, 10)).filter((iso) => !iso.startsWith(monthPrefix)),
+        shifts: ((existing?.blackout_shifts as string[]) ?? []).filter((k) => !k.startsWith(monthPrefix)),
+      };
+      for (const d of blackoutDateStrings) b = applyBlock(b, d);
+      for (const s of blockShiftItems) b = applyBlock(b, s.date, s.shift);
 
       await supabase
         .from("member_preferences")
@@ -995,7 +1007,8 @@ serve(async (req: Request): Promise<Response> => {
           {
             user_id: profile.id,
             department_id: dept.id,
-            blackout_dates: finalDates,
+            blackout_dates: b.dates,
+            blackout_shifts: b.shifts,
           },
           { onConflict: "user_id,department_id" },
         );
@@ -1044,7 +1057,11 @@ _(vale só para o mês em curso; se quiser bloquear no próximo mês, me respond
       confirmMsg = msg;
     } else {
       // serve_only
-      const serveList = serveOnlyDates.map(fmt).join(", ") || "(nenhuma)";
+      const serveItems = [
+        ...serveOnlyDates.map((date) => ({ date } as { date: string; shift?: Shift })),
+        ...parsedShifts.filter((p) => !serveOnlyDates.includes(p.date)),
+      ].sort((a, c) => a.date.localeCompare(c.date));
+      const serveList = serveItems.map(itemLabel).join(", ") || "(nenhuma)";
       confirmMsg =
 `🟢 *Anotado, ${fname}!*
 ━━━━━━━━━━━━━━━━━━━━
