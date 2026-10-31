@@ -15,7 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { DraggableFloating } from '@/components/ui/draggable-floating';
 import { ASSIGNMENT_ROLES } from '@/lib/constants';
-import { FIXED_SLOTS, FixedSlot, findSlotByDayAndTime, normalizeTime } from '@/lib/fixedSlots';
+import { FIXED_SLOTS, FixedSlot, findSlotByDayAndTime, getDayColorSlot, normalizeTime } from '@/lib/fixedSlots';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -166,7 +166,7 @@ export default function UnifiedScheduleView({
           timeEnd: normalizeTime(schedule.time_end),
           label: format(date, 'EEEE', { locale: ptBR }),
           icon: FIXED_SLOTS[0].icon,
-          bgColor: 'bg-muted/50',
+          bgColor: getDayColorSlot(dayOfWeek, schedule.time_start)?.bgColor ?? 'bg-muted/50',
           borderColor: 'border-border',
           activeColor: 'bg-primary'
         };

@@ -55,7 +55,7 @@ import { useScheduleSwaps, type ScheduleSwap } from '@/hooks/useScheduleSwaps';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ASSIGNMENT_ROLES } from '@/lib/constants';
-import { FIXED_SLOTS, FixedSlot, findSlotByDayAndTime, normalizeTime } from '@/lib/fixedSlots';
+import { FIXED_SLOTS, FixedSlot, findSlotByDayAndTime, getDayColorSlot, normalizeTime } from '@/lib/fixedSlots';
 import { format, parseISO, getDay, isToday } from 'date-fns';
 import { ptBR, enUS, es } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
@@ -400,7 +400,7 @@ export default function MySchedules() {
           timeEnd: normalizeTime(schedule.time_end),
           label: format(date, 'EEEE', { locale: dateLocale }),
           icon: FIXED_SLOTS[0].icon,
-          bgColor: 'bg-muted/50',
+          bgColor: getDayColorSlot(dayOfWeek, schedule.time_start)?.bgColor ?? 'bg-muted/50',
           borderColor: 'border-border',
           activeColor: 'bg-primary'
         };
