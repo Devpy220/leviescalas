@@ -29,6 +29,13 @@
       "when": 1793312661394,
       "tag": "0003_kids_checkout_pickup_person",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793455023779,
+      "tag": "0004_deprecate_blackout_limit",
+      "breakpoints": true
     }
   ]
 }
