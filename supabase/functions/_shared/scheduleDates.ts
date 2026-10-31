@@ -122,3 +122,16 @@ export function buildAsciiMonthCalendar(
   return [header, dowRow, ...rows, "", "Legenda: [ dia ] = você pode ser escalado"].join("\n");
 }
 
+
+// "servir <datas>": every remaining day of the month (from todayIso on) is
+// blocked, except the chosen dates. No per-department limit applies.
+export function serveOnlyBlackouts(year: number, monthIndex: number, chosenIso: string[], todayIso: string): string[] {
+  const chosen = new Set(chosenIso);
+  const lastDay = new Date(year, monthIndex + 1, 0).getDate();
+  const out: string[] = [];
+  for (let d = 1; d <= lastDay; d++) {
+    const iso = `${year}-${String(monthIndex + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    if (iso >= todayIso && !chosen.has(iso)) out.push(iso);
+  }
+  return out;
+}
