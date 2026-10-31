@@ -1,16 +1,20 @@
-import { assert, assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { parseUnblockTargets } from "./unblockTargets.ts";
 
-Deno.test("desbloquear domingo de manha mira o domingo e avisa que é o dia inteiro", () => {
+Deno.test("desbloquear domingo de manha mira só o turno da manhã", () => {
   const t = parseUnblockTargets("desbloquear domingo de manha");
   assertEquals([...t.dows], [0]);
-  assert(t.partOfDay);
+  assertEquals(t.shift, "M");
 });
 
-Deno.test("desbloquear domingo a noite mira o domingo", () => {
+Deno.test("desbloquear domingo a noite mira só o turno da noite", () => {
   const t = parseUnblockTargets("desbloquear domingo a noite");
   assertEquals([...t.dows], [0]);
-  assert(t.partOfDay);
+  assertEquals(t.shift, "N");
+});
+
+Deno.test("desbloquear domingo sem turno libera o dia inteiro", () => {
+  assertEquals(parseUnblockTargets("desbloquear domingo").shift, undefined);
 });
 
 Deno.test("desbloquear todos os dias da semana mira os 7 dias", () => {
