@@ -392,7 +392,7 @@ export default function ChurchPublic() {
               {session ? (
                 <>
                   <p className="text-muted-foreground mb-4">
-                    Quer criar um departamento nesta igreja?
+                    Quer criar um departamento nesta igreja? Você vai precisar do código que o líder da igreja envia.
                   </p>
                   <Link to={`/criar-departamento?church=${slug}`}>
                     <Button className="gradient-primary text-primary-foreground">
@@ -407,7 +407,7 @@ export default function ChurchPublic() {
                     Este link é para <strong>líderes</strong> cadastrarem um novo departamento/ministério nesta igreja.
                   </p>
                   <p className="text-xs text-muted-foreground mb-4 max-w-xl mx-auto">
-                    Se você é voluntário, peça ao líder do seu departamento o link de convite específico.
+                    Para criar, você vai precisar do código que o líder da igreja envia. Se você é voluntário, peça ao líder do seu departamento o link de convite específico.
                   </p>
                   <Link to={`/auth?tab=register&church=${slug}&redirect=${encodeURIComponent(`/departments/new?church=${slug}`)}`}>
                     <Button className="gradient-vibrant text-white">
