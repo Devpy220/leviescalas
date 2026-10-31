@@ -2,6 +2,7 @@
 // Handles a stateful menu-based conversation for schedule swaps.
 // Localized via DDI (PT/ES/EN) — see _shared/whatsappI18n.ts
 
+import { isBlockedAt } from "../_shared/blackoutShifts.ts";
 import {
   detectLang,
   t,
@@ -249,7 +250,7 @@ async function getEligibleCandidates(
   const usedUsers = new Set<string>();
   for (const s of theirSchedules ?? []) {
     if (usedUsers.has(s.user_id)) continue;
-    if (reqBlackouts.includes(s.date)) continue;
+    if (isBlockedAt(reqBlackouts, reqShiftBlocks, s.date, s.time_start)) continue;
     const conflict = reqOtherList.some(
       (o: any) =>
         o.date === s.date &&
