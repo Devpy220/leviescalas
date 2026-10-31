@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Clock, Users, ArrowLeftRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Clock, Users, ArrowLeftRight, Pencil, Trash2 } from 'lucide-react';
 import { format, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -20,7 +21,7 @@ import type { FixedSlot } from '@/lib/fixedSlots';
 import type { ScheduleSwap } from '@/hooks/useScheduleSwaps';
 import { cn } from '@/lib/utils';
 
-interface TeamSchedule {
+export interface TeamSchedule {
   id: string;
   date: string;
   time_start: string;
@@ -43,6 +44,10 @@ interface Props {
   onRequestSwap: (schedule: TeamSchedule) => void;
   onRespondSwap: (swap: ScheduleSwap) => void;
   onCancelSwap: (swapId: string) => Promise<boolean>;
+  /** Leaders/co-leaders of the schedule's department can edit or remove it. */
+  canManage?: (schedule: TeamSchedule) => boolean;
+  onEdit?: (schedule: TeamSchedule) => void;
+  onDelete?: (schedule: TeamSchedule) => void;
 }
 
 export function TeamSlotCard({
@@ -56,7 +61,11 @@ export function TeamSlotCard({
   onRequestSwap,
   onRespondSwap,
   onCancelSwap,
+  canManage,
+  onEdit,
+  onDelete,
 }: Props) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const isCurrentDay = isToday(date);
   const userScheduleInSlot = schedules.find((s) => s.user_id === currentUserId);
@@ -196,6 +205,31 @@ export function TeamSlotCard({
                       )}
                     </div>
                   </div>
+
+                  {canManage?.(schedule) && (
+                    <div className="flex items-center gap-0.5 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={t('common.edit')}
+                        title={t('common.edit')}
+                        className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                        onClick={() => { setOpen(false); onEdit?.(schedule); }}
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={t('schedules.remove')}
+                        title={t('schedules.remove')}
+                        className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => { setOpen(false); onDelete?.(schedule); }}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               );
             })}
