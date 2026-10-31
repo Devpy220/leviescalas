@@ -120,7 +120,7 @@ serve(async (req: Request): Promise<Response> => {
     const result = await sendUazapiText(phone, finalMessage, typing);
 
     if (result.ok) {
-      console.log(`WhatsApp sent (UAZAPI) to ${fullNumber}`);
+      console.log(`WhatsApp sent (UAZAPI) to ***${String(fullNumber).slice(-4)}`);
       await logAttempt({ phone: fullNumber, message, status: "sent", origin, providerResponse: result.response });
       return new Response(
         JSON.stringify({ sent: true }),

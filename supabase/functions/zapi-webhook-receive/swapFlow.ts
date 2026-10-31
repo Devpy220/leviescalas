@@ -35,7 +35,7 @@ async function sendWA(
   message: string,
 ): Promise<void> {
   try {
-    console.log(`[sendWA] -> ${phone} chars=${message.length}`);
+    console.log(`[sendWA] -> ***${String(phone).slice(-4)} chars=${message.length}`);
     const res = await fetch(`${deps.supabaseUrl}/functions/v1/send-whatsapp-notification`, {
       method: "POST",
       headers: {
