@@ -473,7 +473,7 @@ export function FloatingActionMenu(props: FloatingActionMenuProps) {
         ref={fabRef}
         role="toolbar"
         aria-label={t('sidebar.menu')}
-        className={`${inline ? 'relative max-w-full' : 'fixed top-3 left-3 max-w-[calc(100vw-1.5rem)]'} z-[60] flex items-center gap-0.5 overflow-x-auto rounded-2xl border border-border/60 bg-card/85 backdrop-blur-xl shadow-lg p-1`}
+        className={`${inline ? 'relative max-w-full z-10' : 'fixed top-3 left-3 max-w-[calc(100vw-1.5rem)] z-[60]'} flex items-center gap-0.5 overflow-x-auto rounded-2xl border border-border/60 bg-card/85 backdrop-blur-xl shadow-lg p-1`}
       >
         <button
           onClick={() => setOpen(v => !v)}
