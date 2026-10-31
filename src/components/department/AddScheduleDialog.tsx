@@ -37,6 +37,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { isBlockedAt } from '@/lib/blackoutShifts';
 
 interface Member {
   id: string;
@@ -123,8 +124,9 @@ export default function AddScheduleDialog({
     const dayOfWeek = getDay(date);
 
     // Check blackout dates
+    // Whole days and single Sunday shifts ("YYYY-MM-DD|M"/"|N") share one list.
     Object.entries(memberBlackouts)
-      .filter(([_, dates]) => dates.includes(dateStr))
+      .filter(([_, dates]) => isBlockedAt(dates, dates, dateStr, timeStart || undefined))
       .forEach(([userId]) => blocked.add(userId));
     
     // Check slot availability - block only if explicitly marked as unavailable
@@ -301,7 +303,7 @@ export default function AddScheduleDialog({
       const [prefsRes, availRes] = await Promise.all([
         supabase
           .from('member_preferences')
-          .select('user_id, blackout_dates')
+          .select('user_id, blackout_dates, blackout_shifts')
           .eq('department_id', departmentId),
         supabase
           .from('member_availability')
@@ -314,9 +316,8 @@ export default function AddScheduleDialog({
       
       const blackouts: Record<string, string[]> = {};
       (prefsRes.data || []).forEach(pref => {
-        if (pref.blackout_dates && pref.blackout_dates.length > 0) {
-          blackouts[pref.user_id] = pref.blackout_dates;
-        }
+        const all = [...(pref.blackout_dates ?? []), ...(pref.blackout_shifts ?? [])];
+        if (all.length > 0) blackouts[pref.user_id] = all;
       });
       setMemberBlackouts(blackouts);
 
