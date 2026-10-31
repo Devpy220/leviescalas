@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { buildCsv, csvCell } from "./csv";
+import { buildCsv, csvCell } from "../src/lib/csv";
 
 describe("csvCell", () => {
   it("neutralizes a formula typed in allergies", () => {
