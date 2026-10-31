@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { serveOnlyBlackouts } from "../_shared/scheduleDates.ts";
 import { tryHandleSwapMessage } from "./swapFlow.ts";
 import { parseUnblockTargets } from "./unblockTargets.ts";
-import { applyBlock, applyUnblock, blockItems, otherShift, parseShiftKey, shiftKey, type Blocks, type Shift } from "../_shared/blackoutShifts.ts";
+import { applyBlock, applyUnblock, blockItems, otherShift, parseShiftKey, type Blocks, type Shift } from "../_shared/blackoutShifts.ts";
 import { detectLang, t, fmtTime, DOW, isScheduleListCommand, translateRole } from "../_shared/whatsappI18n.ts";
 import { LEVI_COMMANDS_HINT, buildSupportOnlyMessage } from "../_shared/messageVariants.ts";
 
