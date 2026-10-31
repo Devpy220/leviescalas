@@ -641,5 +641,11 @@
     "createHelp": "Choose a friendly name for your church children’s ministry.",
     "name": "Name",
     "nameHint": "E.g. Connect Kids"
+  },
+  "blackoutShift": {
+    "wholeDay": "Whole day",
+    "morning": "Morning",
+    "night": "Evening",
+    "sundayHint": "Sunday has two shifts: choose which one to block."
   }
 }

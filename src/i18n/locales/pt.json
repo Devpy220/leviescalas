@@ -641,5 +641,11 @@
     "createHelp": "Escolha um nome amigável para o ministério infantil da sua igreja.",
     "name": "Nome",
     "nameHint": "Ex.: Connect Kids"
+  },
+  "blackoutShift": {
+    "wholeDay": "Dia inteiro",
+    "morning": "Manhã",
+    "night": "Noite",
+    "sundayHint": "Domingo tem dois turnos: escolha qual bloquear."
   }
 }
