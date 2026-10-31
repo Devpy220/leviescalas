@@ -269,6 +269,7 @@ export default function MySchedules() {
           notes,
           department_id,
           sector_id,
+          sector_ids,
           assignment_role,
           user_id,
           sectors(name, color)
@@ -328,6 +329,8 @@ export default function MySchedules() {
         assignment_role: s.assignment_role || null,
         user_id: s.user_id,
         user_name: memberProfiles[s.user_id]?.name || undefined,
+        sector_id: s.sector_id ?? null,
+        sector_ids: s.sector_ids ?? null,
       }));
 
       setSchedules(enrichedSchedules);
