@@ -57,6 +57,8 @@ export interface TopBarItem {
 interface FloatingActionMenuProps {
   /** Page-specific buttons shown in the same fixed bar (already filtered by permission). */
   extraItems?: TopBarItem[];
+  /** Render the bar in the page flow (e.g. under a title) instead of fixed at the top-left. */
+  inline?: boolean;
   isAdmin: boolean;
   shouldShowInstallPrompt: boolean;
   onInstallClick: () => void;
@@ -164,7 +166,7 @@ function DepartmentPicker({
 }
 
 export function FloatingActionMenu(props: FloatingActionMenuProps) {
-  const { isAdmin, shouldShowInstallPrompt, onInstallClick, onSignOut, extraItems = [] } = props;
+  const { isAdmin, shouldShowInstallPrompt, onInstallClick, onSignOut, extraItems = [], inline = false } = props;
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
@@ -388,12 +390,12 @@ export function FloatingActionMenu(props: FloatingActionMenuProps) {
   const go = (path: string) => { setOpen(false); navigate(path); };
 
   return (
-    <>
+    <div className={inline ? 'relative inline-flex max-w-full' : undefined}>
       {/* Floating panel */}
       {open && (
         <div
           ref={panelRef}
-          className="fixed top-[68px] left-3 z-[60] w-44 max-h-[75vh] overflow-y-auto rounded-2xl border border-border/60 bg-card/90 backdrop-blur-2xl shadow-2xl animate-in fade-in slide-in-from-top-2 duration-150"
+          className={`${inline ? 'absolute top-full mt-2 left-0' : 'fixed top-[68px] left-3'} z-[60] w-44 max-h-[75vh] overflow-y-auto rounded-2xl border border-border/60 bg-card/90 backdrop-blur-2xl shadow-2xl animate-in fade-in slide-in-from-top-2 duration-150`}
         >
           {/* Header */}
           <button
@@ -466,12 +468,12 @@ export function FloatingActionMenu(props: FloatingActionMenuProps) {
       )}
 
       {/* Fixed top-left menu bar: LEVI menu + page buttons, all in one place */}
-      <div aria-hidden className="h-[68px] shrink-0" />
+      {!inline && <div aria-hidden className="h-[68px] shrink-0" />}
       <div
         ref={fabRef}
         role="toolbar"
         aria-label={t('sidebar.menu')}
-        className="fixed top-3 left-3 z-[60] flex items-center gap-0.5 max-w-[calc(100vw-1.5rem)] overflow-x-auto rounded-2xl border border-border/60 bg-card/85 backdrop-blur-xl shadow-lg p-1"
+        className={`${inline ? 'relative max-w-full' : 'fixed top-3 left-3 max-w-[calc(100vw-1.5rem)]'} z-[60] flex items-center gap-0.5 overflow-x-auto rounded-2xl border border-border/60 bg-card/85 backdrop-blur-xl shadow-lg p-1`}
       >
         <button
           onClick={() => setOpen(v => !v)}
@@ -655,6 +657,6 @@ export function FloatingActionMenu(props: FloatingActionMenuProps) {
           </DialogContent>
         </Dialog>
       )}
-    </>
+    </div>
   );
 }

@@ -569,13 +569,6 @@ export default function Department() {
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-background">
-        <FloatingActionMenu
-          extraItems={topBarItems}
-          isAdmin={isAdmin}
-          shouldShowInstallPrompt={shouldShowInstallPrompt()}
-          onInstallClick={install}
-          onSignOut={handleSignOut}
-        />
 
         {isLeader && department && (
           <LeaderTour
@@ -618,6 +611,8 @@ export default function Department() {
                 </p>
               </div>
             </div>
+            </div>
+            <div className="container mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 max-w-7xl pb-3">
 
           </div>
         </div>
