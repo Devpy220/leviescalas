@@ -591,6 +591,9 @@ export default function MySchedules() {
                   onRequestSwap={(s) => handleOpenSwapDialog(s as Schedule)}
                   onRespondSwap={handleRespondToSwap}
                   onCancelSwap={handleCancelSwap}
+                  canManage={(s) => managedDeptIds.has(s.department_id)}
+                  onEdit={(s) => handleOpenEdit(s as Schedule)}
+                  onDelete={(s) => setDeleteTarget(s as Schedule)}
                 />
               );
             })}
@@ -624,6 +627,52 @@ export default function MySchedules() {
         onAccept={handleAcceptSwap}
         onReject={handleRejectSwap}
       />
+
+      {/* Leader: edit a published schedule */}
+      <EditScheduleDialog
+        open={editOpen}
+        onOpenChange={(o) => { setEditOpen(o); if (!o) setEditSchedule(null); }}
+        schedule={editSchedule ? {
+          id: editSchedule.id,
+          user_id: editSchedule.user_id,
+          date: editSchedule.date,
+          time_start: editSchedule.time_start,
+          time_end: editSchedule.time_end,
+          notes: editSchedule.notes,
+          sector_id: editSchedule.sector_id ?? null,
+          sector_ids: editSchedule.sector_ids ?? null,
+          assignment_role: editSchedule.assignment_role,
+          profile: { name: memberProfiles[editSchedule.user_id]?.name || '', avatar_url: null },
+        } : null}
+        members={editSchedule ? (deptMembers[editSchedule.department_id] || []) : []}
+        departmentId={editSchedule?.department_id || ''}
+        onScheduleUpdated={() => {
+          window.dispatchEvent(new CustomEvent('schedules-updated'));
+          fetchSchedules();
+        }}
+      />
+
+      {/* Leader: remove someone from a published schedule */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('schedules.removeTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('schedules.removeConfirm', { name: deleteTarget ? (memberProfiles[deleteTarget.user_id]?.name || '') : '' })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handleConfirmDelete(); }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleting}
+            >
+              {deleting ? t('schedules.removing') : t('schedules.remove')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* My Availability Sheet */}
       {departmentIds.length > 0 && currentUser && (
