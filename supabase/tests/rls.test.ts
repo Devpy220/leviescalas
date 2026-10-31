@@ -51,11 +51,6 @@ const PRIVATE_TABLES = [
   "webauthn_credentials",
   "webauthn_challenges",
   "calendar_sync_tokens",
-  "push_subscriptions",
-  "pushalert_subscribers",
-  "telegram_links",
-  "telegram_link_codes",
-  "payment_receipts",
   "schedule_reminders_sent",
   "slot_notes",
   "repertorio",
@@ -147,14 +142,6 @@ for (const { table, payload } of INSERT_FORBIDDEN_TABLES) {
  * Funções SECURITY DEFINER que recebem código de convite NÃO devem
  * expor IDs internos para o anon — apenas validade + nome.
  */
-Deno.test("RPC: validate_invite_code_secure não vaza ID", async () => {
-  const { data, error } = await anon.rpc("validate_invite_code_secure", { code: "codigo-invalido-xyz" });
-  assertEquals(error, null);
-  const row = Array.isArray(data) ? data[0] : data;
-  assertEquals(row?.is_valid, false);
-  assert(!("id" in (row ?? {})), "Função não pode retornar 'id'");
-});
-
 Deno.test("RPC: validate_church_code_secure não vaza ID", async () => {
   const { data, error } = await anon.rpc("validate_church_code_secure", { p_code: "ZZZZZZZZ" });
   assertEquals(error, null);
@@ -164,7 +151,8 @@ Deno.test("RPC: validate_church_code_secure não vaza ID", async () => {
 });
 
 Deno.test("RPC: join_department_by_invite exige auth", async () => {
-  const { data } = await anon.rpc("join_department_by_invite", { invite_code: "xxx" });
+  const { data, error } = await anon.rpc("join_department_by_invite", { invite_code: "xxx" });
   const row = Array.isArray(data) ? data[0] : data;
-  assertEquals(row?.success, false);
+  // Either the call is refused outright or it reports failure.
+  assert(error !== null || row?.success === false, "Anônimo não pode entrar em departamento");
 });

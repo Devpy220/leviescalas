@@ -64,6 +64,13 @@
       "when": 1793460844000,
       "tag": "0008_church_code_only_for_church_leaders",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793479193555,
+      "tag": "0009_remove_dead_schedule_trigger_and_reset_cron",
+      "breakpoints": true
     }
   ]
 }
