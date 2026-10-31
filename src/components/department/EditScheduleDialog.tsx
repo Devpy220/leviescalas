@@ -94,6 +94,7 @@ export default function EditScheduleDialog({
   const [sectors, setSectors] = useState<{ id: string; name: string; color: string }[]>([]);
   const [assignmentRoles, setAssignmentRoles] = useState<{ id: string; name: string; icon: string }[]>([]);
   const [inSlotSet, setInSlotSet] = useState<Set<string>>(new Set());
+  const [otherSundayShiftSet, setOtherSundayShiftSet] = useState<Set<string>>(new Set());
   const [extraIds, setExtraIds] = useState<string[]>([]);
 
   // Fetch availability + sectors + assignment roles
@@ -173,27 +174,42 @@ export default function EditScheduleDialog({
     fetchData();
   }, [open, departmentId]);
 
-  // Who else is already on the selected day/time in this department
+  // Who else is already on the selected day/time in this department, and —
+  // when the leader does NOT allow Sunday morning+night for the same person —
+  // who is already on the other Sunday shift (same rule as the database: before/after 13:00).
   useEffect(() => {
     if (!open || !schedule || !selectedDate || !timeStart || !departmentId) {
       setInSlotSet(new Set());
+      setOtherSundayShiftSet(new Set());
       return;
     }
     let cancelled = false;
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
-    supabase
-      .from('schedules')
-      .select('user_id, time_start')
-      .eq('department_id', departmentId)
-      .eq('date', dateStr)
-      .neq('id', schedule.id)
-      .then(({ data }) => {
-        if (cancelled) return;
-        const ts = normalizeTime(timeStart);
-        setInSlotSet(new Set((data || [])
-          .filter((r: { time_start: string }) => normalizeTime(r.time_start) === ts)
-          .map((r: { user_id: string }) => r.user_id)));
-      });
+    const isSunday = getDay(selectedDate) === 0;
+    Promise.all([
+      supabase
+        .from('schedules')
+        .select('user_id, time_start')
+        .eq('department_id', departmentId)
+        .eq('date', dateStr)
+        .neq('id', schedule.id),
+      isSunday
+        ? (supabase as any).from('departments_safe').select('allow_sunday_double').eq('id', departmentId).maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]).then(([{ data }, { data: dept }]) => {
+      if (cancelled) return;
+      const rows = (data || []) as { user_id: string; time_start: string }[];
+      const ts = normalizeTime(timeStart);
+      setInSlotSet(new Set(rows.filter(r => normalizeTime(r.time_start) === ts).map(r => r.user_id)));
+      if (isSunday && !dept?.allow_sunday_double) {
+        const isMorning = ts < '13:00';
+        setOtherSundayShiftSet(new Set(rows
+          .filter(r => (normalizeTime(r.time_start) < '13:00') !== isMorning)
+          .map(r => r.user_id)));
+      } else {
+        setOtherSundayShiftSet(new Set());
+      }
+    });
     return () => { cancelled = true; };
   }, [open, schedule, selectedDate, timeStart, departmentId]);
 
@@ -236,28 +252,35 @@ export default function EditScheduleDialog({
     return availabilityMap[key] !== false;
   };
 
+  // Everyone who cannot take this slot: already in it, or on the other Sunday shift when doubles are off
+  const lockedSet = useMemo(() => new Set([...inSlotSet, ...otherSundayShiftSet]), [inSlotSet, otherSundayShiftSet]);
+
   const availableMembers = useMemo(() => {
-    return members.filter(m => !inSlotSet.has(m.user_id) && isMemberAvailable(m.user_id));
-  }, [members, selectedDate, timeStart, availabilityMap, blackoutMap, blockedSet, inSlotSet]);
+    return members.filter(m => !lockedSet.has(m.user_id) && isMemberAvailable(m.user_id));
+  }, [members, selectedDate, timeStart, availabilityMap, blackoutMap, blockedSet, lockedSet]);
 
   const unavailableMembers = useMemo(() => {
-    return members.filter(m => !inSlotSet.has(m.user_id) && !isMemberAvailable(m.user_id));
-  }, [members, selectedDate, timeStart, availabilityMap, blackoutMap, blockedSet, inSlotSet]);
+    return members.filter(m => !lockedSet.has(m.user_id) && !isMemberAvailable(m.user_id));
+  }, [members, selectedDate, timeStart, availabilityMap, blackoutMap, blockedSet, lockedSet]);
 
   // People already on this same day/time (other than the schedule being edited) are locked.
   const inSlotMembers = useMemo(() => members.filter(m => inSlotSet.has(m.user_id)), [members, inSlotSet]);
+  const otherShiftMembers = useMemo(
+    () => members.filter(m => otherSundayShiftSet.has(m.user_id) && !inSlotSet.has(m.user_id)),
+    [members, otherSundayShiftSet, inSlotSet]
+  );
 
   // Candidates to add to this slot: not already there and not the person chosen above.
   const addableMembers = useMemo(
-    () => members.filter(m => !inSlotSet.has(m.user_id) && m.user_id !== selectedMemberId),
-    [members, inSlotSet, selectedMemberId]
+    () => members.filter(m => !lockedSet.has(m.user_id) && m.user_id !== selectedMemberId),
+    [members, lockedSet, selectedMemberId]
   );
 
   // Drop extra picks that became invalid (chosen above, already in slot, or unavailable)
   useEffect(() => {
-    setExtraIds(prev => prev.filter(id => id !== selectedMemberId && !inSlotSet.has(id) && isMemberAvailable(id)));
+    setExtraIds(prev => prev.filter(id => id !== selectedMemberId && !lockedSet.has(id) && isMemberAvailable(id)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedMemberId, inSlotSet, selectedDate, timeStart]);
+  }, [selectedMemberId, lockedSet, selectedDate, timeStart]);
 
   const handleSlotSelect = (slotLabel: string) => {
     const slot = availableSlots.find(s => s.label === slotLabel);
@@ -277,11 +300,13 @@ export default function EditScheduleDialog({
 
   const handleSave = async () => {
     if (!schedule || !selectedDate || !timeStart || !timeEnd || !selectedMemberId) return;
-    if (inSlotSet.has(selectedMemberId)) {
+    if (lockedSet.has(selectedMemberId)) {
       toast({
         variant: 'destructive',
         title: 'Membro já escalado',
-        description: 'Este membro já está nesta escala. Escolha outra pessoa.',
+        description: inSlotSet.has(selectedMemberId)
+          ? 'Este membro já está nesta escala. Escolha outra pessoa.'
+          : 'Este membro já está no outro turno deste domingo, e o departamento não permite manhã e noite no mesmo domingo.',
       });
       return;
     }
@@ -318,7 +343,7 @@ export default function EditScheduleDialog({
       }
 
       // Extra volunteers join the same day/time (never duplicating someone already there)
-      const extras = extraIds.filter(id => id !== selectedMemberId && !inSlotSet.has(id));
+      const extras = extraIds.filter(id => id !== selectedMemberId && !lockedSet.has(id));
       if (extras.length > 0) {
         const { data: auth } = await supabase.auth.getUser();
         const { error: insErr } = await supabase.from('schedules').insert(
@@ -534,6 +559,26 @@ export default function EditScheduleDialog({
                       ))}
                     </>
                   )}
+                  {otherShiftMembers.length > 0 && (
+                    <>
+                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground flex items-center gap-1 mt-1">
+                        <Lock className="w-3 h-3" />
+                        No outro turno deste domingo ({otherShiftMembers.length})
+                      </div>
+                      {otherShiftMembers.map(member => (
+                        <SelectItem key={member.user_id} value={member.user_id} disabled>
+                          <div className="flex items-center gap-2 opacity-50">
+                            <Avatar className="h-5 w-5">
+                              <AvatarFallback className="text-[10px] bg-muted text-muted-foreground">
+                                {member.profile.name.substring(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span>{member.profile.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </>
+                  )}
               </SelectContent>
             </Select>
             {selectedMemberId && !isMemberAvailable(selectedMemberId) && (
@@ -641,6 +686,12 @@ export default function EditScheduleDialog({
                   );
                 })}
               </div>
+            )}
+            {otherShiftMembers.length > 0 && (
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Lock className="w-3 h-3 shrink-0" />
+                Quem já está no outro turno deste domingo não aparece aqui (o departamento não permite manhã e noite no mesmo domingo).
+              </p>
             )}
             {extraIds.length > 0 && (
               <p className="text-xs text-muted-foreground">Eles entram no mesmo dia e horário, com os setores e a função escolhidos acima.</p>
