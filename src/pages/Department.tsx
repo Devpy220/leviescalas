@@ -131,6 +131,7 @@ export default function Department() {
   const [showCalendarSync, setShowCalendarSync] = useState(false);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { user, session, loading: authLoading, ensureSession, signOut } = useAuth();
   const { isAdmin } = useAdmin();
   const { shouldShowInstallPrompt, install } = usePWAInstall();
