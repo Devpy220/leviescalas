@@ -229,7 +229,15 @@
     "chooseDepartment": "Elegir Departamento",
     "exportPDF": "Exportar PDF",
     "exportExcel": "Exportar Excel",
-    "teamAvailabilityTitle": "Disponibilidad del Equipo"
+    "teamAvailabilityTitle": "Disponibilidad del Equipo",
+    "menu": "Menú",
+    "schedulesTab": "Escalas",
+    "muralTab": "Mural",
+    "repertoireTab": "Repertorio",
+    "membersTab": "Miembros",
+    "calendarSync": "Sincronizar calendario",
+    "smartSchedule": "Generar escalas rápido (IA)",
+    "manualSchedule": "Agregar escala manual"
   },
   "contact": {
     "title": "Contáctanos",

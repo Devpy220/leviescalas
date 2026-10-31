@@ -229,7 +229,15 @@
     "chooseDepartment": "Choose Department",
     "exportPDF": "Export PDF",
     "exportExcel": "Export Excel",
-    "teamAvailabilityTitle": "Team Availability"
+    "teamAvailabilityTitle": "Team Availability",
+    "menu": "Menu",
+    "schedulesTab": "Schedules",
+    "muralTab": "Board",
+    "repertoireTab": "Repertoire",
+    "membersTab": "Members",
+    "calendarSync": "Sync calendar",
+    "smartSchedule": "Quick schedule (AI)",
+    "manualSchedule": "Add schedule manually"
   },
   "contact": {
     "title": "Contact us",
