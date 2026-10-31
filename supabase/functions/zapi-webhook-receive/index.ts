@@ -833,12 +833,6 @@ serve(async (req: Request): Promise<Response> => {
       .limit(1);
 
     const prompt = prompts?.[0];
-    if (!prompt) {
-      return new Response(JSON.stringify({ ignored: true, reason: "no active prompt" }), {
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
-    }
-
     // Only act when the user sends an EXPLICIT command at the start of the message
     // (bloquear / servir / nenhum / liberar). Free conversation like
     // "qualquer dia tá bom, desde que seja domingo de manhã" must NEVER change data.
@@ -852,14 +846,30 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    const targetMonth = new Date(prompt.target_month + "T00:00:00");
-    const windowStart = new Date(targetMonth.getFullYear(), targetMonth.getMonth() - 1, 28);
-    const windowEnd = new Date(targetMonth.getFullYear(), targetMonth.getMonth(), 5, 23, 59, 59);
     const now = new Date();
-    if (now < windowStart || now > windowEnd) {
-      return new Response(JSON.stringify({ ignored: true, reason: "outside window" }), {
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+    let targetMonth: Date | null = null;
+    let activePrompt: any = null;
+    if (prompt) {
+      const tm = new Date(prompt.target_month + "T00:00:00");
+      const windowStart = new Date(tm.getFullYear(), tm.getMonth() - 1, 28);
+      const windowEnd = new Date(tm.getFullYear(), tm.getMonth(), 5, 23, 59, 59);
+      if (now >= windowStart && now <= windowEnd) {
+        targetMonth = tm;
+        activePrompt = prompt;
+      }
+    }
+    if (!targetMonth) {
+      // Outside the monthly collection window, "servir <datas>" still works at
+      // any time: the month comes from the first dd/mm date (or the current month).
+      if (!/^(servir|vou servir|posso servir)\b/.test(lowerText)) {
+        return new Response(JSON.stringify({ ignored: true, reason: prompt ? "outside window" : "no active prompt" }), {
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+      const dm = /(\b\d{1,2})[/\-.](\d{1,2})/.exec(lowerText);
+      const mon = dm ? Math.min(11, Math.max(0, parseInt(dm[2], 10) - 1)) : now.getMonth();
+      const yr = mon < now.getMonth() ? now.getFullYear() + 1 : now.getFullYear();
+      targetMonth = new Date(yr, mon, 1);
     }
 
     const parsed = parseUserResponse(text, targetMonth);
