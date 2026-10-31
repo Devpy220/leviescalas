@@ -1799,6 +1799,7 @@ export type Database = {
       member_preferences: {
         Row: {
           blackout_dates: string[] | null
+          blackout_shifts: string[]
           created_at: string
           department_id: string
           id: string
@@ -1810,6 +1811,7 @@ export type Database = {
         }
         Insert: {
           blackout_dates?: string[] | null
+          blackout_shifts?: string[]
           created_at?: string
           department_id: string
           id?: string
@@ -1821,6 +1823,7 @@ export type Database = {
         }
         Update: {
           blackout_dates?: string[] | null
+          blackout_shifts?: string[]
           created_at?: string
           department_id?: string
           id?: string
