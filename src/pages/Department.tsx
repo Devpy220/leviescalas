@@ -569,13 +569,6 @@ export default function Department() {
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-background">
-        <FloatingActionMenu
-          extraItems={topBarItems}
-          isAdmin={isAdmin}
-          shouldShowInstallPrompt={shouldShowInstallPrompt()}
-          onInstallClick={install}
-          onSignOut={handleSignOut}
-        />
 
         {isLeader && department && (
           <LeaderTour
@@ -588,7 +581,7 @@ export default function Department() {
         <div>
         {/* Sub-header with department info */}
         <div className="border-b border-border/50 bg-card/50">
-          <div className="container mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 max-w-7xl py-3 flex items-center justify-between">
+          <div className="container mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 max-w-7xl py-3 flex flex-col items-start gap-3">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <DepartmentAvatar
                 departmentId={department.id}
@@ -618,6 +611,14 @@ export default function Department() {
                 </p>
               </div>
             </div>
+            <FloatingActionMenu
+              inline
+              extraItems={topBarItems}
+              isAdmin={isAdmin}
+              shouldShowInstallPrompt={shouldShowInstallPrompt()}
+              onInstallClick={install}
+              onSignOut={handleSignOut}
+            />
 
           </div>
         </div>
