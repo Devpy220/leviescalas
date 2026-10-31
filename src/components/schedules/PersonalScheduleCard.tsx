@@ -16,7 +16,7 @@ import {
 import { PendingSwapBadge } from '@/components/schedules/PendingSwapBadge';
 import SlotRepertoireEditor from '@/components/department/SlotRepertoireEditor';
 import { REPERTOIRE_EDIT_ROLES, ASSIGNMENT_ROLES } from '@/lib/constants';
-import { findSlotByDayAndTime } from '@/lib/fixedSlots';
+import { findSlotByDayAndTime, getDayColorSlot } from '@/lib/fixedSlots';
 import type { ScheduleSwap } from '@/hooks/useScheduleSwaps';
 import { cn } from '@/lib/utils';
 
