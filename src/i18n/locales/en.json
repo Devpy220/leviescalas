@@ -275,7 +275,13 @@
     "details": "View details",
     "upcoming": "Upcoming schedules",
     "none": "No schedules found",
-    "noneDetail": "You have not been scheduled in any department yet."
+    "noneDetail": "You have not been scheduled in any department yet.",
+    "removeTitle": "Remove from schedule",
+    "removeConfirm": "Are you sure you want to remove {{name}} from this schedule?",
+    "removed": "Removed from schedule",
+    "removeError": "Couldn't remove. Check your permissions.",
+    "removing": "Removing...",
+    "remove": "Remove"
   },
   "notifications": {
     "notifications": "Notifications",

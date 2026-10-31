@@ -275,7 +275,13 @@
     "details": "Ver detalles",
     "upcoming": "Próximos turnos",
     "none": "No se encontraron turnos",
-    "noneDetail": "Todavía no tienes turnos en ningún departamento."
+    "noneDetail": "Todavía no tienes turnos en ningún departamento.",
+    "removeTitle": "Quitar de la escala",
+    "removeConfirm": "¿Seguro que deseas quitar a {{name}} de esta escala?",
+    "removed": "Quitado de la escala",
+    "removeError": "No se pudo quitar. Verifica tus permisos.",
+    "removing": "Quitando...",
+    "remove": "Quitar"
   },
   "notifications": {
     "notifications": "Notificaciones",
