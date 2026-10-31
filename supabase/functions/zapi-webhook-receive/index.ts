@@ -291,6 +291,8 @@ serve(async (req: Request): Promise<Response> => {
       new Response(JSON.stringify(body), { headers: { "Content-Type": "application/json", ...corsHeaders } });
     const firstName = (profile.name || "").split(" ")[0] || "👋";
     let cmd = (text || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[!?.]+$/, "").replace(/\s+/g, " ");
+    // True only when this request comes from a SIM to a pending command.
+    let confirmedCommand = false;
 
     // ─── Pedido de exclusão pendente: resposta SIM / NÃO após "SAIR" ───
     const { data: pendingDel } = await supabase.from("whatsapp_consent_log")
@@ -372,6 +374,7 @@ serve(async (req: Request): Promise<Response> => {
       }
       text = pendingCommand.command_text;
       cmd = text.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[!?.]+$/, "").replace(/\s+/g, " ");
+      confirmedCommand = true;
     } else if (pendingCommand && /^(nao|no|cancelar)$/.test(cmd)) {
       await supabase.from("whatsapp_pending_commands").delete().eq("user_id", profile.id);
       await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp,
@@ -517,45 +520,47 @@ serve(async (req: Request): Promise<Response> => {
       return reply({ ok: true, handled: "block_dates", accepted });
     }
 
+    // Unblocking always shows exactly what will be freed and waits for SIM.
+    const askUnblockConfirmation = async (details: string) => {
+      const { error: pendingWriteError } = await supabase.from("whatsapp_pending_commands").upsert({
+        user_id: profile.id, phone: phoneDigits, command_text: cmd,
+        expires_at: new Date(Date.now() + 15 * 60_000).toISOString(),
+      }, { onConflict: "user_id" });
+      if (pendingWriteError) throw pendingWriteError;
+      await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp,
+        `🔓 *${firstName}, confirma o desbloqueio?*\n\n${details}\n\nResponda *SIM* para desbloquear ou *NÃO* para cancelar. Vale por 15 minutos. Nada foi alterado ainda.`);
+      return reply({ ok: true, handled: "unblock_confirmation_required" });
+    };
+
     // ─── "desbloquear <datas|dias da semana>" → libera só os dias pedidos ───
     if (/^(desbloquear|desbloqueio|desbloq|liberar)\s+\S/.test(cmd) && !/^liberar (todos|dias|meu bloqueio)$/.test(cmd)) {
-      const DOWS: Array<[RegExp, number]> = [
-        [/domingo/, 0], [/segunda/, 1], [/ter[cç]a/, 2], [/quarta/, 3],
-        [/quinta/, 4], [/sexta/, 5], [/s[áa]bado/, 6],
-      ];
-      const dows = new Set(DOWS.filter(([r]) => r.test(cmd)).map(([, d]) => d));
-      const dates = new Set<string>();
-      const re = /(\b\d{1,2})[/\-.](\d{1,2})(?:[/\-.](\d{2,4}))?/g;
-      let mm: RegExpExecArray | null;
-      while ((mm = re.exec(cmd)) !== null) {
-        const day = +mm[1], mon = +mm[2] - 1;
-        let yr = mm[3] ? +mm[3] : new Date().getFullYear();
-        if (yr < 100) yr += 2000;
-        const d = new Date(Date.UTC(yr, mon, day));
-        if (d.getUTCDate() !== day || d.getUTCMonth() !== mon) continue;
-        dates.add(d.toISOString().slice(0, 10));
-        if (!mm[3]) { d.setUTCFullYear(yr + 1); dates.add(d.toISOString().slice(0, 10)); }
-      }
+      const { dows, dates, partOfDay } = parseUnblockTargets(cmd);
       if (dows.size === 0 && dates.size === 0) {
         await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp,
-          `Olá *${firstName}*! Não entendi quais dias liberar. Exemplos: *desbloquear domingo*, *desbloquear 10/10* ou só *desbloquear* para liberar todos.`);
+          `Olá *${firstName}*! Não entendi quais dias liberar. Exemplos: *desbloquear domingo*, *desbloquear quarta*, *desbloquear 10/10* ou só *desbloquear* para liberar todos.`);
         return reply({ ok: true, handled: "unblock_specific_invalid" });
       }
+      const wholeDayNote = partOfDay
+        ? "\n\n_O bloqueio vale para o dia inteiro, então manhã e noite desse dia ficam livres._"
+        : "";
       try {
         const rows = await loadBlackouts();
-        const freed: string[] = [];
-        for (const r of rows) {
-          const hit = r.future.filter((d) =>
-            dates.has(d) || dows.has(new Date(d + "T12:00:00Z").getUTCDay()));
-          if (hit.length === 0) continue;
-          const keep = r.all.filter((d) => !hit.includes(d));
-          await supabase.from("member_preferences").update({ blackout_dates: keep }).eq("id", r.id);
-          freed.push(`*${r.deptName}*: ${hit.map(fmt).join(", ")}`);
+        const plan = rows
+          .map((r) => ({ r, hit: r.future.filter((d) => dates.has(d) || dows.has(new Date(d + "T12:00:00Z").getUTCDay())) }))
+          .filter((p) => p.hit.length > 0);
+        if (plan.length === 0) {
+          await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp,
+            `Olá *${firstName}*! Não encontrei bloqueio nesses dias, então nada foi alterado. Envie *bloqueios* para ver seus dias bloqueados.`);
+          return reply({ ok: true, handled: "unblock_specific_nothing" });
         }
-        const msg = freed.length === 0
-          ? `Olá *${firstName}*! Não encontrei bloqueio nesses dias, então nada foi alterado. Envie *bloqueios* para ver seus dias bloqueados.`
-          : `✅ *Desbloqueado, ${firstName}!*\n\nDias liberados:\n${freed.map((l) => `• ${l}`).join("\n")}\n\nSeu líder já pode te escalar nesses dias.`;
-        await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, msg);
+        const lines = plan.map((p) => `• *${p.r.deptName}*: ${p.hit.map(fmt).join(", ")}`).join("\n");
+        if (!confirmedCommand) return await askUnblockConfirmation(`Dias que serão liberados:\n${lines}${wholeDayNote}`);
+        for (const p of plan) {
+          const keep = p.r.all.filter((d) => !p.hit.includes(d));
+          await supabase.from("member_preferences").update({ blackout_dates: keep }).eq("id", p.r.id);
+        }
+        await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp,
+          `✅ *Desbloqueado, ${firstName}!*\n\nDias liberados:\n${lines}${wholeDayNote}\n\nSeu líder já pode te escalar nesses dias.`);
       } catch (e) {
         console.error("unblock specific error:", e);
         await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp,
@@ -568,6 +573,21 @@ serve(async (req: Request): Promise<Response> => {
     if (/^(desbloquear|desbloqueio|desbloq|voltar|voltar a servir|liberar meu bloqueio|liberar dias)$/.test(cmd)) {
       try {
         const rows = await loadBlackouts();
+        if (!confirmedCommand) {
+          const { data: blockedRows } = await supabase.from("members")
+            .select("departments(name)").eq("user_id", profile.id).eq("is_blocked", true);
+          const blockedDepts = (blockedRows ?? []).map((b: any) => b.departments?.name).filter(Boolean);
+          const withDays = rows.filter((r) => r.future.length > 0);
+          if (withDays.length === 0 && blockedDepts.length === 0) {
+            await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp,
+              `Olá *${firstName}*! Você não tem nenhum dia bloqueado, então não havia nada para desbloquear. 🙌`);
+            return reply({ ok: true, handled: "unblock_nothing" });
+          }
+          let details = "";
+          if (withDays.length) details += `Todos estes dias serão liberados:\n${withDays.map((r) => `• *${r.deptName}*: ${r.future.map(fmt).join(", ")}`).join("\n")}`;
+          if (blockedDepts.length) details += `${details ? "\n\n" : ""}Você volta a ficar disponível em:\n${blockedDepts.map((n: string) => `• ${n}`).join("\n")}`;
+          return await askUnblockConfirmation(details);
+        }
         const freed: string[] = [];
         for (const r of rows) {
           if (r.future.length === 0) continue;
