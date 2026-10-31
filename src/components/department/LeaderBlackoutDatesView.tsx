@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Loader2, CalendarOff, AlertTriangle } from 'lucide-react';
 import { format, parseISO, isFuture, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 import { createExtendedMemberColorMap, getMemberBackgroundStyle } from '@/lib/memberColors';
 
 interface LeaderBlackoutDatesViewProps {
@@ -21,9 +22,14 @@ interface MemberProfile {
 interface MemberPreference {
   user_id: string;
   blackout_dates: string[] | null;
+  blackout_shifts: string[] | null;
 }
 
 export default function LeaderBlackoutDatesView({ departmentId }: LeaderBlackoutDatesViewProps) {
+  const { t } = useTranslation();
+  // Entries are whole days ("YYYY-MM-DD") or single Sunday shifts ("YYYY-MM-DD|M"/"|N").
+  const shiftLabel = (key: string) =>
+    key.endsWith('|M') ? t('blackoutShift.morning') : key.endsWith('|N') ? t('blackoutShift.night') : '';
   const [loading, setLoading] = useState(true);
   const [members, setMembers] = useState<MemberProfile[]>([]);
   const [preferences, setPreferences] = useState<MemberPreference[]>([]);
@@ -46,7 +52,7 @@ export default function LeaderBlackoutDatesView({ departmentId }: LeaderBlackout
       // Fetch member preferences with blackout dates
       const { data: prefsData, error: prefsError } = await supabase
         .from('member_preferences')
-        .select('user_id, blackout_dates')
+        .select('user_id, blackout_dates, blackout_shifts')
         .eq('department_id', departmentId);
 
       if (prefsError) throw prefsError;
@@ -88,9 +94,9 @@ export default function LeaderBlackoutDatesView({ departmentId }: LeaderBlackout
     return members
       .map(member => {
         const pref = preferences.find(p => p.user_id === member.id);
-        const blackoutDates = (pref?.blackout_dates || [])
+        const blackoutDates = [...(pref?.blackout_dates || []), ...(pref?.blackout_shifts || [])]
           .filter(dateStr => {
-            const date = parseISO(dateStr);
+            const date = parseISO(dateStr.slice(0, 10));
             return isFuture(date) || isToday(date);
           })
           .sort();
@@ -166,7 +172,7 @@ export default function LeaderBlackoutDatesView({ departmentId }: LeaderBlackout
             {/* Dates list with members */}
             <div className="space-y-2">
               {dateAggregation.map(({ date, memberIds, count }) => {
-                const dateObj = parseISO(date);
+                const dateObj = parseISO(date.slice(0, 10));
                 const membersOnDate = members.filter(m => memberIds.includes(m.id));
                 
                 return (
@@ -185,6 +191,9 @@ export default function LeaderBlackoutDatesView({ departmentId }: LeaderBlackout
                         <p className="text-xs text-muted-foreground">
                           {format(dateObj, 'MMM', { locale: ptBR })}
                         </p>
+                        {shiftLabel(date) && (
+                          <p className="text-[10px] font-medium text-primary">{shiftLabel(date)}</p>
+                        )}
                       </div>
                       
                       <div className="flex -space-x-2">
@@ -246,7 +255,8 @@ export default function LeaderBlackoutDatesView({ departmentId }: LeaderBlackout
                     <div className="flex gap-1 flex-wrap justify-end max-w-[200px]">
                       {member.blackoutDates.slice(0, 3).map(dateStr => (
                         <Badge key={dateStr} variant="outline" className="text-xs">
-                          {format(parseISO(dateStr), 'dd/MM')}
+                          {format(parseISO(dateStr.slice(0, 10)), 'dd/MM')}
+                          {shiftLabel(dateStr) && ` ${shiftLabel(dateStr)}`}
                         </Badge>
                       ))}
                       {member.blackoutDates.length > 3 && (

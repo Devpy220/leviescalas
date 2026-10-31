@@ -35,6 +35,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import SlotRepertoireEditor from './SlotRepertoireEditor';
 import { REPERTOIRE_EDIT_ROLES } from '@/lib/constants';
+import { isBlockedAt } from '@/lib/blackoutShifts';
 interface Schedule {
   id: string;
   user_id: string;
@@ -112,7 +113,7 @@ export default function EditScheduleDialog({
             .eq('is_available', false),
           supabase
             .from('member_preferences')
-            .select('user_id, blackout_dates')
+            .select('user_id, blackout_dates, blackout_shifts')
             .eq('department_id', departmentId),
           supabase
             .from('member_date_availability')
@@ -150,9 +151,9 @@ export default function EditScheduleDialog({
         const bMap: Record<string, string[]> = {};
         if (prefsRes.data) {
           for (const row of prefsRes.data) {
-            if (row.blackout_dates?.length) {
-              bMap[row.user_id] = row.blackout_dates;
-            }
+            // Whole days ("YYYY-MM-DD") and single shifts ("YYYY-MM-DD|M") share one list.
+            const all = [...(row.blackout_dates ?? []), ...(row.blackout_shifts ?? [])];
+            if (all.length) bMap[row.user_id] = all;
           }
         }
         if (dateAvailRes.data) {
@@ -245,7 +246,8 @@ export default function EditScheduleDialog({
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
     
     // Check blackout dates
-    if (blackoutMap[userId]?.includes(dateStr)) return false;
+    const blocks = blackoutMap[userId] ?? [];
+    if (isBlockedAt(blocks, blocks, dateStr, timeStart)) return false;
     
     // Block only if explicitly marked as unavailable
     const key = `${userId}-${dayOfWeek}-${normalizeTime(timeStart)}`;

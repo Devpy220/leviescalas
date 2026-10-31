@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { isBlockedAt } from "../_shared/blackoutShifts.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -165,7 +166,7 @@ serve(async (req) => {
         .select('user_id, day_of_week, time_start, time_end, is_available')
         .eq('department_id', department_id),
       supabase.from('member_preferences')
-        .select('user_id, max_schedules_per_month, min_days_between_schedules, blackout_dates')
+        .select('user_id, max_schedules_per_month, min_days_between_schedules, blackout_dates, blackout_shifts')
         .eq('department_id', department_id),
       supabase.from('schedules')
         .select('user_id, date')
@@ -192,6 +193,7 @@ serve(async (req) => {
       max_schedules_per_month: number;
       min_days_between_schedules: number;
       blackout_dates: Set<string>;
+      blackout_shifts: string[];
     }> = {};
     (prefsRes.data || []).forEach((p: any) => {
       preferencesMap[p.user_id] = {
@@ -199,6 +201,7 @@ serve(async (req) => {
         min_days_between_schedules: p.min_days_between_schedules ?? 3,
         blackout_dates: new Set((p.blackout_dates || []).map((d: any) =>
           typeof d === 'string' ? d : new Date(d).toISOString().split('T')[0])),
+        blackout_shifts: p.blackout_shifts || [],
       };
     });
 
@@ -254,7 +257,7 @@ serve(async (req) => {
     const isEligible = (uid: string, date: string, slot: FixedSlot): { ok: boolean; reason?: string } => {
       // Blackout preference
       const pref = preferencesMap[uid];
-      if (pref?.blackout_dates.has(date)) return { ok: false, reason: 'blackout' };
+      if (pref && isBlockedAt([...pref.blackout_dates], pref.blackout_shifts, date, slot.timeStart)) return { ok: false, reason: 'blackout' };
 
       // Date override
       const ov = dateOverride.get(`${uid}|${date}`);

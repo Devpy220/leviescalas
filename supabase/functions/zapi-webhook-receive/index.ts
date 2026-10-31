@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { serveOnlyBlackouts } from "../_shared/scheduleDates.ts";
 import { tryHandleSwapMessage } from "./swapFlow.ts";
 import { parseUnblockTargets } from "./unblockTargets.ts";
+import { applyBlock, applyUnblock, blockItems, otherShift, parseShiftKey, type Blocks, type Shift } from "../_shared/blackoutShifts.ts";
 import { detectLang, t, fmtTime, DOW, isScheduleListCommand, translateRole } from "../_shared/whatsappI18n.ts";
 import { LEVI_COMMANDS_HINT, buildSupportOnlyMessage } from "../_shared/messageVariants.ts";
 
@@ -28,6 +29,7 @@ export interface ParsedResponse {
   mode: ResponseMode;
   dates: string[]; // ISO YYYY-MM-DD
   weeklyBlocks?: WeeklyBlock[];
+  shifts?: string[]; // single Sunday shifts, "YYYY-MM-DD|M" or "|N"
 }
 
 // Parse the user's reply. Detects mode from keywords, plus dates.
@@ -86,6 +88,8 @@ export function parseUserResponse(text: string, targetMonth: Date): ParsedRespon
   const weeklyBlocks: WeeklyBlock[] = [];
   const WEEKDAY_LABELS = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
 
+  // Sunday has two shifts: "domingos de manhã" blocks only that shift.
+  const shiftKeys = new Set<string>();
   if (weekdayShifts.size > 0) {
     const lastDay = new Date(tYear, tMonth + 1, 0).getDate();
     for (const [dow, shift] of weekdayShifts.entries()) {
@@ -95,7 +99,10 @@ export function parseUserResponse(text: string, targetMonth: Date): ParsedRespon
       for (let d = 1; d <= lastDay; d++) {
         const dt = new Date(tYear, tMonth, d);
         if (dt < today) continue;
-        if (dt.getDay() === dow) found.add(dt.toISOString().slice(0, 10));
+        if (dt.getDay() !== dow) continue;
+        const iso = dt.toISOString().slice(0, 10);
+        if (dow === 0 && shift) shiftKeys.add(`${iso}|${shift === 'manha' ? 'M' : 'N'}`);
+        else found.add(iso);
       }
       const label = shift === 'manha'
         ? `${WEEKDAY_LABELS[dow]}s de manhã`
@@ -132,8 +139,10 @@ export function parseUserResponse(text: string, targetMonth: Date): ParsedRespon
   }
 
   const dates = Array.from(found).sort();
+  // A whole-day pick wins over a shift pick on the same date.
+  const shifts = Array.from(shiftKeys).filter((k) => !found.has(k.slice(0, 10))).sort();
   const mode: ResponseMode = serveOnly ? "serve_only" : "block";
-  return { mode, dates, weeklyBlocks };
+  return { mode, dates, weeklyBlocks, shifts };
 }
 
 // Backward-compat export name (legacy callers)
@@ -425,32 +434,44 @@ serve(async (req: Request): Promise<Response> => {
       return reply({ ok: true, handled: "support" });
     }
 
-    // Helper: future blackout dates per department
+    // Helper: future blocks (whole days + single Sunday shifts) per department
+    const todayIsoBlk = new Date().toISOString().slice(0, 10);
+    const itemLabel = (it: { date: string; shift?: Shift }) =>
+      fmt(it.date) + (it.shift === "M" ? " (manhã)" : it.shift === "N" ? " (noite)" : "");
     const loadBlackouts = async () => {
-      const today = new Date().toISOString().slice(0, 10);
       const { data: prefs } = await supabase
         .from("member_preferences")
-        .select("id, department_id, blackout_dates, departments(name)")
+        .select("id, department_id, blackout_dates, blackout_shifts, departments(name)")
         .eq("user_id", profile.id);
       return (prefs ?? []).map((p: any) => {
-        const all = ((p.blackout_dates as string[]) ?? []).map((d) => String(d).slice(0, 10));
-        return { id: p.id, deptName: p.departments?.name || "—", all, future: all.filter((d) => d >= today).sort() };
+        const blocks: Blocks = {
+          dates: ((p.blackout_dates as string[]) ?? []).map((d) => String(d).slice(0, 10)),
+          shifts: ((p.blackout_shifts as string[]) ?? []).filter((k) => parseShiftKey(k)),
+        };
+        return { id: p.id, deptName: p.departments?.name || "—", blocks, items: blockItems(blocks, todayIsoBlk) };
       });
     };
+    const saveBlocks = (id: string, b: Blocks) =>
+      supabase.from("member_preferences").update({ blackout_dates: b.dates, blackout_shifts: b.shifts }).eq("id", id);
+    // "manhã" → M, "noite"/"tarde" → N; both or neither → whole day.
+    const shiftFromText = (s: string): Shift | undefined => {
+      const m = /\b(manha|cedo)\b/.test(s), n = /\b(noite|tarde)\b/.test(s);
+      return m && !n ? "M" : n && !m ? "N" : undefined;
+    };
+    const isSunday = (iso: string) => new Date(iso + "T12:00:00Z").getUTCDay() === 0;
 
     // ─── "bloqueios" → listar dias bloqueados ───
     if (/^(bloqueios|meus bloqueios|dias bloqueados|bloqueados)$/.test(cmd)) {
-      const rows = (await loadBlackouts()).filter((r) => r.future.length > 0);
+      const rows = (await loadBlackouts()).filter((r) => r.items.length > 0);
       const msg = rows.length === 0
         ? `Olá *${firstName}*! Você não tem nenhum dia bloqueado no momento. 🙌`
-        : `📅 *Seus dias bloqueados, ${firstName}:*\n${rows.map((r) => `\n*${r.deptName}*\n${r.future.map((d) => `• ${fmt(d)}`).join("\n")}`).join("\n")}\n\nPara liberar todos, responda *desbloquear*.`;
+        : `📅 *Seus dias bloqueados, ${firstName}:*\n${rows.map((r) => `\n*${r.deptName}*\n${r.items.map((it) => `• ${itemLabel(it)}`).join("\n")}`).join("\n")}\n\nPara liberar todos, responda *desbloquear*.`;
       await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, msg);
       return reply({ ok: true, handled: "list_blackouts" });
     }
 
-    // ─── "bloquear <datas>" → bloqueia dias específicos (só datas: 10/10, 10-10) ───
-    // Weekday requests ("bloquear domingos de manhã") fall through to the
-    // blackout-prompt parser, which supports weekdays and shifts.
+    // ─── "bloquear <datas|dias da semana> [de manhã|à noite]" ───
+    // On Sundays "de manhã" / "à noite" blocks only that shift.
     if (/^bloquear\b/.test(cmd)) {
       const today0 = new Date(); today0.setHours(0, 0, 0, 0);
       const found = new Set<string>();
@@ -475,8 +496,8 @@ serve(async (req: Request): Promise<Response> => {
       // matching days in the next 30 days.
       if (found.size === 0) {
         const WD: Array<[RegExp, number]> = [
-          [/domingo/, 0], [/segunda/, 1], [/ter[cç]a/, 2], [/quarta/, 3],
-          [/quinta/, 4], [/sexta/, 5], [/s[áa]bado/, 6],
+          [/domingo/, 0], [/segunda/, 1], [/terca/, 2], [/quarta/, 3],
+          [/quinta/, 4], [/sexta/, 5], [/sabado/, 6],
         ];
         const dows = new Set(WD.filter(([r]) => r.test(cmd)).map(([, d]) => d));
         for (let i = 0; i < 30 && dows.size > 0; i++) {
@@ -487,7 +508,7 @@ serve(async (req: Request): Promise<Response> => {
       if (found.size === 0) {
         await sendConfirmation(
           supabaseUrl, serviceRoleKey, profile.whatsapp,
-          `🤔 *${firstName}*, para bloquear dias me envie as datas no formato *dia/mês*.\n\nExemplos:\n• *bloquear 10/10*\n• *bloquear 10-10, 25/10*\n\nPara ver seus bloqueios, responda *bloqueios*.`,
+          `🤔 *${firstName}*, para bloquear dias me envie as datas no formato *dia/mês*.\n\nExemplos:\n• *bloquear 10/10*\n• *bloquear domingo de manhã*\n• *bloquear domingo à noite*\n\nPara ver seus bloqueios, responda *bloqueios*.`,
         );
         return reply({ ok: true, handled: "block_no_dates" });
       }
@@ -501,24 +522,26 @@ serve(async (req: Request): Promise<Response> => {
         );
         return reply({ ok: true, no_depts: true });
       }
-      // No block limit: every requested date is saved in every department.
-      const todayIso = new Date().toISOString().slice(0, 10);
+      const shift = shiftFromText(cmd);
+      const targets = Array.from(found).sort().map((date) => ({ date, shift: isSunday(date) ? shift : undefined }));
+      // No block limit: every requested day is saved in every department.
       for (const deptId of blkDeptIds) {
         const { data: existing } = await supabase
-          .from("member_preferences").select("blackout_dates")
+          .from("member_preferences").select("blackout_dates, blackout_shifts")
           .eq("user_id", profile.id).eq("department_id", deptId).maybeSingle();
-        const merged = new Set<string>(((existing?.blackout_dates as string[]) ?? [])
-          .map((d) => String(d).slice(0, 10)).filter((d) => d >= todayIso));
-        for (const ds of found) merged.add(ds);
+        let b: Blocks = {
+          dates: ((existing?.blackout_dates as string[]) ?? []).map((d) => String(d).slice(0, 10)).filter((d) => d >= todayIsoBlk),
+          shifts: ((existing?.blackout_shifts as string[]) ?? []).filter((k) => (parseShiftKey(k)?.date ?? "") >= todayIsoBlk),
+        };
+        for (const t of targets) b = applyBlock(b, t.date, t.shift);
         await supabase.from("member_preferences").upsert(
-          { user_id: profile.id, department_id: deptId, blackout_dates: Array.from(merged).sort() },
+          { user_id: profile.id, department_id: deptId, blackout_dates: b.dates, blackout_shifts: b.shifts },
           { onConflict: "user_id,department_id" },
         );
       }
-      const accepted = Array.from(found).sort();
-      const msg = `🔴 *Anotado, ${firstName}!*\n━━━━━━━━━━━━━━━━━━━━\n\n🚫 *Dias bloqueados:*\n${accepted.map(fmt).join(", ")}\n\nPara liberar, responda *desbloquear*.\n\n_LEVI_`;
+      const msg = `🔴 *Anotado, ${firstName}!*\n━━━━━━━━━━━━━━━━━━━━\n\n🚫 *Bloqueado:*\n${targets.map(itemLabel).join(", ")}\n\nPara liberar, responda *desbloquear*.\n\n_LEVI_`;
       await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, msg);
-      return reply({ ok: true, handled: "block_dates", accepted });
+      return reply({ ok: true, handled: "block_dates", accepted: targets });
     }
 
     // Unblocking always shows exactly what will be freed and waits for SIM.
@@ -533,35 +556,39 @@ serve(async (req: Request): Promise<Response> => {
       return reply({ ok: true, handled: "unblock_confirmation_required" });
     };
 
-    // ─── "desbloquear <datas|dias da semana>" → libera só os dias pedidos ───
+    // ─── "desbloquear <datas|dias da semana> [de manhã|à noite]" → libera só o pedido ───
     if (/^(desbloquear|desbloqueio|desbloq|liberar)\s+\S/.test(cmd) && !/^liberar (todos|dias|meu bloqueio)$/.test(cmd)) {
-      const { dows, dates, partOfDay } = parseUnblockTargets(cmd);
+      const { dows, dates, shift } = parseUnblockTargets(cmd);
       if (dows.size === 0 && dates.size === 0) {
         await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp,
-          `Olá *${firstName}*! Não entendi quais dias liberar. Exemplos: *desbloquear domingo*, *desbloquear quarta*, *desbloquear 10/10* ou só *desbloquear* para liberar todos.`);
+          `Olá *${firstName}*! Não entendi quais dias liberar. Exemplos: *desbloquear domingo de manhã*, *desbloquear domingo à noite*, *desbloquear quarta*, *desbloquear 10/10* ou só *desbloquear* para liberar todos.`);
         return reply({ ok: true, handled: "unblock_specific_invalid" });
       }
-      const wholeDayNote = partOfDay
-        ? "\n\n_O bloqueio vale para o dia inteiro, então manhã e noite desse dia ficam livres._"
-        : "";
       try {
         const rows = await loadBlackouts();
-        const plan = rows
-          .map((r) => ({ r, hit: r.future.filter((d) => dates.has(d) || dows.has(new Date(d + "T12:00:00Z").getUTCDay())) }))
-          .filter((p) => p.hit.length > 0);
+        const matches = (d: string) => dates.has(d) || dows.has(new Date(d + "T12:00:00Z").getUTCDay());
+        const plan = rows.map((r) => {
+          const targetDates = [...new Set(r.items.map((it) => it.date).filter(matches))].sort();
+          let after = r.blocks;
+          const freed: string[] = [];
+          for (const d of targetDates) {
+            const s = isSunday(d) ? shift : undefined;
+            const next = applyUnblock(after, d, s);
+            if (JSON.stringify(next) !== JSON.stringify(after)) freed.push(itemLabel({ date: d, shift: s }));
+            after = next;
+          }
+          return { r, after, freed };
+        }).filter((p) => p.freed.length > 0);
         if (plan.length === 0) {
           await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp,
             `Olá *${firstName}*! Não encontrei bloqueio nesses dias, então nada foi alterado. Envie *bloqueios* para ver seus dias bloqueados.`);
           return reply({ ok: true, handled: "unblock_specific_nothing" });
         }
-        const lines = plan.map((p) => `• *${p.r.deptName}*: ${p.hit.map(fmt).join(", ")}`).join("\n");
-        if (!confirmedCommand) return await askUnblockConfirmation(`Dias que serão liberados:\n${lines}${wholeDayNote}`);
-        for (const p of plan) {
-          const keep = p.r.all.filter((d) => !p.hit.includes(d));
-          await supabase.from("member_preferences").update({ blackout_dates: keep }).eq("id", p.r.id);
-        }
+        const lines = plan.map((p) => `• *${p.r.deptName}*: ${p.freed.join(", ")}`).join("\n");
+        if (!confirmedCommand) return await askUnblockConfirmation(`Será liberado:\n${lines}`);
+        for (const p of plan) await saveBlocks(p.r.id, p.after);
         await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp,
-          `✅ *Desbloqueado, ${firstName}!*\n\nDias liberados:\n${lines}${wholeDayNote}\n\nSeu líder já pode te escalar nesses dias.`);
+          `✅ *Desbloqueado, ${firstName}!*\n\nLiberado:\n${lines}\n\nSeu líder já pode te escalar nesses dias.`);
       } catch (e) {
         console.error("unblock specific error:", e);
         await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp,
@@ -574,37 +601,37 @@ serve(async (req: Request): Promise<Response> => {
     if (/^(desbloquear|desbloqueio|desbloq|voltar|voltar a servir|liberar meu bloqueio|liberar dias)$/.test(cmd)) {
       try {
         const rows = await loadBlackouts();
+        const withDays = rows.filter((r) => r.items.length > 0);
+        const listOf = (r: (typeof rows)[number]) => `• *${r.deptName}*: ${r.items.map(itemLabel).join(", ")}`;
         if (!confirmedCommand) {
           const { data: blockedRows } = await supabase.from("members")
             .select("departments(name)").eq("user_id", profile.id).eq("is_blocked", true);
           const blockedDepts = (blockedRows ?? []).map((b: any) => b.departments?.name).filter(Boolean);
-          const withDays = rows.filter((r) => r.future.length > 0);
           if (withDays.length === 0 && blockedDepts.length === 0) {
             await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp,
               `Olá *${firstName}*! Você não tem nenhum dia bloqueado, então não havia nada para desbloquear. 🙌`);
             return reply({ ok: true, handled: "unblock_nothing" });
           }
           let details = "";
-          if (withDays.length) details += `Todos estes dias serão liberados:\n${withDays.map((r) => `• *${r.deptName}*: ${r.future.map(fmt).join(", ")}`).join("\n")}`;
+          if (withDays.length) details += `Todos estes bloqueios serão liberados:\n${withDays.map(listOf).join("\n")}`;
           if (blockedDepts.length) details += `${details ? "\n\n" : ""}Você volta a ficar disponível em:\n${blockedDepts.map((n: string) => `• ${n}`).join("\n")}`;
           return await askUnblockConfirmation(details);
         }
-        const freed: string[] = [];
-        for (const r of rows) {
-          if (r.future.length === 0) continue;
-          const keep = r.all.filter((d) => !r.future.includes(d));
-          await supabase.from("member_preferences").update({ blackout_dates: keep }).eq("id", r.id);
-          freed.push(`*${r.deptName}*: ${r.future.map(fmt).join(", ")}`);
+        for (const r of withDays) {
+          await saveBlocks(r.id, {
+            dates: r.blocks.dates.filter((d) => d < todayIsoBlk),
+            shifts: r.blocks.shifts.filter((k) => (parseShiftKey(k)?.date ?? "") < todayIsoBlk),
+          });
         }
         const { data: unblocked } = await supabase.rpc("unblock_member_by_phone", { p_phone: profile.whatsapp });
         const depts = (unblocked ?? []) as Array<{ department_name: string }>;
 
         let msg: string;
-        if (freed.length === 0 && depts.length === 0) {
+        if (withDays.length === 0 && depts.length === 0) {
           msg = `Olá *${firstName}*! Você não tem nenhum dia bloqueado, então não havia nada para desbloquear. 🙌`;
         } else {
           msg = `✅ *Desbloqueado, ${firstName}!*`;
-          if (freed.length) msg += `\n\nDias liberados:\n${freed.map((l) => `• ${l}`).join("\n")}`;
+          if (withDays.length) msg += `\n\nLiberado:\n${withDays.map(listOf).join("\n")}`;
           if (depts.length) msg += `\n\nVocê voltou a ficar disponível em:\n${depts.map((d) => `• ${d.department_name}`).join("\n")}`;
           msg += `\n\nSeu líder já pode te escalar nesses dias.`;
         }
@@ -667,10 +694,16 @@ serve(async (req: Request): Promise<Response> => {
       let msg = L({ pt: `🗓️ *Bloqueios da equipe*`, es: `🗓️ *Bloqueos del equipo*`, en: `🗓️ *Team blocked days*` }) + `\n${LINE}\n`;
       for (const d of depts) {
         const { data: prefs } = await supabase.from("member_preferences")
-          .select("user_id, blackout_dates").eq("department_id", d.id);
+          .select("user_id, blackout_dates, blackout_shifts").eq("department_id", d.id);
+        const shiftWord = (s?: Shift) => s === "M"
+          ? L({ pt: " (manhã)", es: " (mañana)", en: " (morning)" })
+          : s === "N" ? L({ pt: " (noite)", es: " (noche)", en: " (evening)" }) : "";
         const rows = (prefs ?? []).map((p: any) => ({
           uid: p.user_id,
-          dates: ((p.blackout_dates as string[]) ?? []).map((x) => String(x).slice(0, 10)).filter((x) => x >= today).sort(),
+          dates: blockItems({
+            dates: ((p.blackout_dates as string[]) ?? []).map((x) => String(x).slice(0, 10)),
+            shifts: (p.blackout_shifts as string[]) ?? [],
+          }, today).map((it) => dateLabel(it.date) + shiftWord(it.shift)),
         })).filter((r) => r.dates.length);
         const { data: names } = rows.length
           ? await supabase.from("profiles").select("id, name").in("id", rows.map((r) => r.uid))
@@ -680,7 +713,7 @@ serve(async (req: Request): Promise<Response> => {
         msg += `\n🏷️ *${d.name}*\n`;
         msg += rows.length
           ? rows.sort((a, b) => (nm[a.uid] || "").localeCompare(nm[b.uid] || ""))
-              .map((r) => `👤 *${nm[r.uid] || "—"}* (${r.dates.length})\n   ${r.dates.map(dateLabel).join(" • ")}`).join("\n") + "\n"
+              .map((r) => `👤 *${nm[r.uid] || "—"}* (${r.dates.length})\n   ${r.dates.join(" • ")}`).join("\n") + "\n"
           : L({ pt: "✅ Ninguém bloqueou dias.\n", es: "✅ Nadie bloqueó días.\n", en: "✅ No blocked days.\n" });
       }
       await sendConfirmation(supabaseUrl, serviceRoleKey, profile.whatsapp, msg);
@@ -929,25 +962,23 @@ serve(async (req: Request): Promise<Response> => {
       .select("id, name")
       .in("id", deptIds);
 
-    // Compute target blackout list per mode
+    // Compute target blocks per mode. Sunday shifts ("domingos de manhã")
+    // arrive as parsed.shifts ("YYYY-MM-DD|M") and block only that shift.
+    const parsedShifts = (parsed.shifts ?? []).map(parseShiftKey).filter((x): x is { date: string; shift: Shift } => !!x);
     let blackoutDateStrings: string[] = [];
+    let blockShiftItems: Array<{ date: string; shift: Shift }> = [];
     let serveOnlyDates: string[] = [];
-    if (parsed.mode === "none") {
-      blackoutDateStrings = [];
-    } else if (parsed.mode === "block") {
+    if (parsed.mode === "block") {
       blackoutDateStrings = parsed.dates;
-    } else {
-      // serve_only: every remaining day of the month is blocked except the
-      // chosen dates, in every department, regardless of weekly availability.
-      const y = targetMonth.getFullYear();
-      const mIdx = targetMonth.getMonth();
-      const lastDay = new Date(y, mIdx + 1, 0).getDate();
-      const todayIso = new Date().toISOString().slice(0, 10);
-      const chosen = new Set(parsed.dates);
-      for (let d = 1; d <= lastDay; d++) {
-        const iso = `${y}-${String(mIdx + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-        if (iso >= todayIso && !chosen.has(iso)) blackoutDateStrings.push(iso);
-      }
+      blockShiftItems = parsedShifts;
+    } else if (parsed.mode === "serve_only") {
+      // Every remaining day of the month is blocked except the chosen ones;
+      // choosing one Sunday shift blocks the other shift of that Sunday.
+      const wholeChosen = new Set(parsed.dates);
+      const partial = parsedShifts.filter((p) => !wholeChosen.has(p.date));
+      blackoutDateStrings = serveOnlyBlackouts(targetMonth.getFullYear(), targetMonth.getMonth(),
+        [...parsed.dates, ...partial.map((p) => p.date)], new Date().toISOString().slice(0, 10));
+      blockShiftItems = partial.map((p) => ({ date: p.date, shift: otherShift(p.shift) }));
       serveOnlyDates = parsed.dates;
     }
 
@@ -956,19 +987,19 @@ serve(async (req: Request): Promise<Response> => {
     for (const dept of depts ?? []) {
       const { data: existing } = await supabase
         .from("member_preferences")
-        .select("blackout_dates")
+        .select("blackout_dates, blackout_shifts")
         .eq("user_id", profile.id)
         .eq("department_id", dept.id)
         .maybeSingle();
 
-      // Replace this month's list; keep dates from other months.
-      const priorOtherMonths = ((existing?.blackout_dates as string[]) ?? [])
-        .map((d) => String(d).slice(0, 10))
-        .filter((iso) => !iso.startsWith(monthPrefix));
-      const finalDates = parsed.mode === "none"
-        ? priorOtherMonths
-        : Array.from(new Set([...priorOtherMonths, ...blackoutDateStrings])).sort();
-
+      // Replace this month's blocks; keep blocks from other months.
+      let b: Blocks = {
+        dates: ((existing?.blackout_dates as string[]) ?? [])
+          .map((d) => String(d).slice(0, 10)).filter((iso) => !iso.startsWith(monthPrefix)),
+        shifts: ((existing?.blackout_shifts as string[]) ?? []).filter((k) => !k.startsWith(monthPrefix)),
+      };
+      for (const d of blackoutDateStrings) b = applyBlock(b, d);
+      for (const s of blockShiftItems) b = applyBlock(b, s.date, s.shift);
 
       await supabase
         .from("member_preferences")
@@ -976,7 +1007,8 @@ serve(async (req: Request): Promise<Response> => {
           {
             user_id: profile.id,
             department_id: dept.id,
-            blackout_dates: finalDates,
+            blackout_dates: b.dates,
+            blackout_shifts: b.shifts,
           },
           { onConflict: "user_id,department_id" },
         );
@@ -1025,7 +1057,11 @@ _(vale só para o mês em curso; se quiser bloquear no próximo mês, me respond
       confirmMsg = msg;
     } else {
       // serve_only
-      const serveList = serveOnlyDates.map(fmt).join(", ") || "(nenhuma)";
+      const serveItems = [
+        ...serveOnlyDates.map((date) => ({ date } as { date: string; shift?: Shift })),
+        ...parsedShifts.filter((p) => !serveOnlyDates.includes(p.date)),
+      ].sort((a, c) => a.date.localeCompare(c.date));
+      const serveList = serveItems.map(itemLabel).join(", ") || "(nenhuma)";
       confirmMsg =
 `🟢 *Anotado, ${fname}!*
 ━━━━━━━━━━━━━━━━━━━━

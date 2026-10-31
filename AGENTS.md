@@ -8,3 +8,4 @@
 - Keep the home typewriter amber as an independent semantic CSS token rather than using the secondary/amber palette, because the flat theme intentionally neutralizes those general tokens.
 - Localize all application chrome and system feedback through the shared PT/EN/ES dictionaries; switching language must update every visible label, action, date, toast, dialog, and accessibility label while preserving user-authored content.
 - Page-specific menu buttons go into the shared top-left bar via FloatingActionMenu `extraItems` (filtered by permission in the page), because all menus must live in one fixed place with no loose floating buttons.
+- Store blocks as whole days in member_preferences.blackout_dates plus single shifts in blackout_shifts ("YYYY-MM-DD|M" before 14:00, "|N" from 14:00), using the twin helpers src/lib/blackoutShifts.ts and supabase/functions/_shared/blackoutShifts.ts, because Sunday morning and night are separately blockable.

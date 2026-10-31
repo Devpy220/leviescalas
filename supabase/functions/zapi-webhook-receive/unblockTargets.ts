@@ -1,10 +1,10 @@
-// Parses "desbloquear <dias>" (already lowercased and accent-stripped).
-// Blocked days are whole dates: "domingo de manhã" / "domingo à noite"
-// both target Sunday, and `partOfDay` lets the reply explain that.
+// Parses "desbloquear <dias> [de manhã|à noite]" (already lowercased and
+// accent-stripped). `shift` is set only when exactly one shift is named;
+// the caller applies it to Sundays, the only day with two shifts.
 export interface UnblockTargets {
   dows: Set<number>;
   dates: Set<string>;
-  partOfDay: boolean;
+  shift?: "M" | "N";
 }
 
 const DOWS: Array<[RegExp, number]> = [
@@ -14,7 +14,7 @@ const DOWS: Array<[RegExp, number]> = [
 
 export function parseUnblockTargets(cmd: string, now = new Date()): UnblockTargets {
   const dows = new Set(DOWS.filter(([r]) => r.test(cmd)).map(([, d]) => d));
-  if (/\b(todos os dias|todos os dias da semana|semana toda|semana inteira)\b/.test(cmd)) {
+  if (/\b(todos os dias|semana toda|semana inteira)\b/.test(cmd)) {
     for (let d = 0; d < 7; d++) dows.add(d);
   }
   const dates = new Set<string>();
@@ -29,5 +29,6 @@ export function parseUnblockTargets(cmd: string, now = new Date()): UnblockTarge
     dates.add(d.toISOString().slice(0, 10));
     if (!mm[3]) { d.setUTCFullYear(yr + 1); dates.add(d.toISOString().slice(0, 10)); }
   }
-  return { dows, dates, partOfDay: /\b(manha|noite|tarde)\b/.test(cmd) };
+  const m = /\b(manha|cedo)\b/.test(cmd), n = /\b(noite|tarde)\b/.test(cmd);
+  return { dows, dates, shift: m && !n ? "M" : n && !m ? "N" : undefined };
 }

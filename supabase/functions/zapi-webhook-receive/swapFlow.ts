@@ -2,6 +2,7 @@
 // Handles a stateful menu-based conversation for schedule swaps.
 // Localized via DDI (PT/ES/EN) — see _shared/whatsappI18n.ts
 
+import { isBlockedAt } from "../_shared/blackoutShifts.ts";
 import {
   detectLang,
   t,
@@ -194,14 +195,14 @@ async function getEligibleCandidates(
 
   const { data: prefs } = await deps.supabase
     .from("member_preferences")
-    .select("user_id, blackout_dates")
+    .select("user_id, blackout_dates, blackout_shifts")
     .eq("department_id", reqSchedule.department_id)
     .in("user_id", memberIds);
 
   const blockedSet = new Set<string>();
   for (const p of prefs ?? []) {
     const dates: string[] = (p.blackout_dates as string[]) ?? [];
-    if (dates.includes(reqSchedule.date)) blockedSet.add(p.user_id);
+    if (isBlockedAt(dates, (p.blackout_shifts as string[]) ?? [], reqSchedule.date, reqSchedule.time_start)) blockedSet.add(p.user_id);
   }
 
   const { data: conflicts } = await deps.supabase
@@ -229,11 +230,12 @@ async function getEligibleCandidates(
 
   const { data: reqPref } = await deps.supabase
     .from("member_preferences")
-    .select("blackout_dates")
+    .select("blackout_dates, blackout_shifts")
     .eq("department_id", reqSchedule.department_id)
     .eq("user_id", reqSchedule.user_id)
     .maybeSingle();
   const reqBlackouts: string[] = (reqPref?.blackout_dates as string[]) ?? [];
+  const reqShiftBlocks: string[] = (reqPref?.blackout_shifts as string[]) ?? [];
 
   const { data: reqOther } = await deps.supabase
     .from("schedules")
@@ -248,7 +250,7 @@ async function getEligibleCandidates(
   const usedUsers = new Set<string>();
   for (const s of theirSchedules ?? []) {
     if (usedUsers.has(s.user_id)) continue;
-    if (reqBlackouts.includes(s.date)) continue;
+    if (isBlockedAt(reqBlackouts, reqShiftBlocks, s.date, s.time_start)) continue;
     const conflict = reqOtherList.some(
       (o: any) =>
         o.date === s.date &&
