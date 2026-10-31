@@ -475,9 +475,9 @@ export function FloatingActionMenu(props: FloatingActionMenuProps) {
           aria-label={t('sidebar.menu')}
           aria-expanded={open}
           title={t('sidebar.menu')}
-          className={`h-10 w-10 shrink-0 flex items-center justify-center rounded-xl transition-colors ${open ? 'bg-accent' : 'hover:bg-accent'}`}
+          className={`h-8 w-8 sm:h-10 sm:w-10 shrink-0 flex items-center justify-center rounded-xl transition-colors ${open ? 'bg-accent' : 'hover:bg-accent'}`}
         >
-          {open ? <X className="w-5 h-5 text-foreground" /> : <LeviLogo className="w-8 h-8" />}
+          {open ? <X className="w-5 h-5 text-foreground" /> : <LeviLogo className="w-7 h-7 sm:w-8 sm:h-8" />}
         </button>
         {extraItems.length > 0 && <div className="mx-0.5 h-6 w-px shrink-0 bg-border" />}
         {extraItems.map(({ key, icon: Icon, label, onClick, active, badge, highlight }) => (
@@ -487,11 +487,11 @@ export function FloatingActionMenu(props: FloatingActionMenuProps) {
             aria-label={label}
             aria-pressed={active}
             title={label}
-            className={`relative h-10 w-10 shrink-0 flex items-center justify-center rounded-xl transition-all active:scale-95 ${
+            className={`relative h-8 w-8 sm:h-10 sm:w-10 shrink-0 flex items-center justify-center rounded-xl transition-all active:scale-95 ${
               active
                 ? 'gradient-vibrant text-white shadow-glow-sm'
                 : highlight
-                ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                ? 'bg-primary/12 text-primary hover:bg-primary/20'
                 : 'text-foreground/75 hover:bg-accent hover:text-foreground'
             }`}
           >
