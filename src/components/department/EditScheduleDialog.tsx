@@ -173,27 +173,42 @@ export default function EditScheduleDialog({
     fetchData();
   }, [open, departmentId]);
 
-  // Who else is already on the selected day/time in this department
+  // Who else is already on the selected day/time in this department, and —
+  // when the leader does NOT allow Sunday morning+night for the same person —
+  // who is already on the other Sunday shift (same rule as the database: before/after 13:00).
   useEffect(() => {
     if (!open || !schedule || !selectedDate || !timeStart || !departmentId) {
       setInSlotSet(new Set());
+      setOtherSundayShiftSet(new Set());
       return;
     }
     let cancelled = false;
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
-    supabase
-      .from('schedules')
-      .select('user_id, time_start')
-      .eq('department_id', departmentId)
-      .eq('date', dateStr)
-      .neq('id', schedule.id)
-      .then(({ data }) => {
-        if (cancelled) return;
-        const ts = normalizeTime(timeStart);
-        setInSlotSet(new Set((data || [])
-          .filter((r: { time_start: string }) => normalizeTime(r.time_start) === ts)
-          .map((r: { user_id: string }) => r.user_id)));
-      });
+    const isSunday = getDay(selectedDate) === 0;
+    Promise.all([
+      supabase
+        .from('schedules')
+        .select('user_id, time_start')
+        .eq('department_id', departmentId)
+        .eq('date', dateStr)
+        .neq('id', schedule.id),
+      isSunday
+        ? (supabase as any).from('departments_safe').select('allow_sunday_double').eq('id', departmentId).maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]).then(([{ data }, { data: dept }]) => {
+      if (cancelled) return;
+      const rows = (data || []) as { user_id: string; time_start: string }[];
+      const ts = normalizeTime(timeStart);
+      setInSlotSet(new Set(rows.filter(r => normalizeTime(r.time_start) === ts).map(r => r.user_id)));
+      if (isSunday && !dept?.allow_sunday_double) {
+        const isMorning = ts < '13:00';
+        setOtherSundayShiftSet(new Set(rows
+          .filter(r => (normalizeTime(r.time_start) < '13:00') !== isMorning)
+          .map(r => r.user_id)));
+      } else {
+        setOtherSundayShiftSet(new Set());
+      }
+    });
     return () => { cancelled = true; };
   }, [open, schedule, selectedDate, timeStart, departmentId]);
 
