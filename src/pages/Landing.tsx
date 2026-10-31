@@ -291,7 +291,7 @@ function FeatureGrid() {
     {
       icon: Settings,
       title: 'Configurações por Departamento',
-      desc: 'Cada ministério define turnos, dobras de domingo e limite de bloqueios.',
+      desc: 'Cada ministério define turnos, dobras de domingo e setores. Bloqueios de dias são livres.',
       color: 'from-stone-500/15 to-stone-500/5',
       iconColor: 'text-stone-600',
     },
