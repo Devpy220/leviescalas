@@ -238,15 +238,24 @@ export default function MySchedules() {
       // Fetch member profiles for team view
       if (viewMode === 'team') {
         const profilesMap: Record<string, MemberProfile> = {};
+        const membersByDept: Record<string, EditMember[]> = {};
         for (const deptId of deptIds) {
           const { data: profiles } = await supabase.rpc('get_department_member_profiles', { dept_id: deptId });
           if (profiles) {
+            membersByDept[deptId] = [];
             profiles.forEach((p: any) => {
               profilesMap[p.id] = { id: p.id, name: p.name };
+              membersByDept[deptId].push({
+                id: p.id,
+                user_id: p.id,
+                role: (p.role === 'leader' || p.role === 'coleader') ? p.role : 'member',
+                profile: { name: p.name, avatar_url: p.avatar_url ?? null },
+              });
             });
           }
         }
         setMemberProfiles(profilesMap);
+        setDeptMembers(membersByDept);
       }
 
       // Build query - filter by user only in 'mine' mode
