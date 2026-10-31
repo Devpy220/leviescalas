@@ -19,6 +19,7 @@ import {
   UserPlus,
   FileDown,
   X,
+  ChevronLeft,
   type LucideIcon,
 } from 'lucide-react';
 import { LeviLogo } from '@/components/LeviLogo';
@@ -173,6 +174,8 @@ export function FloatingActionMenu(props: FloatingActionMenuProps) {
   const { toast } = useToast();
 
   const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('levi-topbar-collapsed') === '1');
+  const toggleCollapsed = () => setCollapsed(v => { localStorage.setItem('levi-topbar-collapsed', v ? '0' : '1'); return !v; });
   const panelRef = useRef<HTMLDivElement>(null);
   const fabRef = useRef<HTMLDivElement>(null);
 
@@ -480,7 +483,7 @@ export function FloatingActionMenu(props: FloatingActionMenuProps) {
           {open ? <X className="w-5 h-5 text-foreground" /> : <LeviLogo className="w-7 h-7 sm:w-8 sm:h-8" />}
         </button>
         {extraItems.length > 0 && <div className="mx-0.5 h-6 w-px shrink-0 bg-border" />}
-        {extraItems.map(({ key, icon: Icon, label, onClick, active, badge, highlight }) => (
+        {!collapsed && extraItems.map(({ key, icon: Icon, label, onClick, active, badge, highlight }) => (
           <button
             key={key}
             onClick={() => { setOpen(false); onClick(); }}
@@ -503,6 +506,17 @@ export function FloatingActionMenu(props: FloatingActionMenuProps) {
             )}
           </button>
         ))}
+        {extraItems.length > 0 && (
+          <button
+            onClick={toggleCollapsed}
+            aria-label={collapsed ? t('sidebar.showMenus') : t('sidebar.hideMenus')}
+            aria-expanded={!collapsed}
+            title={collapsed ? t('sidebar.showMenus') : t('sidebar.hideMenus')}
+            className="h-8 w-7 sm:h-10 sm:w-8 shrink-0 flex items-center justify-center rounded-xl text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+          >
+            <ChevronLeft className={`w-4 h-4 transition-transform duration-200 ${collapsed ? 'rotate-180' : ''}`} />
+          </button>
+        )}
       </div>
 
       {/* Modals */}
