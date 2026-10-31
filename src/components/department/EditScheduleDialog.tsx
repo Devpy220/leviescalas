@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { format, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar as CalendarIcon, Clock, User, Pencil, AlertTriangle, Layers, UserCog } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, User, Pencil, AlertTriangle, Layers, UserCog, UserPlus, Lock } from 'lucide-react';
 import { SIMPLE_SLOTS, getAvailableSlotsForDay, normalizeTime } from '@/lib/fixedSlots';
 import {
   Dialog,
@@ -93,6 +93,8 @@ export default function EditScheduleDialog({
   const [selectedAssignmentRole, setSelectedAssignmentRole] = useState<string>('');
   const [sectors, setSectors] = useState<{ id: string; name: string; color: string }[]>([]);
   const [assignmentRoles, setAssignmentRoles] = useState<{ id: string; name: string; icon: string }[]>([]);
+  const [inSlotSet, setInSlotSet] = useState<Set<string>>(new Set());
+  const [extraIds, setExtraIds] = useState<string[]>([]);
 
   // Fetch availability + sectors + assignment roles
   useEffect(() => {
@@ -171,9 +173,34 @@ export default function EditScheduleDialog({
     fetchData();
   }, [open, departmentId]);
 
+  // Who else is already on the selected day/time in this department
+  useEffect(() => {
+    if (!open || !schedule || !selectedDate || !timeStart || !departmentId) {
+      setInSlotSet(new Set());
+      return;
+    }
+    let cancelled = false;
+    const dateStr = format(selectedDate, 'yyyy-MM-dd');
+    supabase
+      .from('schedules')
+      .select('user_id, time_start')
+      .eq('department_id', departmentId)
+      .eq('date', dateStr)
+      .neq('id', schedule.id)
+      .then(({ data }) => {
+        if (cancelled) return;
+        const ts = normalizeTime(timeStart);
+        setInSlotSet(new Set((data || [])
+          .filter((r: { time_start: string }) => normalizeTime(r.time_start) === ts)
+          .map((r: { user_id: string }) => r.user_id)));
+      });
+    return () => { cancelled = true; };
+  }, [open, schedule, selectedDate, timeStart, departmentId]);
+
   // Initialize form when schedule changes
   useEffect(() => {
     if (schedule && open) {
+      setExtraIds([]);
       setSelectedDate(new Date(schedule.date + 'T12:00:00'));
       setTimeStart(schedule.time_start.slice(0, 5));
       setTimeEnd(schedule.time_end.slice(0, 5));
@@ -210,12 +237,27 @@ export default function EditScheduleDialog({
   };
 
   const availableMembers = useMemo(() => {
-    return members.filter(m => isMemberAvailable(m.user_id));
-  }, [members, selectedDate, timeStart, availabilityMap, blackoutMap, blockedSet]);
+    return members.filter(m => !inSlotSet.has(m.user_id) && isMemberAvailable(m.user_id));
+  }, [members, selectedDate, timeStart, availabilityMap, blackoutMap, blockedSet, inSlotSet]);
 
   const unavailableMembers = useMemo(() => {
-    return members.filter(m => !isMemberAvailable(m.user_id));
-  }, [members, selectedDate, timeStart, availabilityMap, blackoutMap, blockedSet]);
+    return members.filter(m => !inSlotSet.has(m.user_id) && !isMemberAvailable(m.user_id));
+  }, [members, selectedDate, timeStart, availabilityMap, blackoutMap, blockedSet, inSlotSet]);
+
+  // People already on this same day/time (other than the schedule being edited) are locked.
+  const inSlotMembers = useMemo(() => members.filter(m => inSlotSet.has(m.user_id)), [members, inSlotSet]);
+
+  // Candidates to add to this slot: not already there and not the person chosen above.
+  const addableMembers = useMemo(
+    () => members.filter(m => !inSlotSet.has(m.user_id) && m.user_id !== selectedMemberId),
+    [members, inSlotSet, selectedMemberId]
+  );
+
+  // Drop extra picks that became invalid (chosen above, already in slot, or unavailable)
+  useEffect(() => {
+    setExtraIds(prev => prev.filter(id => id !== selectedMemberId && !inSlotSet.has(id) && isMemberAvailable(id)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedMemberId, inSlotSet, selectedDate, timeStart]);
 
   const handleSlotSelect = (slotLabel: string) => {
     const slot = availableSlots.find(s => s.label === slotLabel);
@@ -235,28 +277,36 @@ export default function EditScheduleDialog({
 
   const handleSave = async () => {
     if (!schedule || !selectedDate || !timeStart || !timeEnd || !selectedMemberId) return;
+    if (inSlotSet.has(selectedMemberId)) {
+      toast({
+        variant: 'destructive',
+        title: 'Membro já escalado',
+        description: 'Este membro já está nesta escala. Escolha outra pessoa.',
+      });
+      return;
+    }
 
     setSaving(true);
     try {
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
-      
+      const sectorIds = selectedSectorIds;
+      const role = selectedAssignmentRole && selectedAssignmentRole !== 'none' ? selectedAssignmentRole : null;
 
-      const { data, error, count } = await supabase
+      const { data, error } = await supabase
         .from('schedules')
         .update({
           date: dateStr,
           time_start: timeStart,
           time_end: timeEnd,
           user_id: selectedMemberId,
-          sector_id: selectedSectorIds[0] ?? null,
-          sector_ids: selectedSectorIds,
-          assignment_role: selectedAssignmentRole && selectedAssignmentRole !== 'none' ? selectedAssignmentRole : null,
+          sector_id: sectorIds[0] ?? null,
+          sector_ids: sectorIds,
+          assignment_role: role,
         })
         .eq('id', schedule.id)
         .select('id, date, time_start, time_end, user_id, sector_id, sector_ids, assignment_role');
 
       if (error) throw error;
-
 
       if (!data || data.length === 0) {
         toast({
@@ -267,9 +317,40 @@ export default function EditScheduleDialog({
         return;
       }
 
+      // Extra volunteers join the same day/time (never duplicating someone already there)
+      const extras = extraIds.filter(id => id !== selectedMemberId && !inSlotSet.has(id));
+      if (extras.length > 0) {
+        const { data: auth } = await supabase.auth.getUser();
+        const { error: insErr } = await supabase.from('schedules').insert(
+          extras.map(userId => ({
+            department_id: departmentId,
+            user_id: userId,
+            date: dateStr,
+            time_start: timeStart,
+            time_end: timeEnd,
+            sector_id: sectorIds[0] ?? null,
+            sector_ids: sectorIds,
+            assignment_role: role,
+            created_by: auth.user?.id as string,
+          }))
+        );
+        if (insErr) {
+          toast({
+            variant: 'destructive',
+            title: 'Escala atualizada, mas não foi possível adicionar os voluntários',
+            description: insErr.message,
+          });
+          onScheduleUpdated();
+          onOpenChange(false);
+          return;
+        }
+      }
+
       toast({
         title: 'Escala atualizada',
-        description: 'As alterações foram salvas com sucesso.',
+        description: extras.length > 0
+          ? `Alterações salvas e ${extras.length} voluntário${extras.length > 1 ? 's' : ''} adicionado${extras.length > 1 ? 's' : ''}.`
+          : 'As alterações foram salvas com sucesso.',
       });
 
       onScheduleUpdated();
@@ -297,7 +378,7 @@ export default function EditScheduleDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Pencil className="w-5 h-5 text-primary" />
@@ -433,6 +514,26 @@ export default function EditScheduleDialog({
                       Nenhum membro encontrado
                     </div>
                   )}
+                  {inSlotMembers.length > 0 && (
+                    <>
+                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground flex items-center gap-1 mt-1">
+                        <Lock className="w-3 h-3" />
+                        Já nesta escala ({inSlotMembers.length})
+                      </div>
+                      {inSlotMembers.map(member => (
+                        <SelectItem key={member.user_id} value={member.user_id} disabled>
+                          <div className="flex items-center gap-2 opacity-50">
+                            <Avatar className="h-5 w-5">
+                              <AvatarFallback className="text-[10px] bg-muted text-muted-foreground">
+                                {member.profile.name.substring(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span>{member.profile.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </>
+                  )}
               </SelectContent>
             </Select>
             {selectedMemberId && !isMemberAvailable(selectedMemberId) && (
@@ -503,6 +604,49 @@ export default function EditScheduleDialog({
               </p>
             )}
           </div>
+
+          {/* Add more volunteers to this same slot */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <UserPlus className="w-4 h-4 text-muted-foreground" />
+              Adicionar mais voluntários
+              {extraIds.length > 0 && (
+                <span className="text-xs text-primary font-normal">({extraIds.length} selecionado{extraIds.length > 1 ? 's' : ''})</span>
+              )}
+            </Label>
+            {addableMembers.length === 0 ? (
+              <p className="text-xs text-muted-foreground">Todos os membros disponíveis já estão nesta escala.</p>
+            ) : (
+              <div className="border rounded-md p-2 space-y-1 max-h-44 overflow-y-auto">
+                {addableMembers.map(m => {
+                  const available = isMemberAvailable(m.user_id);
+                  return (
+                    <label
+                      key={m.user_id}
+                      className={cn(
+                        'flex items-center gap-2 p-2 rounded-md',
+                        available ? 'hover:bg-muted/50 cursor-pointer' : 'opacity-50 cursor-not-allowed'
+                      )}
+                    >
+                      <Checkbox
+                        disabled={!available}
+                        checked={extraIds.includes(m.user_id)}
+                        onCheckedChange={(v) =>
+                          setExtraIds(prev => v ? [...prev, m.user_id] : prev.filter(id => id !== m.user_id))
+                        }
+                      />
+                      <span className="text-sm flex-1">{m.profile.name}</span>
+                      {!available && <span className="text-[10px] text-muted-foreground">Indisponível</span>}
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+            {extraIds.length > 0 && (
+              <p className="text-xs text-muted-foreground">Eles entram no mesmo dia e horário, com os setores e a função escolhidos acima.</p>
+            )}
+          </div>
+
 
           {/* Repertório de Hoje (setlist + anexos + observações) */}
           <div className="pt-2 border-t">
