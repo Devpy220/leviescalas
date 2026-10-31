@@ -29,6 +29,17 @@ import { SwapResponseDialog } from '@/components/schedules/SwapResponseDialog';
 import { PendingSwapBadge } from '@/components/schedules/PendingSwapBadge';
 import { PersonalScheduleCard } from '@/components/schedules/PersonalScheduleCard';
 import { TeamSlotCard } from '@/components/schedules/TeamSlotCard';
+import EditScheduleDialog from '@/components/department/EditScheduleDialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 import MyAvailabilitySheet from '@/components/department/MyAvailabilitySheet';
 import SlotRepertoireEditor from '@/components/department/SlotRepertoireEditor';
@@ -70,12 +81,22 @@ interface Schedule {
   assignment_role: string | null;
   user_id: string;
   user_name?: string;
+  sector_id?: string | null;
+  sector_ids?: string[] | null;
 }
 
 interface MemberProfile {
   id: string;
   name: string;
 }
+
+interface EditMember {
+  id: string;
+  user_id: string;
+  role: 'leader' | 'coleader' | 'member';
+  profile: { name: string; avatar_url: string | null };
+}
+
 
 
 export default function MySchedules() {
@@ -102,7 +123,12 @@ export default function MySchedules() {
   }, [searchParams]);
   const [memberProfiles, setMemberProfiles] = useState<Record<string, MemberProfile>>({});
   const [availabilitySheetOpen, setAvailabilitySheetOpen] = useState(false);
-  const [leaderDepartments, setLeaderDepartments] = useState<{ id: string; name: string }[]>([]);
+  const [managedDeptIds, setManagedDeptIds] = useState<Set<string>>(new Set());
+  const [deptMembers, setDeptMembers] = useState<Record<string, EditMember[]>>({});
+  const [editSchedule, setEditSchedule] = useState<Schedule | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Schedule | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const { user, session, loading: authLoading, signOut } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -138,29 +164,53 @@ export default function MySchedules() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser?.id, authLoading, viewMode]);
 
+  // Departments the user can manage (main leader, leader or co-leader):
+  // they may edit or remove any schedule there, even after it is published.
   const fetchLeaderDepartments = async () => {
     if (!currentUser) return;
     
     try {
-      const { data: memberData, error } = await supabase
-        .from('members')
-        .select('department_id, role, departments(id, name)')
-        .eq('user_id', currentUser.id)
-        .eq('role', 'leader');
+      const [{ data: memberData, error }, { data: owned }] = await Promise.all([
+        supabase
+          .from('members')
+          .select('department_id, role')
+          .eq('user_id', currentUser.id)
+          .in('role', ['leader', 'coleader']),
+        supabase
+          .from('departments')
+          .select('id')
+          .eq('leader_id', currentUser.id),
+      ]);
 
       if (error) throw error;
 
-      const depts = (memberData || [])
-        .filter(m => m.departments)
-        .map(m => ({
-          id: (m.departments as any).id,
-          name: (m.departments as any).name
-        }));
-      
-      setLeaderDepartments(depts);
+      setManagedDeptIds(new Set([
+        ...(memberData || []).map((m) => m.department_id),
+        ...(owned || []).map((d) => d.id),
+      ]));
     } catch (error) {
       console.error('Error fetching leader departments:', error);
     }
+  };
+
+  const handleOpenEdit = (s: Schedule) => {
+    setEditSchedule(s);
+    setEditOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    const { data, error } = await supabase.from('schedules').delete().eq('id', deleteTarget.id).select('id');
+    setDeleting(false);
+    if (error || !data?.length) {
+      toast({ variant: 'destructive', title: t('common.error'), description: t('schedules.removeError') });
+      return;
+    }
+    toast({ title: t('schedules.removed') });
+    setDeleteTarget(null);
+    window.dispatchEvent(new CustomEvent('schedules-updated'));
+    fetchSchedules();
   };
 
   const fetchSchedules = async () => {
