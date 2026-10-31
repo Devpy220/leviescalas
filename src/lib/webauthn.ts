@@ -48,7 +48,12 @@ export async function loginWithBiometric(email: string): Promise<void> {
   );
   if (error || !opts) throw new Error(error?.message || "Nenhuma biometria cadastrada para este email");
 
-  const credential = await startAuthentication({ optionsJSON: opts });
+  let credential;
+  try {
+    credential = await startAuthentication({ optionsJSON: opts });
+  } catch {
+    throw new Error("Nenhuma biometria deste e-mail foi encontrada neste aparelho");
+  }
 
   const { data: result, error: vErr } = await supabase.functions.invoke(
     "webauthn-login-verify",
