@@ -921,31 +921,22 @@ serve(async (req: Request): Promise<Response> => {
     } else if (parsed.mode === "block") {
       blackoutDateStrings = parsed.dates;
     } else {
-      // serve_only: blackouts = candidate days NOT in parsed.dates
-      const { data: availRows } = await supabase
-        .from("member_availability")
-        .select("day_of_week, time_start, time_end, is_available, department_id")
-        .eq("user_id", profile.id);
-
-      const userRows: AvailabilityRow[] = (availRows ?? []).map((r: any) => ({
-        day_of_week: r.day_of_week,
-        time_start: r.time_start,
-        time_end: r.time_end,
-        is_available: r.is_available,
-      }));
-      const activeSlots = getActiveSlotsForUser(userRows);
-      const allCandidates = buildCandidateDays(
-        targetMonth.getFullYear(),
-        targetMonth.getMonth(),
-        activeSlots,
-      ).map((c) => c.iso);
+      // serve_only: every remaining day of the month is blocked except the
+      // chosen dates, in every department, regardless of weekly availability.
+      const y = targetMonth.getFullYear();
+      const mIdx = targetMonth.getMonth();
+      const lastDay = new Date(y, mIdx + 1, 0).getDate();
+      const todayIso = new Date().toISOString().slice(0, 10);
       const chosen = new Set(parsed.dates);
-      blackoutDateStrings = allCandidates.filter((iso) => !chosen.has(iso));
+      for (let d = 1; d <= lastDay; d++) {
+        const iso = `${y}-${String(mIdx + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+        if (iso >= todayIso && !chosen.has(iso)) blackoutDateStrings.push(iso);
+      }
       serveOnlyDates = parsed.dates;
     }
 
     // No per-department block limit: every requested day is applied.
-    const monthPrefix = prompt.target_month.slice(0, 7);
+    const monthPrefix = `${targetMonth.getFullYear()}-${String(targetMonth.getMonth() + 1).padStart(2, "0")}`;
     for (const dept of depts ?? []) {
       const { data: existing } = await supabase
         .from("member_preferences")
