@@ -65,7 +65,6 @@ interface Department {
   created_at: string;
   avatar_url: string | null;
   
-  max_blackout_dates?: number;
   allow_sunday_double?: boolean;
   repertoire_enabled?: boolean;
 }
@@ -248,7 +247,7 @@ export default function Department() {
       // Fetch extra fields not in RPC
       const { data: deptExtra } = await (supabase as any)
         .from('departments_safe')
-        .select('max_blackout_dates, allow_sunday_double')
+        .select('allow_sunday_double')
         .eq('id', id)
         .maybeSingle();
       const { data: deptKids } = await (supabase as any)
@@ -269,7 +268,6 @@ export default function Department() {
         trial_ends_at: data.trial_ends_at || null,
         created_at: data.created_at,
         avatar_url: (data as any).avatar_url || null,
-        max_blackout_dates: deptExtra?.max_blackout_dates ?? 5,
         allow_sunday_double: deptExtra?.allow_sunday_double ?? false,
         repertoire_enabled: !!deptKids?.repertoire_enabled,
       });
