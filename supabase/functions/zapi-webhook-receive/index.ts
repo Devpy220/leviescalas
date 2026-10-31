@@ -439,16 +439,24 @@ serve(async (req: Request): Promise<Response> => {
     const itemLabel = (it: { date: string; shift?: Shift }) =>
       fmt(it.date) + (it.shift === "M" ? " (manhã)" : it.shift === "N" ? " (noite)" : "");
     const loadBlackouts = async () => {
-      const { data: prefs } = await supabase
+      // member_preferences has no FK to departments, so names are fetched separately.
+      const { data: prefs, error: prefsError } = await supabase
         .from("member_preferences")
-        .select("id, department_id, blackout_dates, blackout_shifts, departments(name)")
+        .select("id, department_id, blackout_dates, blackout_shifts")
         .eq("user_id", profile.id);
+      if (prefsError) throw prefsError;
+      const deptIds = [...new Set((prefs ?? []).map((p: any) => p.department_id))];
+      const { data: depts, error: deptsError } = deptIds.length
+        ? await supabase.from("departments").select("id, name").in("id", deptIds)
+        : { data: [], error: null };
+      if (deptsError) throw deptsError;
+      const nameOf = new Map((depts ?? []).map((d: any) => [d.id, d.name]));
       return (prefs ?? []).map((p: any) => {
         const blocks: Blocks = {
           dates: ((p.blackout_dates as string[]) ?? []).map((d) => String(d).slice(0, 10)),
           shifts: ((p.blackout_shifts as string[]) ?? []).filter((k) => parseShiftKey(k)),
         };
-        return { id: p.id, deptName: p.departments?.name || "—", blocks, items: blockItems(blocks, todayIsoBlk) };
+        return { id: p.id, deptName: nameOf.get(p.department_id) || "—", blocks, items: blockItems(blocks, todayIsoBlk) };
       });
     };
     const saveBlocks = (id: string, b: Blocks) =>
