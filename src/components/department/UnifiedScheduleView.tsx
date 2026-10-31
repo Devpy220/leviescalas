@@ -7,13 +7,10 @@ import {
   Trash2,
   Pencil,
   Users,
-  Sparkles,
   Calendar as CalendarIcon,
-  CalendarPlus,
   Search,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { DraggableFloating } from '@/components/ui/draggable-floating';
 import { ASSIGNMENT_ROLES } from '@/lib/constants';
 import { FIXED_SLOTS, FixedSlot, findSlotByDayAndTime, getDayColorSlot, normalizeTime } from '@/lib/fixedSlots';
 import { Button } from '@/components/ui/button';
@@ -397,33 +394,6 @@ export default function UnifiedScheduleView({
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Individually draggable floating buttons — drag anywhere on the button */}
-      {isLeader && !readOnly && (
-        <>
-          <DraggableFloating
-            storageKey="dept-fab-smart"
-            defaultPosition={{ right: 24, bottom: 96 }}
-            onClick={onOpenSmartSchedule}
-            title="Gerar escalas rápido (IA)"
-            aria-label="Gerar escalas rápido"
-            className="h-14 w-14 rounded-2xl shadow-lg bg-primary hover:bg-primary/90 hover:shadow-glow-sm transition-all flex items-center justify-center text-primary-foreground"
-          >
-            <Sparkles className="w-6 h-6 pointer-events-none" />
-          </DraggableFloating>
-
-          <DraggableFloating
-            storageKey="dept-fab-manual"
-            defaultPosition={{ right: 24, bottom: 24 }}
-            onClick={() => onAddSchedule()}
-            title="Adicionar escala manual"
-            aria-label="Adicionar escala manual"
-            className="h-14 w-14 rounded-2xl shadow-lg bg-background hover:bg-accent border border-border flex items-center justify-center"
-          >
-            <CalendarPlus className="w-6 h-6 pointer-events-none" />
-          </DraggableFloating>
-        </>
-      )}
 
       {/* Horizontal Grid of Slot Cards */}
       {slotGroups.length > 0 ? (

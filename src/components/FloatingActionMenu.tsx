@@ -43,7 +43,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { exportToPDF, exportToExcel } from '@/lib/exportSchedules';
 import { useToast } from '@/hooks/use-toast';
 
+export interface TopBarItem {
+  key: string;
+  icon: LucideIcon;
+  label: string;
+  onClick: () => void;
+  active?: boolean;
+  badge?: number;
+  highlight?: boolean;
+}
+
 interface FloatingActionMenuProps {
+  /** Page-specific buttons shown in the same fixed bar (already filtered by permission). */
+  extraItems?: TopBarItem[];
   isAdmin: boolean;
   shouldShowInstallPrompt: boolean;
   onInstallClick: () => void;
@@ -151,7 +163,7 @@ function DepartmentPicker({
 }
 
 export function FloatingActionMenu(props: FloatingActionMenuProps) {
-  const { isAdmin, shouldShowInstallPrompt, onInstallClick, onSignOut } = props;
+  const { isAdmin, shouldShowInstallPrompt, onInstallClick, onSignOut, extraItems = [] } = props;
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
@@ -162,7 +174,7 @@ export function FloatingActionMenu(props: FloatingActionMenuProps) {
 
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
-  const fabRef = useRef<HTMLButtonElement>(null);
+  const fabRef = useRef<HTMLDivElement>(null);
 
   const [pendingAction, setPendingAction] = useState<ContextualAction | null>(null);
   const [selectedDept, setSelectedDept] = useState<UserDepartment | null>(null);
@@ -378,7 +390,7 @@ export function FloatingActionMenu(props: FloatingActionMenuProps) {
       {open && (
         <div
           ref={panelRef}
-          className="fixed bottom-24 right-6 z-[60] w-44 max-h-[70vh] overflow-y-auto rounded-2xl border border-border/60 bg-card/70 backdrop-blur-2xl shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-150"
+          className="fixed top-[68px] left-3 z-[60] w-44 max-h-[75vh] overflow-y-auto rounded-2xl border border-border/60 bg-card/90 backdrop-blur-2xl shadow-2xl animate-in fade-in slide-in-from-top-2 duration-150"
         >
           {/* Header */}
           <button
@@ -450,19 +462,48 @@ export function FloatingActionMenu(props: FloatingActionMenuProps) {
         </div>
       )}
 
-      {/* Floating action button */}
-      <button
+      {/* Fixed top-left menu bar: LEVI menu + page buttons, all in one place */}
+      <div aria-hidden className="h-[68px] shrink-0" />
+      <div
         ref={fabRef}
-        onClick={() => setOpen(v => !v)}
-        aria-label="Menu"
-        className="fixed bottom-6 right-6 z-[60] flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+        role="toolbar"
+        aria-label={t('sidebar.menu')}
+        className="fixed top-3 left-3 z-[60] flex items-center gap-0.5 max-w-[calc(100vw-1.5rem)] overflow-x-auto rounded-2xl border border-border/60 bg-card/85 backdrop-blur-xl shadow-lg p-1"
       >
-        {open ? (
-          <X className="w-8 h-8 text-foreground" />
-        ) : (
-          <LeviLogo className="w-11 h-11" />
-        )}
-      </button>
+        <button
+          onClick={() => setOpen(v => !v)}
+          aria-label={t('sidebar.menu')}
+          aria-expanded={open}
+          title={t('sidebar.menu')}
+          className={`h-8 w-8 sm:h-10 sm:w-10 shrink-0 flex items-center justify-center rounded-xl transition-colors ${open ? 'bg-accent' : 'hover:bg-accent'}`}
+        >
+          {open ? <X className="w-5 h-5 text-foreground" /> : <LeviLogo className="w-7 h-7 sm:w-8 sm:h-8" />}
+        </button>
+        {extraItems.length > 0 && <div className="mx-0.5 h-6 w-px shrink-0 bg-border" />}
+        {extraItems.map(({ key, icon: Icon, label, onClick, active, badge, highlight }) => (
+          <button
+            key={key}
+            onClick={() => { setOpen(false); onClick(); }}
+            aria-label={label}
+            aria-pressed={active}
+            title={label}
+            className={`relative h-8 w-8 sm:h-10 sm:w-10 shrink-0 flex items-center justify-center rounded-xl transition-all active:scale-95 ${
+              active
+                ? 'gradient-vibrant text-white shadow-glow-sm'
+                : highlight
+                ? 'bg-primary/12 text-primary hover:bg-primary/20'
+                : 'text-foreground/75 hover:bg-accent hover:text-foreground'
+            }`}
+          >
+            <Icon className="w-[18px] h-[18px]" />
+            {!!badge && badge > 0 && (
+              <span className="absolute top-0.5 right-0.5 min-w-4 h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
+                {badge}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
 
       {/* Modals */}
       {pendingAction && (

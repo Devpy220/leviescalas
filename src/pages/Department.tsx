@@ -13,13 +13,16 @@ import {
   UserCog,
   Megaphone,
   CalendarSync,
-  Library
+  Library,
+  Sparkles,
+  CalendarPlus,
 } from 'lucide-react';
-import { FloatingActionMenu } from '@/components/FloatingActionMenu';
+import { useTranslation } from 'react-i18next';
+import { FloatingActionMenu, type TopBarItem } from '@/components/FloatingActionMenu';
 import { useAdmin } from '@/hooks/useAdmin';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/hooks/useAuth';
@@ -128,6 +131,7 @@ export default function Department() {
   const [showCalendarSync, setShowCalendarSync] = useState(false);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { user, session, loading: authLoading, ensureSession, signOut } = useAuth();
   const { isAdmin } = useAdmin();
   const { shouldShowInstallPrompt, install } = usePWAInstall();
@@ -538,10 +542,35 @@ export default function Department() {
     navigate('/');
   };
 
+  // Every department menu lives in the fixed top-left bar. Leader-only
+  // entries are added only for leaders/co-leaders; coordinators are read-only.
+  const topBarItems: TopBarItem[] = [];
+  if (kidsLinked) {
+    topBarItems.push({ key: 'kids', icon: ArrowLeft, label: 'Voltar ao LeviKids', onClick: () => navigate(isLeader ? '/kids/admin' : '/kids/dashboard') });
+  }
+  topBarItems.push({ key: 'schedules', icon: Calendar, label: t('sidebar.schedulesTab'), active: activeTab === 'schedules', onClick: () => setActiveTab('schedules') });
+  if (!isCoordinator) {
+    if (!isLeader) {
+      topBarItems.push({ key: 'availability', icon: Clock, label: t('sidebar.availability'), active: activeTab === 'availability', onClick: () => setActiveTab('availability') });
+    }
+    topBarItems.push({ key: 'announcements', icon: Megaphone, label: t('sidebar.muralTab'), active: activeTab === 'announcements', badge: unreadAnnouncements, onClick: () => setActiveTab('announcements') });
+    if (isLeader) {
+      topBarItems.push({ key: 'repertorio', icon: Library, label: t('sidebar.repertoireTab'), active: activeTab === 'repertorio', onClick: () => setActiveTab('repertorio') });
+    }
+    topBarItems.push({ key: 'members', icon: Users, label: t('sidebar.membersTab'), active: activeTab === 'members', onClick: () => setActiveTab('members') });
+    topBarItems.push({ key: 'calendar-sync', icon: CalendarSync, label: t('sidebar.calendarSync'), onClick: () => setShowCalendarSync(true) });
+  }
+  if (isLeader && !isCoordinator) {
+    topBarItems.push({ key: 'smart', icon: Sparkles, label: t('sidebar.smartSchedule'), highlight: true, onClick: () => { setActiveTab('schedules'); setShowSmartSchedule(true); } });
+    topBarItems.push({ key: 'manual', icon: CalendarPlus, label: t('sidebar.manualSchedule'), onClick: () => { setActiveTab('schedules'); handleAddSchedule(); } });
+    topBarItems.push({ key: 'settings', icon: Settings, label: t('sidebar.deptSettings'), onClick: () => setShowSettings(true) });
+  }
+
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-background">
         <FloatingActionMenu
+          extraItems={topBarItems}
           isAdmin={isAdmin}
           shouldShowInstallPrompt={shouldShowInstallPrompt()}
           onInstallClick={install}
@@ -590,106 +619,11 @@ export default function Department() {
               </div>
             </div>
 
-            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-              {kidsLinked && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      asChild
-                      variant="outline"
-                      size="icon"
-                      className="rounded-xl border-violet-300 text-violet-700 hover:bg-violet-50 dark:text-violet-300 dark:border-violet-700 dark:hover:bg-violet-950"
-                      aria-label="Voltar ao LeviKids"
-                    >
-                      <Link to={isLeader ? '/kids/admin' : '/kids/dashboard'}>
-                        <ArrowLeft className="w-5 h-5" />
-                      </Link>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Voltar ao LeviKids</TooltipContent>
-                </Tooltip>
-              )}
-              {isLeader && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="text-muted-foreground click-scale"
-                      onClick={() => setShowSettings(true)}
-                    >
-                      <Settings className="w-5 h-5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Configurações do departamento</TooltipContent>
-                </Tooltip>
-              )}
-            </div>
           </div>
         </div>
 
         <main className="container mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 max-w-7xl transition-all duration-200">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
-          {/* TabsList shown for members and leaders (coordinators see schedules only) */}
-          {!isCoordinator && (
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <TabsList className="bg-muted/50 self-start w-full sm:w-auto overflow-x-auto">
-                <TabsTrigger 
-                  value="schedules" 
-                  className="gap-2 click-scale selection-glow data-[state=active]:gradient-vibrant data-[state=active]:text-white data-[state=active]:shadow-glow-sm transition-all"
-                >
-                  <Calendar className="w-4 h-4" />
-                  <span className="hidden xs:inline">Escalas</span>
-                </TabsTrigger>
-                {!isLeader && (
-                  <TabsTrigger 
-                    value="availability" 
-                    className="gap-2 click-scale selection-glow data-[state=active]:gradient-vibrant data-[state=active]:text-white data-[state=active]:shadow-glow-sm transition-all"
-                  >
-                    <Clock className="w-4 h-4" />
-                    <span className="hidden xs:inline">Disponibilidade</span>
-                  </TabsTrigger>
-                )}
-                <TabsTrigger 
-                  value="announcements" 
-                  className="gap-2 click-scale selection-glow data-[state=active]:gradient-vibrant data-[state=active]:text-white data-[state=active]:shadow-glow-sm transition-all relative"
-                >
-                  <Megaphone className="w-4 h-4" />
-                  <span className="hidden xs:inline">Mural</span>
-                  {unreadAnnouncements > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                      {unreadAnnouncements}
-                    </span>
-                  )}
-                </TabsTrigger>
-                {isLeader && (
-                  <TabsTrigger
-                    value="repertorio"
-                    className="gap-2 click-scale selection-glow data-[state=active]:gradient-vibrant data-[state=active]:text-white data-[state=active]:shadow-glow-sm transition-all"
-                  >
-                    <Library className="w-4 h-4" />
-                    <span className="hidden xs:inline">Repertório</span>
-                  </TabsTrigger>
-                )}
-                <TabsTrigger
-                  value="members"
-                  className="gap-2 click-scale selection-glow data-[state=active]:gradient-vibrant data-[state=active]:text-white data-[state=active]:shadow-glow-sm transition-all"
-                >
-                  <Users className="w-4 h-4" />
-                  <span className="hidden xs:inline">Membros</span>
-                </TabsTrigger>
-              </TabsList>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground shrink-0" onClick={() => setShowCalendarSync(true)}>
-                    <CalendarSync className="w-5 h-5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Sincronizar Calendário</TooltipContent>
-              </Tooltip>
-            </div>
-          )}
-
           <TabsContent value="schedules" className="mt-4 sm:mt-6 animate-fade-in">
             <div className="space-y-6">
               {/* Schedule Calendar */}

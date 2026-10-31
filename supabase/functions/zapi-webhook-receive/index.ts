@@ -197,7 +197,6 @@ serve(async (req: Request): Promise<Response> => {
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     const payload = await req.json().catch(() => ({} as any));
-    console.log("WhatsApp webhook payload:", JSON.stringify(payload).slice(0, 2000));
 
     // UAZAPI payloads nest under `message`. Z-API uses flat fields. Support both.
     const uaMsg = payload.message ?? payload.Message ?? {};
@@ -241,7 +240,7 @@ serve(async (req: Request): Promise<Response> => {
       uaMsg.fromMe === true || uaMsg.fromme === true ||
       payload.fromMe === true || payload.isFromMe === true;
 
-    console.log(`[extract] fromMe=${fromMe} phoneRaw="${phoneRaw}" textLen=${text.length} text="${text.slice(0,40)}"`);
+    console.log(`[extract] fromMe=${fromMe} hasPhone=${!!phoneRaw} textLen=${text.length}`);
 
     if (fromMe || !phoneRaw || typeof text !== "string" || !text.trim()) {
       console.log(`[extract] -> ignored (fromMe=${fromMe}, hasPhone=${!!phoneRaw}, hasText=${!!text.trim()})`);
@@ -279,10 +278,10 @@ serve(async (req: Request): Promise<Response> => {
       return brCanonical(pd) === incomingCanon && incomingCanon.length >= 10;
     });
 
-    console.log(`[lookup] phoneDigits=${phoneDigits} tail=${tail} brCanon=${incomingCanon} candidates=${candidates?.length ?? 0} profileFound=${!!profile}`);
+    console.log(`[lookup] candidates=${candidates?.length ?? 0} profileFound=${!!profile}`);
 
     if (!profile) {
-      console.log(`[lookup] -> no profile match for tail=${tail} brCanon=${incomingCanon}`);
+      console.log(`[lookup] -> no profile match`);
       return new Response(JSON.stringify({ ignored: true, reason: "phone not found" }), {
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
@@ -801,7 +800,7 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // ─── Swap-over-WhatsApp router ───
-    console.log(`[router] profile=${profile.id} name=${profile.name} text="${text}" trying swap`);
+    console.log(`[router] profile=${profile.id} trying swap`);
     try {
       const handledSwap = await tryHandleSwapMessage(
         { supabase, supabaseUrl, serviceRoleKey },

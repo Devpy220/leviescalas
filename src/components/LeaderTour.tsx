@@ -101,7 +101,7 @@ export function LeaderTour({ departmentId, departmentName, inviteCode }: LeaderT
       description: 'O LEVI monta a escala do mês para você.',
       content: (
         <p className="text-sm text-muted-foreground">
-          Use o botão flutuante <strong>de varinha</strong> (canto inferior direito) para gerar
+          Use o botão <strong>de varinha</strong> na barra do topo, à esquerda, para gerar
           escalas automaticamente respeitando disponibilidade, bloqueios e equilíbrio entre voluntários.
           O botão <strong>calendário+</strong> ao lado é para escalar manualmente.
         </p>
@@ -157,8 +157,8 @@ export function LeaderTour({ departmentId, departmentName, inviteCode }: LeaderT
       description: 'Ajuste regras específicas do seu ministério.',
       content: (
         <p className="text-sm text-muted-foreground">
-          No ícone de engrenagem (canto superior direito do departamento) você define:
-          turnos, dobra de domingo, máximo de bloqueios por voluntário, e mais.
+          No ícone de engrenagem, na barra do topo à esquerda, você define:
+          turnos, dobra de domingo e mais.
         </p>
       ),
     },
