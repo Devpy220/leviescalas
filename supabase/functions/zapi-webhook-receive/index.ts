@@ -1032,7 +1032,7 @@ _LEVI_`;
         mode: parsed.mode,
         accepted: parsed.dates,
         blackouts_applied: blackoutDateStrings,
-        rejected_by_dept: rejectedByDept,
+
       }),
       { headers: { "Content-Type": "application/json", ...corsHeaders } },
     );
