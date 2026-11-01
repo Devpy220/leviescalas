@@ -114,7 +114,7 @@ export default function AddScheduleDialog({
   const blockedMembers = useMemo(() => {
     const blocked = new Set<string>();
 
-    // Voluntários bloqueados no departamento (nunca podem ser escalados)
+    // Vocacionados bloqueados no departamento (nunca podem ser escalados)
     members.forEach(m => {
       if ((m as any).is_blocked) blocked.add(m.user_id);
     });

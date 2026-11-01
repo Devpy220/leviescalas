@@ -177,7 +177,7 @@ export default function ChurchSetup() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Cadastrar minha Igreja — LEVI" description="Cadastre sua igreja gratuitamente no LEVI e comece a organizar escalas de voluntários em minutos." path="/church-setup" />
+      <SEO title="Cadastrar minha Igreja — LEVI" description="Cadastre sua igreja gratuitamente no LEVI e comece a organizar escalas de vocacionados em minutos." path="/church-setup" />
       <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 group">
@@ -366,7 +366,7 @@ export default function ChurchSetup() {
                   render={({ field }) => (
                     <div className="grid gap-2">
                       {[
-                        { v: 'levi', title: '📅 LEVI Escalas', desc: 'Escalas de voluntários por departamento/ministério.' },
+                        { v: 'levi', title: '📅 LEVI Escalas', desc: 'Escalas de vocacionados por departamento/ministério.' },
                         { v: 'kids', title: '👶 LeviKids', desc: 'Check-in seguro, salas, professores e responsáveis.' },
                         { v: 'both', title: '✨ Os dois juntos', desc: 'LEVI Escalas + LeviKids na mesma igreja.' },
                       ].map((opt) => {

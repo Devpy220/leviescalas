@@ -29,7 +29,7 @@ async function askAI(country: string, langName: string): Promise<string> {
 1) Main data protection laws of this country (LGPD equivalent, if any).
 2) Specific laws on children's/minors' data protection (relevant to a church kids check-in module).
 3) Parental consent requirements, minimum age of use, data retention and deletion rules.
-4) Objective list of what a church volunteer scheduling app (LEVI, stores names, phones, emails, WhatsApp messaging, children's data) would need to adjust for this country.`;
+4) Objective list of what a church scheduling app for called servants (vocacionados) (LEVI, stores names, phones, emails, WhatsApp messaging, children's data) would need to adjust for this country.`;
 
   const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
     method: "POST",

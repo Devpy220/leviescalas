@@ -76,7 +76,7 @@ serve(async (req: Request): Promise<Response> => {
         type: "announcement",
         message: `📢 Novo aviso em ${department_name}: ${announcement_title}`,
         status: "sent",
-        metadata: { ...metadata, user_name: profile?.name || 'Voluntário' },
+        metadata: { ...metadata, user_name: profile?.name || 'Vocacionado' },
       };
     });
 
@@ -92,10 +92,10 @@ serve(async (req: Request): Promise<Response> => {
         .filter((p: any) => p.whatsapp)
         .map((p: any) => ({
           phone: p.whatsapp,
-          userName: p.name || "Voluntário",
+          userName: p.name || "Vocacionado",
           mainMessage: buildAnnouncementMessage({
             userId: p.id,
-            userName: p.name || "Voluntário",
+            userName: p.name || "Vocacionado",
             deptName: department_name,
             title: announcement_title,
           }),

@@ -239,7 +239,7 @@ export default function EditScheduleDialog({
 
   // Check if a member is available for the selected day/time
   const isMemberAvailable = (userId: string): boolean => {
-    // Voluntário bloqueado (pelo líder ou por ele mesmo) nunca pode ser escalado
+    // Vocacionado bloqueado (pelo líder ou por ele mesmo) nunca pode ser escalado
     if (blockedSet.has(userId)) return false;
     if (!selectedDate || !timeStart) return true; // no filter if no date/time selected
     const dayOfWeek = getDay(selectedDate);
@@ -364,7 +364,7 @@ export default function EditScheduleDialog({
         if (insErr) {
           toast({
             variant: 'destructive',
-            title: 'Escala atualizada, mas não foi possível adicionar os voluntários',
+            title: 'Escala atualizada, mas não foi possível adicionar os vocacionados',
             description: insErr.message,
           });
           onScheduleUpdated();
@@ -376,7 +376,7 @@ export default function EditScheduleDialog({
       toast({
         title: 'Escala atualizada',
         description: extras.length > 0
-          ? `Alterações salvas e ${extras.length} voluntário${extras.length > 1 ? 's' : ''} adicionado${extras.length > 1 ? 's' : ''}.`
+          ? `Alterações salvas e ${extras.length} vocacionado${extras.length > 1 ? 's' : ''} adicionado${extras.length > 1 ? 's' : ''}.`
           : 'As alterações foram salvas com sucesso.',
       });
 
@@ -656,7 +656,7 @@ export default function EditScheduleDialog({
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
               <UserPlus className="w-4 h-4 text-muted-foreground" />
-              Adicionar mais voluntários
+              Adicionar mais vocacionados
               {extraIds.length > 0 && (
                 <span className="text-xs text-primary font-normal">({extraIds.length} selecionado{extraIds.length > 1 ? 's' : ''})</span>
               )}

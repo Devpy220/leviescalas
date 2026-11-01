@@ -62,7 +62,7 @@ export default function ConfirmSchedule() {
         time_end: data.time_end,
         confirmation_status: data.confirmation_status as ConfirmationStatus,
         department_name: data.department_name || 'Departamento',
-        user_name: 'Voluntário',
+        user_name: 'Vocacionado',
       });
 
 

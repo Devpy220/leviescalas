@@ -178,7 +178,7 @@ async function cleanupInactiveMembers(supabase: any) {
     if (p.inactivity_last_notice_at && now - new Date(p.inactivity_last_notice_at).getTime() < 20 * 60 * 60 * 1000) continue;
 
     const daysLeft = Math.max(1, Math.ceil((deadline - now) / DAY));
-    const first = (p.name || "").trim().split(/\s+/)[0] || "voluntário";
+    const first = (p.name || "").trim().split(/\s+/)[0] || "vocacionado";
     const personText =
       `Olá, ${first}! 👋\n\nVocê não foi escalado(a) em nenhum departamento nos últimos 60 dias.\n\n` +
       `⏳ Faltam *${daysLeft} dia(s)*. Se você não for escalado(a) até lá, sua conta no LEVI e seus dados serão excluídos automaticamente.\n\n` +

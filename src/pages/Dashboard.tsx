@@ -882,7 +882,7 @@ function DepartmentCard({ department }: { department: DepartmentWithRole }) {
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-1.5">
               <Users className="w-4 h-4" />
-              <span>{department.member_count || 0} voluntário{(department.member_count || 0) !== 1 ? 's' : ''}</span>
+              <span>{department.member_count || 0} vocacionado{(department.member_count || 0) !== 1 ? 's' : ''}</span>
             </div>
           </div>
           

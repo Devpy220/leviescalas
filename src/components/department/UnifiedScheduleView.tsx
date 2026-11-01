@@ -226,7 +226,7 @@ export default function UnifiedScheduleView({
     return { totalScheduled, daysCount: uniqueDates.size, slotsCount: slotGroups.length };
   }, [slotGroups]);
 
-  // Busca por voluntário (apenas líderes)
+  // Busca por vocacionado (apenas líderes)
   const matchedMembers = useMemo(() => {
     const q = memberQuery.trim().toLowerCase();
     if (!q) return [];
@@ -325,7 +325,7 @@ export default function UnifiedScheduleView({
         </CardHeader>
       </Card>
 
-      {/* Busca por voluntário — apenas líderes */}
+      {/* Busca por vocacionado — apenas líderes */}
       {isLeader && (
         <Card>
           <CardContent className="p-3 space-y-2">
@@ -334,7 +334,7 @@ export default function UnifiedScheduleView({
               <Input
                 value={memberQuery}
                 onChange={(e) => setMemberQuery(e.target.value)}
-                placeholder={`Buscar voluntário em ${format(currentMonth, 'MMMM yyyy', { locale: ptBR })}...`}
+                placeholder={`Buscar vocacionado em ${format(currentMonth, 'MMMM yyyy', { locale: ptBR })}...`}
                 className="pl-9"
               />
             </div>
@@ -354,13 +354,13 @@ export default function UnifiedScheduleView({
               </div>
             )}
             {memberQuery.trim() && matchedMembers.length === 0 && (
-              <p className="text-xs text-muted-foreground">Nenhum voluntário encontrado.</p>
+              <p className="text-xs text-muted-foreground">Nenhum vocacionado encontrado.</p>
             )}
           </CardContent>
         </Card>
       )}
 
-      {/* Dias escalados do voluntário */}
+      {/* Dias escalados do vocacionado */}
       <Dialog open={!!selectedMemberId} onOpenChange={(o) => !o && setSelectedMemberId(null)}>
         <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
@@ -371,7 +371,7 @@ export default function UnifiedScheduleView({
           </DialogHeader>
           <div className="space-y-1.5">
             {selectedMemberSchedules.length === 0 && (
-              <p className="text-sm text-muted-foreground">Este voluntário não está escalado em {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}.</p>
+              <p className="text-sm text-muted-foreground">Este vocacionado não está escalado em {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}.</p>
             )}
             {selectedMemberSchedules.map((s) => (
               <div key={s.id} className="flex items-center justify-between rounded-md border border-border/50 p-2">
@@ -589,7 +589,7 @@ function SlotCard({
             </DialogTitle>
             <DialogDescription className="flex items-center gap-1">
               <Clock className="w-3 h-3" />
-              {slotInfo.timeStart} - {slotInfo.timeEnd} • {schedules.length} {schedules.length === 1 ? 'voluntário' : 'voluntários'}
+              {slotInfo.timeStart} - {slotInfo.timeEnd} • {schedules.length} {schedules.length === 1 ? 'vocacionado' : 'vocacionados'}
             </DialogDescription>
           </DialogHeader>
 
@@ -601,7 +601,7 @@ function SlotCard({
               onClick={() => { setOpen(false); onAddSchedule(date); }}
             >
               <Plus className="w-4 h-4 mr-1" />
-              Adicionar voluntário
+              Adicionar vocacionado
             </Button>
           )}
 

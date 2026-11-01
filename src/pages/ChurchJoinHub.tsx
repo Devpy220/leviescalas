@@ -129,7 +129,7 @@ export default function ChurchJoinHub() {
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-sm text-muted-foreground">
-                Louvor, Mídia, Recepção, Diaconia... Crie um ministério para escalar voluntários.
+                Louvor, Mídia, Recepção, Diaconia... Crie um ministério para escalar vocacionados.
               </p>
               <p className="text-xs text-muted-foreground">
                 Você pode criar quantos departamentos quiser.

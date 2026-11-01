@@ -55,7 +55,7 @@ export default function Privacidade() {
               </thead>
               <tbody className="[&>tr]:border-t [&>tr]:border-border">
                 <tr>
-                  <td className="p-2">Registo de voluntário e gestão de escalas</td>
+                  <td className="p-2">Registo de vocacionado e gestão de escalas</td>
                   <td className="p-2">Execução de contrato / diligências pré-contratuais</td>
                   <td className="p-2">Nome, e-mail, telefone, disponibilidade, funções</td>
                   <td className="p-2">Enquanto a conta existir + 12 meses</td>

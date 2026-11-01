@@ -45,7 +45,7 @@ const tutorialSections = [
     id: 'calendar',
     icon: Calendar,
     title: 'Calendário de Escalas',
-    description: 'Visualize todas as escalas do mês com cores diferenciadas para cada voluntário. Líderes podem adicionar e gerenciar escalas facilmente.',
+    description: 'Visualize todas as escalas do mês com cores diferenciadas para cada vocacionado. Líderes podem adicionar e gerenciar escalas facilmente.',
     color: 'from-blue-500/20 to-blue-600/10',
     borderColor: 'border-blue-500/30',
     iconBg: 'bg-blue-500/20 text-blue-500',
@@ -72,7 +72,7 @@ const tutorialSections = [
     id: 'notifications',
     icon: Bell,
     title: 'Notificações por Email',
-    description: 'Voluntários recebem emails automáticos: ao serem escalados, 48h antes e 2h antes do compromisso.',
+    description: 'Vocacionados recebem emails automáticos: ao serem escalados, 48h antes e 2h antes do compromisso.',
     color: 'from-cyan-500/20 to-cyan-600/10',
     borderColor: 'border-cyan-500/30',
     iconBg: 'bg-cyan-500/20 text-cyan-500',
@@ -169,7 +169,7 @@ export default function Tutorial() {
                 <LeviLogo size="sm" className="opacity-90" />
                 <div>
                   <h2 className="text-white font-display font-bold text-lg">LEVI</h2>
-                  <p className="text-white/70 text-sm">Logística de Escalas para Voluntários</p>
+                  <p className="text-white/70 text-sm">Logística de Escalas para Vocacionados da Igreja</p>
                 </div>
               </div>
               

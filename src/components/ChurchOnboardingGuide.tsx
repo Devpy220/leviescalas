@@ -184,10 +184,10 @@ export function ChurchOnboardingGuide({
           <div className="rounded-xl border-2 border-amber-500/40 bg-amber-500/5 p-4">
             <div className="flex items-center gap-2 mb-2">
               <Users className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-              <p className="font-semibold text-sm">2. Link do Departamento (Voluntários)</p>
+              <p className="font-semibold text-sm">2. Link do Departamento (Vocacionados)</p>
             </div>
             <p className="text-xs text-muted-foreground mb-2">
-              Gerado <strong>dentro de cada departamento</strong>. Use para convidar voluntários
+              Gerado <strong>dentro de cada departamento</strong>. Use para convidar vocacionados
               (Louvor, Mídia, Diaconia…) a entrarem na equipe.
             </p>
             <p className="text-[11px] font-mono text-amber-700 dark:text-amber-400">
@@ -214,7 +214,7 @@ export function ChurchOnboardingGuide({
             </div>
             <div className="flex items-center gap-2">
               <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">3</span>
-              <p>Compartilhe o link do departamento com os voluntários</p>
+              <p>Compartilhe o link do departamento com os vocacionados</p>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">4</span>
@@ -231,12 +231,12 @@ export function ChurchOnboardingGuide({
     {
       icon: Sparkles,
       title: 'Tudo pronto!',
-      description: 'Use os links para entrar como líder, coordenador ou voluntário.',
+      description: 'Use os links para entrar como líder, coordenador ou vocacionado.',
       content: (
         <div className="space-y-3 text-sm text-muted-foreground">
           <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-xs">
             <strong className="text-foreground">Importante:</strong> o responsável pelo cadastro
-            <strong> não entra automaticamente como voluntário</strong>. O acesso à igreja e aos
+            <strong> não entra automaticamente como vocacionado</strong>. O acesso à igreja e aos
             departamentos é feito apenas pelos links — como líder, coordenador ou membro do departamento.
           </div>
           <p className="text-xs italic">

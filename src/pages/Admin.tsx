@@ -493,7 +493,7 @@ export default function Admin() {
       console.error('Error fetching profiles:', error);
       toast({
         title: 'Erro',
-        description: 'Não foi possível carregar os voluntários.',
+        description: 'Não foi possível carregar os vocacionados.',
         variant: 'destructive',
       });
     } finally {
@@ -668,7 +668,7 @@ export default function Admin() {
       setAllProfiles(prev => prev.filter(p => p.id !== profileId));
       toast({
         title: 'Sucesso',
-        description: 'Voluntário excluído com sucesso.',
+        description: 'Vocacionado excluído com sucesso.',
       });
       // Refresh departments as member counts may have changed
       fetchDepartments();
@@ -676,7 +676,7 @@ export default function Admin() {
       console.error('Error deleting volunteer:', error);
       toast({
         title: 'Erro',
-        description: 'Não foi possível excluir o voluntário.',
+        description: 'Não foi possível excluir o vocacionado.',
         variant: 'destructive',
       });
     } finally {
@@ -895,10 +895,10 @@ export default function Admin() {
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/70 mb-2">Pessoas & Igrejas</p>
                 <div className="flex flex-wrap gap-2">
                   <UITooltip><TooltipTrigger asChild>
-                    <Button size="icon" variant="outline" className="h-9 w-9" onClick={() => navigate('/admin/voluntarios')} aria-label="Todos voluntários">
+                    <Button size="icon" variant="outline" className="h-9 w-9" onClick={() => navigate('/admin/voluntarios')} aria-label="Todos vocacionados">
                       <Users className="w-4 h-4 text-emerald-500" />
                     </Button>
-                  </TooltipTrigger><TooltipContent>Todos voluntários</TooltipContent></UITooltip>
+                  </TooltipTrigger><TooltipContent>Todos vocacionados</TooltipContent></UITooltip>
                   <UITooltip><TooltipTrigger asChild>
                     <Button size="icon" variant="outline" className="h-9 w-9" onClick={() => setOpenModal('departments')} aria-label={t("adminCore.departments")}>
                       <Building2 className="w-4 h-4 text-blue-500" />
