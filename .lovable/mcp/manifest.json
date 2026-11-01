@@ -19,7 +19,7 @@
       {
         "name": "list_my_departments",
         "title": "List my departments",
-        "description": "Lista os departamentos da igreja em que o usuário autenticado participa (como líder ou voluntário).",
+        "description": "Lista os departamentos da igreja em que o usuário autenticado participa (como líder ou vocacionado).",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
