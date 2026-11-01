@@ -86,6 +86,14 @@
       "step4Desc": "Confirmaciones y pendientes en tiempo real en el panel.",
       "ctaTitle": "Empieza hoy, gratis",
       "ctaDesc": "Únete a los vocacionados que ya simplificaron la gestión de turnos en su iglesia. 100% gratis"
+    },
+    "servants": {
+      "title": "Menos voluntarios. Más siervos.",
+      "subtitle": "Siervos disponibles y dispuestos a servir a Dios.",
+      "verse": "Heme aquí, envíame a mí.",
+      "verseRef": "Isaías 6:8",
+      "support": "LEVI organiza los turnos de tu iglesia para que cada vocacionado sepa dónde, cuándo y cómo servir, con orden y sin sobrecarga.",
+      "cta": "Comenzar a servir"
     }
   },
   "auth": {

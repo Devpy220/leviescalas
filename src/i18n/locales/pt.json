@@ -86,6 +86,14 @@
       "step4Desc": "Confirmações e pendências em tempo real no painel.",
       "ctaTitle": "Comece hoje, gratuitamente",
       "ctaDesc": "Junte-se aos vocacionados que já simplificaram a gestão das escalas na sua igreja. 100% gratuito · Suporte em português"
+    },
+    "servants": {
+      "title": "Menos voluntários. Mais servos.",
+      "subtitle": "Servos disponíveis e dispostos a servir a Deus.",
+      "verse": "Eis-me aqui, envia-me a mim.",
+      "verseRef": "Isaías 6:8",
+      "support": "O LEVI organiza as escalas da sua igreja para que cada vocacionado saiba onde, quando e como servir, com ordem e sem sobrecarga.",
+      "cta": "Começar a servir"
     }
   },
   "auth": {

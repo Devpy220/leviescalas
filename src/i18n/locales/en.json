@@ -86,6 +86,14 @@
       "step4Desc": "Confirmations and pending items in real-time on the dashboard.",
       "ctaTitle": "Start today, for free",
       "ctaDesc": "Join the servants who have already simplified schedule management at their church. 100% free"
+    },
+    "servants": {
+      "title": "Fewer volunteers. More servants.",
+      "subtitle": "Servants available and willing to serve God.",
+      "verse": "Here am I. Send me!",
+      "verseRef": "Isaiah 6:8",
+      "support": "LEVI organizes your church's schedules so every servant knows where, when and how to serve, with order and without overload.",
+      "cta": "Start serving"
     }
   },
   "auth": {
