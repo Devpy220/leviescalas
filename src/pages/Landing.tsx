@@ -64,6 +64,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable';
 import { TwoFactorVerify } from '@/components/auth/TwoFactorVerify';
 import { LanguageSelector } from '@/components/LanguageSelector';
+import { ServantsCallout } from '@/components/landing/ServantsCallout';
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 const GoogleIcon = () => (
@@ -165,35 +166,35 @@ function FeatureGrid() {
     {
       icon: Calendar,
       title: 'Disponibilidade Semanal',
-      desc: 'Cada voluntário marca os dias e turnos que pode servir — uma vez só, vale para sempre.',
+      desc: 'Cada vocacionado marca os dias e turnos que pode servir — uma vez só, vale para sempre.',
       color: 'from-amber-500/15 to-amber-500/5',
       iconColor: 'text-amber-600',
     },
     {
       icon: CalendarDays,
       title: 'Bloqueio de Datas',
-      desc: 'Voluntário bloqueia dias específicos pelo app ou respondendo no WhatsApp.',
+      desc: 'Vocacionado bloqueia dias específicos pelo app ou respondendo no WhatsApp.',
       color: 'from-rose-500/15 to-rose-500/5',
       iconColor: 'text-rose-600',
     },
     {
       icon: MessageCircle,
       title: 'Notificações via WhatsApp',
-      desc: 'Confirmações, lembretes e avisos chegam direto no WhatsApp do voluntário.',
+      desc: 'Confirmações, lembretes e avisos chegam direto no WhatsApp do vocacionado.',
       color: 'from-emerald-500/15 to-emerald-500/5',
       iconColor: 'text-emerald-600',
     },
     {
       icon: RefreshCw,
       title: 'Trocas pelo WhatsApp',
-      desc: 'Voluntário envia "troca" no WhatsApp do LEVI e resolve a substituição em segundos — sem abrir o app.',
+      desc: 'Vocacionado envia "troca" no WhatsApp do LEVI e resolve a substituição em segundos — sem abrir o app.',
       color: 'from-sky-500/15 to-sky-500/5',
       iconColor: 'text-sky-600',
     },
     {
       icon: CheckCircle2,
       title: 'Confirmação por Link',
-      desc: 'Voluntário confirma presença com um clique no link recebido pelo WhatsApp.',
+      desc: 'Vocacionado confirma presença com um clique no link recebido pelo WhatsApp.',
       color: 'from-teal-500/15 to-teal-500/5',
       iconColor: 'text-teal-600',
     },
@@ -298,7 +299,7 @@ function FeatureGrid() {
     {
       icon: Music,
       title: 'Repertório e Cifras',
-      desc: 'Líder anexa repertório, links e cifras direto na escala — voluntário recebe tudo no WhatsApp.',
+      desc: 'Líder anexa repertório, links e cifras direto na escala — vocacionado recebe tudo no WhatsApp.',
       color: 'from-purple-500/15 to-purple-500/5',
       iconColor: 'text-purple-600',
     },
@@ -319,7 +320,7 @@ function FeatureGrid() {
     {
       icon: Lock,
       title: 'Privacidade de Contato',
-      desc: 'Cada voluntário decide se telefone e e-mail ficam visíveis para os outros do departamento.',
+      desc: 'Cada vocacionado decide se telefone e e-mail ficam visíveis para os outros do departamento.',
       color: 'from-rose-500/15 to-rose-500/5',
       iconColor: 'text-rose-600',
     },
@@ -333,7 +334,7 @@ function FeatureGrid() {
           Funcionalidades em <span className="text-primary">um só lugar</span>
         </h3>
         <p className="text-xs sm:text-sm text-muted-foreground max-w-xl mx-auto mt-2">
-          Da geração inteligente da escala até o lembrete no WhatsApp do voluntário.
+          Da geração inteligente da escala até o lembrete no WhatsApp do vocacionado.
         </p>
       </div>
 
@@ -582,7 +583,7 @@ export default function Landing() {
   };
 
   return (
-    <div className="relative min-h-screen lg:h-screen flex flex-col text-foreground lg:overflow-hidden">
+    <div className="relative min-h-screen flex flex-col text-foreground">
       <VideoBackground />
       <PWAInstallPrompt open={showInstallPrompt} onOpenChange={setShowInstallPrompt} />
 
@@ -615,9 +616,9 @@ export default function Landing() {
         </div>
       </nav>
 
-      <main className="flex-1 min-h-0 pt-16 flex flex-col lg:overflow-hidden">
+      <main className="flex-1 pt-16 flex flex-col">
       {/* ── HERO + FEATURES (single viewport on desktop, scroll on mobile) ── */}
-      <section className="flex-1 min-h-0 relative z-[1] py-4 sm:py-6 lg:overflow-hidden">
+      <section className="relative z-[1] py-4 sm:py-6 lg:h-[calc(100dvh-4rem)] lg:overflow-hidden">
 
         {/* Dot grid + gradient blobs */}
         <div className="absolute inset-0 dot-grid pointer-events-none" />
@@ -775,6 +776,9 @@ export default function Landing() {
         </div>
 
       </section>
+
+      {/* ── SERVANTS HIGHLIGHT ── */}
+      <ServantsCallout onStart={() => openAuth('login')} />
       </main>
 
 

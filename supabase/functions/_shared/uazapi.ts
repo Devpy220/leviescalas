@@ -54,7 +54,7 @@ export function normalizeNumber(raw: string): string {
  * LEVI brand signature appended to every WhatsApp message.
  */
 export const LEVI_SIGNATURE =
-  "*LEVI* — _Logística de Escalas de Voluntários da Igreja_\n\nELSD - Desenvolvendo Soluções";
+  "*LEVI* — _Logística de Escalas para Vocacionados da Igreja_\n\nELSD - Desenvolvendo Soluções";
 
 /**
  * Ensure a message carries the LEVI brand signature:

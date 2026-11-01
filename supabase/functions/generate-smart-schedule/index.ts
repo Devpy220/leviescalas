@@ -151,7 +151,7 @@ serve(async (req) => {
       .filter((m: any) => !blockedSet.has(m.id))
       .map((m: any) => ({ user_id: m.id, name: m.name }));
     if (membersList.length === 0) {
-      return new Response(JSON.stringify({ error: 'Todos os voluntários estão bloqueados' }), {
+      return new Response(JSON.stringify({ error: 'Todos os vocacionados estão bloqueados' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -348,7 +348,7 @@ serve(async (req) => {
     const reasoning = [
       `Escalas geradas de forma determinística: ${scheduled.length} atribuições em ${workItems.length} slots.`,
       `Fairness aplicado: menor histórico + maior tempo desde a última escala têm prioridade.`,
-      `Restrições respeitadas: bloqueios de datas, indisponibilidade semanal, conflitos entre departamentos, máx./mês, intervalo mínimo, exclusividade de domingo, voluntários bloqueados.`,
+      `Restrições respeitadas: bloqueios de datas, indisponibilidade semanal, conflitos entre departamentos, máx./mês, intervalo mínimo, exclusividade de domingo, vocacionados bloqueados.`,
       unfilled.length > 0 ? `Slots sem cobertura suficiente: ${unfilled.slice(0, 10).join(' | ')}` : `Todos os slots cobertos.`,
     ].join(' ');
 

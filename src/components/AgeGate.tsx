@@ -177,7 +177,7 @@ export function AgeGate({ children }: { children: React.ReactNode }) {
           <div className="space-y-3">
             <Alert>
               <AlertDescription className="text-sm">
-                Você é menor de 18 anos. Para servir como voluntário(a) ou auxiliar de sala,
+                Você é menor de 18 anos. Para servir como vocacionado(a) ou auxiliar de sala,
                 seu <strong>pai, mãe ou responsável legal</strong> precisa autorizar seu cadastro
                 e você deve sempre atuar junto de um professor adulto (16+).
               </AlertDescription>

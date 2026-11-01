@@ -119,7 +119,7 @@ export function TeamSlotCard({
             <DialogDescription className="flex items-center gap-1">
               <Clock className="w-3 h-3" />
               {slotInfo.timeStart} - {slotInfo.timeEnd} • {schedules.length}{' '}
-              {schedules.length === 1 ? 'voluntário' : 'voluntários'}
+              {schedules.length === 1 ? 'vocacionado' : 'vocacionados'}
             </DialogDescription>
           </DialogHeader>
 
@@ -141,7 +141,7 @@ export function TeamSlotCard({
           <div className="space-y-1.5">
             {schedules.map((schedule) => {
               const isCurrentUser = schedule.user_id === currentUserId;
-              const memberName = memberProfiles[schedule.user_id]?.name || 'Voluntário';
+              const memberName = memberProfiles[schedule.user_id]?.name || 'Vocacionado';
               const role = schedule.assignment_role
                 ? ASSIGNMENT_ROLES[schedule.assignment_role as keyof typeof ASSIGNMENT_ROLES]
                 : null;

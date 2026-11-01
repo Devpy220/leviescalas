@@ -100,10 +100,10 @@ serve(async (req: Request): Promise<Response> => {
             })
             .map((p: any) => ({
               phone: p.whatsapp,
-              userName: p.name || "Voluntário",
+              userName: p.name || "Vocacionado",
               mainMessage: buildAnnouncementMessage({
                 userId: p.id,
-                userName: p.name || "Voluntário",
+                userName: p.name || "Vocacionado",
                 deptName,
                 title: announcement.title,
               }),

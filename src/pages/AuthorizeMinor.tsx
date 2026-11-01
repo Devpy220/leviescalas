@@ -49,13 +49,13 @@ export default function AuthorizeMinor() {
     const { error } = await (supabase.rpc as any)("authorize_minor", { _minor_id: found.id });
     setBusy(false);
     if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Autorização concedida", description: `${found.name} agora pode servir como voluntário(a).` });
+    toast({ title: "Autorização concedida", description: `${found.name} agora pode servir como vocacionado(a).` });
     setFound({ ...found, guardian_authorized_by: user!.id });
   }
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
-      <SEO title="Autorizar Menor — LEVI" description="Autorize seu filho(a) menor de 18 anos a servir como voluntário no LEVI/LeviKids." path="/authorize-minor" />
+      <SEO title="Autorizar Menor — LEVI" description="Autorize seu filho(a) menor de 18 anos a servir como vocacionado no LEVI/LeviKids." path="/authorize-minor" />
       <div className="max-w-lg mx-auto space-y-4">
         <Button variant="ghost" asChild><Link to="/dashboard"><ArrowLeft className="w-4 h-4 mr-1" /> Voltar</Link></Button>
         <Card className="rounded-2xl">
@@ -69,7 +69,7 @@ export default function AuthorizeMinor() {
               </Alert>
             )}
             <p className="text-sm text-muted-foreground">
-              Informe o e-mail que seu filho(a) usa no LEVI. Ao autorizar, ele(a) poderá atuar como voluntário(a) ou auxiliar,
+              Informe o e-mail que seu filho(a) usa no LEVI. Ao autorizar, ele(a) poderá atuar como vocacionado(a) ou auxiliar,
               sempre junto de um professor adulto (16+).
             </p>
 

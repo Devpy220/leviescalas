@@ -170,7 +170,7 @@ export default function MemberList({
       if (error) throw error;
       setBlockedMap(prev => ({ ...prev, [member.user_id]: !currentlyBlocked }));
       toast({
-        title: currentlyBlocked ? 'Voluntário desbloqueado' : 'Voluntário bloqueado',
+        title: currentlyBlocked ? 'Vocacionado desbloqueado' : 'Vocacionado bloqueado',
         description: currentlyBlocked
           ? `${member.profile.name} voltou a ficar disponível para escalas.`
           : `${member.profile.name} não poderá ser escalado até ser desbloqueado (por você ou pelo próprio via WhatsApp).`,
@@ -457,7 +457,7 @@ export default function MemberList({
                             {blockedMap[member.user_id] ? (
                               <>
                                 <CircleCheck className="w-4 h-4 mr-2 text-emerald-500" />
-                                Desbloquear voluntário
+                                Desbloquear vocacionado
                               </>
                             ) : (
                               <>

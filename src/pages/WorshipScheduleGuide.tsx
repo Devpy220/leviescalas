@@ -32,10 +32,10 @@ const steps = [
   },
   {
     title: '2. Colete a disponibilidade antes de escalar',
-    text: 'Peça a disponibilidade semanal fixa de cada voluntário e as datas em que ele não pode servir. Montar a escala sem isso é a principal causa de troca de última hora.',
+    text: 'Peça a disponibilidade semanal fixa de cada vocacionado e as datas em que ele não pode servir. Montar a escala sem isso é a principal causa de troca de última hora.',
   },
   {
-    title: '3. Equilibre a carga entre os voluntários',
+    title: '3. Equilibre a carga entre os vocacionados',
     text: 'Defina um número máximo de escalas por pessoa no mês. Rodízio justo evita desgaste do time e mantém os novatos envolvidos ao lado dos mais experientes.',
   },
   {
@@ -121,7 +121,7 @@ export default function WorshipScheduleGuide() {
             Faça isso sem planilha
           </h2>
           <p className="text-muted-foreground mb-5">
-            O LEVI coleta a disponibilidade de cada voluntário, monta a escala do mês,
+            O LEVI coleta a disponibilidade de cada vocacionado, monta a escala do mês,
             envia lembretes automáticos por WhatsApp e organiza as trocas com aprovação mútua.
           </p>
           <div className="flex flex-wrap gap-3">

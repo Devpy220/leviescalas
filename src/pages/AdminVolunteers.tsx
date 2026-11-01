@@ -54,7 +54,7 @@ export default function AdminVolunteers() {
       setProfiles((data || []) as Profile[]);
     } catch (e) {
       console.error(e);
-      toast({ title: 'Erro', description: 'Não foi possível carregar os voluntários.', variant: 'destructive' });
+      toast({ title: 'Erro', description: 'Não foi possível carregar os vocacionados.', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -66,10 +66,10 @@ export default function AdminVolunteers() {
       const { error } = await supabase.rpc('admin_delete_volunteer', { profile_id: id });
       if (error) throw error;
       setProfiles((prev) => prev.filter((p) => p.id !== id));
-      toast({ title: 'Sucesso', description: 'Voluntário excluído.' });
+      toast({ title: 'Sucesso', description: 'Vocacionado excluído.' });
     } catch (e) {
       console.error(e);
-      toast({ title: 'Erro', description: 'Não foi possível excluir o voluntário.', variant: 'destructive' });
+      toast({ title: 'Erro', description: 'Não foi possível excluir o vocacionado.', variant: 'destructive' });
     } finally {
       setDeletingId(null);
     }
@@ -105,9 +105,9 @@ export default function AdminVolunteers() {
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <Users className="w-6 h-6" />
-              Todos os Voluntários
+              Todos os Vocacionados
             </h1>
-            <p className="text-sm text-muted-foreground">Gerencie voluntários cadastrados no sistema</p>
+            <p className="text-sm text-muted-foreground">Gerencie vocacionados cadastrados no sistema</p>
           </div>
         </div>
 
@@ -134,7 +134,7 @@ export default function AdminVolunteers() {
             {loading ? (
               <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
             ) : filtered.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">Nenhum voluntário encontrado.</p>
+              <p className="text-center text-muted-foreground py-8">Nenhum vocacionado encontrado.</p>
             ) : (
               <div className="overflow-x-auto">
                 <Table className="text-xs [&_th]:py-2 [&_th]:px-2 [&_td]:py-2 [&_td]:px-2">
@@ -179,7 +179,7 @@ export default function AdminVolunteers() {
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Excluir voluntário?</AlertDialogTitle>
+                                <AlertDialogTitle>Excluir vocacionado?</AlertDialogTitle>
                                 <AlertDialogDescription>
                                   Esta ação excluirá permanentemente "{p.name || p.email}" e todos os dados relacionados. Não pode ser desfeita.
                                 </AlertDialogDescription>

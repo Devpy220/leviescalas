@@ -59,14 +59,14 @@ export function LeaderTour({ departmentId, departmentName, inviteCode }: LeaderT
         'Vamos te mostrar rapidamente as principais funcionalidades. Pode pular a qualquer momento.',
       content: (
         <p className="text-sm text-muted-foreground">
-          Você é responsável por convidar voluntários, montar escalas e manter a comunicação com a equipe.
+          Você é responsável por convidar vocacionados, montar escalas e manter a comunicação com a equipe.
           Tudo isso pode ser feito por aqui.
         </p>
       ),
     },
     {
       icon: Link2,
-      title: 'Convide voluntários para a equipe',
+      title: 'Convide vocacionados para a equipe',
       description: 'Cada departamento tem um link único para entrada na equipe.',
       content: (
         <div className="space-y-2">
@@ -79,7 +79,7 @@ export function LeaderTour({ departmentId, departmentName, inviteCode }: LeaderT
             </div>
           )}
           <p className="text-xs text-muted-foreground">
-            Você encontra esse link na barra lateral em <strong>Convidar voluntários</strong>.
+            Você encontra esse link na barra lateral em <strong>Convidar vocacionados</strong>.
           </p>
         </div>
       ),
@@ -87,7 +87,7 @@ export function LeaderTour({ departmentId, departmentName, inviteCode }: LeaderT
     {
       icon: Users,
       title: 'Disponibilidade da equipe',
-      description: 'Cada voluntário define quando pode servir.',
+      description: 'Cada vocacionado define quando pode servir.',
       content: (
         <p className="text-sm text-muted-foreground">
           Os membros marcam horários semanais (ex: Dom manhã, Qua noite) e datas de bloqueio.
@@ -102,7 +102,7 @@ export function LeaderTour({ departmentId, departmentName, inviteCode }: LeaderT
       content: (
         <p className="text-sm text-muted-foreground">
           Use o botão <strong>de varinha</strong> na barra do topo, à esquerda, para gerar
-          escalas automaticamente respeitando disponibilidade, bloqueios e equilíbrio entre voluntários.
+          escalas automaticamente respeitando disponibilidade, bloqueios e equilíbrio entre vocacionados.
           O botão <strong>calendário+</strong> ao lado é para escalar manualmente.
         </p>
       ),
@@ -110,10 +110,10 @@ export function LeaderTour({ departmentId, departmentName, inviteCode }: LeaderT
     {
       icon: MessageCircle,
       title: 'Notificações por WhatsApp',
-      description: 'Lembretes automáticos para os voluntários.',
+      description: 'Lembretes automáticos para os vocacionados.',
       content: (
         <p className="text-sm text-muted-foreground">
-          Quando uma escala é confirmada, o LEVI envia mensagens pelo WhatsApp lembrando o voluntário do dia,
+          Quando uma escala é confirmada, o LEVI envia mensagens pelo WhatsApp lembrando o vocacionado do dia,
           horário e função. Também envia o pedido mensal de datas de bloqueio.
         </p>
       ),
@@ -125,7 +125,7 @@ export function LeaderTour({ departmentId, departmentName, inviteCode }: LeaderT
       content: (
         <p className="text-sm text-muted-foreground">
           Crie setores (ex: Vocal, Bateria, Câmera 1) e funções com cores/ícones próprios.
-          Na hora de escalar, você designa cada voluntário para uma função específica.
+          Na hora de escalar, você designa cada vocacionado para uma função específica.
         </p>
       ),
     },
@@ -135,7 +135,7 @@ export function LeaderTour({ departmentId, departmentName, inviteCode }: LeaderT
       description: 'Comunicação rápida com a equipe.',
       content: (
         <p className="text-sm text-muted-foreground">
-          Publique recados que aparecem como pop-up por 3h e disparam WhatsApp para os voluntários.
+          Publique recados que aparecem como pop-up por 3h e disparam WhatsApp para os vocacionados.
           Ideal para mudanças de última hora.
         </p>
       ),
@@ -143,7 +143,7 @@ export function LeaderTour({ departmentId, departmentName, inviteCode }: LeaderT
     {
       icon: CalendarSync,
       title: 'Sincronizar com Google Agenda / iCal',
-      description: 'Cada voluntário pode levar a escala para o calendário pessoal.',
+      description: 'Cada vocacionado pode levar a escala para o calendário pessoal.',
       content: (
         <p className="text-sm text-muted-foreground">
           Em <strong>Sincronização de Calendário</strong> cada um gera um link .ics para importar no
@@ -169,7 +169,7 @@ export function LeaderTour({ departmentId, departmentName, inviteCode }: LeaderT
       content: (
         <p className="text-sm text-muted-foreground">
           Próximos passos sugeridos:
-          <br />1. Convidar voluntários pelo link do departamento.
+          <br />1. Convidar vocacionados pelo link do departamento.
           <br />2. Aguardar todos preencherem disponibilidade.
           <br />3. Gerar a primeira escala com a varinha mágica. ✨
         </p>

@@ -198,7 +198,7 @@ export default function ChurchPublic() {
   const churchTitle = `${church.name} — Escalas | LEVI`;
   const churchDesc = church.description
     ? church.description.slice(0, 155)
-    : `Calendário público de escalas e voluntários de ${church.name}${church.city ? ` em ${church.city}` : ''}.`;
+    : `Calendário público de escalas e vocacionados de ${church.name}${church.city ? ` em ${church.city}` : ''}.`;
   const churchAddress = [church.address, church.city, church.state].filter(Boolean).join(', ');
   const churchJsonLd = {
     '@context': 'https://schema.org',
@@ -407,7 +407,7 @@ export default function ChurchPublic() {
                     Este link é para <strong>líderes</strong> cadastrarem um novo departamento/ministério nesta igreja.
                   </p>
                   <p className="text-xs text-muted-foreground mb-4 max-w-xl mx-auto">
-                    Para criar, você vai precisar do código que o líder da igreja envia. Se você é voluntário, peça ao líder do seu departamento o link de convite específico.
+                    Para criar, você vai precisar do código que o líder da igreja envia. Se você é vocacionado, peça ao líder do seu departamento o link de convite específico.
                   </p>
                   <Link to={`/auth?tab=register&church=${slug}&redirect=${encodeURIComponent(`/departments/new?church=${slug}`)}`}>
                     <Button className="gradient-vibrant text-white">

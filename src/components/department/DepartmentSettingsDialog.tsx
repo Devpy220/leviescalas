@@ -211,7 +211,7 @@ export default function DepartmentSettingsDialog({
                     Escalar manhã e noite no domingo
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    Permite que o mesmo voluntário seja escalado nos turnos da manhã e noite no mesmo domingo.
+                    Permite que o mesmo vocacionado seja escalado nos turnos da manhã e noite no mesmo domingo.
                   </p>
                 </div>
                 <Switch

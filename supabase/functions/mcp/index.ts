@@ -17,7 +17,7 @@ function supabaseForUser(ctx) {
 var list_my_departments_default = defineTool({
   name: "list_my_departments",
   title: "List my departments",
-  description: "Lista os departamentos da igreja em que o usu\xE1rio autenticado participa (como l\xEDder ou volunt\xE1rio).",
+  description: "Lista os departamentos da igreja em que o usu\xE1rio autenticado participa (como l\xEDder ou vocacionado).",
   inputSchema: {},
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async (_input, ctx) => {

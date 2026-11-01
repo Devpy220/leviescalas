@@ -12,7 +12,7 @@ function supabaseForUser(ctx: ToolContext) {
 export default defineTool({
   name: "list_my_departments",
   title: "List my departments",
-  description: "Lista os departamentos da igreja em que o usuário autenticado participa (como líder ou voluntário).",
+  description: "Lista os departamentos da igreja em que o usuário autenticado participa (como líder ou vocacionado).",
   inputSchema: {},
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async (_input, ctx) => {

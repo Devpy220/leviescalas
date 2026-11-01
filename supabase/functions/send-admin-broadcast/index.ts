@@ -69,7 +69,7 @@ const handler = async (req: Request): Promise<Response> => {
       message: `📢 LEVI: ${title}\n${message}`,
       status: "sent",
       sent_at: new Date().toISOString(),
-      metadata: { user_name: p.name || 'Voluntário', announcement_title: `${title}\n\n${message}` },
+      metadata: { user_name: p.name || 'Vocacionado', announcement_title: `${title}\n\n${message}` },
     }));
 
     const { error: notificationError } = await supabase
@@ -82,10 +82,10 @@ const handler = async (req: Request): Promise<Response> => {
       .filter((p) => p.whatsapp && p.whatsapp_opt_in_at && !p.whatsapp_opt_out_at)
       .map((p) => ({
         phone: p.whatsapp as string,
-        userName: p.name || "Voluntário",
+        userName: p.name || "Vocacionado",
         mainMessage: buildBroadcastMessage({
           userId: p.id,
-          userName: p.name || "Voluntário",
+          userName: p.name || "Vocacionado",
           title,
           message,
         }),

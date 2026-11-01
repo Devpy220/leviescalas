@@ -234,7 +234,7 @@ export default function CreateDepartment() {
               <Link to="/apoio" className="block">
                 <Button variant="outline" className="w-full h-12 gap-2">
                   <Heart className="w-5 h-5 text-rose-500" />
-                  Apoiar o projeto (voluntário)
+                  Apoiar o projeto (opcional)
                 </Button>
               </Link>
               
@@ -300,7 +300,7 @@ export default function CreateDepartment() {
                 <AlertDescription className="text-sm text-muted-foreground">
                   <strong className="text-foreground">Aqui você cria os departamentos/ministérios da sua igreja.</strong>
                   <br />
-                  Após criar, você receberá um <strong className="text-foreground">link de convite</strong> para adicionar os voluntários ao departamento.
+                  Após criar, você receberá um <strong className="text-foreground">link de convite</strong> para adicionar os vocacionados ao departamento.
                 </AlertDescription>
               </Alert>
 
@@ -420,7 +420,7 @@ export default function CreateDepartment() {
                         Apoie o Projeto
                       </h3>
                       <p className="text-sm text-muted-foreground">
-                        Contribuição voluntária
+                        Contribuição espontânea
                       </p>
                     </div>
                   </div>
@@ -447,7 +447,7 @@ export default function CreateDepartment() {
                   </div>
 
                   <p className="text-xs text-muted-foreground text-center mt-4">
-                    Sua contribuição é 100% voluntária
+                    Sua contribuição é 100% espontânea
                   </p>
                 </div>
               </div>
