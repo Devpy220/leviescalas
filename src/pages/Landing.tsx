@@ -64,6 +64,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable';
 import { TwoFactorVerify } from '@/components/auth/TwoFactorVerify';
 import { LanguageSelector } from '@/components/LanguageSelector';
+import { ServantsCallout } from '@/components/landing/ServantsCallout';
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 const GoogleIcon = () => (
@@ -582,7 +583,7 @@ export default function Landing() {
   };
 
   return (
-    <div className="relative min-h-screen lg:h-screen flex flex-col text-foreground lg:overflow-hidden">
+    <div className="relative min-h-screen flex flex-col text-foreground">
       <VideoBackground />
       <PWAInstallPrompt open={showInstallPrompt} onOpenChange={setShowInstallPrompt} />
 
@@ -615,9 +616,9 @@ export default function Landing() {
         </div>
       </nav>
 
-      <main className="flex-1 min-h-0 pt-16 flex flex-col lg:overflow-hidden">
+      <main className="flex-1 pt-16 flex flex-col">
       {/* ── HERO + FEATURES (single viewport on desktop, scroll on mobile) ── */}
-      <section className="flex-1 min-h-0 relative z-[1] py-4 sm:py-6 lg:overflow-hidden">
+      <section className="relative z-[1] py-4 sm:py-6 lg:h-[calc(100dvh-4rem)] lg:overflow-hidden">
 
         {/* Dot grid + gradient blobs */}
         <div className="absolute inset-0 dot-grid pointer-events-none" />
@@ -775,6 +776,9 @@ export default function Landing() {
         </div>
 
       </section>
+
+      {/* ── SERVANTS HIGHLIGHT ── */}
+      <ServantsCallout onStart={() => openAuth('login')} />
       </main>
 
 
