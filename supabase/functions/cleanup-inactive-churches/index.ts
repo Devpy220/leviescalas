@@ -139,14 +139,16 @@ async function cleanupInactiveMembers(supabase: any) {
     e.joined = Math.max(e.joined, new Date(m.joined_at).getTime());
     byUser.set(m.user_id, e);
   }
-  const { data: admins } = await supabase.from("user_roles").select("user_id").eq("role", "admin");
-  const adminIds = new Set((admins ?? []).map((a: any) => a.user_id));
-  const { data: leaderRows } = await supabase.from("departments").select("leader_id");
-  const leaderIds = new Set((leaderRows ?? []).map((d: any) => d.leader_id));
+  const { data: admins, error: eAdm } = await supabase.from("user_roles").select("user_id").eq("role", "admin");
+  const { data: leaderRows, error: eLead } = await supabase.from("departments").select("leader_id");
   // Co-leaders and coordinators organize schedules without being on them — never auto-delete.
-  const { data: coRows } = await supabase.from("members").select("user_id").in("role", ["leader", "coleader"]);
+  const { data: coRows, error: eCo } = await supabase.from("members").select("user_id").in("role", ["leader", "coleader"]);
+  const { data: coordRows, error: eCoord } = await supabase.from("department_coordinators").select("user_id");
+  // Without the full protected list we could warn or delete a leader — stop this run instead.
+  if (eAdm || eLead || eCo || eCoord) { console.error("protected list load failed", eAdm ?? eLead ?? eCo ?? eCoord); return { deleted, notified }; }
+  const adminIds = new Set((admins ?? []).map((a: any) => a.user_id));
+  const leaderIds = new Set((leaderRows ?? []).map((d: any) => d.leader_id));
   for (const r of coRows ?? []) leaderIds.add((r as any).user_id);
-  const { data: coordRows } = await supabase.from("department_coordinators").select("user_id");
   for (const r of coordRows ?? []) leaderIds.add((r as any).user_id);
 
   for (const [uid, info] of byUser) {
