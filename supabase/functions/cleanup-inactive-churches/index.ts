@@ -34,11 +34,13 @@ async function cleanupInactiveDepartments(supabase: any) {
   if (error) throw error;
 
   for (const d of depts ?? []) {
-    const [{ count: recentByDate }, { count: recentByCreate }] = await Promise.all([
+    const [{ count: recentByDate, error: e1 }, { count: recentByCreate, error: e2 }] = await Promise.all([
       supabase.from("schedules").select("id", { count: "exact", head: true }).eq("department_id", d.id).gte("date", cutoffDate),
       supabase.from("schedules").select("id", { count: "exact", head: true }).eq("department_id", d.id).gte("created_at", new Date(cutoff).toISOString()),
     ]);
-    const active = (recentByDate ?? 0) > 0 || (recentByCreate ?? 0) > 0 || new Date(d.created_at).getTime() > cutoff;
+    // A failed check must never count as "inactive" — skip this department until the next run.
+    if (e1 || e2 || recentByDate == null || recentByCreate == null) { console.error("dept activity check failed", d.id, e1 ?? e2); continue; }
+    const active = recentByDate > 0 || recentByCreate > 0 || new Date(d.created_at).getTime() > cutoff;
     if (active) {
       if (d.inactivity_deadline) await supabase.from("departments").update({ inactivity_deadline: null, inactivity_last_notice_at: null }).eq("id", d.id);
       continue;
@@ -137,14 +139,16 @@ async function cleanupInactiveMembers(supabase: any) {
     e.joined = Math.max(e.joined, new Date(m.joined_at).getTime());
     byUser.set(m.user_id, e);
   }
-  const { data: admins } = await supabase.from("user_roles").select("user_id").eq("role", "admin");
-  const adminIds = new Set((admins ?? []).map((a: any) => a.user_id));
-  const { data: leaderRows } = await supabase.from("departments").select("leader_id");
-  const leaderIds = new Set((leaderRows ?? []).map((d: any) => d.leader_id));
+  const { data: admins, error: eAdm } = await supabase.from("user_roles").select("user_id").eq("role", "admin");
+  const { data: leaderRows, error: eLead } = await supabase.from("departments").select("leader_id");
   // Co-leaders and coordinators organize schedules without being on them — never auto-delete.
-  const { data: coRows } = await supabase.from("members").select("user_id").in("role", ["leader", "coleader"]);
+  const { data: coRows, error: eCo } = await supabase.from("members").select("user_id").in("role", ["leader", "coleader"]);
+  const { data: coordRows, error: eCoord } = await supabase.from("department_coordinators").select("user_id");
+  // Without the full protected list we could warn or delete a leader — stop this run instead.
+  if (eAdm || eLead || eCo || eCoord) { console.error("protected list load failed", eAdm ?? eLead ?? eCo ?? eCoord); return { deleted, notified }; }
+  const adminIds = new Set((admins ?? []).map((a: any) => a.user_id));
+  const leaderIds = new Set((leaderRows ?? []).map((d: any) => d.leader_id));
   for (const r of coRows ?? []) leaderIds.add((r as any).user_id);
-  const { data: coordRows } = await supabase.from("department_coordinators").select("user_id");
   for (const r of coordRows ?? []) leaderIds.add((r as any).user_id);
 
   for (const [uid, info] of byUser) {
@@ -153,12 +157,14 @@ async function cleanupInactiveMembers(supabase: any) {
       .select("id, name, whatsapp, created_at, inactivity_deadline, inactivity_last_notice_at").eq("id", uid).maybeSingle();
     if (!p) continue;
     const recentStart = Math.max(new Date(p.created_at).getTime(), info.joined);
-    const [{ count: a }, { count: b }, { count: k }] = await Promise.all([
+    const [{ count: a, error: ea }, { count: b, error: eb }, { count: k, error: ek }] = await Promise.all([
       supabase.from("schedules").select("id", { count: "exact", head: true }).eq("user_id", uid).gte("date", cutoffDate),
       supabase.from("schedules").select("id", { count: "exact", head: true }).eq("user_id", uid).gte("created_at", cutoffIso),
       supabase.from("kids_room_schedules").select("id", { count: "exact", head: true }).eq("user_id", uid).gte("service_date", cutoffDate),
     ]);
-    if ((a ?? 0) > 0 || (b ?? 0) > 0 || (k ?? 0) > 0 || recentStart > cutoff) {
+    // A failed check must never count as "not scheduled" — skip this person until the next run.
+    if (ea || eb || ek || a == null || b == null || k == null) { console.error("member activity check failed", uid, ea ?? eb ?? ek); continue; }
+    if (a > 0 || b > 0 || k > 0 || recentStart > cutoff) {
       if (p.inactivity_deadline) await supabase.from("profiles").update({ inactivity_deadline: null, inactivity_last_notice_at: null }).eq("id", uid);
       continue;
     }
