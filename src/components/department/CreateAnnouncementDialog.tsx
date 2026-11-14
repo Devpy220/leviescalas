@@ -78,7 +78,7 @@ export default function CreateAnnouncementDialog({
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('Not authenticated');
 
-        const { error } = await supabase
+        const { data: announcement, error } = await supabase
           .from('department_announcements' as any)
           .insert({
             department_id: departmentId,
@@ -86,18 +86,17 @@ export default function CreateAnnouncementDialog({
             title: title.trim(),
             content: content.trim(),
             is_pinned: isPinned,
-          } as any);
+          } as any)
+          .select('id')
+          .single();
         if (error) throw error;
         toast({ title: 'Aviso publicado!', description: 'WhatsApp será enviado em 30 minutos.' });
 
         // In-app notifications only (WhatsApp will be sent after 30 min by cron)
-        if (departmentName) {
+        if (announcement) {
           supabase.functions.invoke('send-announcement-notification', {
             body: {
-              department_id: departmentId,
-              department_name: departmentName,
-              announcement_title: title.trim(),
-              skip_whatsapp: true,
+              announcement_id: (announcement as any).id,
             },
           }).catch((err) => console.error('Notification error:', err));
         }

@@ -4,6 +4,8 @@
 - Sentence-prefixed WhatsApp commands that change data must be confirmed via a short-lived, service-only pending command before execution, because casual phrases must never silently change availability.
 # LEVI project decisions
 
+- The user-callable announcement notifier accepts only a persisted announcement ID and creates in-app notices; only the authenticated delayed worker may enqueue announcement WhatsApp messages, because callers must not bypass the publication delay or supply outbound content.
+
 - Preserve the home typewriter identity: only the L/E/V/I initials in the top sentence and every rotating word in the home headline stay amber in light and dark themes; change this only on an explicit user request, because generic theme updates previously erased the brand color.
 - Keep the home typewriter amber as an independent semantic CSS token rather than using the secondary/amber palette, because the flat theme intentionally neutralizes those general tokens.
 - Localize all application chrome and system feedback through the shared PT/EN/ES dictionaries; switching language must update every visible label, action, date, toast, dialog, and accessibility label while preserving user-authored content.
